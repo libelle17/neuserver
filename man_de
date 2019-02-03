@@ -2,7 +2,7 @@
 .\" Manual-Seite für ²DPROG²
 .\" Schreiben Sie an geraldschade@gmx.de, wenn Sie Fehler oder Mängel entdeckt haben
 .pc
-.TH man 1 "03.02.19" "Version 0.47243" "Manual-Seite für ²DPROG²"
+.TH man 1 "04.02.19" "Version 0.10001" "Manual-Seite für ²DPROG²"
 .SH NAME
 \fB²DPROG² \- FaxServer-Funktionalität\fR: veranlasst automatischen Faxversand von Dateien, Benennung empfangener Faxe und Protokollierung aller Faxe in einer Datenbank 
 .br
@@ -14,58 +14,56 @@
 .SH GEBRAUCH
 .SH OPTIONEN 
 .SH FUNKTIONSWEISE
-.SH VORAUSSETZUNGEN
-.SH AUTOMATISCH INSTALLIERTE PROGRAMMPAKETE
-.SH AUSWIRKUNGEN DES PROGRAMMABLAUFS
-.SH DEINSTALLATION
-Wechseln Sie in einem Terminal in das Installationsverzeichnis (beim selben eingeloggten Benutzer: \fBcd ~/²DPROG²\fR, ansonsten wird es über \fB²DPROG² -info\fR angezeigt).
+.SH FUNKTIONSWEISE
 .br
-Rufen Sie dort \fBmake uninstall\fR auf.
+    \fRProgramm: \fB/root/neuserver/neuserver\fR, V: \fB0.10001 \fR
 .br
-Dadurch wird das installierte \fB²DPROG²\fR gelöscht und das Script \fBuninstallinv\fR in umgekehrter Reihenfolge abgearbeitet, das bei der Installation und beim Aufruf von ²DPROG² erstellt wurde. 
+\fBOptionen, die nicht gespeichert werden (aktueller Wert in Klammern): \fR
 .br
-Dadurch werden zusätzlich installierte Programmpakete, zusätzlich erteilte Berechtigungen, für ²DPROG² eingerichtete Sambafreigaben und Firewallausnahmen wieder gelöscht. 
+\fB -st, --stop\fR: neuserver anhalten (\fB0\fR)
 .br
-Auf die Deinstallation der Konfigurationsdateien, der angesammelten Daten und systemrelevanter Programme wie libgcc und selinux wird dabei verzichtet.
+\fB -n, --dszahl <string>\fR: Zahl der aufzulistenden Datensaetze = <zahl> statt ('\fB30\fR')
 .br
-Etwaige Fehlermeldungen beziehen sich meist auf einen Deinstallationsversuch bereits entfernter Programme und können ignoriert werden.
+\fB -sqlw, --sql-wortreich\fR: Bildschirmausgabe mit SQL-Befehlen (\fB0\fR)
 .br
-.SH RUECKGABEWERTE
-\fB0\fR: Normaler Rückgabewert
+\fB -w, --wortreich\fR: Bildschirmausgabe gespraechiger (\fB0\fR)
 .br
-\fB7\fR: Der Infobildschirm (\fB²DPROG² -info\fR) wurde angezeigt 
+\fB -ldn, --logdateineu\fR: logdatei vorher loeschen (\fB0\fR)
 .br
-\fB8\fR: Die Hilfe wurde angezeigt
+\fB -kd, --konfdatei <string>\fR: verwendet Konfigurationsdatei <string> anstatt ('\fB\fR')
 .br
-\fB9\fR: Zur Inbetriebnahme des gerade eingerichteten Capi-Moduls muss der Rechner neu gestartet werden
+\fB -h, --hilfe\fR: Erklaerung haeufiger Optionen (\fB3\fR)
 .br
-\fB10\fR: Die Initialisierung der Datenbank scheiterte und das Programm wurde deshalb beendet
+\fB -lh, --langhilfe\fR: Erklaerung aller Optionen (\fB3\fR)
 .br
-\fB11\fR: Die Überprüfung einer Datenbanktabelle scheiterte und das Programm wurde deshalb beendet
+\fB -vi, --vi\fR: Konfigurationsdatei , Logdatei usw. bearbeiten/sehen (beenden mit ':qa') (\fB0\fR)
 .br
-\fB17\fR: Gabelung zu weiterem thread misslungen
+\fB -vs, --vs\fR: Quelldateien in \fB/root/neuserver\fR bearbeiten/sehen (beenden mit ':qa') (\fB0\fR)
 .br
-\fB98\fR: Programmaufruf abgebrochen, da es bereits einmal läuft
+\fB -autoakt, --autoaktual <zahl>\fR: Programm automatisch aktualisieren (\fB1\fR)
 .br
-\fB99\fR: Suchbefehl mit \fB²DPROG² -fd 2\fR bei Dateilink misslungen
+\fB -rf, --rueckfragen\fR: alle Parameter werden abgefragt (darunter einige hier nicht gezeigte) (\fB0\fR)
 .br
-\fB113\fR: Ein SQL-Befehl für die Mariadb-Datenbank scheiterte an sonstigem Fehler
+\fB -krf, --keinerueckfragen\fR: keine Rueckfragen, z.B. fuer Aufruf aus cron (\fB0\fR)
 .br
-\fB115\fR: Eine Datenbankeintragung scheiterte an voller Festplatte
+\fB -info, --version\fR: Zeigt die Programmversion an (\fB0\fR)
 .br
-Nach Aufruf von \fB²DPROG² -vi\fR oder \fB²DPROG² -vs\fR wird ggf. der Rückgabewert von \fBvi\fR/\fBvim\fR weitergeleitet
-.SH FEHLER
-Fehler bitte mit u.a. dem Wort '²DPROG²' in der Email-Ueberschrift melden. 
+\fBOptionen z.Speich. i.Konfigur'datei (vorausg. '1'=doch nicht speichern, 'no'=Gegenteil, z.B. '-noocra','-1noocri'):\fR
 .br
-Bitte auch melden, wenn sich Änderungsbedarf durch andere Hard- bzw. Software ergeben.
+\fB -host, --host <string>\fR: verwendet die Datenbank auf Host <string> anstatt auf ('\fBlocalhost\fR')
 .br
-.SH PROGRAMMÄNDERUNG
-Durch Aufruf von '\fBsh viall\fR' mit den üblichen '\fBvim\fR'-Befehlen, gefolgt von '\fBmake\fR' und '\fBmake install\fR' vom Installationsverzeichnis ('\fB~/²DPROG²\fR) aus können Sie das Programm ändern.
-
-.SH HAFTUNG
-Das Programm wurde mit bester Absicht entwickelt und durch den Autor getestet.
+\fB -muser, --muser <string>\fR: verwendet fuer MySQL/MariaDB den Benutzer <string> anstatt ('\fB\fR')
 .br
-Trotzdem kann der Autor für keine Schäden haften, die durch das Programm entstehen könnten
-
-.SH AUTOR
-Gerald Schade (geraldschade@gmx.de; www.diabdachau.de)
+\fB -mpwd, --mpwd <string>\fR: verwendet fuer MySQL/MariaDB das Passwort <string>
+.br
+\fB -db, --datenbank <string>\fR: verwendet die Datenbank <string> anstatt ('\fB\fR')
+.br
+\fB -sp, --sprache <string>\fR: Language/Sprache/Lingue/Lingua [\fBd\fReutsch,\fBe\fRnglisch] ('\fBd\fR')
+.br
+\fB -lvz, --logvz <pfad>\fR: waehlt als Logverzeichnis <pfad>, derzeit ('\fB/var/log\fR')
+.br
+\fB -ld, --logdname <string>\fR: logdatei <string> (im Pfad '\fB/var/log\fR') wird verwendet anstatt ('\fBneuserver.log\fR')
+.br
+\fB -l, --log <zahl>\fR: protokolliert ausfuehrlich in Datei '\fB/var/log/neuserver.log\fR' (sonst knapper) (\fB0\fR)
+.br
+\fB -cm, --cronminuten <string>\fR: alle wieviel Minuten soll \fBneuserver\fR ueber crontab aufgerufen werden (0=gar nicht), anstatt  ('\fB0\fR')

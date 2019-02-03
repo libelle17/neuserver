@@ -2,7 +2,7 @@
 .\" manual page for ²DPROG²
 .\" write to geraldschade@gmx.de if You discover an error or a deficit in the program
 .pc
-.TH man 1 "03.02.19" "Version 0.47243" "\fB²DPROG²\fR man page"
+.TH man 1 "04.02.19" "Version 0.10001" "\fB²DPROG²\fR man page"
 .SH NAME
 \fB²DPROG² \- Fax server functionality\fR: induces automatic fax transmission of files, naming of received faxes and logging of all of them in a database
 .br
@@ -14,55 +14,56 @@
 .SH USAGE
 .SH OPTIONS 
 .SH FUNCTIONALITY
-.SH PRECONDITIONS
-.SH AUTOMATICALLY INSTALLED SOFTWARE PACKAGES 
-.SH IMPLICATIONS
-.SH UNINSTALLING
-Change in a terminal to the installation directory (for the same installed user, it's \fBcd ~/²DPROG²\fR, otherwise it will be displayed by \fB²DPROG² -info\fR).
+.SH FUNCTIONALITY
 .br
-Call \fBmake uninstall\fR. 
+    \fRProgramm: \fB/root/neuserver/neuserver\fR, V: \fB0.10001 \fR
 .br
-Then the installed \fB²DPROG²\fR will be deleted and the script \fBuninstallinv\fR will be executed in reverse order which has been generated during the installation and execution of ²DPROG².
+\fBOptions which are not saved (current value in parentheses): \fR
 .br
-Thereby additionally installed program packets, permissions, samba shares and firewall exceptions are deleted.  
+\fB -st, --stop\fR: stop neuserver (\fB0\fR)
 .br
-Configuration files, data, and system relevant programs like libgcc and selinux will not be deleted.
+\fB -n, --reccount <string>\fR: No. of listed entries = <no> instead of ('\fB30\fR')
 .br
-Error messages originate mostly in efforts to delete a program already missing and can then be ignored.
-
-.SH RETURN CODES
-\fB0\fR: Normal return code
+\fB -sqlv, --sql-verbose\fR: screen output with SQL commands (\fB0\fR)
 .br
-\fB7\fR: The info screen (\fB²DPROG² -info\fR) has been displayed
+\fB -v, --verbose\fR: screen output more verbose (\fB0\fR)
 .br
-\fB8\fR: The help has been displayed
+\fB -lfn, --logfilenew\fR: delete log file afore (\fB0\fR)
 .br
-\fB9\fR: To start the just installed capi module the computer has to be restarted
+\fB -cf, --conffile <string>\fR: uses configuration file <string> instead of ('\fB\fR')
 .br
-\fB10\fR: Initializing of the database failed and the program was stopped therefore
+\fB -h, --help\fR: Explanation of frequent options (\fB3\fR)
 .br
-\fB11\fR: Checking of a database table failed and the program was stopped therefore
+\fB -lh, --longhelp\fR: Explanation of all options (\fB3\fR)
 .br
-\fB17\fR: Fork to another thread failed
+\fB -vi, --vi\fR: edit/view configuration file , log file etc. (finish with ':qa') (\fB0\fR)
 .br
-\fB98\fR: Program stopped because it is already running once
+\fB -vs, --vs\fR: edit/view source files in \fB/root/neuserver\fR(finish with ':qa') (\fB0\fR)
 .br
-\fB99\fR: A search command at a link failed while using \fB²DPROG² -fd 2\fR
+\fB -autoupd, --autoupdate <zahl>\fR: Update program automatically (\fB1\fR)
 .br
-\fB113\fR: An sql command for the mariadb database failed with a miscellaneous error
+\fB -ia, --interactive\fR: all parameters will be prompted (some of them not shown here) (\fB0\fR)
 .br
-\fB115\fR: A database entry failed because of a full disk
+\fB -noia, --nointeraction\fR: no questions, e.g. for a call from within cron (\fB0\fR)
 .br
-After calling \fB²DPROG² -vi\fR or \fB²DPROG² -vs\fR the return code of \fBvi\fR/\fBvim\fR will be passed
-.SH ERRORS
-Please report any errors with the word '²DPROG²' included in the email headline. 
+\fB -info, --version\fR: shows the program version (\fB0\fR)
 .br
-Please report as well, if different hard- or software yields a requirement for a program modification.
-.SH PROGRAM MODIFICATION
-By calling '\fBsh viall\fR' and application of the usual '\fBvim\fR'-commands, followed by '\fBmake\fR' and '\fBmake install\fR' from the installation directory ('\fB~/²DPROG²\fR), You may alter the program.
-.SH LIABILITY
-The program has been written with the best aim and has been tested by the author.
+\fBOptions to be saved in the configuration file: (preced. '1'=don't save, 'no'=contrary, e.g. '-noocra','-1noocri'):\fR
 .br
-Nevertheless the author cannot be liable for any damage caused by the program.
-.SH AUTHOR
-Gerald Schade (geraldschade@gmx.de; www.diabdachau.de)
+\fB -host, --host <string>\fR: takes the database on host <string> instead of ('\fBlocalhost\fR')
+.br
+\fB -muser, --muser <string>\fR: takes the user <string> for MySQL/MariaDB instead of ('\fB\fR')
+.br
+\fB -mpwd, --mpwd <string>\fR: takes the password <string> for MySQL/MariaDB
+.br
+\fB -db, --database <string>\fR: uses the database <string> instead of ('\fB\fR')
+.br
+\fB -lg, --language <string>\fR: Language/Sprache/Lingue/Lingua [\fBd\fReutsch,\fBe\fRnglisch] ('\fBe\fR')
+.br
+\fB -ldr, --logdir <path>\fR: choses <path> as log directory, currently ('\fB/var/log\fR')
+.br
+\fB -lf, --logfilename <string>\fR: log file <string> (in path '\fB/var/log\fR') will be used instead of ('\fBneuserver.log\fR')
+.br
+\fB -l, --log <zahl>\fR: put detailed logs in file '\fB/var/log/neuserver.log\fR' (otherwise shorter) (\fB0\fR)
+.br
+\fB -cm, --cronminutes <string>\fR: every how many minutes shall \fBneuserver\fR be called in crontab (0=not at all), instead of  ('\fB0\fR')

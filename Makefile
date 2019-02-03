@@ -211,48 +211,34 @@ MANS+=$(_MAN)
 HTMLS::=$(patsubst %,%.html,$(MANS))
 GZS::=$(patsubst %,%.gz,$(MANS))
 
-
-.PHONY: all
+.PHONY: all glei opt opt2 opt3 optfast optc optg altc neu new
+ifeq (,$(SRCS))
+$(info keine *.cpp-Dateien => kompiliere nichts)
+all glei opt opt2 opt3 optfast optc optg altc neu new:
+	@printf ""
+else
 all: anzeig weiter
-
-.PHONY: glei
 glei: anzeig $(EXEC) $(GZS) 
-
-.PHONY: opt
 opt: CFLAGS += -O
 opt: neu
-
-.PHONY: opt2
 opt2: CFLAGS+= -O2
 opt2: neu
-
-.PHONY: opt3
 opt3: CFLAGS+= -O3
 opt3: neu
-
-.PHONY: optfast
 optfast: CFLAGS+= -Ofast
 optfast: neu
-
-.PHONY: optc
 opts: CFLAGS+= -Os
 opts: neu
-
-.PHONY: optg
 optg: CFLAGS+= -Og
 optg: neu
-
-.PHONY: altc
 altc: CFLAGS+= -std=gnu++11
 altc: CCInst::=gcc-c++
 altc: CCName::=g++
 altc: CC::=$(CCName) # CC=$(SUDC)$(CCName)
 altc: opts
-
-.PHONY: new
 new: neu
-.PHONY: neu
 neu: anzeig clean weiter
+endif
 
 .PHONY: weiter
 weiter: compiler $(EXEC) $(GZS) 
