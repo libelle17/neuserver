@@ -2,5 +2,5 @@
 su
 echo "gewünschter Servername, dann Ender:"
 read $SERVER
-hostname $SERVER
+hostnamectl set-hostname '$SERVER' 
 
