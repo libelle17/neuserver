@@ -1,0 +1,71 @@
+.\" t -*- coding: UTF-8 -*-
+.\" Manual-Seite für ²DPROG²
+.\" Schreiben Sie an geraldschade@gmx.de, wenn Sie Fehler oder Mängel entdeckt haben
+.pc
+.TH man 1 "03.02.19" "Version 0.47243" "Manual-Seite für ²DPROG²"
+.SH NAME
+\fB²DPROG² \- FaxServer-Funktionalität\fR: veranlasst automatischen Faxversand von Dateien, Benennung empfangener Faxe und Protokollierung aller Faxe in einer Datenbank 
+.br
+(manpage available in english: 'man ²DPROG²' or 'man -Len ²DPROG²')
+.SH SYNOPSIS
+\fB²DPROG² [-<kurzopt>|--<langopt> [<ergänzung>]] ...\fR
+.SH KURZBESCHREIBUNG
+.SH INSTALLATION
+.SH GEBRAUCH
+.SH OPTIONEN 
+.SH FUNKTIONSWEISE
+.SH VORAUSSETZUNGEN
+.SH AUTOMATISCH INSTALLIERTE PROGRAMMPAKETE
+.SH AUSWIRKUNGEN DES PROGRAMMABLAUFS
+.SH DEINSTALLATION
+Wechseln Sie in einem Terminal in das Installationsverzeichnis (beim selben eingeloggten Benutzer: \fBcd ~/²DPROG²\fR, ansonsten wird es über \fB²DPROG² -info\fR angezeigt).
+.br
+Rufen Sie dort \fBmake uninstall\fR auf.
+.br
+Dadurch wird das installierte \fB²DPROG²\fR gelöscht und das Script \fBuninstallinv\fR in umgekehrter Reihenfolge abgearbeitet, das bei der Installation und beim Aufruf von ²DPROG² erstellt wurde. 
+.br
+Dadurch werden zusätzlich installierte Programmpakete, zusätzlich erteilte Berechtigungen, für ²DPROG² eingerichtete Sambafreigaben und Firewallausnahmen wieder gelöscht. 
+.br
+Auf die Deinstallation der Konfigurationsdateien, der angesammelten Daten und systemrelevanter Programme wie libgcc und selinux wird dabei verzichtet.
+.br
+Etwaige Fehlermeldungen beziehen sich meist auf einen Deinstallationsversuch bereits entfernter Programme und können ignoriert werden.
+.br
+.SH RUECKGABEWERTE
+\fB0\fR: Normaler Rückgabewert
+.br
+\fB7\fR: Der Infobildschirm (\fB²DPROG² -info\fR) wurde angezeigt 
+.br
+\fB8\fR: Die Hilfe wurde angezeigt
+.br
+\fB9\fR: Zur Inbetriebnahme des gerade eingerichteten Capi-Moduls muss der Rechner neu gestartet werden
+.br
+\fB10\fR: Die Initialisierung der Datenbank scheiterte und das Programm wurde deshalb beendet
+.br
+\fB11\fR: Die Überprüfung einer Datenbanktabelle scheiterte und das Programm wurde deshalb beendet
+.br
+\fB17\fR: Gabelung zu weiterem thread misslungen
+.br
+\fB98\fR: Programmaufruf abgebrochen, da es bereits einmal läuft
+.br
+\fB99\fR: Suchbefehl mit \fB²DPROG² -fd 2\fR bei Dateilink misslungen
+.br
+\fB113\fR: Ein SQL-Befehl für die Mariadb-Datenbank scheiterte an sonstigem Fehler
+.br
+\fB115\fR: Eine Datenbankeintragung scheiterte an voller Festplatte
+.br
+Nach Aufruf von \fB²DPROG² -vi\fR oder \fB²DPROG² -vs\fR wird ggf. der Rückgabewert von \fBvi\fR/\fBvim\fR weitergeleitet
+.SH FEHLER
+Fehler bitte mit u.a. dem Wort '²DPROG²' in der Email-Ueberschrift melden. 
+.br
+Bitte auch melden, wenn sich Änderungsbedarf durch andere Hard- bzw. Software ergeben.
+.br
+.SH PROGRAMMÄNDERUNG
+Durch Aufruf von '\fBsh viall\fR' mit den üblichen '\fBvim\fR'-Befehlen, gefolgt von '\fBmake\fR' und '\fBmake install\fR' vom Installationsverzeichnis ('\fB~/²DPROG²\fR) aus können Sie das Programm ändern.
+
+.SH HAFTUNG
+Das Programm wurde mit bester Absicht entwickelt und durch den Autor getestet.
+.br
+Trotzdem kann der Autor für keine Schäden haften, die durch das Programm entstehen könnten
+
+.SH AUTOR
+Gerald Schade (geraldschade@gmx.de; www.diabdachau.de)

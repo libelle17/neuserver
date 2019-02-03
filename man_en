@@ -1,0 +1,68 @@
+'\" t -*- coding: UTF-8 -*-
+.\" manual page for ²DPROG²
+.\" write to geraldschade@gmx.de if You discover an error or a deficit in the program
+.pc
+.TH man 1 "03.02.19" "Version 0.47243" "\fB²DPROG²\fR man page"
+.SH NAME
+\fB²DPROG² \- Fax server functionality\fR: induces automatic fax transmission of files, naming of received faxes and logging of all of them in a database
+.br
+(manpage-Hilfe in deutsch verfügbar: 'man ²DPROG²' oder 'man -Lde ²DPROG²')
+.SH SYNOPSIS
+\fB²DPROG² [-<shortopt>|--<longopt> [<supplement>]] ...\fR
+.SH SHORT DESCRIPTION 
+.SH INSTALLATION
+.SH USAGE
+.SH OPTIONS 
+.SH FUNCTIONALITY
+.SH PRECONDITIONS
+.SH AUTOMATICALLY INSTALLED SOFTWARE PACKAGES 
+.SH IMPLICATIONS
+.SH UNINSTALLING
+Change in a terminal to the installation directory (for the same installed user, it's \fBcd ~/²DPROG²\fR, otherwise it will be displayed by \fB²DPROG² -info\fR).
+.br
+Call \fBmake uninstall\fR. 
+.br
+Then the installed \fB²DPROG²\fR will be deleted and the script \fBuninstallinv\fR will be executed in reverse order which has been generated during the installation and execution of ²DPROG².
+.br
+Thereby additionally installed program packets, permissions, samba shares and firewall exceptions are deleted.  
+.br
+Configuration files, data, and system relevant programs like libgcc and selinux will not be deleted.
+.br
+Error messages originate mostly in efforts to delete a program already missing and can then be ignored.
+
+.SH RETURN CODES
+\fB0\fR: Normal return code
+.br
+\fB7\fR: The info screen (\fB²DPROG² -info\fR) has been displayed
+.br
+\fB8\fR: The help has been displayed
+.br
+\fB9\fR: To start the just installed capi module the computer has to be restarted
+.br
+\fB10\fR: Initializing of the database failed and the program was stopped therefore
+.br
+\fB11\fR: Checking of a database table failed and the program was stopped therefore
+.br
+\fB17\fR: Fork to another thread failed
+.br
+\fB98\fR: Program stopped because it is already running once
+.br
+\fB99\fR: A search command at a link failed while using \fB²DPROG² -fd 2\fR
+.br
+\fB113\fR: An sql command for the mariadb database failed with a miscellaneous error
+.br
+\fB115\fR: A database entry failed because of a full disk
+.br
+After calling \fB²DPROG² -vi\fR or \fB²DPROG² -vs\fR the return code of \fBvi\fR/\fBvim\fR will be passed
+.SH ERRORS
+Please report any errors with the word '²DPROG²' included in the email headline. 
+.br
+Please report as well, if different hard- or software yields a requirement for a program modification.
+.SH PROGRAM MODIFICATION
+By calling '\fBsh viall\fR' and application of the usual '\fBvim\fR'-commands, followed by '\fBmake\fR' and '\fBmake install\fR' from the installation directory ('\fB~/²DPROG²\fR), You may alter the program.
+.SH LIABILITY
+The program has been written with the best aim and has been tested by the author.
+.br
+Nevertheless the author cannot be liable for any damage caused by the program.
+.SH AUTHOR
+Gerald Schade (geraldschade@gmx.de; www.diabdachau.de)

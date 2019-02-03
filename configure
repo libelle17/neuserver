@@ -1,0 +1,371 @@
+#!/bin/sh
+still() {
+	"$@" >/dev/null 2>&1;
+}
+leise() {
+	"$@" >/dev/null;
+}
+
+#kf kein Fehler
+kf() {
+	"$@" 2>/dev/null;
+}
+
+# Installationsprogramm ermitteln
+# inhaltlich parallel linst_cl::pruefipr( in kons.cpp
+# Ubuntu:   libtiff-dev   libtiff5
+# Opensuse: libtiff-devel libtiff5
+# Fedora:   libtiff       libtiff-devel
+# IdPR wird benötigt für: sudo
+# IPR wird verwendet in: einricht, dieses für: make, ctags, gtags, vim (in viall)
+# IP_R wird verwendet für: Makefile
+getIPR() {
+	CTAGS=ctags;
+#	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
+	os=$(cat /etc/os-release|grep '^NAME=')
+	[ -z "$os" ]&& os=$(cat /etc/lsb-release|grep '^DISTRIB_ID=')
+	os=$(echo $os|cut -d= -f2|sed 's/"\(.*\)"/\1/')
+	# echo $os
+	case "$os" in 
+		*Mint*) osnr=1;;
+		*Ubuntu*) osnr=2;; 
+		*Debian*) osnr=3;; 
+		*SUSE*) osnr=4;; 
+		*Fedora*) osnr=5;; 
+		*Mageia*) osnr=7;; 
+		*Manjaro*) osnr=8;; 
+	esac;
+	[ $osnr -eq 0 ]&&{
+		#	echo unvergeben;
+	leise which apt-get&&osnr=2|| 
+			leise which rpm&&{ { leise which zypper&&osnr=4; }||{ leise which dnf&&osnr=5; }||{ leise which yum&&osnr=6; }||
+		{ leise which urpmi.update&&osnr=7; } }|| { leise which pacman&&osnr=8; } }
+#	echo osnr: $osnr;
+# openSUSE
+	{ [ $osnr = 4 ]&&
+		{ 
+			Z=zypper;
+			g=--gpg-auto-import-keys;
+			IdPR="$Z -n $g in -f ";
+			IP_R="${SUDC}$Z $g in ";
+			UPR="${SUDC}$Z rm -u ";
+			PGROFF=groff;
+			# die nächsten beiden Variablen dürften 26.3.17 unnötig werden
+			REPOS="${SUDC}$Z lr|grep 'g++\|devel_gcc'\>$KR||${SUDC}$Z ar http://download.opensuse.org/repositories/devel:/gcc/\`cat /etc/*-release|grep ^NAME= |cut -d'\"' -f2|sed 's/ /_/'\`_\`cat /etc/*-release|grep ^VERSION_ID= |cut -d'\"' -f2\`/devel:gcc.repo;";
+			UREPO="${SUDC}$Z lr|grep \\\\\"g++\\\\\|devel_gcc\\\\\"\>$KR && ${SUDC}$Z rr devel_gcc;";
+			COMP="gcc gcc-c++ \$(CCInst)";
+			# sonst dauerts beim Editieren zu lang
+		  if test "$ICH" = viall; then
+				LBOOST=$(cat vars|grep LBOOST|cut -d= -f2);
+				LBIO=$(cat vars|grep LBIO|cut -d= -f2);
+				LBLO=$(cat vars|grep LBLO|cut -d= -f2);
+			else
+  			# z.B. 'i+ | boost_1_65-devel |'
+  			LBOOST=$(zypper se boost*-devel|grep ' | boost'|tail -n1|cut -d'|' -f2|sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//');
+				LBIO=$(V=libboost_iostreams;zypper se $V|grep "| $V"|tail -n1|cut -d'|' -f2|sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//');
+				LBLO=$(V=libboost_locale;zypper se $V|grep "| $V"|tail -n1|cut -d'|' -f2|sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//');
+				[ ! "$LBOOST" ]&&[ "$LBIO" ]&&[ "$LBLO" ]&& LBOOST=$(V=boost-license;zypper se $V|grep "| $V"|tail -n1|cut -d'|' -f2|sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//');
+			fi
+			LT=${_LT}-${dev};
+		} 
+	} || 
+	{ [ $osnr = 1 -o $osnr = 2 -o $osnr = 3 ]&&
+		{ 
+			IdPR="apt-get --assume-yes --allow-unauthenticated install --reinstall ";
+			IP_R="${SUDC}$IdPR";
+			UPR="${SUDC}apt-get -f install; ${SUDC}apt-get --auto-remove purge ";
+			dev=dev;
+			COMP="build-essential linux-headers-\$(shell uname -r)";
+			LT=${_LT}-${dev};
+			CTAGS=exuberant-ctags;
+		} 
+	} || 
+	{ [ $osnr = 5 ]&&
+		{ 
+			IdPR="dnf -y install ";
+			UPR="${SUDC}dnf remove ";
+		} 
+	} || 
+	{ [ $osnr = 6 ]&&
+		{ 
+			IdPR="yum -y install ";
+			UPR="${SUDC}yum remove ";
+		} 
+	} || 
+	{ [ $osnr = 7 ]&&
+		{ 
+			IdPR="urpmi --auto --force ";
+			IP_R="${SUDC}$IdPR";
+			UPR="${SUDC}urpme ";
+			dev=devel;
+			LT=${_LT}-${dev};
+			libmdb=lib64mariadb;
+			COMP="make automake gcc-c++ kernel-devel";
+		} 
+	} || 
+	{ [ $osnr = 8 ]&&
+		{ 
+			IdPR="pacman -S ";
+			IP_R="${SUDC}$IdPR";
+			dev=devel;
+			LT=${_LT}-${dev};
+			COMP="make automake base-devel";
+			UPR="${SUDC}pacman -R ";
+			SPR="pacman -Qi ";
+			libmdb=libmysqlclient;
+			UDPR="${SUDC}pacman -Rd ";
+		};
+	}
+	[ $osnr = 5 -o $osnr = 6 ]&& 
+	{ 
+		libmdb="mariadb mysql";
+		COMP="make automake gcc-c++ kernel-devel";
+		IP_R="${SUDC}$IdPR";
+		LBOOST=boost-${dev};
+		LBIO=boost-iostreams
+		LBLO=boost-locale
+		LT="${_LT} ${_LT}-${dev}";
+		LT5="";
+	}
+	{ [ $osnr -gt 3 -a $osnr -lt 8 ]&&
+		{ 
+			SPR="rpm -q ";
+			LACL=libacl-${dev};
+			LCURL=libcurl-${dev};
+			UDPR="${SUDC}rpm -e --nodeps ";
+		};
+	} || 
+	{ [ $osnr -le 3 ]&&
+		{ 
+			SPR="dpkg -s ";
+			LBOOST=libboost-${dev};
+			LBIO=libboost-iostreams-${dev};
+			LBLO=libboost-locale-${dev};
+			#   dpk -s libboost-dev, dpk -s libboost-iostream-dev, dpk -s libboost-locale-dev,   		
+			LACL=libacl1-${dev};
+			LCURL=libcurl4-openssl-${dev};
+			UDPR="${SUDC}apt-get -f install; ${SUDC}dpkg -r --force-depends ";
+		};
+	}
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include[ ]*<mysql.h>" "$A" &&break;done ||libmdb=;
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include[ ]*<boost" "$A" &&break;done ||LBOOST=;
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include[ ]*<tiffio.h>" "$A" &&break;done ||LT=;
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include .*acl.h>" "$A" &&break;done ||LACL=;
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include .*curl.h>" "$A" &&break;done ||LCURL=;
+	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include .*curses.h>" "$A" &&break;done ||LCURS=;
+	IPR="${SUDC}$IdPR";
+	DTN="`find . -maxdepth 1 -name ${DPROG}.cpp -printf '%f '`\
+		   `find . -maxdepth 1 -name ${DPROG}.h -printf '%f '`\
+			 `find . -maxdepth 1 \( -name '*.cpp' -or -name '*.h' \) -not -name "${DPROG}*" -printf '%f\\n'|sort|tr '\\n' ' '`\
+			  man_?? Makefile configure \
+			 `find . -maxdepth 1 -name '*.sh' -printf '%f '`\
+			  viall .exrc $UNF $ILOG"
+}
+
+exportvars() {
+	rm -f vars;
+	for v in KR KF IPR IP_R UPR UDPR SPR UNROH UNF AUNF ILOG PGROFF LT LT5 LBOOST LBIO LBLO LACL LCURL LCURS LM18 dev libmdb REPOS UREPO COMP GITV DTN DPROG; do
+		eval nv=\$$v; 
+		printf "$v::=$nv\n">>vars; 
+	done;
+#	printf "testvar::=rot gelb grün\n">>vars
+}
+
+ausricht() {
+	# im der letzten eingerückten Block der Bildschirmausgabe stehen die tatsächlich installierten Programme
+	# siehe int linst_cl::doinst(kons.cpp)
+	cat "$1" >> $GILOG
+	if [ $osnr = 4 ]; then
+		# am Schluss hole hold-Register, entferne Zeilenumbrueche, fasse Leerzeichen zusammen; wenn nicht zwischen NEW package und leerer Zeile, loesche Zeile;
+		# loesche auch die letzten Suchmusterzeilen (NEW package und leere Zeile); haenge ans Hold-Register an;
+		sed -ni.bak '${g;s/\n//g;s/\s\+/ /g;p};/NEW package\|reinstalled:/,/^$/!d;//d;H' "$1";
+	elif [ $osnr = 5 -o $osnr = 6 ]; then
+		# Beispiel für dnf:	 
+		#	 V=Verifying;sed -n '/'$V'/{s/[ ]*'$V'[ ]*:[ ]*\([^ ]*\).*/\1/;H};${x;s/\n/ /g;p}' /DATA/down/inst_vim_orig
+		# in Fedora: nach dem Programm kommt mit einem Leerzeichen eine Versionsnr., die unnötig ist für die Deninstallation
+		#		sed -ni.bak '/^\s/{s/\([^ ]\+\)[ ][^ ]\+/ \1/g;s/\s\+/ /g;h;:a;n;/^\s/{s/\([^ ]\+\)[ ][^ ]\+/ \1/g;s/\s\+/ /g;H;ba};};${x;s/\n/ /g;p}' "$1";
+		# ausserdem: nicht der letzte eingerueckte Block, sondern der hinter "Installed:" (vielleicht auch "Installiert:")
+		# am Schluss hole hold-Register, entferne Zeilenumbrueche, fasse Leerzeichen zusammen; wenn nicht zwischen Install und leerer Zeile, loesche Zeile;
+		# loesche auch die letzten Suchmusterzeilen (Install und leere Zeile); uebertrage nur den ersten von zwei Textbloecken; haenge ans Hold-Register an;
+		sed -ni.bak '${g;s/\n//g;s/\s\+/ /g;p};/Install[^: dt]*[dt]:/,/^$/!d;//d;{s/\([^ ]\+\)[ ][^ ]\+/\1/g};H' "$1";
+	else # apt
+		# am Schluss hole hold-Register, entferne Zeilenumbrueche, fasse Leerzeichen zusammen; wenn nicht zwischen NEW package und vorn anfangender Zeile, 
+		# loesche Zeile; loesche auch die letzten Suchmusterzeilen (NEW package und leere Zeile); haenge ans Hold-Register an;
+		sed -ni.bak '${g;s/\n//g;s/\s\+/ /g;p};/NEW package\|NEUEN Pakete/,/^[^ ]/!d;//d;H' "$1";
+	fi;
+	sed -i.baksed 's/ libstdc[^g ]*gcc[^ ]*/ /g;s/ libgcc[^ ]*/ /g;s/ libselinux[^ ]*/ /g' "$1"; 
+	# die Deinstallation von libgcc.x86_64 wirkte sich irgendwie ungünstig auf das System aus ...
+	# noch ungünstiger die von libselinux ...
+	# s. doanfg(string& datei, string& inhalt, string& comment) in kons.cpp
+	IP=$(cat $1)
+	printf "IP: '$IP'\n">>$GILOG
+	#//	 for IP in $(cat $1); do
+	# wenn $AUNF fehlt oder eine der in $1 erwähnten Programm dort nicht aufgeführt ist, dann zuinstallieren=ja; "; vi ..." nicht zu werten
+	[ ! -f $AUNF ]&&zuinst=ja|| 
+	{
+		for E in $IP; do 
+			grep -q "[^;] $E" $AUNF||{ zuinst=ja;break;} 
+		done;				
+	} 
+	[ -n "$zuinst" ]&& 
+	{ 
+		T=${UDPR}$IP; 
+		printf "$T\n# $3\nprintf \"(Inst: $(date +%F\ %T)): \$blau%%s\$reset\\\n\" \"$T\"\n">>$AUNF;
+		[ $2/ = "vim/" ] &&{ printf "alias vi>$KR&&${SUDC}unalias vi\necho \"alias vi>$KR&&${SUDC}unalias vi\"\n">>$AUNF;}
+	}
+	#//	 done;
+	#//	 test -f $AUNF&&grep -q " $2" $AUNF||{
+	#//	  T=${UPR}$2;
+	#//		printf "$T\nprintf \"\$blau%%s\$reset\\\n\" \"$T\"\n">>$AUNF;
+	#//	 }
+}
+
+# wird aufgerufen im Hauptprogramm configure, wenn 1. Parameter 'inst', dieses in Makefile mit: $(COMP), $$lc, $(pgd), $(slc), $(LT), $(LT5), $(PGROFF)
+# sonst mit 'make', aus viall mit 'ctags', 'global' und 'vim'
+einricht() {
+	# wenn $1 nicht aufrufbar oder "_", dann installiere $2
+	if [ "$1" != _ ]&& still which "$1"; then
+		if [ $3/ = verbose/ ]; then  \
+			printf "$blau$1$reset installed/ schon da, $blau$2$reset not to be installed/ übersprungen\n"; fi
+	else
+		getIPR;
+		[ "$1" = _ ]|| printf "$blau$1$reset not found/ nicht gefunden => "  
+		printf "Installing/ Installiere $blau$2$reset ...\n";
+		[ "$1" = "vim" ]&&[ $osnr = 5 -o $osnr = 6 ]&&{ ${SUDC}yum update vim-minimal;}
+		[ $osnr = 1 -o $osnr = 2 -o $osnr = 3 ]&&{
+			# wenn cdrom-Zeile vorkommt, vor ftp.-debian-Zeile steht und www.debian.org erreichbar ist, dann alle cdrom-Zeilen hinten anhängen
+			# gleichlautend in kons.cpp: linst_cl::linst_cl(int obverb,int oblog)
+			${SUDC} sh -c "S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S && \ 
+			test 0\$(sed -n '/^[^#]*ftp.*debian/{=;q}' \$S) -gt 0\$(sed -n '/'\$F'/{=;q}' \$S) && \  
+			ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'\$F'/{H;d};\${p;x}' \$S;:"
+			# für jessie weitere evtl. notwendige Befehle
+			# in /etc/apt/sources.list einfügen: "deb http://ftp.de.debian.org/debian/ unstable main contrib non-free
+			#                                    "deb-src http://ftp.de.debian.org/debian/ unstable main contrib non-free"
+			sudo apt-get -f install
+			# sudo apt-get update && sudo apt-get upgrade
+			# sudo apt-get autoremove
+			# sudo apt-get install gnome-tweak-tool
+			# sudo apt-get install libboost-filesystem-dev
+		}
+		rweg=0;
+		CMD=${IPR};
+		[ _$(echo $1|cut -c1-3) = _"gcc" -o _$(echo $2|cut -c1-3) = _"gcc" ]&&{
+		CMD=${IP_R};
+		if test -n "$Z"; then
+			${SUDC}$Z lr|grep 'g++\|devel_gcc'>/dev/null 2>&1 ||{ 
+				GREPO=http://download.opensuse.org/repositories/devel:/gcc/
+			GREPO=${GREPO}`cat /etc/*-release|grep ^NAME= |cut -d\" -f2|sed 's/ /_/'`_
+			GREPO=${GREPO}`cat /etc/*-release|grep ^VERSION_ID= |cut -d\" -f2`
+			GREPO=${GREPO}/devel:gcc.repo;
+			printf "Adding Repository/ Füge Repository hinzu: $blau$GREPO$reset\n";
+			${SUDC}$Z rr devel_gcc >/dev/null 2>&1;
+			${SUDC}$Z ar $GREPO && rweg=1;
+		}
+	fi
+}
+LOG=inst_$(echo $2|sed 's/ //g').log; # Leerzeichen entfernen
+printf "Befehl/Command: ${CMD}$2\n";
+${CMD}$2|tee $LOG # "$2" geht bei mehreren Wörtern nicht, z.B. "groff-base groff"
+printf "\nRueckmeldung bei einricht $2:\n">>$GILOG;
+ausricht "$LOG" $1 "${IPR}$2";
+if [ "$1" = "g++" -o "$1" = "g++-6" ]&& [ -n "$Z" ]&& [ $rweg = 1 ]; then
+	printf "Removing Repository/ Entferne Repository ${blau}devel_gcc$reset again/ wieder\n";
+	${SUDC}$Z rr devel_gcc;
+else :; fi
+	fi
+}
+
+# hier geht's los ...
+printf "Fuehre aus/executing: $0 $1 $2 $3 $4 ...\r"
+#// string substitution geht nur in bash, nicht in dash, was auf deb-Systemen standardmaessig durch sh aufgerufen wird
+#// => in diesem Fall Aufruf in bash-Aufruf umwandeln; dies wird zwar hier nicht gebraucht, jedoch sourct dieses Programm
+#// install.sh, wo derselbe Aufruf steht 
+#// [ -z "$BASH_SOURCE" ]&&{ bash "$0";exit;}
+UNROH=uninstall
+UNF=${UNROH}inv # Name muss identisch sein mit Ende von uindt in kons.cpp 
+DN=/dev/null
+KR="$DN 2>&1" # keine Rueckmeldung
+KF=" 2>$DN" # keine Fehlermeldung
+PGROFF="groff-base groff"
+dev=devel
+libmdb="libmariadb libmariadbclient libmysql libmysqlclient"
+LCURS=ncurses;
+osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
+Z=""
+[ "$(id -u)" -ne "0" ]&&SUDC="sudo "
+if test "$ICH" != install.sh -a "$ICH" != ${DPROG}_inst.sh -a "$ICH" != transfer; then
+	. ./install.sh
+fi
+#// echo nach sourcen von ./install.sh,DPROG: $DPROG, GITV: $GITV
+INSTVZ="$(dirname $(readlink -f "$0"))"
+ILOG=inst.log
+GILOG=$INSTVZ/$ILOG
+mkdir -p $INSTVZ
+AUNF=$INSTVZ/$UNF
+_LT="libtiff"
+LT5="${_LT}5"
+LM18=libmysqlclient18
+
+getIPR;
+# diese Datei wird wegen obigem in viall gesourct, deshalb dort der Rest zu uebergehen
+rot="\033[1;31m"
+gruen="\033[1;32m"
+blau="\033[1;34m"
+reset="\033[0m"
+if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -o "$ICH" = viall; then
+	if test "$1" = inst; then
+		# um aus Makefile hier etwas installieren zu koennen
+		einricht "$2" "$3" "$4"
+		exit
+	fi
+
+	# Gruppen, deren Mitglieder sudo aufrufen koennen; fuer Debian muss zuerst 'sudo' genannt werden, weil eine Zuordnung zu 'root' nichts hilft (s.u. tail)
+	SUG="admin\|root\|sudo\|wheel\|ntadmin";
+
+	# ab hier wird etwas getan ...
+	echo \"$GITV\">gitvdt
+	# falls der Benutzer 'sudo' fehlt oder der aktuelle Benutzer ihn nicht aufrufen darf, weil er nicht Mitglied einer Administratorgruppe ist ...
+	INSTP=sudo;still which $INSTP|| 
+	{
+		printf "Must install '$INSTP'. "
+		printf "Please enter ${blau}root$reset's password if asked:\n"
+		printf "Muss '$INSTP' einrichten. "
+		printf "Bitte geben Sie bei Fragen das Passwort von '${blau}root$reset' ein:\n";
+		#	test -f $AUNF&&grep -q "[^;] sudo" $AUNF||printf "${UPR}sudo\nprintf \"\$blau%%s\$reset\\\n\" \"${UPR}sudo\"\n">>$AUNF;
+		#	su -c "$IdPR sudo;";
+		# genauso in: linst_cl::linst_cl(int obverb,int oblog)
+		# wenn cdrom-Zeile vorkommt, vor ftp.-debian-Zeile steht und www.debian.org erreichbar ist, dann alle cdrom-Zeilen hinten anhängen
+		su -c "S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S && \
+			test 0\$(sed -n '/^[^#]*ftp.*debian/{=;q}' \$S) -gt 0\$(sed -n '/'\$F'/{=;q}' \$S) && \
+			ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'\$F'/{H;d};\${p;x}' \$S;:"
+		LOG=inst_$INSTP.log;
+		printf "%bsu -c \"$IdPR $INSTP\"|tee \"$LOG\";%b\n" ${blau} ${reset}
+		su -c "$IdPR $INSTP"|tee "$LOG";
+		printf "\nRueckmeldung su -c \"$IdPR $INSTP\":\n">>$GILOG
+		ausricht "$LOG";
+	}
+	# 0=sudo aufrufbar
+	a=$(sudo -n -v 2>&1);test -z "$a" || echo $a|grep -q "assw" || 
+	{
+		printf "Must allow '$blau$USER$reset' to call '${blau}sudo$reset'."
+		printf "Please enter ${blau}root$reset's password at the next question:\n"
+		printf "Then please log out and in again, change to the directory '$blau$PWD$reset' and then call '${blau}sh install.sh$reset'!\n"
+		printf "Muss '$blau$USER$reset' den Aufruf von '${blau}sudo$reset' ermoeglichen. "
+		printf "Bitte geben Sie bei der Frage das Passwort von '${blau}root$reset' ein:\n";
+		printf "Danach loggen Sie sich bitte aus und nochmal ein, wechseln Sie nach '$blau$PWD$reset' und rufen Sie '${blau}sh install.sh$reset' auf!\n";
+		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";"
+		su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";" && exit
+	}
+	if test "$ICH" != viall; then
+		#// which sudo >/dev/null && id -Gzn $USER|grep -qw "$SUG";}||{ 
+		# falls make fehlt, dann installieren ...
+		einricht make make
+		#// $SPR make >$DN 2>&1 ||{ echo Installing/ Installiere 'make' ....; id su >$DN 2>&1 && { su -c "$IPR make;";:;} || ${SUDC}$IPR make; grep -q make $AUNF||printf "${UPR}make\necho \"${UPR}make\"\n">>$AUNF; }
+		# in kons.cpp steht gleichnamig spath=\n#include spath\n;\n
+		# sfftobmp, vom source code in /usr/local/bin installiert, wurde unter Fedora 14 LX nicht bei der source-code-Installation von capisuite gefunden
+		${SUDC}sh -c 'echo \"$PATH$(D=/usr/local/bin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")$(D=/usr/local/sbin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")\"'>spath
+		exportvars;
+		Mf=Makefile;Mfr=$Mf.roh; test -f $Mfr && mv $Mfr $Mf
+	fi
+fi
+printf "                                                                                                                                            \r"
