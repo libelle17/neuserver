@@ -15,13 +15,15 @@ smbpasswd -a $1
 }
 
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
+sed 's/:://;/\$/d;s/=/="/;s/$/"/;' vars>vars.sh
+. ./vars.sh
 hostnamectl
 echo -e $blau"gewünschter Servername, dann Enter:"$reset
 read SERVER
 hostnamectl set-hostname "$SERVER" 
 hostnamectl
 grep -q "^praxis:" /etc/group||groupadd praxis
-rpm -q samba 2>/dev/null||zypper install samba
+$(SPR) samba 2>/dev/null||$(IPR) samba
 systemctl start smb
 systemctl enable smb
 systemctl start nmb
