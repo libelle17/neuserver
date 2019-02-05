@@ -211,10 +211,10 @@ MANS+=$(_MAN)
 HTMLS::=$(patsubst %,%.html,$(MANS))
 GZS::=$(patsubst %,%.gz,$(MANS))
 
-.PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new
+.PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig
 ifeq (,$(SRCS))
 $(info keine *.cpp-Dateien => kompiliere nichts)
-all glei opt opt2 opt3 optfast opts optg altc neu new:
+all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC):
 	@printf ""
 else
 all: anzeig weiter
@@ -284,7 +284,8 @@ pull:
 	@git pull
 	@sh configure
 
-.PHONY: anzeig
+ifeq (,$(SRCS))
+else
 anzeig:
 # 'echo -e' geht nicht z.B. in ubuntu
 	@[ "$(DPROG)" ]||{ printf "Datei/File %b'vars'%b fehlerhaft/faulty, bitte vorher/please call %b'./install.sh'%b aufrufen/before!\n" \
@@ -296,12 +297,15 @@ anzeig:
 	        $(blau) "$(CCName)" $(reset) $(blau) "$(CCInst)" $(reset) $(blau) "$(CFLAGS)" $(reset)
 	@printf " Target path for/Zielpfad fuer '%bmake install%b': %b%s%b\n" $(blau) $(reset) $(blau) "'$(EXPFAD)'" $(reset) >$(BA)
 	-@rm -f fehler.txt $(KF)
+endif
 
 .PHONY: debug debugnew debugneu
 debug debugnew debugneu: DEBUG=-g 
 debug: all
 debugneu debugnew: neu
 
+ifeq (,$(SRCS))
+else
 $(EXEC): $(OBJ)
 	-@printf " linking/verlinke %s to/zu %b%s%b ..." "$(OBJ)" $(blau) "$@" $(reset) >$(BA)
 	-@df --output=ipcent / |tail -n1|grep - && $(SUDC)pkill postdrop;:
@@ -314,6 +318,7 @@ $(EXEC): $(OBJ)
 	$(shell touch *.o $${EXEC})
 	-@printf " Fertig mit/Finished with %b$(ICH)%b, Target: %b$@%b:, nachher/afterwords:\n" $(blau) $(reset) $(blau) $(reset)
 	-@printf " '%b%s%b'\n" $(blau) "$$(ls -l --time-style=+' %d.%m.%Y %H:%M:%S' --color=always $(EXEC))" $(reset)
+endif
 
 %.o : %.cpp
 %.o : %.cpp $(DEPDIR)/%.d
