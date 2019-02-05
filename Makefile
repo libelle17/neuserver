@@ -83,7 +83,7 @@ RP:=)
 DISTR::=$(shell os=$$(cat /etc/os-release|grep '^NAME=');[ -z "$$os" ]&& os=$$(cat /etc/lsb-release|grep '^DISTRIB_ID=');os=$$(echo $$os|cut -d= -f2|sed 's/"\(.*\)"/\1/'); case "$$os" in *Mint*$(RP) osnr=1;; *Ubunto*$(RP) osnr=1;; *Debian*$(RP) osnr=1;; *SUSE*$(RP) osnr=2;; *Fedora*$(RP) osnr=3;; *Mageia*$(RP) osnr=4;; *Manjaro*$(RP) osnr=5;; esac;echo $$osnr;)
 ifeq ($(GCCOK),0)
 # wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
-	MINVGCC::=$(shell which zypper >/dev/null 2>&1&&zypper se /gcc[^-]*\-c\\+\\+$$/|tail -n1|cut -dc -f3|cut -d- -f1||echo 0;)
+	MINVGCC::=$(shell which zypper >/dev/null 2>&1&&zypper se /gcc[^-]$*-c\\+\\+$$/|tail -n1|cut -dc -f3|cut -d- -f1||echo 0;)
 	ZUERSETZ::=$(shell expr $(MINVGCC) \> $(MINGCCNR))
 	ifeq ($(ZUERSETZ),1)
 		MINGCCNR::=$(MINVGCC)
