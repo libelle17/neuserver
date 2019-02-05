@@ -214,7 +214,7 @@ GZS::=$(patsubst %,%.gz,$(MANS))
 .PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig
 ifeq (,$(SRCS))
 $(info keine *.cpp-Dateien => kompiliere nichts)
-all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC):
+all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC) $(INSTEXEC):
 	@printf ""
 else
 all: anzeig weiter
@@ -398,9 +398,12 @@ stumm: all
 
 stumminst: install
 
+ifeq (,$(SRCS))
+else
 $(INSTEXEC): $(EXEC)
 	@printf " Copying program/ Kopiere Programmdatei: %b%s%b -> %b%s%b\n" $(blau) "$(EXEC)" $(reset) $(blau) "$(INSTEXEC)" $(reset) >$(BA)
 	-@$(SUDC)pkill $(EXEC) $(KF); $(SUDC)pkill -9 $(EXEC) $(KF); $(SUDC)cp -p "$(EXEC)" "$(INSTEXEC)"
+endif
 
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE
