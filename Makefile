@@ -211,10 +211,10 @@ MANS+=$(_MAN)
 HTMLS::=$(patsubst %,%.html,$(MANS))
 GZS::=$(patsubst %,%.gz,$(MANS))
 
-.PHONY: all glei opt opt2 opt3 optfast optc optg altc neu new
+.PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new
 ifeq (,$(SRCS))
 $(info keine *.cpp-Dateien => kompiliere nichts)
-all glei opt opt2 opt3 optfast optc optg altc neu new:
+all glei opt opt2 opt3 optfast opts optg altc neu new:
 	@printf ""
 else
 all: anzeig weiter
