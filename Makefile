@@ -69,7 +69,7 @@ MINGCCNR::=6
 # maximal verfügbare g++-Version, falls die Verknüpfungen in /usr/bin stehen und evtl. /usr/bin/g++ nicht auf die höchste verknüpft ist
 # MAXGCC::=$(shell { ls /usr/bin/g++* 2>/dev/null||echo 0;}|tail -n1)
 # maximal verfügbare g++-Version
-MAXGCC::=$(shell erg=0;for i in {50..1};do which g++-$$i>/dev/null 2>&1&&{ erg=$$i;break;};done;echo $$erg)
+MAXGCC::=$(shell erg=0;for i in {50..1};do which g++-$$i >/dev/null 2>&1&&{ erg=$$i;break;};done;echo $$erg)
 # deren Hauptversionsnummer
 MAXGCCNR::=$(shell echo $(MAXGCC)|cut -d- -f2)
 #1=verfügbare Version höher als die minimal notwendige, 0=nicht
@@ -77,7 +77,7 @@ GCCNEU::=$(shell expr $(MAXGCCNR) \> $(MINGCCNR))
 # 1=minimal notwendige Version verfügbar, 0=nicht
 GCCOK::=$(shell expr $(MAXGCCNR) \>= $(MINGCCNR))
 # 1=Debian usw., 2=Opensuse, 3=Fedora usw., 4=Magieia, 5=Manjaro usw.
-# DISTR::=$(shell which apt>/dev/null 2>&1&&echo 1||{ which zypper>/dev/null 2>&1&&echo 2||{ which dnf>/dev/null 2>&1||which yum>/dev/null 2>&1&&echo 3||{ which urpmi.update>/dev/null 2>&1&&echo 4||{ which pacman>/dev/null 2>&1&&echo 5||echo 0;};};};})
+# DISTR::=$(shell which apt >/dev/null 2>&1&&echo 1||{ which zypper >/dev/null 2>&1&&echo 2||{ which dnf >/dev/null 2>&1||which yum >/dev/null 2>&1&&echo 3||{ which urpmi.update >/dev/null 2>&1&&echo 4||{ which pacman >/dev/null 2>&1&&echo 5||echo 0;};};};})
 # #	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 RP:=)
 DISTR::=$(shell os=$$(cat /etc/os-release|grep '^NAME=');[ -z "$$os" ]&& os=$$(cat /etc/lsb-release|grep '^DISTRIB_ID=');os=$$(echo $$os|cut -d= -f2|sed 's/"\(.*\)"/\1/'); case "$$os" in *Mint*$(RP) osnr=1;; *Ubunto*$(RP) osnr=1;; *Debian*$(RP) osnr=1;; *SUSE*$(RP) osnr=2;; *Fedora*$(RP) osnr=3;; *Mageia*$(RP) osnr=4;; *Manjaro*$(RP) osnr=5;; esac;echo $$osnr;)
@@ -163,8 +163,8 @@ ifneq ($(shell echo $$EUID),0)
 endif
 slc::=$(SUDC)/sbin/ldconfig
 # deinstallieren und Ueberschrift vormerken
-# uninst=printf '$(UPR)$(1)\nprintf "$$blau%%s$$reset\\n" "$(UPR)$(1)"\n'>>$(UNF);
-# uninstd=printf '$(UDPR)$(1)\nprintf "$$blau%%s$$reset\\n" "$(UDPR)$(1)"\n'>>$(UNF); # direkt
+# uninst=printf '$(UPR)$(1)\nprintf "$$blau%%s$$reset\\n" "$(UPR)$(1)"\n' >>$(UNF);
+# uninstd=printf '$(UDPR)$(1)\nprintf "$$blau%%s$$reset\\n" "$(UDPR)$(1)"\n' >>$(UNF); # direkt
 # in Protokoll suchen und ...
 # sunins=test -f $(UNF)&&grep -q '$(1)' $(UNF)||{ $(call uninst,$(2))};
 # suninsd=test -f $(UNF)&&grep -q '$(1)' $(UNF)||{ $(call uninstd,$(2))}; # direkt
@@ -177,15 +177,15 @@ slc::=$(SUDC)/sbin/ldconfig
 # i_unins=$(IP_R)$(1) &&{ $(call sunins,$(1),$(2))};
 # i_uninsd=$(IP_R)$(1) &&{ $(call suninsd,$(1),$(2))}; # direkt
 # Programm suchen, ggf. installieren und ...
-# siunins= $(SPR)$(1)>$(KR)||{ $(call iunins,$(1),$(2))};
-# siuninsd= $(SPR)$(1)>$(KR)||{ $(call iuninsd,$(1),$(2))}; # direkt
+# siunins= $(SPR)$(1) >$(KR)||{ $(call iunins,$(1),$(2))};
+# siuninsd= $(SPR)$(1) >$(KR)||{ $(call iuninsd,$(1),$(2))}; # direkt
 # i1siun=$(call siunins,$(1),$(1))
 # i1siund=$(call siuninsd,$(1),$(1)) # direkt
-# si_unins=$(SPR)$(1)>$(KR)||{ $(call i_unins,$(1),$(2))};
+# si_unins=$(SPR)$(1) >$(KR)||{ $(call i_unins,$(1),$(2))};
 # GROFFCHECK::=$(call i1siund,$(PGROFF)):
 
 DEPDIR ::= .d
-$(shell mkdir -p $(DEPDIR)>$(KR))
+$(shell mkdir -p $(DEPDIR) >$(KR))
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 
 # POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d 2>/dev/null
@@ -248,7 +248,7 @@ define setz_gitv
 	 @D=$(1)/.git/config; GITV=$$([ -f $$D ]&&sed -n '/ *url =.*com/{s/.*com\/\([^/]*\).*/\1/p}' $$D);\
 	 sed -i 's/^\(\[ -z .* \]&& GITV=\).*;/\1'$$GITV';/g' $(1)/install.sh;\
 	 [ -z "$$GITV" ]&& GITV=$(EXEC);\
-	 [ "$$GITV" = "$(sed 's/"//g' $(1)/gitvdt)" ]|| echo \"$$GITV\">$(1)/gitvdt;:;
+	 [ "$$GITV" = "$(sed 's/"//g' $(1)/gitvdt)" ]|| echo \"$$GITV\" >$(1)/gitvdt;:;
 endef
 
 # davor:
@@ -305,7 +305,7 @@ debugneu debugnew: neu
 $(EXEC): $(OBJ)
 	-@printf " linking/verlinke %s to/zu %b%s%b ..." "$(OBJ)" $(blau) "$@" $(reset) >$(BA)
 	-@df --output=ipcent / |tail -n1|grep - && $(SUDC)pkill postdrop;:
-	-@man>$(KR);[ $$? -gt 1 ]&&{ sh configure inst _ man verbose;}||:;
+	-@man >$(KR);[ $$? -gt 1 ]&&{ sh configure inst _ man verbose;}||:;
 #	-@find /usr/lib -iname zlib.so -exec false {}+&&{ sh configure inst _ zlib-$(dev) verbose;};:
 	-@ld -lz 2>/dev/null||{ sh configure inst _ zlib-$(dev) verbose;};:
 	-@printf " (Version: %b%s%s%b\n " $(blau) "$$(cat versdt)" ")" $(reset) >$(BA)
@@ -317,12 +317,12 @@ $(EXEC): $(OBJ)
 
 %.o : %.cpp
 %.o : %.cpp $(DEPDIR)/%.d
-	@[ $@ = $(DPROG).o ]&&{ $(call machvers);if test -f entwickeln; then awk "BEGIN {print `cat versdt`+0.00001}">versdt;\
+	@[ $@ = $(DPROG).o ]&&{ $(call machvers);if test -f entwickeln; then awk "BEGIN {print `cat versdt`+0.00001}" >versdt;\
 	else printf " %bFile '%bentwickeln%b' missing, keeping the version number stable/ Datei '%bentwickeln%b' fehlt, lasse die Version gleich%b\n" \
 	$(schwarz) $(grau) $(schwarz) $(grau) $(schwarz) $(reset) >$(BA); fi;}; :;
 	@printf " kompiliere %b%s%b: " $(blau) "$<" $(reset) >$(BA);
-#	-@if ! test -f instvz; then printf \"$$(getent passwd $$(logname)|cut -d: -f6)\">instvz; fi;
-	-@if ! test -f instvz; then printf \"$$(pwd)\">instvz; fi; # wird in kons.cpp verwendet
+#	-@if ! test -f instvz; then printf \"$$(getent passwd $$(logname)|cut -d: -f6)\" >instvz; fi;
+	-@if ! test -f instvz; then printf \"$$(pwd)\" >instvz; fi; # wird in kons.cpp verwendet
 	-$(CC) $(DEBUG)$(DEPFLAGS) $(CFLAGS) -c $< $(BFA);
 	-@sed -i 's/versdt //g;s/gitvdt //g' $(DEPDIR)/*.Td
 	-@if test -s fehler.txt; then vi +0/error fehler.txt; else rm -f fehler.txt; fi;
@@ -353,30 +353,30 @@ endif
 	[ "$(DISTR)" = "1" ]&&{ $(SUDC)add-apt-repository ppa:ubuntu-toolchain-r/test;$(SUDC)apt-get update;};:;\
 	{ printf "Installiere/Installing Compiler ...\n" >$(BA);sh configure inst "$(COMP)";:;};}
 	-@[ "$(libmdb)" ]&&{ for kand in $(libmdb);do \
-	[ -f /usr/include/mysql/mysql.h>$(KR) ]&& \
+	[ -f /usr/include/mysql/mysql.h >$(KR) ]&& \
 	find $$(find /usr -maxdepth 1 -type d -name "lib*" $(KF)|sort -r) -regextype egrep -regex ".*libm(ysql|ariadb)client.so" -print -quit $(KF)|\
-	grep ''>$(KR)&& break;\
+	grep '' >$(KR)&& break;\
 	sh configure inst _ $$kand-$(dev) verbose; done;}||:
-	-@[ -z $$mitpg ]||$(SPR) $(pgd)>$(KR)||{ sh configure inst _ "$(pgd)" verbose;$(slc);};
+	-@[ -z $$mitpg ]||$(SPR) $(pgd) >$(KR)||{ sh configure inst _ "$(pgd)" verbose;$(slc);};
 # 3.5.17: auch libtiff5 hat gefehlt
 	-@[ "$(LT)" ]&& for r in 1 2;do \
 	[ $$r = 1 ]&& LTakt="$(LT)" ||{ [ -z "$(LT5)" ]&&break;LTakt="$(LT5)";};\
-	find /usr/include /usr/local/include -name tiff.h -print -quit $(KF)|grep ''>$(KR)&&\
-	find /usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib -maxdepth 2 -type l -xtype f -name "libtiff.so" -print -quit $(KF)|grep ''>$(KR)&& break;\
+	find /usr/include /usr/local/include -name tiff.h -print -quit $(KF)|grep '' >$(KR)&&\
+	find /usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib -maxdepth 2 -type l -xtype f -name "libtiff.so" -print -quit $(KF)|grep '' >$(KR)&& break;\
 	sh configure inst _ "$$LTakt" verbose;\
 	done; :;
 #	P=tiff_copy;T=$$P.tar.gz;M=$$P-master;wget https://github.com/$(GITV)/$$P/archive/master.tar.gz -O $$T&&{ rm -rf $$P;tar xpvf $$T;} &&\
 	mv $$M $$P&& cd $$P&&{ sed -i.bak s'/(thandle_t) client_data.fd);/(thandle_t) \&client_data.fd);/' tools/fax2tiff.c;\
 	./configure&& make&& $(SUDC)make install&&$(SUDC)touch /usr/local/sclibtiff;\
-	bef="cd `pwd`;make uninstall;cd -;";grep -q $$bef $(UNF)||printf "$$bef\n">>$(UNF);\
+	bef="cd `pwd`;make uninstall;cd -;";grep -q $$bef $(UNF)||printf "$$bef\n" >>$(UNF);\
 	$(SUDC)ldconfig;cd ..;};
 
 	-@[ "$(LACL)" ]&&{ [ -f /usr/include/sys/acl.h ]|| sh configure inst _ "$(LACL)" verbose;}||:
 	-@[ "$(LCURL)" ]&&{ [ -f /usr/include/curl/curl.h -o -f /usr/include/x86_64-linux-gnu/curl/curl.h ]|| sh configure inst _ "$(LCURL)" verbose;}||:
 	-@[ "$(LCURS)" ]&&{ [ -f /usr/include/ncursesw/ncurses.h -o -f /usr/include/x86_64-linux-gnu/ncursesw/ncurses.h ]|| sh configure inst _ "$(LCURS)-$(dev)" verbose;}||:
-	-@[ "$(LBOOST)" ]&&{ $(SPR) $(LBOOST)>$(KR)|| sh configure inst _ "$(LBOOST)" verbose;}||:
-	-@[ "$(LBIO)" ]&&{ $(SPR) "$(LBIO)">$(KR)||sh configure inst _ "$(LBIO)" verbose;}||:
-	-@[ "$(LBLO)" ]&&{ $(SPR) "$(LBLO)">$(KR)||sh configure inst _ "$(LBLO)" verbose;}||:
+	-@[ "$(LBOOST)" ]&&{ $(SPR) $(LBOOST) >$(KR)|| sh configure inst _ "$(LBOOST)" verbose;}||:
+	-@[ "$(LBIO)" ]&&{ $(SPR) "$(LBIO)" >$(KR)||sh configure inst _ "$(LBIO)" verbose;}||:
+	-@[ "$(LBLO)" ]&&{ $(SPR) "$(LBLO)" >$(KR)||sh configure inst _ "$(LBLO)" verbose;}||:
 #//	-@[ -f /usr/include/boost/iostreams/device/mapped_file.hpp -o -f /usr/share/doc/libboost-dev ]|| sh configure inst _ "$(LBOOST)" verbose;
 # ggf. Korrektur eines Fehlers in libtiff 4.0.7, notwendig fuer hylafax+, 17.1.17 in Programm verlagert
 	@printf "                                  \r" >$(BA)
@@ -413,26 +413,26 @@ install: $(INSTEXEC) $(INSTenMAN) $(INST_MAN)
 README.md: $(HTMLS)
 	-@rm -f README.md
 ifeq ("$(wildcard man_de)$(wildcard man_en)","man_deman_en")
-	-@echo "<h3>Manual: 1) <a href=\"#english_E\">english</a>, 2) <a href=\"#deutsch_D\">deutsch (unten anschließend)</a></h3>" > README.md
+	-@echo "<h3>Manual: 1) <a href=\"#english_E\">english</a>, 2) <a href=\"#deutsch_D\">deutsch (unten anschließend)</a></h3>" >README.md
 endif
 	@for d in $(MANS); do sed -n '20,$$p' $$d.html >> $@; [ -z $$A ]||A=$$A", ";A=$$A$(blau)$$d$(reset); done; \
 	printf " %b$@%b neu erstellt aus: $$A\n" $(blau) $(reset)
 
 define machvers	 
-	VD="versdt";[ -f $$VD ]||echo 0.1>$$VD;:
+	VD="versdt";[ -f $$VD ]||echo 0.1 >$$VD;:
 endef
 
 define priv_html
 	-@printf " erstelle/generating:%b$(1)%b\n" $(blau) $(reset)
 	-@groff -mandoc -Thtml -v >$(KR);EXC="$$$$?"; \
-	for p in $(PGROFF); do { [ $$$${EXC} -gt 1 ]|| ! which groff>$(KR)|| ! $(SPR) $$$$p>$(KR);}&&{ sh configure inst _ $$$$p verbose;}; done; :;
+	for p in $(PGROFF); do { [ $$$${EXC} -gt 1 ]|| ! which groff >$(KR)|| ! $(SPR) $$$$p >$(KR);}&&{ sh configure inst _ $$$$p verbose;}; done; :;
 	-@rm -f $(1).html
 	-@sed -e 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;'\
 	 -e 's/Ä/\&Auml;/g;s/Ö/\&Ouml;/g;s/Ü/\&Uuml;/g;s/ä/\&auml;/g;s/ö/\&ouml;/g;s/ü/\&uuml;/g;s/ß/\&szlig;/g;'\
 	  $(1) | \
  	 groff -mandoc -Thtml -W break| \
 	 sed -e "s/&amp;/\&/g;s@<h1 align=\".*\">man@<h1 align=\"center\">$(PROGGROSS) (Version $$$$(cat versdt)) - $$(LGL)<a name=\"$$(LGL)\"></a>@g;"\
-	  -e "s/\(<a \(href\|name\)=\"[^\"]*\)/\1_D/g;/^<td width=/d;" > $(1).html
+	  -e "s/\(<a \(href\|name\)=\"[^\"]*\)/\1_D/g;/^<td width=/d;" >$(1).html
 	@printf "%b%s%b neu aus %b%s%b erstellt\n" $(blau) "$(1).html" $(reset) $(blau) "$(1)" $(reset)
 endef
 
@@ -451,7 +451,7 @@ $(1).gz: $(EXEC) $(1)
 		W1a=$$$$(echo $$$$W1|sed -e "s/"`printf \\\\033`"/\(ESC\)/g;s/\\\\n/\\\\\\\\n/g");\
 		W2="sed :a;N;$$$$!ba";\
 		printf " rufe auf/calling: '%b$$$$EX |$$$$W1a |$$$$W2 >$$$$TMP%b'\n" $(blau) $(reset);\
-		$$$$EX|$$$$W1|$$$$W2>$$$$TMP; \
+		$$$$EX|$$$$W1|$$$$W2 >$$$$TMP; \
 	 nlinit=`echo 'nl="'; echo '"'`; eval "$$$$nlinit"; \
 	 von=".SH $$(OPN)"; bis=".SH $$(FKT)"; sed -i.bak "/$$$$von/,/$$$$bis/{/$$$$von/{n;p;r $$$$TMP$$$$nl};/$$$$bis/p;d}" $(1);
 	@sed 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;s/\\fB/\\fI/g' $(1)|gzip -c >$$@
@@ -485,23 +485,23 @@ gesclean: instclean clean
 .PHONY: confclean
 confclean:
 	-@sh -c 'D=$(INSTEXEC).conf;test -f $$D &&{ printf "Wollen Sie \"%b$$D%b\" wirklich loeschen (j/n)?" $(blau) $(reset); read answer; \
-	if echo "$$answer"|grep -iq "^j\|^y";then $(SUDC)rm -r "$$D">$(KR)&&printf "\"%b%s%b\" geloescht!\n" $(blau) "$(INSTEXEC).conf" $(reset); fi;:;} \
+	if echo "$$answer"|grep -iq "^j\|^y";then $(SUDC)rm -r "$$D" >$(KR)&&printf "\"%b%s%b\" geloescht!\n" $(blau) "$(INSTEXEC).conf" $(reset); fi;:;} \
 	||{ printf "Konfigurationsdatei \"%b$$D%b\" fehlt.\n" $(blau) $(reset);}'
 
 .PHONY: uninstall
 uninstall: instclean
-	-@tac $(UNF)>tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH);: # uninstallinv von hinten nach vorne abarbeiten
+	-@tac $(UNF) >tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH);: # uninstallinv von hinten nach vorne abarbeiten
 	-@[ "$(DISTR)" = "1" ]&&{ $(SUDC)apt-get -f install;};:;
 	-@printf "Fertig mit uninstall!\n"
 
 .PHONY: allesweg
 allesweg: instclean
-	-@tac $(UNF)>tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH) <<-EOF $'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n' EOF;: # uninstallinv von hinten nach vorne abarbeiten
+	-@tac $(UNF) >tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH) <<-EOF $'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n' EOF;: # uninstallinv von hinten nach vorne abarbeiten
 	-@[ "$(DISTR)" = "1" ]&&{ $(SUDC)apt-get -f install<<EOF $'\n'$'\n' EOF;};:;
 	-@printf "Fertig mit uninstall!\n"
 
 #//rufe:
-#//	printf '$(UPR)$(PGROFF)\nprintf "$$blau%%s$$reset\\n" "$(UPR)$(PGROFF)"\n'>>gtest
+#//	printf '$(UPR)$(PGROFF)\nprintf "$$blau%%s$$reset\\n" "$(UPR)$(PGROFF)"\n' >>gtest
 #//	-@$(SUDC)blau=$(blau) reset=$(reset) sh gerufen
 
 #//teste:
@@ -580,14 +580,14 @@ dotrans:
 	 for D in $$(find . -maxdepth 1 -name "*.cpp" -or -name "*.h"); do\
 	  sed -e '/^[[:space:]]*\/\*\/\/.*\*\/[[:space:]]*$$/d;'\
 		-e 's_/\*//[^*]*\*/__g;/\/\*\/\//,/\*\//{/^[[:space:]]*\/\*\/\//d;/\*\/[[:space:]]*$$/d;'\
-		-e '/\/\*\/\//!{/\*\//!d};s_/\*//.*__;s_.*\*/__};/^[[:space:]]*\/\/\/\/.*/d;s_////.*__;s/\r$$//' $$D>$(Ziel)/$$D;\
+		-e '/\/\*\/\//!{/\*\//!d};s_/\*//.*__;s_.*\*/__};/^[[:space:]]*\/\/\/\/.*/d;s_////.*__;s/\r$$//' $$D >$(Ziel)/$$D;\
 		((DAT++));\
 	  printf "$$blau$$D$$reset nach $$blau$(Ziel)/$$reset kopiert\n";\
 	  chmod --reference=$$D $(Ziel)/$$D;\
 	  chown --reference=$$D $(Ziel)/$$D;\
 	 done;\
 	 for D in .exrc Makefile install.sh man_?? versdt pname viall configure; do\
-	  [ -f $$D ]&&{ sed '/^#\/\/.*/d;s_#\/\/.*__g' $$D>$(Ziel)/$$D;((DAT++));\
+	  [ -f $$D ]&&{ sed '/^#\/\/.*/d;s_#\/\/.*__g' $$D >$(Ziel)/$$D;((DAT++));\
 	   printf "$$blau$$D$$reset nach $$blau$(Ziel)/$$reset kopiert\n"; };\
 	   chmod --reference=$$D $(Ziel)/$$D;\
 	   chown --reference=$$D $(Ziel)/$$D;\
@@ -596,7 +596,7 @@ dotrans:
 	   printf "%b$(Ziel)/$$D%b in %b$(Ziel)/$$ROH/%b umbenannt\n" $(blau) $(reset) $(blau) $(reset);\
 	  };\
 	 done;\
-	 echo $(DPROG)>$(Ziel)/pname;\
+	 echo $(DPROG) >$(Ziel)/pname;\
 	 printf "Insgesamt $$blau$$DAT$$reset Dateien kopiert\n";\
 	fi;
 	@$(call setz_gitv,$(Ziel))
@@ -607,12 +607,12 @@ newproj: neuproj
 .PHONY: neuproj
 neuproj:
 	@Z=;while [ -z "$$Z" -o -d ../"$$Z" ]; do [ ! -z "$$Z" -a -d ../"$$Z" ]&& echo \'..\\"$$Z"\' gibt es schon/already exists.; echo Programmname/program name?; read Z;done;mkdir -p ../"$$Z";cp -ai kons.cpp kons.h DB.cpp DB.h Makefile .exrc configure install.sh man_?? viall* ../"$$Z";\
-		sed -n ":Start;/\/\/α.*\/\/ω/{p;n;bStart};/\/\/α/,/\/\/ω/p;/VOMHAUPTCODE/i#include \"$$Z.h\"" "$(DPROG).cpp">"../$$Z/$$Z.cpp";\
-    sed -n ":Start;/\/\/α.*\/\/ω/{p;n;bStart};/\/\/α/,/\/\/ω/p;1i#define DPROG \"$$Z\"" "$(DPROG).h">"../$$Z/$$Z.h";\
-		M=man_de;K=KURZ;D=DEINST;[ -f $$M ]&&sed -n "1,/^\.SH $$K/p;/^\.SH $$K/,/^\.SH $$D/{/^\.SH $$K/d;/^\.SH /p};/^\.SH $$D/,\$${/^\.SH $$D/d;p}" $$M>../"$$Z"/$$M;\
-		M=man_en;K=SHORT;D=UNINST;[ -f $$M ]&&sed -n "1,/^\.SH $$K/p;/^\.SH $$K/,/^\.SH $$D/{/^\.SH $$K/d;/^\.SH /p};/^\.SH $$D/,\$${/^\.SH $$D/d;p}" $$M>../"$$Z"/$$M;\
+		sed -n ":Start;/\/\/α.*\/\/ω/{p;n;bStart};/\/\/α/,/\/\/ω/p;/VOMHAUPTCODE/i#include \"$$Z.h\"" "$(DPROG).cpp" >"../$$Z/$$Z.cpp";\
+    sed -n ":Start;/\/\/α.*\/\/ω/{p;n;bStart};/\/\/α/,/\/\/ω/p;1i#define DPROG \"$$Z\"" "$(DPROG).h" >"../$$Z/$$Z.h";\
+		M=man_de;K=KURZ;D=DEINST;[ -f $$M ]&&sed -n "1,/^\.SH $$K/p;/^\.SH $$K/,/^\.SH $$D/{/^\.SH $$K/d;/^\.SH /p};/^\.SH $$D/,\$${/^\.SH $$D/d;p}" $$M >../"$$Z"/$$M;\
+		M=man_en;K=SHORT;D=UNINST;[ -f $$M ]&&sed -n "1,/^\.SH $$K/p;/^\.SH $$K/,/^\.SH $$D/{/^\.SH $$K/d;/^\.SH /p};/^\.SH $$D/,\$${/^\.SH $$D/d;p}" $$M >../"$$Z"/$$M;\
 		cd ../"$$Z";\
-		echo 0.1>versdt; touch entwickeln; echo $$Z>pname;\
+		echo 0.1 >versdt; touch entwickeln; echo $$Z >pname;\
 		L="\"/var/log/\" DPROG \"vorgabe.log\"";\
 		sh configure;\
 		sed -i '/\$DTN [^'\'']/s/ +.* -pNu/ -pNu/' viall;\

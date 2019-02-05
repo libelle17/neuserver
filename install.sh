@@ -56,7 +56,7 @@ if test "$ICH" != configure -a "$ICH" != viall -a "$ICH" != modziel.sh -a $AUFRU
 			mv $DPROG-master $DPROG && 
 			{
 				cd $DPROG; 
-				echo $DPROG>$DPROG/pname
+				echo $DPROG >pname
 				. ./configure
 				Q=../${DPROG}_1/$INSTLOG; test -f $Q && cp -a $Q .||:
 				Q=../${DPROG}_1/$UNF; test -f $Q && cp -a $Q .||:

@@ -23,11 +23,11 @@ read SERVER
 hostnamectl set-hostname "$SERVER" 
 hostnamectl
 grep -q "^praxis:" /etc/group||groupadd praxis
-$(SPR) samba 2>/dev/null||$(IPR) samba
-systemctl start smb
-systemctl enable smb
-systemctl start nmb
-systemctl enable nmb
+$SPR samba 2>/dev/null||$IPR samba
+systemctl start smb 2>/dev/null|systemctl start smbd
+systemctl enable smb 2>/dev/null|systemctl enable smbd
+systemctl start nmb 2>/dev/null|systemctl start nmbd
+systemctl enable nmb 2>/dev/null|systemctl enable nmbd
 testuser schade "Gerald Schade"
 testuser sturm "T.Sturm"
 testuser simon "U.Simon"
