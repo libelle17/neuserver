@@ -211,10 +211,10 @@ MANS+=$(_MAN)
 HTMLS::=$(patsubst %,%.html,$(MANS))
 GZS::=$(patsubst %,%.gz,$(MANS))
 
-.PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig
+.PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig compiler
 ifeq (,$(SRCS))
 $(info keine *.cpp-Dateien => kompiliere nichts)
-all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC) $(INSTEXEC):
+all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC) $(INSTEXEC) compiler:
 	@printf ""
 else
 all: anzeig weiter
@@ -337,7 +337,8 @@ endif
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
 
-.PHONY: compiler
+ifeq (,$(SRCS))
+else
 compiler:
 	@printf " DISTR: %b%s%b, untersuche/examining Compiler ...\n" $(blau) "$(DName)" $(reset) >$(BA)
 #	@printf " Untersuche/Examining Compiler ...\n" >$(BA)
@@ -385,6 +386,7 @@ endif
 #//	-@[ -f /usr/include/boost/iostreams/device/mapped_file.hpp -o -f /usr/share/doc/libboost-dev ]|| sh configure inst _ "$(LBOOST)" verbose;
 # ggf. Korrektur eines Fehlers in libtiff 4.0.7, notwendig fuer hylafax+, 17.1.17 in Programm verlagert
 	@printf "                                  \r" >$(BA)
+endif
 
 .PHONY: stumm stumminst
 stumm stumminst: BA::=/dev/null
@@ -453,13 +455,13 @@ $(1).gz: $(EXEC) $(1)
 	-@printf " aktualisiere/updating %b$(1)%b\n" $(blau) $(reset)
 	-@sed -i "s/\(Version \)[^\"]*/\1$$$$(cat versdt)/;s/\(\.TH[^\"]*\)\"[^\"]*/\1\"$$$$(date +'%d.%m.%y')/" $(1)
 	-@Lang=$(shell echo $(1)|cut -d_ -f2|head -c1);\
-		TMP=tmp_opt_$$$$Lang;chmod +x $(EXEC);\
+		TMP=tmp_opt_$$$$Lang;test -f $(EXEC)&&chmod +x $(EXEC);\
 		EX="./$(EXEC) -1lg $$$$Lang -sh";\
 		W1="sed -e s/^/.br\n/;s/\\[[01]\\;3.m/\\\\fB/g;s/\\[0m/\\\\fR/g";\
 		W1a=$$$$(echo $$$$W1|sed -e "s/"`printf \\\\033`"/\(ESC\)/g;s/\\\\n/\\\\\\\\n/g");\
 		W2="sed :a;N;$$$$!ba";\
-		printf " rufe auf/calling: '%b$$$$EX |$$$$W1a |$$$$W2 >$$$$TMP%b'\n" $(blau) $(reset);\
-		$$$$EX|$$$$W1|$$$$W2 >$$$$TMP; \
+		test -f $(EXEC)&&printf " rufe auf/calling: '%b$$$$EX |$$$$W1a |$$$$W2 >$$$$TMP%b'\n" $(blau) $(reset);\
+		test -f $(EXEC)&&$$$$EX|$$$$W1|$$$$W2 >$$$$TMP; \
 	 nlinit=`echo 'nl="'; echo '"'`; eval "$$$$nlinit"; \
 	 von=".SH $$(OPN)"; bis=".SH $$(FKT)"; sed -i.bak "/$$$$von/,/$$$$bis/{/$$$$von/{n;p;r $$$$TMP$$$$nl};/$$$$bis/p;d}" $(1);
 	@sed 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;s/\\fB/\\fI/g' $(1)|gzip -c >$$@
