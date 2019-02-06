@@ -12,15 +12,11 @@ testuser() {
 		} fi;
 		if test $obu -eq 1; then {
 				echo -e "erstelle Linux-Benutzer $blau$1$reset";
-				useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1";
-#               passwd "$1";
-#               userdel $1;
+				useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
 		if test $obs -eq 1; then {
-				echo -e "erstelle Samba-Benutzer $blau$1$reset";
-#               pdbedit -x -u $1;
-				echo -ne "$passw\n$passw\n"|smbpasswd -a -s $1
-#               smbclient -L //localhost/ -U $1
+				echo -e "erstelle Samba-Benutzer $blau$1$reset"; # loeschen: pdbedit -x -u $1;
+				echo -ne "$passw\n$passw\n"|smbpasswd -a -s $1 # pruefen: smbclient -L //localhost/ -U $1
 		} fi;
 }
 
@@ -49,4 +45,14 @@ testuser simon "U.Simon"
 testuser vsftp "Benutzer zum Scannen von Brother MFC 8510DN über vsftp"
 testuser bittner "S.Bittner"
 
-
+grlw=$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i |grep '-'|grep -v ':\|swap\|efi\|fat\|iso'|sort -nrk2|head -n1);
+if test -n "${grlw}"; then {
+		dev=$(echo $grlw|cut -d' ' -f1|cut -d- -f2); # md0;
+		byt=$(echo $grlw|cut -d' ' -f2);
+		nam=$(echo $grlw|cut -d' ' -f4); # f3 = type;
+		uid=$(echo $grlw|cut -d' ' -f5);
+} fi;
+mtlw=$(grep "^LABEL=$NAM\|^UUID=$uid" /etc/fstab);
+if ! grep "^LABEL=$NAM\|^UUID=$uid" /etc/fstab; then
+fi;
+echo $dev $byt $nam $uid
