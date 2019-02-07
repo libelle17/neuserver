@@ -45,14 +45,36 @@ testuser simon "U.Simon"
 testuser vsftp "Benutzer zum Scannen von Brother MFC 8510DN über vsftp"
 testuser bittner "S.Bittner"
 
-grlw=$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i |grep '-'|grep -v ':\|swap\|efi\|fat\|iso'|sort -nrk2|head -n1);
-if test -n "${grlw}"; then {
-		dev=$(echo $grlw|cut -d' ' -f1|cut -d- -f2); # md0;
-		byt=$(echo $grlw|cut -d' ' -f2);
-		nam=$(echo $grlw|cut -d' ' -f4); # f3 = type;
-		uid=$(echo $grlw|cut -d' ' -f5);
+Dvz=DATA
+test -d /$Dvz || mkdir /$Dvz
+if ! mountpoint -q /$Dvz; then {
+#		wenn $Dvz noch nicht /etc/fstab vorkommt
+		if ! sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'|cut -d' ' -f2|grep "^/$Dvz$(printf '\xa')" >/dev/null; then { # "^/$Dvz\>" ginge auch
+#				groesstes Laufwerk
+				grlw=$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i |grep '-'|grep -v ':\|swap\|efi\|fat\|iso'|sort -nrk2|head -n1);
+				if test -n "${grlw}"; then {
+						dev=$(echo $grlw|cut -d' ' -f1|cut -d- -f2); # md0;
+						byt=$(echo $grlw|cut -d' ' -f2);
+						typ=$(echo $grlw|cut -d' ' -f3);
+						nam=$(echo $grlw|cut -d' ' -f4);
+						uid=$(echo $grlw|cut -d' ' -f5);
+
+						eintr="\\t /$Dvz\\t $typ\\t user,noauto,acl,user_xattr,exec\\t 1\\t 2"
+						if test -z "$nam"; then {
+								eintr="UUID="$uuid$eintr;
+						} else {
+								eintr="LABEL="$nam$eintr;
+						} fi;
+						echo -e $eintr >>/etc/fstab
+						echo -e \"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.
+				} fi;
+		} fi;
 } fi;
-mtlw=$(grep "^LABEL=$NAM\|^UUID=$uid" /etc/fstab);
-if ! grep "^LABEL=$NAM\|^UUID=$uid" /etc/fstab; then
-fi;
-echo $dev $byt $nam $uid
+eintr="@reboot mount /$Dvz";
+tmp=vorcrontab;
+if ! crontab -l >/dev/null 2>&1; then {
+		echo "$eintr" >$tmp; crontab <$tmp;
+		echo -e \"$blau$eintr$reset\" in crontab eingetragen.
+} else {
+		crontab -l|grep -q "^$eintr" ||{ crontab -l|sed "/^[^#]/i$eintr" >$tmp;crontab <$tmp;echo -e \"$blau$eintr$reset\" in crontab ergänzt.;};
+} fi;
