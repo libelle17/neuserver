@@ -72,7 +72,7 @@ if ! mountpoint -q /$Dvz; then {
 } fi;
 eintr="@reboot mount /$Dvz";
 tmp=vorcrontab;
-if ! crontab -l >/dev/null 2>&1; then {
+if ! crontab -l|sed '^[^#]' >/dev/null 2>&1; then {
 		echo "$eintr" >$tmp; crontab <$tmp;
 		echo -e \"$blau$eintr$reset\" in crontab eingetragen.
 } else {
