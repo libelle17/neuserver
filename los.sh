@@ -61,7 +61,7 @@ if ! mountpoint -q /$Dvz; then {
 
 						eintr="\\t /$Dvz\\t $typ\\t user,noauto,acl,user_xattr,exec\\t 1\\t 2"
 						if test -z "$nam"; then {
-								eintr="UUID="$uuid$eintr;
+								eintr="UUID="$uid$eintr;
 						} else {
 								eintr="LABEL="$nam$eintr;
 						} fi;
