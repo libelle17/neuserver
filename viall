@@ -21,5 +21,5 @@ einricht vim vim
 #// so waere es projektspezfisch
 #// `which vim || which vi` <DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h -p -c "syntax on" -c "set number" -c "set autoindent" -c "set autoindent" -c "set tabstop=2" -c "set ignorecase" -c "set showmatch" -c "set magic" -c "set ruler" 
 #// .. und so etwas allgemeiner
-`which vim || which vi` $DTN +'tabfirst|tab sview ../autofax/autofax.cpp|tabnext|tab sview ../autofax/autofax.h|tabfirst' -pNu .exrc
+`which vim || which vi` $DTN +'tabfirst' -pNu .exrc
 #// DTN="<DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h man_en man_de Makefile install.sh viall .exrc uninstallinv"

@@ -2,7 +2,7 @@
 .\" manual page for ²DPROG²
 .\" write to geraldschade@gmx.de if You discover an error or a deficit in the program
 .pc
-.TH man 1 "04.02.19" "Version 0.10001" "\fB²DPROG²\fR man page"
+.TH man 1 "09.02.19" "Version 0.47244" "\fB²DPROG²\fR man page"
 .SH NAME
 \fB²DPROG² \- Fax server functionality\fR: induces automatic fax transmission of files, naming of received faxes and logging of all of them in a database
 .br
@@ -10,19 +10,102 @@
 .SH SYNOPSIS
 \fB²DPROG² [-<shortopt>|--<longopt> [<supplement>]] ...\fR
 .SH SHORT DESCRIPTION 
-.SH INSTALLATION
-.SH USAGE
-.SH OPTIONS 
-.SH FUNCTIONALITY
-.SH FUNCTIONALITY
+\fB²DPROG²\fR offers quasi the functionality of a fax server, which can be useful for some also behind a fast data line.
 .br
-    \fRProgramm: \fB/root/neuserver/neuserver\fR, V: \fB0.10001 \fR
+\fB²DPROG²\fR is a command line program to remit files of a certain directory automatically to \fBhylafax\fR (in case a linux-compatible modem is installed) and/or \fBcapisuite\fR (in case a fritzcard 2.0 or 2.1 is installed), if the fax number is integrated in the file name as requested.
+Furthermore, ²DPROG² holds the posted faxes in a mariadb database.
+.br
+Additionally, received faxes from \fBhylafax\fR/\fBcapisuite\fR can be named automatically with the sender's name, according to his fax number, and stored.
+.br
+The usability within a network (may also be a windows network with only one linux machine) is being accomplished by automatic integration of all relevant directories into a samba server. It could be complemented by a frontend for the mariadb database.
+.SH INSTALLATION
+.br
+First, please read the chapters 'functionality', 'preconditions','automatically installed software packages' and 'implications' below. Then, if connected to the internet, call (e.g. by coying the line and pasting it into a terminal):
+.br
+\fBN=²DPROG²;P=${N}_inst.sh;cd ~;wget https://raw.githubusercontent.com/²gitv²/$N/master/install.sh -O$P&&sh $P\fR
+.br
+At last, call:
+.br
+ \fB²DPROG²\fR
+.br
+and answer some questions of the program.
+.br
+The first execution and the first processing of a sent/received fax with each of hylafax and/or capisuite may take some time and need some additional input, respectively.
+.br
+\fB²DPROG² -again\fR for each of then. Hereby  the necessary program installations for future fax receiving will simultaneously be completed.
+.SH USAGE
+Ideally, the program should have installed itsself after the first call(s) (see above) and one-time answering of some questions in a self-running way.
+.br
+Then a directory e.g. '\fBtobefaxed\fR' exists, in which e.g. users in a network (e.g. via the above mentioned samba share) can deposit files to be faxed, e.g. 
+.br
+"\fBMedical report on Frank Ill to Dr. Healthy and Frank Ill to fax 099 987654321 and 088 887654321.doc\fR" (it could also be e.g. an *.xls, a *.jpg, a *.tif, a *.txt, a *pdf file; the section ' to Dr. Healthy and Frank Ill' is optional for the later allocation of the fax number(s) in the database, it may also be obmitted; on the other hand, if the program can assign the last (1-)3 faxes to a certain addressee clearly, the section ' to fax 099 987654321 and 088 887654321' may be obmitted).
+.br
+When \fB²DPROG²\fR is called for the next time (per default 2 minutes), the above mentioned example file will initially be copied and renamed into 
+.br
+"\fBMedical report on Frank Ill to Dr. Healthy to fax 099 987654321.doc\fR" and 
+.br
+"\fBMedical report on Frank Ill to Frank Ill to fax 088 887654321.doc\fR" and converted into the pdf-files 
+.br
+"\fBMedical report on Frank Ill to Dr. Healthy to fax 099 987654321.pdf\fR" and 
+.br
+"\fBMedical report on Frank Ill to Frank Ill to fax 088 887654321.pdf\fR".
+.br
+Those are subsequently being relayed to \fBhylafax\fR or \fBCapisuite\fR and from there sent.
+.br
+Simultaneously they are being moved from '\fBtobefaxed\fR' to the waiting directory, e.g. '\fBwaitingfaxes\fR' and recorded in the spool table \fBspooltab\fR.
+.br
+Faxes which are placed by a user in the directory '\fBtobefaxed/2200\fR' will be handled starting at 10 p.m., if ²DPROG² is running.
+.br
+If subdirectories in '\fBtobefaxedfR' are found named with a date or time (e.g. '\fB20180101 0800\fR' or '\fB2200\fR'), the contained faxes will be processed after that time an in the first case the subdirectory will then be deleted if empty.
+.br
+At each call, ²DPROG² checks the status of \fBhylafax\fR and/or \fBCapisuite\fR. The Finishing of a fax process there causes ²DPROG² to move the source files (here the above mentioned .doc- and .pdf-files) from the waiting directory to one or several archive directories or a directory for failed faxes and to move their database record from  '\fBspooltab\fR' to the archive table '\fBouta\fR'.
+.br
+Further on, incoming faxes via \fBhylafax\fR or \fBCapisuite\fR are being transmitted to an incoming directory and if applicable named including the sender's name. To this purpose, customizeable sql commands are being used, if specified.
+.br
+Depending on operating system, accessability and preferences the users thus could look up the status of their faxes in the above mentioned directories, in the database tables or by calling '\fB²DPROG²\fB', '\fB²DPROG² -lista\fR', '\fB²DPROG² -listf\fR' or '\fB²DPROG² -listi\fR'. 
+
+.SH OPTIONS 
+ '\fB²DPROG² -?\fR' or '\fB²DPROG² -h\fR' shows the important command line options and '\fB²DPROG² -lh\fR' all of them. Some options (e.g. the sql commands for finding an addressee from the fax number) cannot be set via the command line, but only via the configuration file, which can be edited directly by '\fB²DPROG² -vi\fR' or interactively by '\fB²DPROG² -rf\fR'.
+.br
+    \fRProgramm: \fB/root/autofax/autofax\fR, V: \fB0.47244 \fRVerwende: \fBFritzbox\fR, \fBCapisuite\fR, \fBHylafax\fR
 .br
 \fBOptions which are not saved (current value in parentheses): \fR
 .br
-\fB -st, --stop\fR: stop neuserver (\fB0\fR)
+\fB -delf, --deletefax\fR: delete a fax with query (\fB0\fR)
+.br
+\fB -delo, --deleteorphans\fR: delete entries from `\fBspool\fR` without detection of file in waiting directory or capisuite fax or hylafax (\fB0\fR)
+.br
+\fB -dela, --deleteallwaiting\fR: delete all waiting faxes and associated entries from `\fBspool\fR` (\fB0\fR)
+.br
+\fB -again, --receiveagain\fR: present a received fax again (\fB0\fR)
+.br
+\fB -red, --redirect\fR: redirect outgoing fax ahead by the other channel (\fB0\fR)
+.br
+\fB -csf, --correctsuccessflag\fR: in the database table `\fBouta\fR` the success flag is being corrected (\fB0\fR)
+.br
+\fB -rod, --reorderdir\fR: Examine files in waiting,failed a.faxed directory against the tables `\fBouta\fR` and put them to order (\fB0\fR)
+.br
+\fB -st, --stop\fR: stop autofax (\fB0\fR)
+.br
+\fB -listo, --listoutg\fR: lists entries from `\fBouta\fR` with success flag (\fB0\fR)
+.br
+\fB -listf, --listfailed\fR: lists entries from `\fBouta\fR` without success flag (\fB0\fR)
+.br
+\fB -listi, --listinca\fR: lists entries from `\fBinca\fR` (\fB0\fR)
+.br
+\fB -listw, --listwaiting\fR: lists waiting faxes (\fB0\fR)
+.br
+\fB -reconly, --receiveonly\fR: receives only (\fB0\fR)
+.br
+\fB -sndonly, --sendonly\fR: sends only (\fB0\fR)
+.br
+\fB -s, --search <string>\fR: Look in processed faxes for <string>:  ('\fB\fR')
 .br
 \fB -n, --reccount <string>\fR: No. of listed entries = <no> instead of ('\fB30\fR')
+.br
+\fB -vc, --vc\fR: edit capisuite log files (finish with ':qa') (\fB0\fR)
+.br
+\fB -vh, --vh\fR: edit hylafax modem configuration file (finish with ':qa') (\fB0\fR)
 .br
 \fB -sqlv, --sql-verbose\fR: screen output with SQL commands (\fB0\fR)
 .br
@@ -38,7 +121,7 @@
 .br
 \fB -vi, --vi\fR: edit/view configuration file , log file etc. (finish with ':qa') (\fB0\fR)
 .br
-\fB -vs, --vs\fR: edit/view source files in \fB/root/neuserver\fR(finish with ':qa') (\fB0\fR)
+\fB -vs, --vs\fR: edit/view source files in \fB/root/autofax\fR(finish with ':qa') (\fB0\fR)
 .br
 \fB -autoupd, --autoupdate <zahl>\fR: Update program automatically (\fB1\fR)
 .br
@@ -50,20 +133,287 @@
 .br
 \fBOptions to be saved in the configuration file: (preced. '1'=don't save, 'no'=contrary, e.g. '-noocra','-1noocri'):\fR
 .br
+\fB -tdr, --tofaxdir <path>\fR: faxes the files from <path> instead of ('\fB/var/autofax/tobefaxed\fR')
+.br
+\fB -wdr, --waitdir <path>\fR: files are waiting in <path> instead of ('\fB/var/autofax/waitingfaxes\fR')
+.br
+\fB -ndr, --notfaxeddir <path>\fR: Failed Faxes are collected here and not in ('\fB/var/autofax/notfaxed\fR')
+.br
+\fB -rdr, --receiveddir <path>\fR: directory for recieved faxes ('\fB/var/autofax/recvdir\fR')
+.br
+\fB -fbox, --takefbox <zahl>\fR: use fritzbox\fB or not\fR (\fB1\fR)
+.br
+\fB -fbdr, --fritzboxdir <path>\fR: receiving directory of the fritzbox (via CIFS) ('\fB/mnt/diabfb/Generic-FlashDisk-01/FRITZ/faxbox\fR')
+.br
+\fB -capi, --takecapi <zahl>\fR: use capisuite\fB or not\fR (\fB1\fR)
+.br
+\fB -hyla, --takehyla <zahl>\fR: use hylafax\fB or not\fR (\fB1\fR)
+.br
+\fB -hf, --hylafirst <zahl>\fR: trying to send faxes first via hylafax (\fB0\fR)
+.br
+\fB -fc, --firstcapi <zahl>\fR: try to send faxes primarily via capisuite (\fB0\fR)
+.br
+\fB -mod, --hmodem <string>\fR: Modem used for hylafax, instead of  ('\fBttyACM0\fR')
+.br
+\fB -mc, --maxcapitries <string>\fR: try Hylafax after <no> tries of Capisuite instead of ('\fB3\fR')
+.br
+\fB -mh, --maxhylatries <string>\fR: try Capisuite after <no> tries of Hylafax instead of ('\fB3\fR')
+.br
+\fB -cuser, --cuser <string>\fR: takes the linux user <string> for capisuite and/or samba instead of ('\fBschade\fR')
+.br
+\fB -crct, --cringcount <string>\fR: No. of bell rings until Capisuite accepts the call, instead of ('\fB1\fR')
+.br
+\fB -hrct, --hringcount <string>\fR: No. of bell rings until hylafaxs accepts the call, instead of ('\fB2\fR')
+.br
+\fB -hmd, --hmaxdials <string>\fR: No of dialing retries in hylafax, instead of   ('\fB11\fR')
+.br
+\fB -it, --immediatelytarget <zahl>\fR: copy faxes into target directory irrespective of faxing success (\fB1\fR)
+.br
+\fB -ocri, --ocri <zahl>\fR: Text from received faxes will be filtered (\fB1\fR)
+.br
+\fB -ocro, --ocro <zahl>\fR: Text from sent pictures will be filtered (\fB0\fR)
+.br
+\fB -tfs, --tofaxstr <string>\fR: the fax number will be expected after <string> instead of ('\fBan Fax\fR')
+.br
+\fB -tcfs, --tocfaxstr <string>\fR: fax no.for fax with preference to capisuite is expected after <string> instead of ('\fBan cFax\fR')
+.br
+\fB -thfs, --tohfaxstr <string>\fR: fax no.for fax with preference to hylafax is expected after <string> instead of ('\fBan hFax\fR')
+.br
+\fB -ts, --tostr <string>\fR: name of addressee is expected after <string> instead of ('\fB an \fR')
+.br
+\fB -ands, --andstr <string>\fR: separating string <string> for multiple addressees/tel'numbers, instead of ('\fBund\fR')
+.br
+\fB -fd, --find <string>\fR: version 1,2 or 3 of filefind (variable performance differences instead of ('\fB3\fR')
+.br
 \fB -host, --host <string>\fR: takes the database on host <string> instead of ('\fBlocalhost\fR')
 .br
-\fB -muser, --muser <string>\fR: takes the user <string> for MySQL/MariaDB instead of ('\fB\fR')
+\fB -muser, --muser <string>\fR: takes the user <string> for MySQL/MariaDB instead of ('\fBuser\fR')
 .br
 \fB -mpwd, --mpwd <string>\fR: takes the password <string> for MySQL/MariaDB
 .br
-\fB -db, --database <string>\fR: uses the database <string> instead of ('\fB\fR')
+\fB -db, --database <string>\fR: uses the database <string> instead of ('\fBautofax\fR')
 .br
 \fB -lg, --language <string>\fR: Language/Sprache/Lingue/Lingua [\fBd\fReutsch,\fBe\fRnglisch] ('\fBe\fR')
 .br
 \fB -ldr, --logdir <path>\fR: choses <path> as log directory, currently ('\fB/var/log\fR')
 .br
-\fB -lf, --logfilename <string>\fR: log file <string> (in path '\fB/var/log\fR') will be used instead of ('\fBneuserver.log\fR')
+\fB -lf, --logfilename <string>\fR: log file <string> (in path '\fB/var/log\fR') will be used instead of ('\fBautofax.log\fR')
 .br
-\fB -l, --log <zahl>\fR: put detailed logs in file '\fB/var/log/neuserver.log\fR' (otherwise shorter) (\fB0\fR)
+\fB -l, --log <zahl>\fR: put detailed logs in file '\fB/var/log/autofax.log\fR' (otherwise shorter) (\fB0\fR)
 .br
-\fB -cm, --cronminutes <string>\fR: every how many minutes shall \fBneuserver\fR be called in crontab (0=not at all), instead of  ('\fB0\fR')
+\fB -cm, --cronminutes <string>\fR: every how many minutes shall \fBautofax\fR be called in crontab (0=not at all), instead of  ('\fB0\fR')
+.SH FUNCTIONALITY
+.LP
+When called, '\fB²DPROG²\fR' accomplishes the following:
+.LP
+\fB1)\fR The current hardware is being checked.
+.br
+\fBa)\fR with the command '\fBlspci | grep -i isdn\fR' for a fritz card. 
+.br
+\fBb)\fR with the command '\fBstty -F\fR' for a fax modem.
+.LP
+\fB2)\fR The fax configuration file \fBfax.conf\fR of capisuite is read, if it exists 
+.LP
+\fB3)\fR Further defaults from the program code are assigned which can be overloaded by the ²DPROG² configuration file (see 4), command line arguments or anwers to questions (see 5).   
+.LP
+\fB4)\fR Defaults are loaded from the configuration file, if it exists (per default \fB²DPROG².conf\fR in the same directory as \fB²DPROG²\fR, per default \fB/usr/local/sbin/²DPROG²\fR)) 
+.LP
+\fB5)\fR Questions are asked, if values are missing from the configuration file (see 4) or if a command line option demands interacitivity. 
+.LP
+\fB6)\fR The directory of \fBhylafax\fR is beeing determined (\fB/var/spool/hylafax\fR or \fB/var/spool/fax\fR), if hylafax is installed.
+.LP
+\fB7)\fR Directories used by the users for fax files to be sent, for waiting faxes, for fax files already sent, for failed faxes and for received faxes are being checked and created if needed. Thereby user defined file name patterns can be respected to store successfully sent faxes in different directories. 
+.LP
+\fB8)\fR The program inserts itsself if wanted and necessary in root's \fBcrontab\fR in order to be called in adjustable intervals. To avoid this, either '\fBcronminut\fR' can be set to \fB0\fR, or the already generated ²DPROG² entries can be commented out with a leading '\fB#\fR'.
+.LP
+\fB9)\fR The program checks if all user-relevant directories (see 7) are being included in samba shares in \fB/etc/samba/smb.conf\fR; such are being added if needed.
+.LP
+\fB10)\fR Working of MariaDB is being checked, if necessary it is being (installed and) started, the database tables \fBspooltab\fR (for faxes just in spool), \fBouta\fR (for sent and failed faxes) and \fBinca\fR (for received faxes) are being checked and if necessary created or amended.
+.LP
+\fB11)\fR In case of the respective command line options corrections in the contents of the waiting directory or of the database tables are being commited or their contents is being listed and then the program is being finished. 
+.LP
+\fB12)\fR Otherwise, file in the outgoing directory are being analysed. Each file with some identifiable fax number(s) within its file name which is or can be converted in/into pdf format will be moved to to waiting directory and recorded in \fBspooltab\fR.
+.br
+If a file contains more than one recepients and/or a conversion to pdf is necessary, additional files are generated and the original file may be renamed.
+If necessary, additional numbers near the end of the file name(s) may be added in order not to conflict with any other file name in one of the directories mentioned in 7).
+.br
+If more files have been generated, the successive movements and recordings are being carried out with all of them. 
+.\" DateienHerricht(), WVZinDatenbank()
+.LP
+\fB13)\fR Depending on the configuration the functionaliy of \fBhylafax\fR and/or \fBcapisuite\fR is being checked and if necessary and possible restored (including by installation of those programs; in case of a fritzcard 2.0 or a fax modem USR5637 an additional automatic configuration can/will be done). Kernel modules for hylafax and/or capisuite are automatically generated, also in case of a kernel update.
+.LP
+\fB14)\fR In case of respective command line options faxes are being deleted and the program is finished.
+.LP
+\fB15)\fR Otherwise the files which have been recorded under 12) in \fBspooltab\fR are being forwarded to \fBhylafax\fR or \fBcapisuite\fR and this is being protocolled in \fBspooltab\fR.
+.\" faxealle()
+.LP
+\fB16)\fR All faxes which are recorded in \fBspooltab\fR as waiting are being checked in \fBhylafax\fR/\fBcapisuite\fR as to their status which is being updated in \fBspooltab\fR (number of tries hitherto).
+.br
+If hylafax and capisuite are working simultaneously and a prespecified number of send tries has been reached without success in the programs of the first preference of those two, the fax is additionally forwarded to the second of the two programs.
+.br
+If the fax transmission is finished (with/without success), the file is being moved from the waiting directory to the respective directory for sent faxes or for failed faxes, optionally modified by ocr via ocrmypdf (if a young enough python3 > 3.5 is installed), and the database entry is being transferred from \fBspooltab\fR to \fBouta\fR.
+.br
+The status of the mentioned faxes is being displayed.
+.\" untersuchespool()
+.LP
+\fB17)\fR If additional faxes in the spool of hylafax/capisuite are detected which are not created via ²DPROG², they are displayed.
+In intervals they will be integrated into the ²DPROG² database (without the not available information on the original file name).
+.LP
+\fB18)\fR Via \fBhylafax\fR/\fBcapisuite\fR received faxes are copied to a receiving directory and there named with the name of the sender, if possible, by means of their fax number which is being looked up using a predefineable number of predefineable sql commands, which are applied one after another until the fax number is found.
+.br
+Such sql commands shall deliver (at least) 2 fields (with a user defined sense), whose contents, separated by a comma, will be used by ²DPROG² to name the received faxes. Before applied, within the sql commands the string '&&faxnr&&' will be replaced by the current fax number. Example:
+.br
+.br
+\fIselect concat(haname,', ',ort,', ',kvnu) name, zulg from kvaerzte.hae where concat(if(mid(fax1k,1,1)='0','','08131'), replace(replace(replace(replace(fax1k,' ',''),'-',''),'/',''),'\'','')) = '&&faxnr&&'\fR
+.br
+.br
+If more sql commands are specified and one of them does not give a result, the next one will be tried.
+.br
+Optionally, the received faxes are subjected to \fRocr\fR via a call of \fRocrmypdf\fR.
+.LP
+\fB19)\fR The configuration file is being written, if necessary.
+.LP
+\fB20)\fR If the option \fB-autoupd\fR (\fB--autoupdate\fR) is acitve, at last after the second call of every day the version number of \fB²DPROG²\fR will be compared with that of the installation source und if necessary a new version will be installed.
+.LP
+Some program parts are executed simultaneously, which may loosen up the display of the result.
+.br
+Sending and receiving are started every minute, until the respective other part has finished for the first time.
+.br
+Check and possibly correction of possibly falsely stored fax files (e.g. by a cancelling the program deliberately) will be done in intervals.
+.SH PRECONDITIONS
+\fBHardware\fR: Computer with a fritzcard 2.0 or 2.1 or/and a linux compatible fax modem; in the current version, a US Robotics modem USR5637 and one of the below mentioned linux distributions are needed for an automatic installation (by answering some questions). In case of a concurrent use of a fritzcard and a modem, the program can optimize the security of transmission of a fax.
+.br
+\fBSoftware\fR: The program was adjusted to an installation of Opensuse >= 42.1, Debian >= 9.10, Ubuntu >= 16.04, Mint >= 18 or Fedora >= 24 with standard options. System D has to be installed, i.e., "systemctl" has to run, which is the case in the mentioned  program versions. One of the packet managers rpm or dpkg and apt, dnf, yum or zypper has to be installed, respectively, as is the case per default in the mentioned linux distributions. The program '\fBwget\fR' must be installed. Uninstalling of the programs added by ²DPROG² by \fBmake uninstall\fR works currently only with the english and the german versions of the packet manager.
+.br
+.\"In Manjaro, before installation, the commands 'sudo pacman -S wget vi' and 'sudo pacman -Syu' can be necessary.
+.SH AUTOMATICALLY INSTALLED SOFTWARE PACKAGES 
+.br
+(for this purpose, depending on the distribution, zypper, apt(-get), dnf or yum are used).
+.LP
+\fI\fBmakefile:\fR
+.br
+gcc V.6, g++ V.6, groff, libmysqlclient-dev(el), libtiff-dev(el) (in case of version 4.0.7 with a slight modification, see Makefile)
+.LP
+\fI\fB²DPROG²:\fR
+.br
+acl, boost, boost-devel, boost-iostreams-devel, boost-local-devel, cron, ghostscript, imagemagick, libreoffice-common, libreoffice-base, mariadb-server, policycoreutils, policycoreutils-python-utils, poppler-tools, samba, sfftobmp, (in debian-derivates, for mariadb, additionally: apt-transport-https)
+.LP
+\fIin case \fBcapisuite\fR \fIshall be used\fR:
+.br
+capisuite, capiutils, capi4linux, fcpci-3.10.0, gcc-4.8, g++-4.8, kernel-source (linux-source), libcapi20-2, libcapi20-3, libxslt-tools, linux-headers-$(uname -r), python-devel, (in fedora, additionally: kernel-modules-extra), 
+.LP
+\fIin case \fBhylafax\fR \fIshall be used\fR:
+.br
+hylafax+, hylafax+-client, sendmail, tiff (in case of version 4.0.7 with a slight modification, see Makefile)
+.LP
+\fIin case \fBocr\fR \fIshall be used\fR:
+.br
+ffmpeg, ffmpeg-devel, ffmpeg-compat, gcc, libavformat-devel, libffi-devel, ocrmypdf, python3-devel, python3-pip, python3-setuptools, rpmfusion, qpdf, redhat-rpm-config, tesseract-ocr, unpaper, and via 'python3 pip': cryptography, cffi, image, M2Crypto, ocrmypdf, PyPDF2, reportlab, ruffus.
+.LP
+\fIin case You want to work on the source files with 'sh viall'\fR:
+.br
+vim
+.LP
+All those installations may include dependent programs.
+.br
+If You don't want one of those programs or want to keep an older version of one, You may not install ²DPROG² or use the respective program parts.
+
+.SH IMPLICATIONS
+The program has to take the following measures for its neat function:
+.LP
+\fB1)\fR In debian, in the file /etc/apt/sources.list a dvd-entry can be moved behind the standard online repositories.
+.br
+\fB2)\fR Sudo (is missing per default in debian) will be installed if needed.
+.br
+The current linux user, if not already contained, will be entered into an administrator group mentioned in /etc/sudoers, because he has to call "sudo".
+.br
+\fB3)\fR 'GNU make' will be installed if not present, automatically by calling 'sh install.sh' or 'configure'.
+.br
+\fB4)\fR Installation of \fBhylafax+\fR, in case a modem is connected and hylafax+ is not installed. If necessary configuration of hylafax+ by calling '\fBfaxsetup -nointeracitve\fR', by editing the configuration files \fBconfig\fR and \fBconfig.*\fR (e.g. \fBconfig.ttyACM0\fR) in the hylafax configuration directory (default e.g. \fB/var/spool/hylafax/etc\fR).   
+.LP
+\fB5)\fR Installation of \fBcapisuite\fR, in case a fritzcard is inserted and capisuite is not installed. If necessary configuration of \fB/etc/capisuite/capisuite.conf\fR and \fB/etc/capisuite/fax.conf\fR. If necessary edition of the python-script for received faxes (default e.g. \fB/usr/lib64/capisuite/incoming.py\fR) in order to determine the rings before answer, creation and edition of the files '\fB/etc/udev/rules.d/46-FKN_isdn_capi.rules\fR', '\fB/etc/modprobe.d/50-blacklist.conf\fR'.
+.LP
+\fB6)\fR Installation of services: 
+.br
+\fBa)\fR in systemd (in the directory /usr/lib/systemd/system or /lib/systemd/system), especially:
+.br
+\fBhylafax-faxq.service\fR, \fBhylafax-hfaxd.service\fR, \fBhylafax-faxgetty-....service\fR (e.g. \fBhylafax-faxgetty-ttyACM0\fR),
+.br
+\fBcapisuite.service\fR,
+.br
+\fBb)\fR Moving of existing service files from the directory /etc/init.d to a newly created directory /etc/ausrangiert ("discarded"):
+\fBhylafax\fR, \fBcapisuite\fR
+.br
+\fBc)\fR In case \fBselinux\fR is active (as per default in fedora), it impedes per default \fRhylafax\fR; in this case, a module for selinux is silently arranged in order to allow running hylafax-hfaxd. Furtheron, up to the possible construction of a better fitting solution, the domain 'getty' has to be deactivated with the command '\fBsemanage permissive -a getty_t\fR' in order to be able to receive faxes.  
+.LP
+\fB7)\fR Creation of a logfile, per default \fB/var/log/²DPROG².log\fR.
+.LP
+\fB8)\fR if necessary creation and making accessible of the configurable \fBdirectories\fR for faxes to be sent, waiting, finished and failed.
+.LP
+\fB9)\fR if necessary creation and making accessible of the configuration file \fB²DPROG².conf\fR in the same directory where the program is located by itsself (default: \fB/usr/local/sbin/²DPROG²\fR).
+.LP
+\fB10)\fR Insertion of a line for the periodic automatic program call in root's crontab
+.LP
+\fB11)\fR if necessary insertion of sections for the directories mentioned under 8) in /etc/samba/smb.conf, if necessary insertion of the program user or (if root) the user chosen for the capisuite as samba user.
+In case a Suse firewall is present, allow samba-server for "external zone".
+After calling ²DPROG², the directories mentioned in 8) should be readable via samba within a local network and the directory for faxes to be sent should also be writable. 
+.LP
+\fB12)\fR if necessary insertion of a database in mariadb with a configurable name, creation and modification of several tables and a procedure in this database, if necessary insertion of a user with a configurable name in mariadb for the management of those tables.
+.LP
+\fB13)\fR With specific command line options for ²DPROG², faxes can be deleted, especially:
+.br
+\fBa)\fR in hylafax by callinng 'faxrm'
+.br
+\fBb)\fR in capisuite: by deleting files like /var/spool/capisuite/users/<user>/sendq/*.txt und ~/*.sff. In capisuite, an orphaned lock file (/var/spool/capisuite/users/<user>/sendq/*.lock) can be deleted, too.
+.LP
+\fB14)\fR With a specific command line option for ²DPROG², an old received fax can be converted to a pdf-File again.
+.br
+.SH UNINSTALLING
+Change in a terminal to the installation directory (for the same installed user, it's \fBcd ~/²DPROG²\fR, otherwise it will be displayed by \fB²DPROG² -info\fR).
+.br
+Call \fBmake uninstall\fR. 
+.br
+Then the installed \fB²DPROG²\fR will be deleted and the script \fBuninstallinv\fR will be executed in reverse order which has been generated during the installation and execution of ²DPROG².
+.br
+Thereby additionally installed program packets, permissions, samba shares and firewall exceptions are deleted.  
+.br
+Configuration files, data, and system relevant programs like libgcc and selinux will not be deleted.
+.br
+Error messages originate mostly in efforts to delete a program already missing and can then be ignored.
+
+.SH RETURN CODES
+\fB0\fR: Normal return code
+.br
+\fB7\fR: The info screen (\fB²DPROG² -info\fR) has been displayed
+.br
+\fB8\fR: The help has been displayed
+.br
+\fB9\fR: To start the just installed capi module the computer has to be restarted
+.br
+\fB10\fR: Initializing of the database failed and the program was stopped therefore
+.br
+\fB11\fR: Checking of a database table failed and the program was stopped therefore
+.br
+\fB17\fR: Fork to another thread failed
+.br
+\fB98\fR: Program stopped because it is already running once
+.br
+\fB99\fR: A search command at a link failed while using \fB²DPROG² -fd 2\fR
+.br
+\fB113\fR: An sql command for the mariadb database failed with a miscellaneous error
+.br
+\fB115\fR: A database entry failed because of a full disk
+.br
+After calling \fB²DPROG² -vi\fR or \fB²DPROG² -vs\fR the return code of \fBvi\fR/\fBvim\fR will be passed
+.SH ERRORS
+Please report any errors with the word '²DPROG²' included in the email headline. 
+.br
+Please report as well, if different hard- or software yields a requirement for a program modification.
+.SH PROGRAM MODIFICATION
+By calling '\fBsh viall\fR' and application of the usual '\fBvim\fR'-commands, followed by '\fBmake\fR' and '\fBmake install\fR' from the installation directory ('\fB~/²DPROG²\fR), You may alter the program.
+.SH LIABILITY
+The program has been written with the best aim and has been tested by the author.
+.br
+Nevertheless the author cannot be liable for any damage caused by the program.
+.SH AUTHOR
+Gerald Schade (geraldschade@gmx.de; www.diabdachau.de)

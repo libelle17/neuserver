@@ -78,6 +78,7 @@ getIPR() {
 			COMP="build-essential linux-headers-\$(shell uname -r)";
 			LT=${_LT}-${dev};
 			CTAGS=exuberant-ctags;
+			LCURS="$(apt-cache search 'libncurses[0-9]+-dev$'|sort -r|head -n1|cut -d'-' -f1) $(apt-cache search 'libncursesw[0-9]+-dev$'|sort -r|head -n1|cut -d'-' -f1)";
 		} 
 	} || 
 	{ [ $osnr = 5 ]&&
@@ -264,7 +265,7 @@ einricht() {
 	fi
 }
 LOG=inst_$(echo $2|sed 's/ //g').log; # Leerzeichen entfernen
-printf "Befehl/Command: ${CMD}$2\n";
+printf "${blau}Befehl/Command${reset}: ${CMD}$2\n";
 ${CMD}$2|tee $LOG # "$2" geht bei mehreren Wörtern nicht, z.B. "groff-base groff"
 printf "\nRueckmeldung bei einricht $2:\n">>$GILOG;
 ausricht "$LOG" $1 "${IPR}$2";
