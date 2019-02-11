@@ -8,18 +8,20 @@ FREQUENZ=5 # rufe gtags jedes 5. Mal auf
 
 exportvars
 einricht ctags "$CTAGS"
-ctags -V *.cpp *.h >/dev/null
-test -f $ZD || echo 1>$ZD; awk "BEGIN {print `cat $ZD`+1}">$ZD
+tf=gtags.files;
+find . -maxdepth 1 -type f -regex ".*\.c\|.*\.cpp\|.*\.h\|.*\.sh\|./Makefile\|./configure\|viall" >"$tf";
+ctags -V -L "$tf" >/dev/null; 
+test -f $ZD||echo 1 >$ZD; awk "BEGIN {print `cat $ZD`+1}" >$ZD
 expr $(cat $ZD) % $FREQUENZ >/dev/null 2>&1||{ 
   printf "Calling/rufe auf: gtags - please wait / bitte warten ...\n";
   einricht gtags global; 
-	ls *.cpp *.h > gtags.files;
-	gtags;} # in Fedora koennte gtags fehlen; >$KR Permission denied
+	gtags -f "$tf";
+} # in Fedora koennte gtags fehlen; >$KR Permission denied
 einricht vim vim
 #// PR=vim;PK=$PR;still which $PR ||{ getIPR;[ $fed = 1 ] &&{ sudo yum update vim-minimal;};${IP_R}$PK&&{ test -f $UNF&&grep -q " $PK" $UNF||\
 #// printf "${UPR}$PK\nprintf \"\$blau%%s\$reset\" \"${UPR}$PK\"\nalias vi>$KR&&sudo unalias vi\necho \"alias vi>$KR&&sudo unalias vi\"\n">>$UNF;};}
 #// so waere es projektspezfisch
 #// `which vim || which vi` <DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h -p -c "syntax on" -c "set number" -c "set autoindent" -c "set autoindent" -c "set tabstop=2" -c "set ignorecase" -c "set showmatch" -c "set magic" -c "set ruler" 
 #// .. und so etwas allgemeiner
-`which vim || which vi` $DTN +'tabfirst' -pNu .exrc
+$(which vim||which vi) $DTN +'tabfirst' -pNu .exrc
 #// DTN="<DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h man_en man_de Makefile install.sh viall .exrc uninstallinv"
