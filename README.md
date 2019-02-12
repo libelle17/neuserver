@@ -28,9 +28,8 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Fax server functionality</b>: induces automatic fax
-transmission of files, naming of received faxes and logging
-of all of them in a database <br>
+&minus; neuserver</b>: installs a linux server, if wanted as
+a copy of an active server in the local network <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
 neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
@@ -867,9 +866,11 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-bietet quasi die Funktionalit&auml;t eines Faxservers,
-welcher f&uuml;r manche auch hinter einer schnellen
-Datenleitung sinnvoll sein kann. <b><br>
+versucht, &uuml;ber die Datei los.sh mit einigen
+R&uuml;ckfragen den Server nach den
+Bed&uuml;rfnissen der diabetologischen
+Gemeisnchaftspraxis Dachau einzurichten. Optional kann ein
+aktiver Server als Kopierquelle eingegeben werden. <b><br>
 neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
 in einem bestimmten Verzeichnis automatisch an
 <b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
