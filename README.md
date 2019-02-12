@@ -846,9 +846,8 @@ caused by the program.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; FaxServer-Funktionalit&auml;t</b>: veranlasst
-automatischen Faxversand von Dateien, Benennung empfangener
-Faxe und Protokollierung aller Faxe in einer Datenbank <br>
+&minus; neuserver</b>: richtet einen neuen Linux-Server ein,
+ggf. mit Kopie von einem aktiven Server im Netz <br>
 (manpage available in english: &rsquo;man neuserver&rsquo;
 or &rsquo;man -Len neuserver&rsquo;)</p>
 
