@@ -12,12 +12,6 @@
 .SH KURZBESCHREIBUNG
 \fB²DPROG²\fR versucht, über die Datei los.sh mit einigen Rückfragen den Server nach den Bedürfnissen der diabetologischen Gemeisnchaftspraxis Dachau einzurichten. Optional kann ein aktiver Server als Kopierquelle eingegeben werden.
 .br
-\fB²DPROG²\fR ist ein Befehlszeilenprogramm, mit dem Dateien in einem bestimmten Verzeichnis automatisch an \fBhylafax\fR (falls ein linux-kompatibles Fax-Modem angeschlossen ist) und/oder \fBcapisuite\fR (falls eine Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet werden, wenn die Faxnummer im Dateinamen wie vorgesehen eingetragen ist,
-und das weiterhin die versandten Faxe in einer MariaDB-Datenbank abspeichert. 
-.br
-Außerdem können von \fBhylafax\fR/\fBcapisuite\fR empfangene Faxe automatisch nach dem Sender anhand dessen Faxnummer benannt und abgespeichert werden.
-.br
-Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk mit nur einem Linuxrechner) geschieht durch automatischen Eintrag der für ²DPROG² relevanten Verzeichnisse in einen Samba-Server. Sie könnte ergänzt werden durch eine Maske für die mariadb-Datenbank.
 .SH INSTALLATION
 .br
 Zunächst lesen Sie bitte die untenstehenden Kapitel 'Funktionsweise','Voraussetzungen','Automatisch installierte Programmpakete' und 'Auswirkungen des Programmablaufs'.

@@ -52,23 +52,7 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 tries to configure a linux server via the script los.sh,
 with some callbacks, following the needs of the diabetologic
 practice Dachau. Optionally an active server can be
-nominated as copy source. <b><br>
-neuserver</b> is a command line program to remit files of a
-certain directory automatically to <b>hylafax</b> (in case a
-linux-compatible modem is installed) and/or <b>capisuite</b>
-(in case a fritzcard 2.0 or 2.1 is installed), if the fax
-number is integrated in the file name as requested.
-Furthermore, neuserver holds the posted faxes in a mariadb
-database. <br>
-Additionally, received faxes from
-<b>hylafax</b>/<b>capisuite</b> can be named automatically
-with the sender&rsquo;s name, according to his fax number,
-and stored. <br>
-The usability within a network (may also be a windows
-network with only one linux machine) is being accomplished
-by automatic integration of all relevant directories into a
-samba server. It could be complemented by a frontend for the
-mariadb database.</p>
+nominated as copy source.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>
@@ -872,25 +856,7 @@ versucht, &uuml;ber die Datei los.sh mit einigen
 R&uuml;ckfragen den Server nach den
 Bed&uuml;rfnissen der diabetologischen
 Gemeisnchaftspraxis Dachau einzurichten. Optional kann ein
-aktiver Server als Kopierquelle eingegeben werden. <b><br>
-neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
-in einem bestimmten Verzeichnis automatisch an
-<b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
-angeschlossen ist) und/oder <b>capisuite</b> (falls eine
-Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
-werden, wenn die Faxnummer im Dateinamen wie vorgesehen
-eingetragen ist, und das weiterhin die versandten Faxe in
-einer MariaDB-Datenbank abspeichert. <br>
-Au&szlig;erdem k&ouml;nnen von
-<b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
-nach dem Sender anhand dessen Faxnummer benannt und
-abgespeichert werden. <br>
-Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
-mit nur einem Linuxrechner) geschieht durch automatischen
-Eintrag der f&uuml;r neuserver relevanten Verzeichnisse
-in einen Samba-Server. Sie k&ouml;nnte erg&auml;nzt
-werden durch eine Maske f&uuml;r die
-mariadb-Datenbank.</p>
+aktiver Server als Kopierquelle eingegeben werden.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>

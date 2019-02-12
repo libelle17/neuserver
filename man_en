@@ -12,12 +12,6 @@
 .SH SHORT DESCRIPTION 
 \fB²DPROG²\fR tries to configure a linux server via the script los.sh, with some callbacks, following the needs of the diabetologic practice Dachau. Optionally an active server can be nominated as copy source.
 .br
-\fB²DPROG²\fR is a command line program to remit files of a certain directory automatically to \fBhylafax\fR (in case a linux-compatible modem is installed) and/or \fBcapisuite\fR (in case a fritzcard 2.0 or 2.1 is installed), if the fax number is integrated in the file name as requested.
-Furthermore, ²DPROG² holds the posted faxes in a mariadb database.
-.br
-Additionally, received faxes from \fBhylafax\fR/\fBcapisuite\fR can be named automatically with the sender's name, according to his fax number, and stored.
-.br
-The usability within a network (may also be a windows network with only one linux machine) is being accomplished by automatic integration of all relevant directories into a samba server. It could be complemented by a frontend for the mariadb database.
 .SH INSTALLATION
 .br
 First, please read the chapters 'functionality', 'preconditions','automatically installed software packages' and 'implications' below. Then, if connected to the internet, call (e.g. by coying the line and pasting it into a terminal):
