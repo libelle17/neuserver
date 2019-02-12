@@ -28,8 +28,8 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; neuserver</b>: installs a linux server, if wanted as
-a copy of an active server in the local network <br>
+&minus; neuserver</b>: configures a linux server, if wanted
+as a copy of an active server in the local network <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
 neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
@@ -49,8 +49,10 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-offers quasi the functionality of a fax server, which can be
-useful for some also behind a fast data line. <b><br>
+tries to configure a linux server via the script los.sh,
+with some callbacks, following the needs of the diabetologic
+practice Dachau. Optionally an active server can be
+nominated as copy source. <b><br>
 neuserver</b> is a command line program to remit files of a
 certain directory automatically to <b>hylafax</b> (in case a
 linux-compatible modem is installed) and/or <b>capisuite</b>
