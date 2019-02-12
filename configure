@@ -21,28 +21,28 @@ kf() {
 # IP_R wird verwendet für: Makefile
 getIPR() {
 	CTAGS=ctags;
-#	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
+#	OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 	os=$(cat /etc/os-release|grep '^NAME=')
 	[ -z "$os" ]&& os=$(cat /etc/lsb-release|grep '^DISTRIB_ID=')
 	os=$(echo $os|cut -d= -f2|sed 's/"\(.*\)"/\1/')
 	# echo $os
 	case "$os" in 
-		*Mint*) osnr=1;;
-		*Ubuntu*) osnr=2;; 
-		*Debian*) osnr=3;; 
-		*SUSE*) osnr=4;; 
-		*Fedora*) osnr=5;; 
-		*Mageia*) osnr=7;; 
-		*Manjaro*) osnr=8;; 
+		*Mint*) OSNR=1;;
+		*Ubuntu*) OSNR=2;; 
+		*Debian*) OSNR=3;; 
+		*SUSE*) OSNR=4;; 
+		*Fedora*) OSNR=5;; 
+		*Mageia*) OSNR=7;; 
+		*Manjaro*) OSNR=8;; 
 	esac;
-	[ $osnr -eq 0 ]&&{
+	[ $OSNR -eq 0 ]&&{
 		#	echo unvergeben;
-	leise which apt-get&&osnr=2|| 
-			leise which rpm&&{ { leise which zypper&&osnr=4; }||{ leise which dnf&&osnr=5; }||{ leise which yum&&osnr=6; }||
-		{ leise which urpmi.update&&osnr=7; } }|| { leise which pacman&&osnr=8; } }
-#	echo osnr: $osnr;
+	leise which apt-get&&OSNR=2|| 
+			leise which rpm&&{ { leise which zypper&&OSNR=4; }||{ leise which dnf&&OSNR=5; }||{ leise which yum&&OSNR=6; }||
+		{ leise which urpmi.update&&OSNR=7; } }|| { leise which pacman&&OSNR=8; } }
+#	echo OSNR: $OSNR;
 # openSUSE
-	{ [ $osnr = 4 ]&&
+	{ [ $OSNR = 4 ]&&
 		{ 
 			Z=zypper;
 			g=--gpg-auto-import-keys;
@@ -53,7 +53,7 @@ getIPR() {
 			# die nächsten beiden Variablen dürften 26.3.17 unnötig werden
 			REPOS="${SUDC}$Z lr|grep 'g++\|devel_gcc'\>$KR||${SUDC}$Z ar http://download.opensuse.org/repositories/devel:/gcc/\`cat /etc/*-release|grep ^NAME= |cut -d'\"' -f2|sed 's/ /_/'\`_\`cat /etc/*-release|grep ^VERSION_ID= |cut -d'\"' -f2\`/devel:gcc.repo;";
 			UREPO="${SUDC}$Z lr|grep \\\\\"g++\\\\\|devel_gcc\\\\\"\>$KR && ${SUDC}$Z rr devel_gcc;";
-			COMP="gcc gcc-c++ \$(CCInst)";
+			COMP="gcc gcc-c++"; # \$(CCInst)";
 			# sonst dauerts beim Editieren zu lang
 		  if test "$ICH" = viall; then
 				LBOOST=$(cat vars|grep LBOOST|cut -d= -f2);
@@ -69,7 +69,7 @@ getIPR() {
 			LT=${_LT}-${dev};
 		} 
 	} || 
-	{ [ $osnr = 1 -o $osnr = 2 -o $osnr = 3 ]&&
+	{ [ $OSNR = 1 -o $OSNR = 2 -o $OSNR = 3 ]&&
 		{ 
 			IdPR="apt-get --assume-yes --allow-unauthenticated install --reinstall ";
 			IP_R="${SUDC}$IdPR";
@@ -81,19 +81,19 @@ getIPR() {
 			LCURS="$(apt-cache search 'libncurses[0-9]+-dev$'|sort -r|head -n1|cut -d'-' -f1) $(apt-cache search 'libncursesw[0-9]+-dev$'|sort -r|head -n1|cut -d'-' -f1)";
 		} 
 	} || 
-	{ [ $osnr = 5 ]&&
+	{ [ $OSNR = 5 ]&&
 		{ 
 			IdPR="dnf -y install ";
 			UPR="${SUDC}dnf remove ";
 		} 
 	} || 
-	{ [ $osnr = 6 ]&&
+	{ [ $OSNR = 6 ]&&
 		{ 
 			IdPR="yum -y install ";
 			UPR="${SUDC}yum remove ";
 		} 
 	} || 
-	{ [ $osnr = 7 ]&&
+	{ [ $OSNR = 7 ]&&
 		{ 
 			IdPR="urpmi --auto --force ";
 			IP_R="${SUDC}$IdPR";
@@ -104,7 +104,7 @@ getIPR() {
 			COMP="make automake gcc-c++ kernel-devel";
 		} 
 	} || 
-	{ [ $osnr = 8 ]&&
+	{ [ $OSNR = 8 ]&&
 		{ 
 			IdPR="pacman -S ";
 			IP_R="${SUDC}$IdPR";
@@ -117,7 +117,7 @@ getIPR() {
 			UDPR="${SUDC}pacman -Rd ";
 		};
 	}
-	[ $osnr = 5 -o $osnr = 6 ]&& 
+	[ $OSNR = 5 -o $OSNR = 6 ]&& 
 	{ 
 		libmdb="mariadb mysql";
 		COMP="make automake gcc-c++ kernel-devel";
@@ -128,7 +128,7 @@ getIPR() {
 		LT="${_LT} ${_LT}-${dev}";
 		LT5="";
 	}
-	{ [ $osnr -gt 3 -a $osnr -lt 8 ]&&
+	{ [ $OSNR -gt 3 -a $OSNR -lt 8 ]&&
 		{ 
 			SPR="rpm -q ";
 			LACL=libacl-${dev};
@@ -136,7 +136,7 @@ getIPR() {
 			UDPR="${SUDC}rpm -e --nodeps ";
 		};
 	} || 
-	{ [ $osnr -le 3 ]&&
+	{ [ $OSNR -le 3 ]&&
 		{ 
 			SPR="dpkg -s ";
 			LBOOST=libboost-${dev};
@@ -165,7 +165,7 @@ getIPR() {
 
 exportvars() {
 	rm -f vars;
-	for v in IPR IP_R UPR UDPR SPR UNROH UNF AUNF ILOG PGROFF LT LT5 LBOOST LBIO LBLO LACL LCURL LCURS LM18 dev libmdb REPOS UREPO COMP GITV DTN DPROG; do
+	for v in OSNR IPR IP_R UPR UDPR SPR UNROH UNF AUNF ILOG PGROFF LT LT5 LBOOST LBIO LBLO LACL LCURL LCURS LM18 dev libmdb REPOS UREPO COMP GITV DTN DPROG; do
 		eval nv=\$$v; 
 		printf "$v::=$nv\n">>vars; 
 	done;
@@ -176,11 +176,11 @@ ausricht() {
 	# im der letzten eingerückten Block der Bildschirmausgabe stehen die tatsächlich installierten Programme
 	# siehe int linst_cl::doinst(kons.cpp)
 	cat "$1" >> $GILOG
-	if [ $osnr = 4 ]; then
+	if [ $OSNR = 4 ]; then
 		# am Schluss hole hold-Register, entferne Zeilenumbrueche, fasse Leerzeichen zusammen; wenn nicht zwischen NEW package und leerer Zeile, loesche Zeile;
 		# loesche auch die letzten Suchmusterzeilen (NEW package und leere Zeile); haenge ans Hold-Register an;
 		sed -ni.bak '${g;s/\n//g;s/\s\+/ /g;p};/NEW package\|reinstalled:/,/^$/!d;//d;H' "$1";
-	elif [ $osnr = 5 -o $osnr = 6 ]; then
+	elif [ $OSNR = 5 -o $OSNR = 6 ]; then
 		# Beispiel für dnf:	 
 		#	 V=Verifying;sed -n '/'$V'/{s/[ ]*'$V'[ ]*:[ ]*\([^ ]*\).*/\1/;H};${x;s/\n/ /g;p}' /DATA/down/inst_vim_orig
 		# in Fedora: nach dem Programm kommt mit einem Leerzeichen eine Versionsnr., die unnötig ist für die Deninstallation
@@ -232,8 +232,8 @@ einricht() {
 		getIPR;
 		[ "$1" = _ ]|| printf "$blau$1$reset not found/ nicht gefunden => "  
 		printf "Installing/ Installiere $blau$2$reset ...\n";
-		[ "$1" = "vim" ]&&[ $osnr = 5 -o $osnr = 6 ]&&{ ${SUDC}yum update vim-minimal;}
-		[ $osnr = 1 -o $osnr = 2 -o $osnr = 3 ]&&{
+		[ "$1" = "vim" ]&&[ $OSNR = 5 -o $OSNR = 6 ]&&{ ${SUDC}yum update vim-minimal;}
+		[ $OSNR = 1 -o $OSNR = 2 -o $OSNR = 3 ]&&{
 			# wenn cdrom-Zeile vorkommt, vor ftp.-debian-Zeile steht und www.debian.org erreichbar ist, dann alle cdrom-Zeilen hinten anhängen
 			# gleichlautend in kons.cpp: linst_cl::linst_cl(int obverb,int oblog)
 			${SUDC} sh -c "S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S && \ 
@@ -291,7 +291,7 @@ PGROFF="groff-base groff"
 dev=devel
 libmdb="libmariadb libmariadbclient libmysql libmysqlclient"
 LCURS=ncurses;
-osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
+OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 Z=""
 [ "$(id -u)" -ne "0" ]&&SUDC="sudo "
 if test "$ICH" != install.sh -a "$ICH" != ${DPROG}_inst.sh -a "$ICH" != transfer; then
