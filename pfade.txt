@@ -1,0 +1,14 @@
+Mint:            /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+su -c mint:      /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+Fedora:          /usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
+su -c Fedora:    /usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
+Ubuntu:          /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+su -c Ubuntu:    /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+Debian:          /usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+su -c Debian:    /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Leap 42.3:       /home/schade/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games:/usr/lib/mit/bin:/usr/lib/mit/sbin
+su -c Leap 42.3: /home/schade/bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:/bin:/usr/bin/X11:/usr/games:/usr/lib/mit/bin:/usr/lib/mit/sbin
+Mageia:          /usr/local/bin:/usr/bin:/usr/local/games:/usr/games:/usr/lib64/qt4/bin:/usr/lib64/qt5/bin
+su -c Mageia:    /usr/local/bin:/usr/bin:/usr/local/games:/usr/games:/usr/lib64/qt4/bin:/usr/lib64/qt5/bin
+Tumble:          /home/schade/bin:/usr/local/bin:/usr/bin:/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin
+su -c Tumble:    /sbin:/bin:/usr/sbin:/usr/bin
