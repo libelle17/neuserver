@@ -79,13 +79,12 @@ GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 # 1=Debian usw., 2=Opensuse, 3=Fedora usw., 4=Magieia, 5=Manjaro usw.
 # DISTR::=$(shell which apt >/dev/null 2>&1&&echo 1||{ which zypper >/dev/null 2>&1&&echo 2||{ which dnf >/dev/null 2>&1||which yum >/dev/null 2>&1&&echo 3||{ which urpmi.update >/dev/null 2>&1&&echo 4||{ which pacman >/dev/null 2>&1&&echo 5||echo 0;};};};})
 # #	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
-RP:=)
-DISTR::=$(shell os=$$(cat /etc/os-release|grep '^NAME=');[ -z "$$os" ]&& os=$$(cat /etc/lsb-release|grep '^DISTRIB_ID=');os=$$(echo $$os|cut -d= -f2|sed 's/"\(.*\)"/\1/'); case "$$os" in *Mint*$(RP) osnr=1;; *Ubunto*$(RP) osnr=1;; *Debian*$(RP) osnr=1;; *SUSE*$(RP) osnr=2;; *Fedora*$(RP) osnr=3;; *Mageia*$(RP) osnr=4;; *Manjaro*$(RP) osnr=5;; esac;echo $$osnr;)
+-include vars # wird durch install.sh generiert; DPROG und GDAT dürfen nur nachher verwendet werden
 ifeq ($(GCCOK),0)
 	# wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
-	ifeq ($(DISTR),1)
+  ifeq ($(shell expr $(OSNR) \<= 3),1)
   	MINVGCC::=$(shell apt-cache search '^g\+\+-[0-9]+$$' -n|cut -f2 -d'-'|sort -nr|head -n1)
-  else ifeq ($(DISTR),2)
+  else ifeq ($(OSNR),4)
 	  MINVGCC::=$(shell which zypper $(KR)&&zypper se /gcc[^-]$*-c\\+\\+$$/|tail -n1|cut -dc -f3|cut -d- -f1||echo 0;)
   endif
   ifeq ($(shell expr $(MINVGCC) \> $(MINGCCNR)),1)
@@ -96,20 +95,24 @@ ifeq ($(shell expr $(MAXGCCNR) \> $(MINGCCNR)),1)
 	MINGCCNR::=$(MAXGCCNR)
 endif
 CCName::=g++-$(MINGCCNR)
-ifeq ($(DISTR),1)
+ifeq ($(shell expr $(OSNR) \<= 3),1)
 	CCInst::=gcc-$(MINGCCNR) g++-$(MINGCCNR)
 	DName::="Debian/Ubuntu/Mint"
-else ifeq ($(DISTR),2)
+else ifeq ($(OSNR),4)
 	CCInst::=gcc$(MINGCCNR) gcc$(MINGCCNR)-c++
 	DName::="OpenSuse"
-else ifeq ($(DISTR),3)
+else ifeq ($(OSNR),5)
 	DName::="Fedora"
-else ifeq ($(DISTR),4)
+else ifeq ($(OSNR),6)
+	DName::="Fedoraalt"
+else ifeq ($(OSNR),7)
 	DName::="Mageia"
-else ifeq ($(DISTR),5)
+else ifeq ($(OSNR),8)
 	DName::="Manjaro"
 endif
--include vars # wird durch install.sh generiert; CCInst muss vorher definiert werden, DPROG und GDAT dürfen nur nachher verwendet werden
+ifeq ($(shell expr $(OSNR) \<= 4),1)
+	COMP::=$(COMP) $(CCInst)
+endif
 CFLAGS::=-c -Wall
 LDFLAGS::=
 ifneq ($(libmdb),)
@@ -141,9 +144,6 @@ INSTEXEC::=$(EXPFAD)/$(EXEC)
 GDAT::=$(DTN:inst.log=)
 GDAT::=$(GDAT:uninstallinv=)
 GDAT::=$(GDAT:Makefile=Makefile.roh)
-ifeq ($(DISTR),1)
-	COMP::=$(COMP) $(CCInst)
-endif
 CC::=$(CCName) # CC=$(SUDC)$(CCName)
 pgd::=postgresql-$(dev)
 SUDC::=
@@ -346,7 +346,7 @@ $(warning Variable 'SPR' not assigned, please call './install.sh' before!)
 $(error Variable 'SPR' nicht belegt, bitte vorher './install.sh' aufrufen!)
 endif
 	@[ "$(GCCOK)" = "1" ]||{ \
-		[ "$(DISTR)" = "1" ]&&{ \
+		[ "$(OSNR)" -le 3 ]&&{ \
 			src=/etc/apt/sources.list;[ -f $$src -a -s $$src ]||$(SUDC)cp -a /usr/share/doc/apt/examples/sources.list $$src;:;\
 			grep toolchain /etc/apt/sources.list||ls /etc/apt/sources.list.d/*toolchain* $(KF)||{ \
 				$(SUDC)add-apt-repository ppa:ubuntu-toolchain-r/test;$(SUDC)apt-get update;\
@@ -503,13 +503,13 @@ confclean:
 .PHONY: uninstall
 uninstall: instclean
 	-@tac $(UNF) >tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH);: # uninstallinv von hinten nach vorne abarbeiten
-	-@[ "$(DISTR)" = "1" ]&&{ $(SUDC)apt-get -f install;};:;
+	-@[ "$(OSNR)" -le 3 ]&&{ $(SUDC)apt-get -f install;};:;
 	-@printf "uninstall finished/ Fertig mit uninstall!\n"
 
 .PHONY: allesweg
 allesweg: instclean
 	-@tac $(UNF) >tmp_$(UNROH)&& $(SUDC)blau=$(blau) reset=$(reset) bash tmp_$(UNROH) <<-EOF $'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n'$'\n' EOF;: # uninstallinv von hinten nach vorne abarbeiten
-	-@[ "$(DISTR)" = "1" ]&&{ $(SUDC)apt-get -f install<<EOF $'\n'$'\n' EOF;};:;
+	-@[ "$(OSNR)" -le 3 ]&&{ $(SUDC)apt-get -f install<<EOF $'\n'$'\n' EOF;};:;
 	-@printf "Fertig mit uninstall!\n"
 
 #//rufe:

@@ -55,6 +55,7 @@ while read -r zeile; do
 	testuser $user "$comm";
 done <benutzer;
 
+# Laufwerke mounten
 fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
 istinfstab=0;
 namnr=0; # 0=DATA, 1=DAT1, 2=DAT2 usw
@@ -119,6 +120,9 @@ while read -r zeile; do
 done << EOF
 $(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""'|tac) 
 EOF
+
+# fehlende Programme installieren
+
 
 if false; then
 	eintr="@reboot mount /$Dvz";
