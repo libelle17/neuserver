@@ -3,47 +3,9 @@ blau="\033[1;34m";
 reset="\033[0m";
 prog="";
 
-testuser() {
-		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
-		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
-		passw="";
-		if test $obu -eq 1 -o $obs -eq 1; then {
-				echo -e "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:";
-				read passw;
-		} fi;
-		if test $obu -eq 1; then {
-				echo -e "erstelle Linux-Benutzer $blau$1$reset";
-				useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
-		} fi;
-		if test $obs -eq 1; then {
-				echo -e "erstelle Samba-Benutzer $blau$1$reset"; # loeschen: pdbedit -x -u $1;
-				echo -ne "$passw\n$passw\n"|smbpasswd -a -s $1 # pruefen: smbclient -L //localhost/ -U $1
-		} fi;
-}
-
-obinfstab() {
-	istinfstab=0;
-	while read -r zeile; do
-#		echo dort: $zeile;
-		if test "$(echo $zeile|cut -d' ' -f2)" = "$1"; then istinfstab=1; break; fi;
-	done << EOF
-$fstb
-EOF
-}
-
-obprogda() {
- prog="";
- for verz in /usr/local/bin /usr/bin /usr/local/sbin /usr/sbin /sbin /bin /usr/libexec /run do
-	 prog="$verz/$1";
-	 if test -f "$prog"; then return 0; fi;
- done;
- prog=$(which "$1" 2>/dev/null);
- if test -f "$prog"; then return 0; fi;
-}
-
-test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
-sed 's/:://;/\$/d;s/=/="/;s/$/"/;' vars>vars.sh
-. ./vars.sh
+setzhost() {
+echo Setze Host;
+# wenn Hostname z.B. linux-8zyu o.ä., dann korrigieren;
 case $(hostname) in
 *-*) {
 		hostnamectl;
@@ -54,6 +16,9 @@ case $(hostname) in
 		hostnamectl; 
 };
 esac;
+}
+
+setzbenutzer() {
 grep -q "^praxis:" /etc/group||groupadd praxis
 $SPR samba 2>/dev/null||$IPR samba
 systemctl start smb 2>/dev/null||systemctl start smbd
@@ -65,7 +30,9 @@ while read -r zeile; do
 	comm=\"${zeile#* \"};
 	testuser $user "$comm";
 done <benutzer;
+}
 
+mountlaufwerke() {
 # Laufwerke mounten
 fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
 istinfstab=0;
@@ -131,8 +98,48 @@ while read -r zeile; do
 done << EOF
 $(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""'|tac) 
 EOF
+}
 
-# fehlende Programme installieren
+testuser() {
+		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
+		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
+		passw="";
+		if test $obu -eq 1 -o $obs -eq 1; then {
+				echo -e "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:";
+				read passw;
+		} fi;
+		if test $obu -eq 1; then {
+				echo -e "erstelle Linux-Benutzer $blau$1$reset";
+				useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
+		} fi;
+		if test $obs -eq 1; then {
+				echo -e "erstelle Samba-Benutzer $blau$1$reset"; # loeschen: pdbedit -x -u $1;
+				echo -ne "$passw\n$passw\n"|smbpasswd -a -s $1 # pruefen: smbclient -L //localhost/ -U $1
+		} fi;
+}
+
+obinfstab() {
+	istinfstab=0;
+	while read -r zeile; do
+#		echo dort: $zeile;
+		if test "$(echo $zeile|cut -d' ' -f2)" = "$1"; then istinfstab=1; break; fi;
+	done << EOF
+$fstb
+EOF
+}
+
+obprogda() {
+ prog="";
+ for verz in /usr/local/bin /usr/bin /usr/local/sbin /usr/sbin /sbin /bin /usr/libexec /run; do
+	 prog="$verz/$1";
+	 if test -f "$prog"; then return 0; fi;
+ done;
+ prog=$(which "$1" 2>/dev/null);
+ if test -f "$prog"; then return 0; fi;
+ return 1;
+}
+
+setzinstprog() {
 case $OSNR in
 	1|2|3)
 		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
@@ -191,7 +198,57 @@ case $OSNR in
 		upd="pacman -Syu";
 		compil="gcc linux-headers-`uname -r`";;
 esac;
-P=htop;$psuch "$P"&&$instyp "$P";
+}
+
+ersetzeprog() {
+	case $OSNR in
+	1|2|3)
+		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
+		if [ "$1" = hylafax ]; then eprog="hylafax-server"; return; fi;
+		if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; return; fi;
+		if [ "$1" = "hylafax hylafax-client" ]; then eprog="hylafax-server hylafax-client"; return; fi;
+		if [ "$1" = "hylafax+ hylafax+-client" ]; then eprog="hylafax+-server hylafax+-client"; return; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="linux-source-$(uname -r|cut -d. -f1,2)"; return; fi;
+		if [ "$1" = tiff ]; then eprog="libtiff-tools"; return; fi;
+		if [ "$1" = "libxslt-tools" ]; then eprog="xsltproc"; return; fi;
+		if [ "$1" = imagemagick ]; then eprog="imagemagick imagemagick-doc"; return; fi;
+		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-common libreoffice-base"; return; fi;
+		if [ "$1" = "libcapi20-2" ]; then eprog="libcapi20-dev"; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog="tesseract-ocr-eng"; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-ocr-deu"; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; return; fi;
+		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
+		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; return; fi;
+		eprog=$(sed 's/-devel/-dev/g' <<<"$eprog");;
+	5|6)
+		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; return; fi;
+		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
+		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
+}
+
+doinst() {
+	ersetzeprog "$1";
+}
+
+instmaria() {
+case $OSNR in
+	1|2|3)
+		apt-get -y install apt-transport-https;
+		apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
+	*)
+		doinst mariadb;
+		if [ $OSNR -eq 8 ]; then
+			mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
+		fi;;
+esac;
+
+}
+
+proginst() {
+setzinstprog;
+# fehlende Programme installieren
+P=htop;$psuch "$P" >/dev/null||$instyp "$P";
 
 # Mariadb
 case $OSNR in
@@ -203,13 +260,28 @@ esac;
 systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
 systemctl start $db_systemctl_name >/dev/null 2>&1;
 installiert=1;
-if ! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name mysqld|grep -q .; then installiert=0; fi;
-if [ $installiert -eq 1 ]; then
- if ! obprogda mysql; then installiert=0; fi;
- if ! grep "^mysql" /etc/passwd; then installiert=0; fi;
- if ! mysql -V; then installiert=0; fi; 
-fi;
+mysqld="mysqld";
+mysqlben="mysql";
+mysqlbef="mysql";
+if ! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .; then installiert=0; fi;
+[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
+[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
+[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
+if [ $installiert -eq 0]; then
 
+fi;
+echo installiert: $installiert;
+
+}
+
+# Start
+test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
+sed 's/:://;/\$/d;s/=/="/;s/$/"/;' vars>vars.sh
+. ./vars.sh
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
+proginst;
 
 
 
