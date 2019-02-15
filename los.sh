@@ -122,6 +122,66 @@ $(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep
 EOF
 
 # fehlende Programme installieren
+case $OSNR in
+	1|2|3)
+		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
+					ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'$F'/{H;d};${p;x}' $S;:;
+		psuch="dpkg -s "; # dpkg -l wuerde zwar genauer anzeigen, aber errorlevel nicht abhängig vom Installtationszustand
+		instp="apt-get install";
+		instyp="apt-get -y --force-yes --reinstall install ";
+		upr="apt-get -f install;apt-get --auto-remove purge ";
+		udpr="apt-get -f install;dpkg -r --force-depends ";
+		uypr="apt-get -f install;apt-get -y --auto-remove purge ";
+		upd="apt update;apt upgrade;";
+		compil="install build-essential linux-headers-`uname -r`";
+		dev="dev";;
+	4|5|6|7)
+		psuch="rpm -q ";
+		dev="devel";
+		udpr="rpm -e --nodeps ";
+		case $OSNR in
+			4)
+				instp="zypper -n --gpg-auto-import-keys in ";	
+				instyp=instp+"-y -f ";
+				upr="zypper -n rm -u ";
+				uypr=upr+"-y ";
+				upd="zypper patch";
+				repos="zypper lr | grep 'g++\\|devel_gcc'>/dev/null 2>&1 ||zypper ar http://download.opensuse.org/repositories/devel:";
+				repos="${repos}/gcc/`cat /etc/*-release |grep ^NAME= | cut -d'\"' -f2 | sed 's/ /_/'`";
+				repos="${repos}_`cat /etc/*-release | grep ^VERSION_ID= | cut -d'\"' -f2`/devel:gcc.repo;";
+				compil="gcc gcc-c++ gcc6-c++";;
+			5)
+				instp="dnf install ";
+				instyp="dnf -y install ";
+				upr="dnf remove ";
+				uypr="dnf -y remove ";
+				upd="dnf update";;
+			6)
+				instp="yum install ";
+				instyp="yum -y install ";
+				upr="yum remove ";
+				uypr="yum -y remove ";
+				upd="yum update";;
+			7)
+				instp="urpmi --auto ";
+				instyp="urpmi --auto --force ";
+				upr="urpme ";
+				uypr="urpme --auto --force ";
+				upd="urpmi.update -a";;
+		esac;
+		compil="make automake gcc-c++ kernel-devel";;
+	8)
+		psuch="pacman -Qi";
+		instp="pacman -S ";
+		instyp="pacman -S --noconfirm ";
+		upr="pacman -R -s ";
+		udpr="pacman -R -d -d ";
+		uypr="pacman -R -s --noconfirm "; 
+		upd="pacman -Syu";
+		compil="gcc linux-headers-`uname -r`";;
+esac;
+P=htop;$psuch "$P"&&$instyp "$P";
+
 
 
 if false; then

@@ -28,8 +28,9 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; neuserver</b>: configures a linux server, if wanted
-as a copy of an active server in the local network <br>
+&minus; Fax server functionality</b>: induces automatic fax
+transmission of files, naming of received faxes and logging
+of all of them in a database <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
 neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
@@ -49,10 +50,24 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-tries to configure a linux server via the script los.sh,
-with some callbacks, following the needs of the diabetologic
-practice Dachau. Optionally an active server can be
-nominated as copy source.</p>
+offers quasi the functionality of a fax server, which can be
+useful for some also behind a fast data line. <b><br>
+neuserver</b> is a command line program to remit files of a
+certain directory automatically to <b>hylafax</b> (in case a
+linux-compatible modem is installed) and/or <b>capisuite</b>
+(in case a fritzcard 2.0 or 2.1 is installed), if the fax
+number is integrated in the file name as requested.
+Furthermore, neuserver holds the posted faxes in a mariadb
+database. <br>
+Additionally, received faxes from
+<b>hylafax</b>/<b>capisuite</b> can be named automatically
+with the sender&rsquo;s name, according to his fax number,
+and stored. <br>
+The usability within a network (may also be a windows
+network with only one linux machine) is being accomplished
+by automatic integration of all relevant directories into a
+samba server. It could be complemented by a frontend for the
+mariadb database.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>
@@ -163,7 +178,7 @@ cannot be set via the command line, but only via the
 configuration file, which can be edited directly by
 &rsquo;<b>neuserver -vi</b>&rsquo; or interactively by
 &rsquo;<b>neuserver -rf</b>&rsquo;. <br>
-Programm: <b>/root/autofax/autofax</b>, V: <b>0.47247</b>
+Programm: <b>/root/autofax/autofax</b>, V: <b>0.47259</b>
 Verwende: <b>Fritzbox</b>, <b>Capisuite</b>, <b>Hylafax <br>
 Options which are not saved (current value in parentheses):
 <br>
@@ -831,8 +846,9 @@ caused by the program.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; neuserver</b>: richtet einen neuen Linux-Server ein,
-ggf. mit Kopie von einem aktiven Server im Netz <br>
+&minus; FaxServer-Funktionalit&auml;t</b>: veranlasst
+automatischen Faxversand von Dateien, Benennung empfangener
+Faxe und Protokollierung aller Faxe in einer Datenbank <br>
 (manpage available in english: &rsquo;man neuserver&rsquo;
 or &rsquo;man -Len neuserver&rsquo;)</p>
 
@@ -852,11 +868,27 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-versucht, &uuml;ber die Datei los.sh mit einigen
-R&uuml;ckfragen den Server nach den
-Bed&uuml;rfnissen der diabetologischen
-Gemeisnchaftspraxis Dachau einzurichten. Optional kann ein
-aktiver Server als Kopierquelle eingegeben werden.</p>
+bietet quasi die Funktionalit&auml;t eines Faxservers,
+welcher f&uuml;r manche auch hinter einer schnellen
+Datenleitung sinnvoll sein kann. <b><br>
+neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
+in einem bestimmten Verzeichnis automatisch an
+<b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
+angeschlossen ist) und/oder <b>capisuite</b> (falls eine
+Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
+werden, wenn die Faxnummer im Dateinamen wie vorgesehen
+eingetragen ist, und das weiterhin die versandten Faxe in
+einer MariaDB-Datenbank abspeichert. <br>
+Au&szlig;erdem k&ouml;nnen von
+<b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
+nach dem Sender anhand dessen Faxnummer benannt und
+abgespeichert werden. <br>
+Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
+mit nur einem Linuxrechner) geschieht durch automatischen
+Eintrag der f&uuml;r neuserver relevanten Verzeichnisse
+in einen Samba-Server. Sie k&ouml;nnte erg&auml;nzt
+werden durch eine Maske f&uuml;r die
+mariadb-Datenbank.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>
@@ -979,7 +1011,7 @@ werden, die wiederum &uuml;ber &rsquo;<b>neuserver
 -vi</b>&rsquo; direkt editiert oder auch &uuml;ber
 &rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
 werden kann. <br>
-Programm: <b>/root/autofax/autofax</b>, V: <b>0.47247</b>
+Programm: <b>/root/autofax/autofax</b>, V: <b>0.47259</b>
 Verwende: <b>Fritzbox</b>, <b>Capisuite</b>, <b>Hylafax <br>
 Optionen, die nicht gespeichert werden (aktueller Wert in
 Klammern): <br>
