@@ -1,6 +1,7 @@
 #!/bin/bash
-blau="\033[1;34m"
-reset="\033[0m"
+blau="\033[1;34m";
+reset="\033[0m";
+prog="";
 
 testuser() {
 		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
@@ -28,6 +29,16 @@ obinfstab() {
 	done << EOF
 $fstb
 EOF
+}
+
+obprogda() {
+ prog="";
+ for verz in /usr/local/bin /usr/bin /usr/local/sbin /usr/sbin /sbin /bin /usr/libexec /run do
+	 prog="$verz/$1";
+	 if test -f "$prog"; then return 0; fi;
+ done;
+ prog=$(which "$1" 2>/dev/null);
+ if test -f "$prog"; then return 0; fi;
 }
 
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
@@ -142,9 +153,9 @@ case $OSNR in
 		case $OSNR in
 			4)
 				instp="zypper -n --gpg-auto-import-keys in ";	
-				instyp=instp+"-y -f ";
+				instyp=$instp" -y -f ";
 				upr="zypper -n rm -u ";
-				uypr=upr+"-y ";
+				uypr=$upr" -y ";
 				upd="zypper patch";
 				repos="zypper lr | grep 'g++\\|devel_gcc'>/dev/null 2>&1 ||zypper ar http://download.opensuse.org/repositories/devel:";
 				repos="${repos}/gcc/`cat /etc/*-release |grep ^NAME= | cut -d'\"' -f2 | sed 's/ /_/'`";
@@ -164,23 +175,41 @@ case $OSNR in
 				upd="yum update";;
 			7)
 				instp="urpmi --auto ";
-				instyp="urpmi --auto --force ";
+				instyp=$instp"--force ";
 				upr="urpme ";
-				uypr="urpme --auto --force ";
+				uypr=$upr"--auto --force ";
 				upd="urpmi.update -a";;
 		esac;
 		compil="make automake gcc-c++ kernel-devel";;
 	8)
 		psuch="pacman -Qi";
 		instp="pacman -S ";
-		instyp="pacman -S --noconfirm ";
+		instyp=$instp"--noconfirm ";
 		upr="pacman -R -s ";
+		uypr=$upr"--noconfirm "; 
 		udpr="pacman -R -d -d ";
-		uypr="pacman -R -s --noconfirm "; 
 		upd="pacman -Syu";
 		compil="gcc linux-headers-`uname -r`";;
 esac;
 P=htop;$psuch "$P"&&$instyp "$P";
+
+# Mariadb
+case $OSNR in
+	1|2|3)
+		db_systemctl_name="mysql";;
+	4|5|6|7)
+		db_systemctl_name="mariadb";;
+esac;
+systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
+systemctl start $db_systemctl_name >/dev/null 2>&1;
+installiert=1;
+if ! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name mysqld|grep -q .; then installiert=0; fi;
+if [ $installiert -eq 1 ]; then
+ if ! obprogda mysql; then installiert=0; fi;
+ if ! grep "^mysql" /etc/passwd; then installiert=0; fi;
+ if ! mysql -V; then installiert=0; fi; 
+fi;
+
 
 
 
