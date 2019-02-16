@@ -279,94 +279,96 @@ instmaria() {
 	esac;
 }
 
-proginst() {
-setzinstprog;
-# fehlende Programme installieren
-P=htop;$psuch "$P" >/dev/null||$instyp "$P";
-P=vsftp;$psuch "$P" >/dev/null||$instyp "$P";
-
-# Mariadb
-case $OSNR in
-	1|2|3)
-		db_systemctl_name="mysql";;
-	4|5|6|7)
-		db_systemctl_name="mariadb";;
-esac;
-for iru in 1 2; do
-	systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
-	systemctl start $db_systemctl_name >/dev/null 2>&1;
-	installiert=1;
-	mysqld="mysqld";
-	mysqlben="mysql";
-	mysqlbef="mysql";
-	! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&installiert=0;
-	[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
-	[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
-	[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
-	[ $installiert -eq 1 ]&&break;
-	instmaria;
-done;
-if [ $installiert -eq 1 ]; then
-	datadir=$(sed 's/#.*$//g' $($mysqlbef --help|sed -n '/Default options/{n;p}') 2>/dev/null|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
-	if [ -z "$datadir" ]; then
-		mycnfpfad=$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null);
-		[ -z "$mycnfpfad" ]&&mycnfpfad=$(find $HOME -name .my.cnf -printf '%p\\n' -quit);
-		if [ -n "$mycnfpfad" ]; then
-			for aktdir in $(sed 's/#.*$//g' "$mycnfpfad"| grep '!includedir' | sed 's/^[ \t]//g' | cut -d' ' -f2-);do
-				mycnfpfad="$myconfpfad $(find $aktdir -not -type d)";
+mariadb() {
+	# Mariadb
+	case $OSNR in
+		1|2|3)
+			db_systemctl_name="mysql";;
+		4|5|6|7)
+			db_systemctl_name="mariadb";;
+	esac;
+	for iru in 1 2; do
+		systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
+		systemctl start $db_systemctl_name >/dev/null 2>&1;
+		installiert=1;
+		mysqld="mysqld";
+		mysqlben="mysql";
+		mysqlbef="mysql";
+		! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&installiert=0;
+		[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
+		[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
+		[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
+		[ $installiert -eq 1 ]&&break;
+		instmaria;
+	done;
+	if [ $installiert -eq 1 ]; then
+		datadir=$(sed 's/#.*$//g' $($mysqlbef --help|sed -n '/Default options/{n;p}') 2>/dev/null|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
+		if [ -z "$datadir" ]; then
+			mycnfpfad=$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null);
+			[ -z "$mycnfpfad" ]&&mycnfpfad=$(find $HOME -name .my.cnf -printf '%p\\n' -quit);
+			if [ -n "$mycnfpfad" ]; then
+				for aktdir in $(sed 's/#.*$//g' "$mycnfpfad"| grep '!includedir' | sed 's/^[ \t]//g' | cut -d' ' -f2-);do
+					mycnfpfad="$myconfpfad $(find $aktdir -not -type d)";
+				done;
+			fi;
+			for aktzz in $mycnfpfad; do
+				datadir=$(sed 's/#.*$//g' "$aktzz"|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
+				[ -n "$datadir" ]&&break;
 			done;
 		fi;
-		for aktzz in $mycnfpfad; do
-			datadir=$(sed 's/#.*$//g' "$aktzz"|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
-			[ -n "$datadir" ]&&break;
+		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
+		[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
+		if ! [ -d $datadir ]; then
+			echo rufe mysql_install_db auf
+			$(find /usr/local /usr/bin /usr/sbin -name mysql_install_db 2>/dev/null);
+			systemctl start mysql;
+		fi;
+		while mysql -e'\q' 2>/dev/null; do
+			mroot="";
+			while [ -z $mroot ]; do
+				printf "Admin für mysql: ";[ $0 = dash ]&&read mroot||read -e -i "root" mroot;
+			done;
+			mrpwd="";
+			while [ -z $mrpwd ]; do
+				printf "Passwort für '$mroot': ";read mrpwd;
+				# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
+				# auskommentiert werden und der Service neu gestartet werden
+			done;
+			echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+			mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
+			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
 		done;
-	fi;
-	[ -z "$datadir" ]&&datadir="/var/lib/mysql";
-	[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
-	if ! [ -d $datadir ]; then
-		echo rufe mysql_install_db auf
-		$(find /usr/local /usr/bin /usr/sbin -name mysql_install_db 2>/dev/null);
-		systemctl start mysql;
-	fi;
-	while mysql -e'\q' 2>/dev/null; do
-		mroot="";
-		while [ -z $mroot ]; do
-			printf "Admin für mysql: ";[ $0 = dash ]&&read mroot||read -e -i "root" mroot;
+		user="";
+		while [ -z "$user" ];do
+			printf "Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
 		done;
-		mrpwd="";
-		while [ -z $mrpwd ]; do
-			printf "Passwort für '$mroot': ";read mrpwd;
-			# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
-			# auskommentiert werden und der Service neu gestartet werden
+		pwd="";
+		while [ -z "$pwd" ];do
+			read -p "Passwort für '$user': " pwd;
 		done;
-    echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
-    mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
-		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
-		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
-		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
-	done;
-	user="";
-	while [ -z "$user" ];do
-		printf "Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
-	done;
-	pwd="";
-	while [ -z "$pwd" ];do
-		read -p "Passwort für '$user': " pwd;
-	done;
-	if mysql -u"$user" -p"$pwd" -e'\q' 2>/dev/null; then
-		echo Benutzer "$user"  war schon eingerichtet;
-	else
-		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
-		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
-		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
-		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
+		if mysql -u"$user" -p"$pwd" -e'\q' 2>/dev/null; then
+			echo Benutzer "$user"  war schon eingerichtet;
+		else
+			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
+			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
+		fi;
+		echo datadir: $datadir;
+		echo user: $user;
+		echo Jetzt konfigurieren;
 	fi;
-  echo datadir: $datadir;
-	echo user: $user;
-  echo Jetzt konfigurieren;
-fi;
-echo installiert: $installiert;
+	echo installiert: $installiert;
+}
 
+proginst() {
+	setzinstprog;
+	# fehlende Programme installieren
+	P=htop;$psuch "$P" >/dev/null||$instyp "$P";
+	ersetzeprog vsftpd;$psuch "$eprog" >/dev/null||$instyp "$eprog";
+#	mariadb;
 }
 
 # Start
