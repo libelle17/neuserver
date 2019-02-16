@@ -202,7 +202,7 @@ esac;
 
 ersetzeprog() {
 	case $OSNR in
-	1|2|3)
+	1|2|3) # mint, ubuntu, debian
 		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
 		if [ "$1" = hylafax ]; then eprog="hylafax-server"; return; fi;
 		if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; return; fi;
@@ -219,12 +219,35 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; return; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
 		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; return; fi;
-		eprog=$(sed 's/-devel/-dev/g' <<<"$eprog");;
-	5|6)
+		eprog=$(sed 's/-devel/-dev/g' <<<"$eprog");
+		;
+	5|6) # fedora, fedoraalt
 		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
 		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; return; fi;
+		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; return; fi;
+		if [ "$1" = tiff ]; then eprog="libtiff-tools"; return; fi;
+		if [ "$1" = libtiff5 ]; then eprog="libtiff"; return; fi;
+		if [ "$1" = "libcapi20-2" ]; then eprog="isdn4k-utils"; return; fi;
+		if [ "$1" = "libcapi20-3" ]; then eprog=""; return; fi;
+		if [ "$1" = "capiutils" ]; then eprog=""; return; fi;
+		if [ "$1" = imagemagick ]; then eprog="ImageMagick ImageMagick-doc"; return; fi;
+		if [ "$1" = "libxslt-tools" ]; then eprog="libxslt"; return; fi;
+		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-filters libreoffice-langpack-de"; return; fi;
+		if [ "$1" = "tesseract-ocr" ]; then eprog="tesseract"; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog=""; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; return; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; return; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
-		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
+			;
+	4) # suse
+		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; return; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; return; fi;
+		if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; return; fi;
+			;
+	8) # manjaro
+		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; return; fi;
+			;
+ esac;
 }
 
 doinst() {
