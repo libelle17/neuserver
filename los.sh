@@ -342,13 +342,23 @@ if [ $installiert -eq 1 ]; then
     mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
 		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
 		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
+		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
 	done;
-	read -p "Standardbenutzer (z.B. 'praxis'): " user;
-	read -p "Passwort für '$user': " pwd;
-	if mysql -u$user -p$pwd -e'\q' 2>/dev/null; then
-		echo ja;
+	user="";
+	while [ -z "$user" ];do
+		printf "Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
+	done;
+	pwd="";
+	while [ -z "$pwd" ];do
+		read -p "Passwort für '$user': " pwd;
+	done;
+	if mysql -u"$user" -p"$pwd" -e'\q' 2>/dev/null; then
+		echo Benutzer "$user"  war schon eingerichtet;
 	else
-		echo nein;
+		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
+		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
 	fi;
   echo datadir: $datadir;
 	echo user: $user;
