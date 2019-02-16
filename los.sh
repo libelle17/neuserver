@@ -2,6 +2,7 @@
 blau="\033[1;34m";
 reset="\033[0m";
 prog="";
+obnmr=1;
 
 setzhost() {
 echo Setze Host;
@@ -220,7 +221,7 @@ ersetzeprog() {
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
 		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; return; fi;
 		eprog=$(sed 's/-devel/-dev/g' <<<"$eprog");
-		;
+		;;
 	5|6) # fedora, fedoraalt
 		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
 		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; return; fi;
@@ -238,34 +239,44 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; return; fi;
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; return; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
-			;
+		;;
 	4) # suse
 		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; return; fi;
 		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; return; fi;
 		if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; return; fi;
-			;
+		;;
 	8) # manjaro
 		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; return; fi;
-			;
+		;;
  esac;
+ eprog="$1";
 }
 
 doinst() {
 	ersetzeprog "$1";
+	[ -n "$2" ]&&obprogda "$2"&&return 0;
+	echo eprog: $eprog;
+	if [ -n "$eprog" ]; then
+   if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
+		obnmr=0;
+		zypper mr -k --all;
+	 fi;
+	 $instp $1;
+	fi;
 }
 
 instmaria() {
-case $OSNR in
-	1|2|3)
-		apt-get -y install apt-transport-https;
-		apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
-	*)
-		doinst mariadb;
-		if [ $OSNR -eq 8 ]; then
-			mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
-		fi;;
-esac;
-
+	case $OSNR in
+		1|2|3)
+			apt-get -y install apt-transport-https;
+			apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
+		*)
+			echo doinsta mariadb;
+			doinst mariadb;
+			if [ $OSNR -eq 8 ]; then
+				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
+			fi;;
+	esac;
 }
 
 proginst() {
@@ -280,18 +291,68 @@ case $OSNR in
 	4|5|6|7)
 		db_systemctl_name="mariadb";;
 esac;
-systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
-systemctl start $db_systemctl_name >/dev/null 2>&1;
-installiert=1;
-mysqld="mysqld";
-mysqlben="mysql";
-mysqlbef="mysql";
-if ! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .; then installiert=0; fi;
-[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
-[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
-[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
-if [ $installiert -eq 0]; then
-
+for iru in 1 2; do
+	systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
+	systemctl start $db_systemctl_name >/dev/null 2>&1;
+	installiert=1;
+	mysqld="mysqld";
+	mysqlben="mysql";
+	mysqlbef="mysql";
+	! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&installiert=0;
+	[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
+	[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
+	[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
+	[ $installiert -eq 1 ]&&break;
+	instmaria;
+done;
+if [ $installiert -eq 1 ]; then
+	datadir=$(sed 's/#.*$//g' $($mysqlbef --help|sed -n '/Default options/{n;p}') 2>/dev/null|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
+	if [ -z "$datadir" ]; then
+		mycnfpfad=$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null);
+		[ -z "$mycnfpfad" ]&&mycnfpfad=$(find $HOME -name .my.cnf -printf '%p\\n' -quit);
+		if [ -n "$mycnfpfad" ]; then
+			for aktdir in $(sed 's/#.*$//g' "$mycnfpfad"| grep '!includedir' | sed 's/^[ \t]//g' | cut -d' ' -f2-);do
+				mycnfpfad="$myconfpfad $(find $aktdir -not -type d)";
+			done;
+		fi;
+		for aktzz in $mycnfpfad; do
+			datadir=$(sed 's/#.*$//g' "$aktzz"|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
+			[ -n "$datadir" ]&&break;
+		done;
+	fi;
+	[ -z "$datadir" ]&&datadir="/var/lib/mysql";
+	[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
+	if ! [ -d $datadir ]; then
+		echo rufe mysql_install_db auf
+		$(find /usr/local /usr/bin /usr/sbin -name mysql_install_db 2>/dev/null);
+		systemctl start mysql;
+	fi;
+	while mysql -e'\q' 2>/dev/null; do
+		mroot="";
+		while [ -z $mroot ]; do
+			printf "Admin für mysql: ";[ $0 = dash ]&&read mroot||read -e -i "root" mroot;
+		done;
+		mrpwd="";
+		while [ -z $mrpwd ]; do
+			printf "Passwort für '$mroot': ";read mrpwd;
+			# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
+			# auskommentiert werden und der Service neu gestartet werden
+		done;
+    echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+    mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
+		echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+		mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
+	done;
+	read -p "Standardbenutzer (z.B. 'praxis'): " user;
+	read -p "Passwort für '$user': " pwd;
+	if mysql -u$user -p$pwd -e'\q' 2>/dev/null; then
+		echo ja;
+	else
+		echo nein;
+	fi;
+  echo datadir: $datadir;
+	echo user: $user;
+  echo Jetzt konfigurieren;
 fi;
 echo installiert: $installiert;
 
