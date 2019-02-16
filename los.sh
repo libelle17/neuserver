@@ -220,7 +220,7 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; return; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
 		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; return; fi;
-		eprog=$(sed 's/-devel/-dev/g' <<<"$eprog");
+		eprog=$(echo "$eprog"|sed 's/-devel/-dev/g');
 		;;
 	5|6) # fedora, fedoraalt
 		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
@@ -283,6 +283,7 @@ proginst() {
 setzinstprog;
 # fehlende Programme installieren
 P=htop;$psuch "$P" >/dev/null||$instyp "$P";
+P=vsftp;$psuch "$P" >/dev/null||$instyp "$P";
 
 # Mariadb
 case $OSNR in
