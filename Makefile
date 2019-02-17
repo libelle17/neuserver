@@ -437,7 +437,7 @@ endef
 define priv_html
 	-@printf " erstelle/generating:%b$(1)%b\n" $(blau) $(reset)
 	-@groff -mandoc -Thtml -v ;EXC="$$$$?"; \
-		echo vor Groff-Pruefung ................................... \
+		echo vor Groff-Pruefung ...................................; \
 	  bp=$$(PGROFF);for p in $$$$bp;do { echo pruefe $$$$p;echo EXC: $$$${EXC};[ $$$${EXC} -gt 1 ]||which groff||$$(SPR) $$$$p;}||{ sh configure inst _ $$$$p verbose;};done;:;\
 	  echo nach Groff-Pruefung ...................................
 	-@rm -f $(1).html
