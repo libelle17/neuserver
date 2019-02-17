@@ -372,24 +372,48 @@ mariadb() {
 }
 
 proginst() {
+	echo -e $blauproginst\(\)$reset: setinstprog
 	setzinstprog;
 	# fehlende Programme installieren
+	echo -e $blauproginst\(\)$reset: htop
 	doinst htop;
+	echo -e $blauproginst\(\)$reset: vsfptd
 	doinst vsftpd;
+	echo -e $blauproginst\(\)$reset: openssh-server
 	doinst openssh-server;
+	echo -e $blauproginst\(\)$reset: openssh-client
 	doinst openssh-client;
+	D=/etc/ssh/sshd_config;
+	W=PermitRootLogin;
+	if ! grep "^$W[[:space:]]*Yes$" $D; then
+		if grep "^$W" $D; then
+			sed -i "/^$W/c$W Yes" $D;
+		elif grep "^#$W" $D; then
+			sed -i "/^#$W/a$W Yes" $D;
+		fi;
+	fi;
 	systemctl enable ssh;
+	systemctl restart ssh;
 	#	mariadb;
 }
 
 # Start
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
-sed 's/:://;/\$/d;s/=/="/;s/$/"/;' vars>vars.sh
+echo Starte mit los.sh...
+sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;' vars>vars.sh
 . ./vars.sh
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
-proginst;
+#proginst;
+if [ "$DESKTOP_SESSION" = cinnamon ]; then
+	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40
+	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200
+if [ "$DESKTOP_SESSION" = gnome ]; then
+	gsettings set org.gnome.settings-daemon.peripherals.keyboard repeat-interval 40
+	gsettings set org.gnome.settings-daemon.peripherals.keyboard delay 200
+elif [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+fi;
 
 
 
