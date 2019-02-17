@@ -433,8 +433,8 @@ endef
 
 define priv_html
 	-@printf " erstelle/generating:%b$(1)%b\n" $(blau) $(reset)
-	-@groff -mandoc -Thtml -v $(KR);EXC="$$$$?"; \
-	for p in $(PGROFF); do { [ $$$${EXC} -gt 1 ]|| ! which groff $(KR)|| ! $(SPR) $$$$p $(KR);}&&{ sh configure inst _ $$$$p verbose;}; done; :;
+	-@groff -mandoc -Thtml -v ;EXC="$$$$?"; \
+	for p in $(PGROFF); do { [ $$$${EXC} -gt 1 ]|| ! which groff || ! $(SPR) $$$$p ;}&&{ sh configure inst _ $$$$p verbose;}; done; :;
 	-@rm -f $(1).html
 	-@sed -e 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;'\
 	 -e 's/Ä/\&Auml;/g;s/Ö/\&Ouml;/g;s/Ü/\&Uuml;/g;s/ä/\&auml;/g;s/ö/\&ouml;/g;s/ü/\&uuml;/g;s/ß/\&szlig;/g;'\
