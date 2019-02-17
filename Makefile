@@ -438,7 +438,7 @@ define priv_html
 	-@printf " erstelle/generating:%b$(1)%b\n" $(blau) $(reset)
 	-@groff -mandoc -Thtml -v ;EXC="$$$$?"; \
 		echo vor Groff-Pruefung ...................................; \
-	  bp=$$(PGROFF);for p in $$$$bp;do { echo pruefe $$$$p;echo EXC: $$$${EXC};[ $$$${EXC} -gt 1 ]||which groff||$$(SPR) $$$$p;}||{ sh configure inst _ $$$$p verbose;};done;:;\
+	  bp=$(PGROFF);for p in $$$$bp;do { echo pruefe $$$$p;echo EXC: $$$$EXC;[ $$$$EXC -eq 0 ]||which groff $(KR)||$(SPR) $$$$p $(KR);}||{ sh configure inst _ $$$$p verbose;};done;:;\
 	  echo nach Groff-Pruefung ...................................
 	-@rm -f $(1).html
 	-@sed -e 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;'\
