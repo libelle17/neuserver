@@ -398,21 +398,25 @@ proginst() {
 }
 
 # Start
+if test "$(id -u)" -ne "0"; then
+	if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
+		gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
+		gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
+	fi;
+fi;
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
 echo Starte mit los.sh...
-sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;' vars>vars.sh
+sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
 #proginst;
 if [ "$DESKTOP_SESSION" = cinnamon ]; then
-	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40
-	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200
-if [ "$DESKTOP_SESSION" = gnome ]; then
-	gsettings set org.gnome.settings-daemon.peripherals.keyboard repeat-interval 40
-	gsettings set org.gnome.settings-daemon.peripherals.keyboard delay 200
+	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
+	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
 elif [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+	echo kommt noch;
 fi;
 
 
