@@ -2,7 +2,7 @@
 .\" Manual-Seite für ²DPROG²
 .\" Schreiben Sie an geraldschade@gmx.de, wenn Sie Fehler oder Mängel entdeckt haben
 .pc
-.TH man 1 "14.02.19" "Version 0.47259" "Manual-Seite für ²DPROG²"
+.TH man 1 "17.02.19" "Version 0.47265" "Manual-Seite für ²DPROG²"
 .SH NAME
 \fB²DPROG² \- FaxServer-Funktionalität\fR: veranlasst automatischen Faxversand von Dateien, Benennung empfangener Faxe und Protokollierung aller Faxe in einer Datenbank 
 .br
@@ -67,7 +67,7 @@ Der Benutzer könnte also je nach Betriebssystem, Zugriffsmöglichkeit und Präf
 .SH OPTIONEN 
  '\fB²DPROG² -?\fR' oder '\fB²DPROG² -h\fR' zeigt die wichtigen Befehlszeilenoptionen und '\fB²DPROG² -lh\fR' alle. Einige Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten aus der Faxnummer) können nicht über die Befehlszeile, sondern nur über die Konfigurationsdatei eingegeben werden, die wiederum über '\fB²DPROG² -vi\fR' direkt editiert oder auch über '\fB²DPROG² -rf\fR' interaktiv gepflegt werden kann.
 .br
-    \fRProgramm: \fB/root/autofax/autofax\fR, V: \fB0.47259 \fRVerwende: \fBFritzbox\fR, \fBCapisuite\fR, \fBHylafax\fR
+    \fRProgramm: \fB/root/autofax/autofax\fR, V: \fB0.47265 \fRVerwende: \fBFritzbox\fR, \fBCapisuite\fR, \fBHylafax\fR
 .br
 \fBOptionen, die nicht gespeichert werden (aktueller Wert in Klammern): \fR
 .br

@@ -24,7 +24,7 @@ getIPR() {
 #	OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 	os=$(cat /etc/os-release|grep '^NAME=')
 	[ -z "$os" ]&& os=$(cat /etc/lsb-release|grep '^DISTRIB_ID=')
-	os=$(echo $os|cut -d= -f2|sed 's/"\(.*\)"/\1/')
+	os=$(echo $os|cut -d= -f2|sed 's/^[[:space:]]*//'|sed 's/"\(.*\)"/\1/')
 	# echo $os
 	case "$os" in 
 		*Mint*) OSNR=1;;
