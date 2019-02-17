@@ -404,6 +404,19 @@ if test "$(id -u)" -ne "0"; then
 		gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
 	fi;
 fi;
+if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+	D=~/.config/kcminputrc;
+	RD="RepeatDelay=";
+	rd=210;
+	RR="RepeatRate=";
+	rr=27;
+	if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
+		echo editiere $D;
+		sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
+		xset r rate $rd $rr;
+	fi;
+fi;
+exit;
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
@@ -415,11 +428,7 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 if [ "$DESKTOP_SESSION" = cinnamon ]; then
 	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
 	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
-elif [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
-	echo editiere ~/.config/kcminputrc
-	echo kommt noch;
 fi;
-
 
 
 if false; then
