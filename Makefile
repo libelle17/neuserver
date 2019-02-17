@@ -434,7 +434,7 @@ endef
 define priv_html
 	-@printf " erstelle/generating:%b$(1)%b\n" $(blau) $(reset)
 	-@groff -mandoc -Thtml -v $(KR);EXC="$$$$?"; \
-	for p in $(PGROFF); do { [ $$$${EXC} -gt 1 ]|| ! which groff $(KR)|| ! $(SPR) $$$$p $(KR);}&&{ sh configure inst _ $$$$p verbose;}; done; :;
+		bp=$(PGROFF);for p in $$$$bp;do { [ $$$$EXC -eq 0 ]||which groff $(KR)||$(SPR) $$$$p $(KR);}||{ sh configure inst _ $$$$p verbose;};done;:;
 	-@rm -f $(1).html
 	-@sed -e 's/²gitv²/$(GITV)/g;s/²DPROG²/$(DPROG)/g;'\
 	 -e 's/Ä/\&Auml;/g;s/Ö/\&Ouml;/g;s/Ü/\&Uuml;/g;s/ä/\&auml;/g;s/ö/\&ouml;/g;s/ü/\&uuml;/g;s/ß/\&szlig;/g;'\
@@ -568,8 +568,8 @@ tumitzieh:
 		Fg="$$Fg\b: ";printf "$$Fg";[ "$$0" = "dash" ]&&read TZL||read -e -i "$$TZL" TZL;:;\
 	done;\
 	printf "adapt/ mitziehen von %b$$TZL%b\n" $(blau) $(reset);\
-	printf "cp -au $$blau.exrc Makefile install.sh man_?? versdt viall configure $$reset\"$$TZL\";\n";\
-	cp -au .exrc Makefile install.sh man_?? versdt viall configure "$$TZL";\
+	printf "cp -au $$blau.exrc Makefile install.sh man_?? viall configure $$reset\"$$TZL\";\n";\
+	cp -au .exrc Makefile install.sh man_?? viall configure "$$TZL";\
 	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\\$A\" -a -f \"\\$A\" ]&&cp -au \"\\$A\" \"$$TZL\";done;\n";\
 	cd "$$TZL" $(DN);test -d ".git"&&git commit -m"vor mitzieh" $(KR);cd - $(DN);\
 	for A in kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h;do [ -f "$$TZL/$$A" -a -f "$$A" ]&&cp -au "$$A" "$$TZL";done;\
