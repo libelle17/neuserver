@@ -416,6 +416,7 @@ if [ "$DESKTOP_SESSION" = cinnamon ]; then
 	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
 	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
 elif [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+	echo editiere ~/.config/kcminputrc
 	echo kommt noch;
 fi;
 
