@@ -202,66 +202,74 @@ esac;
 }
 
 ersetzeprog() {
+	sprog="";
+	eprog=$1;
+	while true; do
 	case $OSNR in
 	1|2|3) # mint, ubuntu, debian
-		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
-		if [ "$1" = hylafax ]; then eprog="hylafax-server"; return; fi;
-		if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; return; fi;
-		if [ "$1" = "hylafax hylafax-client" ]; then eprog="hylafax-server hylafax-client"; return; fi;
-		if [ "$1" = "hylafax+ hylafax+-client" ]; then eprog="hylafax+-server hylafax+-client"; return; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="linux-source-$(uname -r|cut -d. -f1,2)"; return; fi;
-		if [ "$1" = tiff ]; then eprog="libtiff-tools"; return; fi;
-		if [ "$1" = "libxslt-tools" ]; then eprog="xsltproc"; return; fi;
-		if [ "$1" = imagemagick ]; then eprog="imagemagick imagemagick-doc"; return; fi;
-		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-common libreoffice-base"; return; fi;
-		if [ "$1" = "libcapi20-2" ]; then eprog="libcapi20-dev"; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog="tesseract-ocr-eng"; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-ocr-deu"; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; return; fi;
-		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
-		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; return; fi;
+		if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
+		if [ "$1" = hylafax ]; then eprog="hylafax-server"; break; fi;
+		if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; break; fi;
+		if [ "$1" = "hylafax hylafax-client" ]; then eprog="hylafax-server hylafax-client"; break; fi;
+		if [ "$1" = "hylafax+ hylafax+-client" ]; then eprog="hylafax+-server hylafax+-client"; break; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="linux-source-$(uname -r|cut -d. -f1,2)"; break; fi;
+		if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
+		if [ "$1" = "libxslt-tools" ]; then eprog="xsltproc"; break; fi;
+		if [ "$1" = imagemagick ]; then eprog="imagemagick imagemagick-doc"; break; fi;
+		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-common libreoffice-base"; break; fi;
+		if [ "$1" = "libcapi20-2" ]; then eprog="libcapi20-dev"; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog="tesseract-ocr-eng"; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-ocr-deu"; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; break; fi;
+		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
+		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
 		eprog=$(echo "$eprog"|sed 's/-devel/-dev/g');
 		;;
 	5|6) # fedora, fedoraalt
-		if [ "$1" = mariadb ]; then eprog="mariadb-server"; return; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; return; fi;
-		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; return; fi;
-		if [ "$1" = tiff ]; then eprog="libtiff-tools"; return; fi;
-		if [ "$1" = libtiff5 ]; then eprog="libtiff"; return; fi;
-		if [ "$1" = "libcapi20-2" ]; then eprog="isdn4k-utils"; return; fi;
-		if [ "$1" = "libcapi20-3" ]; then eprog=""; return; fi;
-		if [ "$1" = "capiutils" ]; then eprog=""; return; fi;
-		if [ "$1" = imagemagick ]; then eprog="ImageMagick ImageMagick-doc"; return; fi;
-		if [ "$1" = "libxslt-tools" ]; then eprog="libxslt"; return; fi;
-		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-filters libreoffice-langpack-de"; return; fi;
-		if [ "$1" = "tesseract-ocr" ]; then eprog="tesseract"; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog=""; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; return; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; return; fi;
-		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; return; fi;
+		if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; break; fi;
+		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
+		if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
+		if [ "$1" = libtiff5 ]; then eprog="libtiff"; break; fi;
+		if [ "$1" = "libcapi20-2" ]; then eprog="isdn4k-utils"; break; fi;
+		if [ "$1" = "libcapi20-3" ]; then eprog=""; break; fi;
+		if [ "$1" = "capiutils" ]; then eprog=""; break; fi;
+		if [ "$1" = imagemagick ]; then eprog="ImageMagick ImageMagick-doc"; break; fi;
+		if [ "$1" = "libxslt-tools" ]; then eprog="libxslt"; break; fi;
+		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-filters libreoffice-langpack-de"; break; fi;
+		if [ "$1" = "tesseract-ocr" ]; then eprog="tesseract"; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog=""; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; break; fi;
+		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; break; fi;
+		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
 		;;
 	4) # suse
-		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; return; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; return; fi;
-		if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; return; fi;
+		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; break; fi;
+		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; break; fi;
+		if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; break; fi;
 		;;
 	8) # manjaro
-		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; return; fi;
+		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
 		;;
  esac;
- eprog="$1";
+ break;
+ done;
+ [ -z "$eprog" ]&&eprog="$1";
+ [ -z "$sprog" ]&&sprog="$eprog";
 }
 
 doinst() {
 	ersetzeprog "$1";
 	[ -n "$2" ]&&obprogda "$2"&&return 0;
-	echo eprog: $eprog;
+	echo -e eprog: $blau$eprog$reset sprog: $blau$sprog$reset;
+	$psuch "$sprog" >/dev/null 2>&1&&return 0;
 	if [ -n "$eprog" ]; then
-   if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
-		obnmr=0;
-		zypper mr -k --all;
-	 fi;
-	 $instp $1;
+		echo intalliere $eprog;
+		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
+			obnmr=0;
+			zypper mr -k --all;
+		fi;
+		$instp "$eprog";
 	fi;
 }
 
@@ -271,7 +279,7 @@ instmaria() {
 			apt-get -y install apt-transport-https;
 			apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
 		*)
-			echo doinsta mariadb;
+			echo doinst mariadb;
 			doinst mariadb;
 			if [ $OSNR -eq 8 ]; then
 				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
@@ -366,9 +374,12 @@ mariadb() {
 proginst() {
 	setzinstprog;
 	# fehlende Programme installieren
-	P=htop;$psuch "$P" >/dev/null||$instyp "$P";
-	ersetzeprog vsftpd;$psuch "$eprog" >/dev/null||$instyp "$eprog";
-#	mariadb;
+	doinst htop;
+	doinst vsftpd;
+	doinst openssh-server;
+	doinst openssh-client;
+	systemctl enable ssh;
+	#	mariadb;
 }
 
 # Start
