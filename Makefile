@@ -432,7 +432,7 @@ define machvers
 endef
 
 define priv_html
-	-@printf " erstelle/generating:%b$(1)%b...\n" $(blau) $(reset)
+	-@printf " erstelle/generating:%b$(1)%b..." $(blau) $(reset)
 	-@groff -mandoc -Thtml -v $(KR);EXC="$$$$?"; \
 		bp="$(PGROFF)";for p in $$$$bp;do { [ $$$$EXC -eq 0 ]&&which groff $(KR)&&$(SPR) $$$$p $(KR);}||{ sh configure inst _ $$$$p verbose;};done;:;
 	-@rm -f $(1).html
