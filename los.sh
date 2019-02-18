@@ -383,6 +383,7 @@ proginst() {
 	doinst openssh-server;
 	echo -e $blauproginst\(\)$reset: openssh-client
 	doinst openssh-client;
+# putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
 	if ! grep "^$W[[:space:]]*Yes$" $D; then
@@ -397,26 +398,41 @@ proginst() {
 	#	mariadb;
 }
 
+nichtroot() {
+	if test "$(id -u)" -ne 0; then
+		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
+			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
+			gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
+		fi;
+		if [ "$DESKTOP_SESSION" = cinnamon ]; then
+			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
+			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
+		fi;
+	fi;
+	if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+		D=~/.config/kcminputrc;
+		RD="RepeatDelay=";
+		rd=210;
+		RR="RepeatRate=";
+		rr=27;
+		if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
+			echo editiere $D;
+			sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
+			xset r rate $rd $rr;
+		fi;
+	fi;
+}
+
+sambaconf() {
+	dire="/etc/samba";[ -d "$dire" ]||mkdir -p /etc/samba;
+	smbdt="/etc/samba/smb.conf";
+	muster="/usr/share/samba/smb.conf";
+	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
+}
+
+
 # Start
-if test "$(id -u)" -ne "0"; then
-	if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
-		gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
-		gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
-	fi;
-fi;
-if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
-	D=~/.config/kcminputrc;
-	RD="RepeatDelay=";
-	rd=210;
-	RR="RepeatRate=";
-	rr=27;
-	if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
-		echo editiere $D;
-		sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
-		xset r rate $rd $rr;
-	fi;
-fi;
-exit;
+nichtroot;
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
@@ -425,10 +441,7 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 #setzbenutzer;
 #mountlaufwerke;
 #proginst;
-if [ "$DESKTOP_SESSION" = cinnamon ]; then
-	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
-	gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
-fi;
+sambaconf;
 
 
 if false; then
