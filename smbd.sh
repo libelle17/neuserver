@@ -2,7 +2,7 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
-@include "smbvars"
+@include "smbvars.sh"
 BEGIN {
 # for(i in N) fertig[i]=0;
 IGNORECASE=1;
