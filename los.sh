@@ -395,7 +395,8 @@ proginst() {
 	fi;
 	systemctl enable ssh;
 	systemctl restart ssh;
-	#	mariadb;
+	mariadb;
+	doinst git;
 }
 
 nichtroot() {
