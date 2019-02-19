@@ -223,6 +223,7 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; break; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
 		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
+		if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
 		eprog=$(echo "$eprog"|sed 's/-devel/-dev/g');
 		;;
 	5|6) # fedora, fedoraalt
@@ -242,6 +243,7 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; break; fi;
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; break; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
+		if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
 		;;
 	4) # suse
 		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; break; fi;
@@ -350,7 +352,7 @@ mariadb() {
 		done;
 		user="";
 		while [ -z "$user" ];do
-			printf "Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
+			printf "Mariadb Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
@@ -379,10 +381,8 @@ proginst() {
 	doinst htop;
 	echo -e $blauproginst\(\)$reset: vsfptd
 	doinst vsftpd;
-	echo -e $blauproginst\(\)$reset: openssh-server
-	doinst openssh-server;
-	echo -e $blauproginst\(\)$reset: openssh-client
-	doinst openssh-client;
+	echo -e $blauproginst\(\)$reset: openssh
+	doinst openssh;
 # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
@@ -393,8 +393,15 @@ proginst() {
 			sed -i "/^#$W/a$W Yes" $D;
 		fi;
 	fi;
-	systemctl enable ssh;
-	systemctl restart ssh;
+
+	case $OSNR in
+	1|2|3) # mint, ubuntu, debian
+		sshd=ssh;;
+	4|5|6|7) # opensuse
+		sshd=sshd;;
+	esac;
+	systemctl enable $sshd;
+	systemctl restart $sshd;
 	mariadb;
 	doinst git;
 }
@@ -411,7 +418,9 @@ nichtroot() {
 		fi;
 	fi;
 	if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
-		D=~/.config/kcminputrc;
+		DNam=kcminputrc;
+		D=~/.config/$DNam;
+		[ -f $D ]||D=/etc/xdg/$DNam;
 		RD="RepeatDelay=";
 		rd=210;
 		RR="RepeatRate=";
@@ -419,7 +428,11 @@ nichtroot() {
 		if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
 			echo editiere $D;
 			sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
-			xset r rate $rd $rr;
+			#  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
+			if test -n "$DISPLAY"; then 
+				echo xset r rate $rd $rr;
+				xset r rate $rd $rr;
+			fi;
 		fi;
 	fi;
 }
@@ -441,7 +454,7 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
-#proginst;
+proginst;
 sambaconf;
 
 
