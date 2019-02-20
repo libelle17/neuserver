@@ -2,13 +2,14 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
-@include "smbvars.sh"
+@include "smbvars.sh";
+@include "smbab.sh";
 BEGIN {
 # for(i in N) fertig[i]=0;
 IGNORECASE=1;
 FS="=";
 }
-# am Beginn eines neuen Abschnitts
+# am Beginn eines neuen Abschnitts nach [global]
 /^[[]/ {
   if (trim($1)=="[global]") inglobal=1;
 	else if (inglobal==1) {
@@ -33,7 +34,7 @@ FS="=";
 		for(i in N) {
 			if (trn==N[i]) {
 				if (tri==I[i]) {
-					print "# belassen:"
+#					print "# belassen:"
 					print $0;
 				} else {
 				  print "# geändert:";

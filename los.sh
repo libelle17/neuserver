@@ -397,7 +397,7 @@ proginst() {
 	case $OSNR in
 	1|2|3) # mint, ubuntu, debian
 		sshd=ssh;;
-	4|5|6|7) # opensuse
+	4|5|6|7) # opensuse, fedora, mageia
 		sshd=sshd;;
 	esac;
 	systemctl enable $sshd;
@@ -442,6 +442,17 @@ sambaconf() {
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
+	S2=smbab.sh;
+	echo "BEGIN {" >$S2;
+	nr=0;
+	while read -r zeile; do
+		if [ "$zeile" = "/DATA" ];then avar="daten"; else avar=$(echo $zeile|awk '{s=substr($0,2);print s;}');fi;
+		echo " A["$nr"]="$avar";" >>$S2;
+		nr=$(expr $nr + 1);
+	done << EOF
+	$(awk '{if($3~"^ext"||$3~"^ntfs")print$2;}' /etc/fstab);
+EOF
+	echo "};" >>$S2;
 }
 
 

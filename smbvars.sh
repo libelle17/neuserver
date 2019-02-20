@@ -21,5 +21,4 @@ N[18]="soecket options"; 					I[18]="TCP_NODELAY";
 N[19]="hosts allow"; 	 						I[19]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[20]="interfaces"; 	 						I[20]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[21]="time server"; 				  		I[21]="Yes";
-A[0]="daten";											P[0]="/DATA"
 }
