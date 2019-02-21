@@ -9,21 +9,49 @@ BEGIN {
 IGNORECASE=1;
 FS="=";
 }
-# am Beginn eines neuen Abschnitts nach [global]
+# am Beginn eines neuen Abschnitts ...
 /^[[]/ {
-  if (trim($1)=="[global]") inglobal=1;
+  tri=trim($1);
+  if (tri=="[global]") inglobal=1;
 	else if (inglobal==1) {
+#   , und zwar des nächsten Abschnitts nach [global]		
 		kommentiert=0;
 		for(i in N) {
 			if (fertig[i]==0) {
 				if (!kommentiert) {
-					print "# hinzugefügt:"
+					print "# hinzugefügt (los.sh):";
 					kommentiert=1;
 				}
 				print "   " N[i] " = " I[i]  
 			}
 		}
 		inglobal=0;
+	}
+# , eines Abschnitts nach einem fstab-Laufwerk
+	if (infstab==1) {
+		kommentiert=0;
+		for(i in Na) {
+			if (fertig[i]==0) {
+				if (!kommentiert) {
+					print "# hinzugefügt (los.sh):";
+					kommentiert=1;
+				}
+				if (i==0) print "   " Na[i] " = los.sh " Name;
+				else if (i==1) print "   " Na[i] " = " Pfad;
+				else print "   " Na[i] " = " Ia[i];
+			}
+		}
+	}
+	infstab=0;
+  for(i in A) {
+		if (tri==A[i]) {
+			afertig[i]=1;
+			infstab=1;
+			Name=A[i];
+      Pfad=P[i];
+			delete fertig;
+			break;
+		}
 	}
 }
 # innerhalb eines Abchnitts, in Nicht-Kommentarzeile => pruefen
@@ -37,8 +65,26 @@ FS="=";
 #					print "# belassen:"
 					print $0;
 				} else {
-				  print "# geändert:";
-					print $1 " = " I[i]
+				print "# geändert (los.sh):";
+					print $1 " = " I[i];
+				}
+				fertig[i]=1;
+				next;
+			}
+		}
+	} else if (infstab==1) {
+		trn=trim($1);
+		tri=trim($2);
+		for(i in Na) {
+			if (trn==Na[i]) {
+				if (tri==Ia[i]||(i==0&&tri=="los.sh " Name)||(i==1&&tri=Pfad)) {
+#					print "# belassen:"
+					print $0;
+				} else {
+					print "# geändert (los.sh):";
+					if (i==0) print "   " Na[i] " = los.sh " Name;
+					else if (i==1) print "   " Na[i] " = " Pfad;
+					else print "   " Na[i] " = " Ia[i];
 				}
 				fertig[i]=1;
 				next;
@@ -51,5 +97,15 @@ FS="=";
 	print $0;
 }
 END {
-print " - DONE -"
+for (i in A) {
+	if (Afertig[i]==0) {
+		print "# ergänzt (los.sh):";
+		print A[i];
+		for (j in Na)  {
+			if (j==0) print "   " Na[j] " = los.sh " P[i];
+			else if (j==1) print "   " Na[j] " = " P[i];
+			else print "   " Na[j] " = " Ia[j];
+		}
+	}
+}
 }

@@ -447,10 +447,11 @@ sambaconf() {
 	nr=0;
 	while read -r zeile; do
 		if [ "$zeile" = "/DATA" ];then avar="daten"; else avar=$(echo $zeile|awk '{s=substr($0,2);print s;}');fi;
-		echo " A["$nr"]="$avar";" >>$S2;
+			echo -$zeile-$avar-
+		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
 		nr=$(expr $nr + 1);
 	done << EOF
-	$(awk '{if($3~"^ext"||$3~"^ntfs")print$2;}' /etc/fstab);
+	$(awk '{if(($3~"^ext"||$3~"^ntfs")&&$2!="/")print$2;}' /etc/fstab)
 EOF
 	echo "};" >>$S2;
 }
@@ -465,7 +466,7 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
-proginst;
+#proginst;
 sambaconf;
 
 

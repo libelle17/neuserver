@@ -21,4 +21,13 @@ N[18]="soecket options"; 					I[18]="TCP_NODELAY";
 N[19]="hosts allow"; 	 						I[19]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[20]="interfaces"; 	 						I[20]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[21]="time server"; 				  		I[21]="Yes";
+Na[0]="comment";									Ia[0]="";
+Na[1]="path";											Ia[1]="";
+Na[2]="directory mask";						Ia[2]="0660";
+Na[3]="browseable";								Ia[3]="Yes";
+Na[4]="read only";								Ia[4]="no";
+Na[5]="vfs objects";							Ia[5]="recycle";
+Na[6]="recycle:versions";					Ia[6]="Yes";
+Na[7]="recycle:keeptree";					Ia[7]="Yes";
+Na[8]="recycle:repository";				Ia[8]="Papierkorb";
 }
