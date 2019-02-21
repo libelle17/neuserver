@@ -29,7 +29,7 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-- Fax server functionality</b>: induces automatic fax
+&minus; Fax server functionality</b>: induces automatic fax
 transmission of files, naming of received faxes and logging
 of all of them in a database <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
@@ -687,7 +687,7 @@ caused by the program.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-- FaxServer-Funktionalit&auml;t</b>: veranlasst
+&minus; FaxServer-Funktionalit&auml;t</b>: veranlasst
 automatischen Faxversand von Dateien, Benennung empfangener
 Faxe und Protokollierung aller Faxe in einer Datenbank <br>
 (manpage available in english: &rsquo;man

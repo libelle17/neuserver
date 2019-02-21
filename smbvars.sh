@@ -1,6 +1,6 @@
 BEGIN {
 	N[0]="usershare allow guests"; 	I[0]="No";
-	N[1]="usershare max shares"; 		I[1]="100";
+	N[1]="usershare max shares"; 		I[1]="1000";
 	N[2]="passdb backend"; 					I[2]="tdbsam";
 	N[3]="ntlm auth"; 							I[3]="yes";
 	N[4]="wins server"; 						I[4]="";
@@ -12,15 +12,14 @@ BEGIN {
 N[10]="unix charset"; 						I[10]="UTF-8";
 N[11]="dos charset"; 							I[11]="CP1250";
 N[12]="security"; 								I[12]="user";
-N[13]="usershare max shares"; 		I[13]="1000";
-N[14]="add machine script"; 			I[14]="/usr/sbin/useradd -c Machine -d /var/lib/nobody -s /bin/false %m$";
-N[15]="domain logons"; 						I[15]="No";
-N[16]="domain master"; 						I[16]="Auto";
-N[17]="username map"; 						I[17]="/etc/samba/smbusers";
-N[18]="soecket options"; 					I[18]="TCP_NODELAY";
-N[19]="hosts allow"; 	 						I[19]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
-N[20]="interfaces"; 	 						I[20]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
-N[21]="time server"; 				  		I[21]="Yes";
+N[13]="add machine script"; 			I[13]="/usr/sbin/useradd -c Machine -d /var/lib/nobody -s /bin/false %m$";
+N[14]="domain logons"; 						I[14]="No";
+N[15]="domain master"; 						I[15]="Auto";
+N[16]="username map"; 						I[16]="/etc/samba/smbusers";
+N[17]="soecket options"; 					I[17]="TCP_NODELAY";
+N[18]="hosts allow"; 	 						I[18]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
+N[19]="interfaces"; 	 						I[19]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
+N[20]="time server"; 				  		I[20]="Yes";
 Na[0]="comment";									Ia[0]="";
 Na[1]="path";											Ia[1]="";
 Na[2]="directory mask";						Ia[2]="0660";
