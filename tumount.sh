@@ -1,4 +1,5 @@
 #!/usr/bin/awk -f
+#usage: awk -f tumount.sh /etc/fstab
 /^[^#;]/ {
 # wenns das mount-Verzeichnis gibt
 if (!system("test -d "$2)) {
