@@ -46,6 +46,7 @@ Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
 mtpnr=0;
 runde2=0;
+# Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
 while read -r zeile; do
 #	echo "Hier: " $zeile;
 	dev=$(echo $zeile|cut -d' ' -f1|cut -d= -f2|cut -d\" -f2);
@@ -59,6 +60,7 @@ while read -r zeile; do
 					while :;do	
 						abbruch=0;
 						[ -z "$bishDAT" ]&&abbruch=1;
+						# wenn der geplante Buchstabe noch nicht vergeben: Abbruch von while planen
 						eval "case "$Dnamnr" in "$bishDAT"):;;*)false;;esac;"||abbruch=1;
 						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
 						[ $abbruch -eq 1 ]&&break;
@@ -100,6 +102,7 @@ while read -r zeile; do
 			esac;
     esac;
 	else
+		# wenn das Laufwerk schon ein Label hat
 		case "$nam" in 
 			"DATA")[ "$Dnamnr" = "A" ]&&Dnamnr=1;;
 			"DAT*")nr=$(echo $nam|cut -dT -f2);case nr in ''|*[!0-9]*);;*)Dnamnr=$(expr $nr + 1);;esac;;
