@@ -36,8 +36,14 @@ done <benutzer;
 mountlaufwerke() {
 # Laufwerke mounten
 fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
+blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
+# bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
+# z.B. "2|1|3|A"
+bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"/DAT/{printf substr($6,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"/win/{printf substr($4,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
 istinfstab=0;
-namnr=0; # 0=DATA, 1=DAT1, 2=DAT2 usw
+Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
+wnamnr=1;
 mtpnr=0;
 runde2=0;
 while read -r zeile; do
@@ -45,17 +51,58 @@ while read -r zeile; do
 	dev=$(echo $zeile|cut -d' ' -f1|cut -d= -f2|cut -d\" -f2);
 	typ=$(echo $zeile|cut -d' ' -f3|cut -d= -f2|cut -d\" -f2);
 	nam=$(echo $zeile|cut -d' ' -f4|cut -d= -f2|cut -d\" -f2);
+	echo $dev, $typ, $nam
 	if test -z "$nam"; then
-		case "$typ" in ext*|bt*)
-		[ $namnr -eq 0 ]&&nam="DATA"||nam="DAT"$namnr;
-		echo e2label /dev/$dev "$nam";
-		e2label /dev/$dev "$nam";
-		namnr=$(expr $namnr + 1 );;
+		case "$typ" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
+			case "$typ" in 
+				ext*|btrfs|reiserfs)
+					while :;do	
+						abbruch=0;
+						[ -z "$bishDAT" ]&&abbruch=1;
+						eval "case "$Dnamnr" in "$bishDAT"):;;*)false;;esac;"||abbruch=1;
+						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
+						[ $abbruch -eq 1 ]&&break;
+					done;
+					nam="DAT"$Dnamnr;;
+				ntfs*|exfat*|vfat)
+					while :;do	
+						abbruch=0;
+						[ -z "$bishwin" ]&&abbruch=1;
+						eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
+						wnamnr=$(expr $Dnamnr + 1 );
+						[ $abbruch -eq 1 ]&&break;
+					done;
+					nam="win"$wnamnr;;
+			esac;
+			case typ in 
+				ext*)
+					echo e2label /dev/$dev "$nam";
+					e2label /dev/$dev "$nam";;
+				btrfs)
+					echo btrfs filesystem label /dev/$dev "$nam";
+					btrfs filesystem label /dev/$dev "$nam";;
+				reiserfs)
+					echo reiserfstune -l "$nam" /dev/$dev;
+					reiserfstune -l "$nam" /dev/$dev;;
+				ntfs*)
+					echo ntfslabel /dev/$dev "$nam";
+					ntfslabel /dev/$dev "$nam";;
+				exfat*)
+					echo exfatlabel /dev/$dev "$nam";
+					exfatlabel /dev/$dev "$nam";;
+				vfat)
+					echo mache vfat Label;
+					gemountet=0;
+					mountpoint -q /dev/$dev&&{ gemountet=1; umount /dev/$dev;};
+					env MTOOLS_SKIP_CHECK=1 mlabel -i /dev/$dev ::x;
+					dosfslabel /dev/$dev "$nam";
+					test $gemountet -eq 1&&mount /dev/$dev;;
+			esac;
     esac;
 	else
 		case "$nam" in 
-			"DATA")[ "$namnr" -eq 0 ]&&namnr=1;;
-			"DAT*")nr=$(echo $nam|cut -dT -f2);case nr in ''|*[!0-9]*);;*)namnr=$(expr $nr + 1);;esac;;
+			"DATA")[ "$Dnamnr" = "A" ]&&Dnamnr=1;;
+			"DAT*")nr=$(echo $nam|cut -dT -f2);case nr in ''|*[!0-9]*);;*)Dnamnr=$(expr $nr + 1);;esac;;
 		esac;
 	fi;
 	mtp=$(echo $zeile|cut -d' ' -f6|cut -d= -f2|cut -d\" -f2);
@@ -97,7 +144,7 @@ while read -r zeile; do
 	fi;
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
-$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""'|tac) 
+$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|UUID=""'|tac) 
 EOF
 }
 
@@ -465,9 +512,9 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
 #setzhost;
 #setzbenutzer;
-#mountlaufwerke;
+mountlaufwerke;
 #proginst;
-sambaconf;
+#sambaconf;
 
 
 if false; then
