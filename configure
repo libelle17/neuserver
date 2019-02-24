@@ -356,7 +356,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		printf "Muss '$blau$USER$reset' den Aufruf von '${blau}sudo$reset' ermoeglichen. "
 		printf "Bitte geben Sie bei der Frage das Passwort von '${blau}root$reset' ein:\n";
 		printf "Danach loggen Sie sich bitte aus und nochmal ein, wechseln Sie nach '$blau$PWD$reset' und rufen Sie '${blau}sh install.sh$reset' auf!\n";
-		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER"; && su -c \"pkill -u \\\"$USER\\\""
+		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER"; && su -c \"pkill -u \\\"$USER\\\"\""
 		su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";" && su -c "pkill -u \"$USER\""
 	}
 	if test "$ICH" != viall; then
