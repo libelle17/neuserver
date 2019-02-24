@@ -236,9 +236,11 @@ einricht() {
 		[ $OSNR = 1 -o $OSNR = 2 -o $OSNR = 3 ]&&{
 			# wenn cdrom-Zeile vorkommt, vor ftp.-debian-Zeile steht und www.debian.org erreichbar ist, dann alle cdrom-Zeilen hinten anhängen
 			# gleichlautend in kons.cpp: linst_cl::linst_cl(int obverb,int oblog)
-			${SUDC} sh -c "S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S && \ 
-			test 0\$(sed -n '/^[^#]*ftp.*debian/{=;q}' \$S) -gt 0\$(sed -n '/'\$F'/{=;q}' \$S) && \  
-			ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'\$F'/{H;d};\${p;x}' \$S;:"
+			cmd="S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S &&";
+			cmd="$cmd test 0\$(sed -n '/^[^#]*ftp.*debian/{=;q}' \$S) -gt 0\$(sed -n '/'\$F'/{=;q}' \$S) &&";
+			cmd="$cmd ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'\$F'/{H;d};\${p;x}' \$S;:";
+			#	echo "$cmd";
+			$SUDC sh -c "$cmd";
 			# für jessie weitere evtl. notwendige Befehle
 			# in /etc/apt/sources.list einfügen: "deb http://ftp.de.debian.org/debian/ unstable main contrib non-free
 			#                                    "deb-src http://ftp.de.debian.org/debian/ unstable main contrib non-free"
@@ -354,8 +356,8 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		printf "Muss '$blau$USER$reset' den Aufruf von '${blau}sudo$reset' ermoeglichen. "
 		printf "Bitte geben Sie bei der Frage das Passwort von '${blau}root$reset' ein:\n";
 		printf "Danach loggen Sie sich bitte aus und nochmal ein, wechseln Sie nach '$blau$PWD$reset' und rufen Sie '${blau}sh install.sh$reset' auf!\n";
-		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";"
-		su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";" && exit
+		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER"; && su -c \"pkill -u \\\"$USER\\\""
+		su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";" && su -c "pkill -u \"$USER\""
 	}
 	if test "$ICH" != viall; then
 		#// which sudo >/dev/null && id -Gzn $USER|grep -qw "$SUG";}||{ 

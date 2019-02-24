@@ -496,11 +496,11 @@ test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort ein
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
-#setzhost;
-#setzbenutzer;
+setzhost;
+setzbenutzer;
 mountlaufwerke;
-#proginst;
-#sambaconf;
+proginst;
+sambaconf;
 
 
 if false; then
