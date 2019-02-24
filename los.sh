@@ -123,6 +123,8 @@ while read -r zeile; do
 done << EOF
 $(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|UUID=""'|tac) 
 EOF
+  mount -a;
+  awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' /etc/fstab;
 }
 
 testuser() {
