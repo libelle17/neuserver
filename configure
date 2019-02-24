@@ -239,7 +239,7 @@ einricht() {
 			cmd="S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 \$F \$S &&";
 			cmd="$cmd test 0\$(sed -n '/^[^#]*ftp.*debian/{=;q}' \$S) -gt 0\$(sed -n '/'\$F'/{=;q}' \$S) &&";
 			cmd="$cmd ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'\$F'/{H;d};\${p;x}' \$S;:";
-			#	echo "$cmd";
+			# 	echo "$cmd";
 			$SUDC sh -c "$cmd";
 			# für jessie weitere evtl. notwendige Befehle
 			# in /etc/apt/sources.list einfügen: "deb http://ftp.de.debian.org/debian/ unstable main contrib non-free
