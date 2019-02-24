@@ -86,7 +86,7 @@ ifeq ($(GCCOK),0)
   	MINVGCC::=$(shell apt-cache search '^g\+\+-[0-9]+$$' -n|cut -f2 -d'-'|sort -nr|head -n1)
   else ifeq ($(OSNR),4)
 	  MINVGCC::=$(shell which zypper $(KR)&&zypper se /gcc[^-]$*-c\\+\\+$$/|tail -n1|cut -dc -f3|cut -d- -f1||echo 0;)
-#  else ifeq ($(OSNR),5)
+  #  else ifeq ($(OSNR),5)
 	else
 	  MINVGCC::=6
   endif
