@@ -2,6 +2,13 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
+function druckabschnitt(i,Pfad) {
+		printf "   %s = ",Na[i];
+		if (i==0) print Pfad" (los.sh)";
+		else if (i==1) print Pfad;
+		else if (Na[i]=="available") print (system("mountpoint -q '"Pfad"'")?"No":"Yes");
+		else print Ia[i];
+}
 @include "smbvars.sh";
 @include "smbab.sh";
 BEGIN {
@@ -37,9 +44,7 @@ FS="=";
 					print "# hinzugefügt (los.sh):";
 					kommentiert=1;
 				}
-				if (i==0) print "   "Na[i]" = los.sh "Pfad;
-				else if (i==1) print "   "Na[i]" = "Pfad;
-				else print "   "Na[i]" = "Ia[i];
+				druckabschnitt(i,Pfad);
 				next;
 			}
 		}
@@ -84,9 +89,7 @@ FS="=";
 					print $0;
 				} else {
 					print "# geändert (los.sh):";
-					if (i==0) print "   "Na[i]" = los.sh "Pfad;
-					else if (i==1) print "   "Na[i]" = "Pfad;
-					else print "   "Na[i]" = "Ia[i];
+					druckabschnitt(i,Pfad);
 				}
 				fertig[i]=1;
 				next;
@@ -100,14 +103,12 @@ FS="=";
 	print $0;
 }
 END {
-for (i in A) {
-	if (afertig[i]==0) {
+for (j in A) {
+	if (afertig[j]==0) {
 		print "# ergänzt (los.sh):";
-		print A[i];
-		for (j in Na)  {
-			if (j==0) print "   "Na[j]" = los.sh "P[i];
-			else if (j==1) print "   "Na[j]" = "P[i];
-			else print "   "Na[j]" = "Ia[j];
+		print A[j];
+		for (i in Na)  {
+			druckabschnitt(i,P[j]);
 		}
 	}
 }

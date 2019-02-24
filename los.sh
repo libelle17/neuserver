@@ -26,15 +26,15 @@ systemctl start smb 2>/dev/null||systemctl start smbd
 systemctl enable smb 2>/dev/null||systemctl enable smbd
 systemctl start nmb 2>/dev/null||systemctl start nmbd
 systemctl enable nmb 2>/dev/null||systemctl enable nmbd
-while read -r zeile; do
+while read -u 3 -r zeile; do
 	user=${zeile%% \"*};
 	comm=\"${zeile#* \"};
 	testuser $user "$comm";
-done <benutzer;
+done 3< benutzer;
 }
 
 mountlaufwerke() {
-# Laufwerke mounten
+# Laufwerke einhängen
 fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
 blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
@@ -89,11 +89,11 @@ while read -r zeile; do
 					exfatlabel /dev/$dev "$nam";;
 				vfat)
 					echo mache vfat Label;
-					gemountet=0;
-					mountpoint -q /dev/$dev&&{ gemountet=1; umount /dev/$dev;};
+					eingehaengt=0;
+					mountpoint -q /dev/$dev&&{ eingehaengt=1; umount /dev/$dev;};
 					env MTOOLS_SKIP_CHECK=1 mlabel -i /dev/$dev ::x;
 					dosfslabel /dev/$dev "$nam";
-					test $gemountet -eq 1&&mount /dev/$dev;;
+					test $eingehaengt -eq 1&&mount /dev/$dev;;
 			esac;
     esac;
 	fi;
@@ -127,17 +127,23 @@ EOF
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' /etc/fstab;
 }
 
+cleanstdin() {
+	while read -e -t 0.1; do : ; done
+}
+
 testuser() {
 		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
 		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
 		passw="";
 		if test $obu -eq 1 -o $obs -eq 1; then {
+			while test -z "$passw"; do
 				echo -e "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:";
 				read passw;
+			done;
 		} fi;
 		if test $obu -eq 1; then {
-				echo -e "erstelle Linux-Benutzer $blau$1$reset";
-				useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
+			echo -e "erstelle Linux-Benutzer $blau$1$reset";
+			useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
 		if test $obs -eq 1; then {
 				echo -e "erstelle Samba-Benutzer $blau$1$reset"; # loeschen: pdbedit -x -u $1;
@@ -474,19 +480,34 @@ sambaconf() {
 	dire="/etc/samba";[ -d "$dire" ]||mkdir -p /etc/samba;
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
+	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
+	printf "Arbeitsgruppe des Sambaservers: ";[ $0 = dash ]&&read arbgr||read -e -i "$workgr" arbgr;
+	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' smbvars.sh;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
-	S2=smbab.sh;
+	S2=smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
 		if [ "$zeile" = "/DATA" ];then avar="daten"; else avar=$(echo $zeile|awk '{s=substr($0,2);print s;}');fi;
 		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
 		nr=$(expr $nr + 1);
+	# Einhängepunkte der interessanten Dateisysteme verwenden
 	done << EOF
-	$(awk '{if(($3~"^ext"||$3~"^ntfs")&&$2!="/")print$2;}' /etc/fstab)
+	$(awk '{if(($3~"^ext"||$3~"^ntfs"||$3=="btrfs"||$3=="reiserfs"||$3=="vfat"||$3~"^exfat")&&$2!="/")print$2;}' /etc/fstab)
 EOF
 	echo "};" >>$S2;
 	awk -f smbd.sh $smbdt >smb.conf;
+	if ! diff -q smb.conf /etc/samba/smb.conf; then  
+		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
+		mv /etc/samba/smb1.conf /etc/samba/smb2.conf 2>/dev/null;
+		mv /etc/samba/smb0.conf /etc/samba/smb1.conf 2>/dev/null;
+		mv /etc/samba/smb.conf /etc/samba/smb0.conf 2>/dev/null;
+		cp -a smb.conf /etc/samba/smb.conf;
+	  systemctl restart smbd 2>/dev/null;	
+	  systemctl restart smb 2>/dev/null;	
+	  systemctl restart nmbd 2>/dev/null;	
+	  systemctl restart nmb 2>/dev/null;	
+	fi;
 }
 
 
@@ -501,7 +522,7 @@ setzbenutzer;
 mountlaufwerke;
 proginst;
 sambaconf;
-
+echo hier Ende!
 
 if false; then
 	eintr="@reboot mount /$Dvz";
