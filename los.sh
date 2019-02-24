@@ -47,10 +47,9 @@ wnamnr=1;
 # Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
 while read -r zeile; do
 #	echo "Hier: " $zeile;
-	dev=$(echo $zeile|cut -d' ' -f1|cut -d= -f2|cut -d\" -f2);
-	typ=$(echo $zeile|cut -d' ' -f3|cut -d= -f2|cut -d\" -f2);
-	nam=$(echo $zeile|cut -d' ' -f4|cut -d= -f2|cut -d\" -f2);
-	echo $dev, $typ, $nam
+	dev=$(echo $zeile|cut -d\" -f2);
+	typ=$(echo $zeile|cut -d\" -f6);
+	nam=$(echo $zeile|cut -d\" -f8);
 	if test -z "$nam"; then
 		case "$typ" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
 			case "$typ" in 
@@ -98,24 +97,25 @@ while read -r zeile; do
 			esac;
     esac;
 	fi;
-	mtp=$(echo $zeile|cut -d' ' -f6|cut -d= -f2|cut -d\" -f2);
+	mtp=$(echo $zeile|cut -d\" -f12);
 	[ -z "$mtp" ]&&mtp="/"$nam;
-	byt=$(echo $zeile|cut -d' ' -f2|cut -d= -f2|cut -d\" -f2);
-	uid=$(echo $zeile|cut -d' ' -f5|cut -d= -f2|cut -d\" -f2);
+	byt=$(echo $zeile|cut -d\" -f4);
+	uid=$(echo $zeile|cut -d\" -f10);
 	[ -n "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
 	if test -z "$nam"; then
 		ident="UUID="$uid;
 	else 
 		ident="LABEL="$nam;
 	fi;
-	obinfstab $ident;
+	mitfuell=$(echo "$ident"|sed 's/ /\\040/g');
+	obinfstab $mitfuell;
 	if test $istinfstab -eq 0; then
 		# echo $mtp $istinfstab;
 		eintr="\t $mtp\t $typ\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
 		if test "$typ" = "ntfs"; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
-		eintr=$ident$eintr;
+		eintr=$mitfuell$eintr;
 		echo -e $eintr >>/etc/fstab;
 		echo -e \"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.
 	fi;
@@ -147,7 +147,7 @@ obinfstab() {
 	istinfstab=0;
 	while read -r zeile; do
 #		echo dort: $zeile;
-		if test "$(echo $zeile|cut -d' ' -f1)" = "$1"; then istinfstab=1; break; fi;
+		if test "$(echo $zeile|cut -d' ' -f1)" = $1; then istinfstab=1; break; fi;
 	done << EOF
 $fstb
 EOF
