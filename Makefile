@@ -82,10 +82,13 @@ GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 -include vars # wird durch install.sh generiert; DPROG und GDAT dürfen nur nachher verwendet werden
 ifeq ($(GCCOK),0)
 	# wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
-  ifeq ($(shell expr $(OSNR) \<= 3),1)
+  ifeq ($(shell expr $(OSNR) \<\= 3),1)
   	MINVGCC::=$(shell apt-cache search '^g\+\+-[0-9]+$$' -n|cut -f2 -d'-'|sort -nr|head -n1)
   else ifeq ($(OSNR),4)
 	  MINVGCC::=$(shell which zypper $(KR)&&zypper se /gcc[^-]$*-c\\+\\+$$/|tail -n1|cut -dc -f3|cut -d- -f1||echo 0;)
+#  else ifeq ($(OSNR),5)
+	else
+	  MINVGCC::=6
   endif
   ifeq ($(shell expr $(MINVGCC) \> $(MINGCCNR)),1)
 	  MINGCCNR::=$(MINVGCC)
@@ -95,7 +98,7 @@ ifeq ($(shell expr $(MAXGCCNR) \> $(MINGCCNR)),1)
 	MINGCCNR::=$(MAXGCCNR)
 endif
 CCName::=g++-$(MINGCCNR)
-ifeq ($(shell expr $(OSNR) \<= 3),1)
+ifeq ($(shell expr $(OSNR) \<\= 3),1)
 	CCInst::=gcc-$(MINGCCNR) g++-$(MINGCCNR)
 	DName::="Debian/Ubuntu/Mint"
 else ifeq ($(OSNR),4)
@@ -110,7 +113,7 @@ else ifeq ($(OSNR),7)
 else ifeq ($(OSNR),8)
 	DName::="Manjaro"
 endif
-ifeq ($(shell expr $(OSNR) \<= 4),1)
+ifeq ($(shell expr $(OSNR) \<\= 4),1)
 	COMP::=$(COMP) $(CCInst)
 endif
 CFLAGS::=-c -Wall
