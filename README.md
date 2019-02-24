@@ -685,19 +685,22 @@ caused by the program.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
 &minus; FaxServer-Funktionalit&auml;t</b>: veranlasst
 automatischen Faxversand von Dateien, Benennung empfangener
 Faxe und Protokollierung aller Faxe in einer Datenbank <br>
-(manpage available in english: &rsquo;man neuserver&rsquo;
-or &rsquo;man -Len neuserver&rsquo;)</p>
+(manpage available in english: &rsquo;man
+&quot;neuserver&quot;&rsquo; or &rsquo;man -Len
+&quot;neuserver&quot;&rsquo;)</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS_D"></a>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
+
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
 [-&lt;kurzopt&gt;|--&lt;langopt&gt;
 [&lt;erg&auml;nzung&gt;]] ...</b></p>
 
@@ -707,12 +710,12 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;</b>
 bietet quasi die Funktionalit&auml;t eines Faxservers,
 welcher f&uuml;r manche auch hinter einer schnellen
 Datenleitung sinnvoll sein kann. <b><br>
-neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
-in einem bestimmten Verzeichnis automatisch an
+&quot;neuserver&quot;</b> ist ein Befehlszeilenprogramm, mit
+dem Dateien in einem bestimmten Verzeichnis automatisch an
 <b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
 angeschlossen ist) und/oder <b>capisuite</b> (falls eine
 Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
@@ -725,9 +728,9 @@ nach dem Sender anhand dessen Faxnummer benannt und
 abgespeichert werden. <br>
 Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
 mit nur einem Linuxrechner) geschieht durch automatischen
-Eintrag der f&uuml;r neuserver relevanten Verzeichnisse
-in einen Samba-Server. Sie k&ouml;nnte erg&auml;nzt
-werden durch eine Maske f&uuml;r die
+Eintrag der f&uuml;r &quot;neuserver&quot; relevanten
+Verzeichnisse in einen Samba-Server. Sie k&ouml;nnte
+erg&auml;nzt werden durch eine Maske f&uuml;r die
 mariadb-Datenbank.</p>
 
 <h2>INSTALLATION
@@ -745,19 +748,19 @@ Anschlie&szlig;end verbinden Sie den Rechner falls
 n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
-N=neuserver;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com/libelle17/$N/master/install.sh
+N=&quot;neuserver&quot;;P=${N}_inst.sh;cd ~;wget
+https://raw.githubusercontent.com/&quot;libelle17&quot;/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
-neuserver</b> <br>
+&quot;neuserver&quot;</b> <br>
 und beantworten einige Rueckfragen des Programms. <br>
 Der erste Programmaufruf und die erste Faxverarbeitung eines
 gesandten/empfangenen Faxes mit Hylafax/Capsiuite
 k&ouml;nnen jeweils etwas dauern und ein paar
 zus&auml;tzliche Eingaben erfordern. <br>
-neuserver -erneut f&uuml;r jedes von Ihnen. Hierdurch
-wird gleichzeitig die notwendige Programminstallation
-f&uuml;r k&uuml;nftige Faxe
+&quot;neuserver&quot; -erneut f&uuml;r jedes von Ihnen.
+Hierdurch wird gleichzeitig die notwendige
+Programminstallation f&uuml;r k&uuml;nftige Faxe
 vervollst&auml;ndigt.</p>
 
 <h2>GEBRAUCH
@@ -785,10 +788,11 @@ Seite darf f&uuml;r den Fall, dass das Programm die
 letzten (1-)3 Faxe zu einem Adressaten eindeutig einer
 Faxnummer zuordnen kann, die Passage &rsquo; an Fax 099
 987654321 und 088 887654321&rsquo; auch fehlen). <br>
-Wenn <b>neuserver</b> beim n&auml;chsten Mal automatisch
-aufgerufen wird (standardm&auml;&szlig;ig alle 2
-Minuten), wird die o.g. Beispieldatei zun&auml;chst
-kopiert und umbenannt in <br>
+Wenn <b>&quot;neuserver&quot;</b> beim n&auml;chsten Mal
+automatisch aufgerufen wird
+(standardm&auml;&szlig;ig alle 2 Minuten), wird die
+o.g. Beispieldatei zun&auml;chst kopiert und umbenannt
+in <br>
 &quot;<b>Arztbericht zu Franz Krank an Dr. Gesund an Fax 099
 987654321.doc</b>&quot; und <br>
 &quot;<b>Arztbericht zu Franz Krank an Franz Krank an Fax
@@ -810,15 +814,16 @@ deren Namen aus einem Datum oder Uhrzeit bestehen (z.B.
 &rsquo;<b>2200</b>&rsquo;), so werden darin enthaltene Faxe
 erst nach diesem Zeitpunkt verarbeitet und im ersteren Fall
 das Unterverzeichnis nach Leerung geloescht. <br>
-Bei jedem Aufruf &uuml;berpr&uuml;ft neuserver den
-Status von <b>hylafax</b> und/oder <b>Capisuite</b>. Der
-Abschluss eines Faxvorgangs dort hat zur Folge, dass
-neuserver die Quelldateien (also hier die o.g. .doc- und
-.pdf-Dateien) aus dem Warteverzeichnis in ein oder mehrere
-alternative Archivverzeichnisse oder ein Verzeichnis
-f&uuml;r gescheiteterte Faxe ablegt und den
-Datenbankeintrag von &rsquo;<b>spooltab</b>&rsquo; in die
-Archivtabelle &rsquo;<b>outa</b>&rsquo; verschiebt. <br>
+Bei jedem Aufruf &uuml;berpr&uuml;ft
+&quot;neuserver&quot; den Status von <b>hylafax</b> und/oder
+<b>Capisuite</b>. Der Abschluss eines Faxvorgangs dort hat
+zur Folge, dass &quot;neuserver&quot; die Quelldateien (also
+hier die o.g. .doc- und .pdf-Dateien) aus dem
+Warteverzeichnis in ein oder mehrere alternative
+Archivverzeichnisse oder ein Verzeichnis f&uuml;r
+gescheiteterte Faxe ablegt und den Datenbankeintrag von
+&rsquo;<b>spooltab</b>&rsquo; in die Archivtabelle
+&rsquo;<b>outa</b>&rsquo; verschiebt. <br>
 Weiterhin werden &uuml;ber <b>hylafax</b> oder
 <b>Capisuite</b> angekommene Faxe in ein Empfangsverzeichnis
 kopiert und ggf. nach dem Sender benannt. Hierzu werden,
@@ -829,10 +834,12 @@ werden, bis einer einen Datensatz zu der Faxnummer findet.
 Der Benutzer k&ouml;nnte also je nach Betriebssystem,
 Zugriffsm&ouml;glichkeit und Pr&auml;ferenz in den
 genannten Verzeichnissen, in den Datenbanktabellen oder
-durch Aufruf von z.B. &rsquo;<b>neuserver&rsquo;,
-&rsquo;neuserver -lista</b>&rsquo;, &rsquo;<b>neuserver
--listf</b>&rsquo; oder &rsquo;<b>neuserver -listi</b>&rsquo;
-den Stand des Faxens &uuml;berpr&uuml;fen.</p>
+durch Aufruf von z.B.
+&rsquo;<b>&quot;neuserver&quot;&rsquo;,
+&rsquo;&quot;neuserver&quot; -lista</b>&rsquo;,
+&rsquo;<b>&quot;neuserver&quot; -listf</b>&rsquo; oder
+&rsquo;<b>&quot;neuserver&quot; -listi</b>&rsquo; den Stand
+des Faxens &uuml;berpr&uuml;fen.</p>
 
 <h2>OPTIONEN
 <a name="OPTIONEN_D"></a>
@@ -840,17 +847,18 @@ den Stand des Faxens &uuml;berpr&uuml;fen.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>neuserver
--?</b>&rsquo; oder &rsquo;<b>neuserver -h</b>&rsquo; zeigt
-die wichtigen Befehlszeilenoptionen und &rsquo;<b>neuserver
--lh</b>&rsquo; alle. Einige Optionen (z.B. die SQL-Befehle
-zur Suche eines Adressaten aus der Faxnummer)
-k&ouml;nnen nicht &uuml;ber die Befehlszeile,
-sondern nur &uuml;ber die Konfigurationsdatei eingegeben
-werden, die wiederum &uuml;ber &rsquo;<b>neuserver
--vi</b>&rsquo; direkt editiert oder auch &uuml;ber
-&rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
-werden kann.</p>
+<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>&quot;neuserver&quot;
+-?</b>&rsquo; oder &rsquo;<b>&quot;neuserver&quot;
+-h</b>&rsquo; zeigt die wichtigen Befehlszeilenoptionen und
+&rsquo;<b>&quot;neuserver&quot; -lh</b>&rsquo; alle. Einige
+Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten
+aus der Faxnummer) k&ouml;nnen nicht &uuml;ber die
+Befehlszeile, sondern nur &uuml;ber die
+Konfigurationsdatei eingegeben werden, die wiederum
+&uuml;ber &rsquo;<b>&quot;neuserver&quot; -vi</b>&rsquo;
+direkt editiert oder auch &uuml;ber
+&rsquo;<b>&quot;neuserver&quot; -rf</b>&rsquo; interaktiv
+gepflegt werden kann.</p>
 
 <h2>FUNKTIONSWEISE
 <a name="FUNKTIONSWEISE_D"></a>
@@ -858,7 +866,8 @@ werden kann.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Beim Aufruf von
-&rsquo;<b>neuserver</b>&rsquo; geschieht folgendes:</p>
+&rsquo;<b>&quot;neuserver&quot;</b>&rsquo; geschieht
+folgendes:</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>1)</b> Die
 aktuelle Hardware wird &uuml;berpr&uuml;ft: <b><br>
@@ -873,17 +882,18 @@ eingelesen, falls es sie gibt</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>3)</b>
 Weitere Vorgaben aus dem Programmcode werden zugewiesen, die
-durch die neuserver-Konfigurationsdatei (siehe 4),
-Kommandozeilenargumente oder Antworten auf
+durch die &quot;neuserver&quot;-Konfigurationsdatei (siehe
+4), Kommandozeilenargumente oder Antworten auf
 R&uuml;ckfragen (siehe 5) &uuml;berdeckt werden
 k&ouml;nnen.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>4)</b>
 Vorgaben werden geladen aus der Konfigurationsdatei, falls
 existent (standardm&auml;&szlig;ig
-<b>neuserver.conf</b> im selben Verzeichnis wie
-<b>neuserver</b>, standardm&auml;&szlig;ig
-<b>/usr/local/sbin/neuserver</b>))</p>
+<b>&quot;neuserver&quot;.conf</b> im selben Verzeichnis wie
+<b>&quot;neuserver&quot;</b>,
+standardm&auml;&szlig;ig
+<b>/usr/local/sbin/&quot;neuserver&quot;</b>))</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>5)</b>
 R&uuml;ckfragen werden gestellt, falls in der
@@ -911,9 +921,9 @@ Benutzers root) ein, um auf Wunsch in (einstellbaren)
 Abst&auml;nden aufgerufen zu werden. Um dies zu
 verhindern, kann entweder &rsquo;<b>cronminut</b>&rsquo; auf
 <b>0</b> eingestellt werden oder die bereits erstellten
-neuserver-Eintr&auml;ge mit <b>crontab -e</b> mit einem
-vorangestellten &rsquo;<b>#</b>&rsquo; auskommentiert
-werden.</p>
+&quot;neuserver&quot;-Eintr&auml;ge mit <b>crontab
+-e</b> mit einem vorangestellten &rsquo;<b>#</b>&rsquo;
+auskommentiert werden.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>9)</b> Das
 Programm &uuml;berpr&uuml;ft, ob alle
@@ -998,11 +1008,11 @@ Der Status der genannten Faxe wird angezeigt.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>17)</b>
 Weitere in der Warteschleife von hylafax/capisuite
-befindliche, nicht &uuml;ber neuserver erstellte Faxe
-werden ggf. angezeigt. In Intervallen werden sie in die
-neuserver-Datenbank integriert (ohne die fehlende
-Information &uuml;ber den urspr&uuml;nglichen
-Dateinamen)</p>
+befindliche, nicht &uuml;ber &quot;neuserver&quot;
+erstellte Faxe werden ggf. angezeigt. In Intervallen werden
+sie in die &quot;neuserver&quot;-Datenbank integriert (ohne
+die fehlende Information &uuml;ber den
+urspr&uuml;nglichen Dateinamen)</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>18)</b>
 &Uuml;ber <b>hylafax</b>/<b>capisuite</b> empfangene
@@ -1011,9 +1021,9 @@ voreingestellter SQL-Befehle nach dem Namen des Absenders
 benannt und in ein Empfangsverzeichnis gestellt. <br>
 Solche SQL-Befehle sollen (mindestens) zwei Ergebnisfelder
 (mit benutzerdefinierter Bedeutung) liefern, deren Inhalt
-dann, durch ein Komma getrennt, von neuserver zur Benennung
-eines empfangenen Faxes verwendet werden. Vor der Anwendung
-des SQL-Befehls wird die Zeichenfolge
+dann, durch ein Komma getrennt, von &quot;neuserver&quot;
+zur Benennung eines empfangenen Faxes verwendet werden. Vor
+der Anwendung des SQL-Befehls wird die Zeichenfolge
 &rsquo;&&faxnr&&&rsquo; zur aktuellen
 Faxnummer erweitert. Beispiel fuer einen solchen SQL-Befehl:
 <i><br>
@@ -1030,13 +1040,13 @@ Optional werden die empfangenen Dateien mit Hilfe von
 <b>ocrmypdf</b> einer Texterkennung unterzogen.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>19)</b> Die
-Konfigurationsdatei <b>neuserver.conf</b> wird ggf.
-geschrieben.</p>
+Konfigurationsdatei <b>&quot;neuserver&quot;.conf</b> wird
+ggf. geschrieben.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>20)</b> Wenn
 die Option <b>-autoakt</b> bzw. <b>--autoaktual</b> aktiv
 ist, wird zuletzt bei jedem zweiten Aufruf jedes Tages die
-Versionsummer von <b>neuserver</b> mit der der
+Versionsummer von <b>&quot;neuserver&quot;</b> mit der der
 Installationsquelle verglichen und im Fall eines
 R&uuml;ckstands eine Aktualisierung
 durchgef&uuml;hrt</p>
@@ -1078,10 +1088,11 @@ Paketmanager rpm oder dpkg sowie apt, dnf, yum oder zypper
 muss installiert sein, wie in den genannten
 Linuxdistributionen standardm&auml;&szlig;ig der
 Fall. Das Programm &rsquo;<b>wget</b>&rsquo; wird
-vorausgesetzt. Die Deinstallation der durch neuserver
-hinzugef&uuml;gten Programme mit <b>make uninstall</b>
-ist gegenw&auml;rtig nur f&uuml;r englische und
-deutsche Versionen der Paketmanager eingerichtet.</p>
+vorausgesetzt. Die Deinstallation der durch
+&quot;neuserver&quot; hinzugef&uuml;gten Programme mit
+<b>make uninstall</b> ist gegenw&auml;rtig nur
+f&uuml;r englische und deutsche Versionen der
+Paketmanager eingerichtet.</p>
 
 <h2>AUTOMATISCH INSTALLIERTE PROGRAMMPAKETE
 <a name="AUTOMATISCH INSTALLIERTE PROGRAMMPAKETE_D"></a>
@@ -1100,7 +1111,7 @@ libtiff-dev(el) (im Fall von Vers. 4.0.7 mit leichter
 Modifikation, s. Makefile)</p>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver:</b>
+<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;:</b>
 <br>
 acl, boost, boost-devel, boost-iostreams-devel,
 boost-local-devel, cron, ghostscript, imagemagick,
@@ -1141,9 +1152,9 @@ vim</p>
 Installationen k&ouml;nnen abh&auml;ngige Programme
 einschlie&szlig;en. <br>
 Falls Sie eines dieser Programme nicht wollen bzw. nicht
-aktualisieren wollen, dann d&uuml;rfen Sie neuserver
-oder die entsprechenden Programmteile nicht auf diesem
-Computer verwenden.</p>
+aktualisieren wollen, dann d&uuml;rfen Sie
+&quot;neuserver&quot; oder die entsprechenden Programmteile
+nicht auf diesem Computer verwenden.</p>
 
 <h2>AUSWIRKUNGEN DES PROGRAMMABLAUFS
 <a name="AUSWIRKUNGEN DES PROGRAMMABLAUFS_D"></a>
@@ -1217,7 +1228,7 @@ faxe &uuml;ber hylafax empfangen zu k&ouml;nnen.</p>
 <p style="margin-left:11%; margin-top: 1em"><b>7)</b>
 Erstellen einer Protokolldatei,
 standardm&auml;&szlig;ig
-<b>/var/log/neuserver.log</b>.</p>
+<b>/var/log/&quot;neuserver&quot;.log</b>.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>8)</b> ggf.
 Erstellen und Zugreifbarmachen der bestimmbaren
@@ -1226,8 +1237,9 @@ abgearbeitete und empfangene Faxe.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>9)</b> ggf.
 Erstellen und Ver&auml;ndern der Konfigurationsdatei
-neuserver.conf in dem Verzeichnis, in dem auch es selbst
-steht (Vorgabe: /usr/local/sbin/neuserver).</p>
+&quot;neuserver&quot;.conf in dem Verzeichnis, in dem auch
+es selbst steht (Vorgabe:
+/usr/local/sbin/&quot;neuserver&quot;).</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>10)</b> ggf.
 Einf&uuml;gen einer Zeile zum automatischen periodischen
@@ -1254,9 +1266,10 @@ bestimmbarem Namen in mariadb zur Datenpflege in diesen
 Tabellen</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>13)</b>
-durch entsprechende Befehlszeilenoptionen von neuserver
-k&ouml;nnen innerhalb von hylafax und capisuite Faxe
-gel&ouml;scht werden, insbesondere: <b><br>
+durch entsprechende Befehlszeilenoptionen von
+&quot;neuserver&quot; k&ouml;nnen innerhalb von hylafax
+und capisuite Faxe gel&ouml;scht werden, insbesondere:
+<b><br>
 a)</b> in hylafax: durch Aufruf von &rsquo;faxrm&rsquo;
 <b><br>
 b)</b> in capisuite: durch L&ouml;schen der Dateien wie
@@ -1277,18 +1290,20 @@ werden.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Wechseln Sie in
 einem Terminal in das Installationsverzeichnis (beim selben
-eingeloggten Benutzer: <b>cd ~/neuserver</b>, ansonsten wird
-es &uuml;ber <b>neuserver -info</b> angezeigt). <br>
+eingeloggten Benutzer: <b>cd ~/&quot;neuserver&quot;</b>,
+ansonsten wird es &uuml;ber <b>&quot;neuserver&quot;
+-info</b> angezeigt). <br>
 Rufen Sie dort <b>make uninstall</b> auf. <br>
-Dadurch wird das installierte <b>neuserver</b>
+Dadurch wird das installierte <b>&quot;neuserver&quot;</b>
 gel&ouml;scht und das Script <b>uninstallinv</b> in
 umgekehrter Reihenfolge abgearbeitet, das bei der
-Installation und beim Aufruf von neuserver erstellt wurde.
-<br>
+Installation und beim Aufruf von &quot;neuserver&quot;
+erstellt wurde. <br>
 Dadurch werden zus&auml;tzlich installierte
 Programmpakete, zus&auml;tzlich erteilte Berechtigungen,
-f&uuml;r neuserver eingerichtete Sambafreigaben und
-Firewallausnahmen wieder gel&ouml;scht. <br>
+f&uuml;r &quot;neuserver&quot; eingerichtete
+Sambafreigaben und Firewallausnahmen wieder
+gel&ouml;scht. <br>
 Auf die Deinstallation der Konfigurationsdateien, der
 angesammelten Daten und systemrelevanter Programme wie
 libgcc und selinux wird dabei verzichtet. <br>
@@ -1303,8 +1318,8 @@ k&ouml;nnen ignoriert werden.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>0</b>:
 Normaler R&uuml;ckgabewert <b><br>
-7</b>: Der Infobildschirm (<b>neuserver -info</b>) wurde
-angezeigt <b><br>
+7</b>: Der Infobildschirm (<b>&quot;neuserver&quot;
+-info</b>) wurde angezeigt <b><br>
 8</b>: Die Hilfe wurde angezeigt <b><br>
 9</b>: Zur Inbetriebnahme des gerade eingerichteten
 Capi-Moduls muss der Rechner neu gestartet werden <b><br>
@@ -1316,15 +1331,16 @@ beendet <b><br>
 17</b>: Gabelung zu weiterem thread misslungen <b><br>
 98</b>: Programmaufruf abgebrochen, da es bereits einmal
 l&auml;uft <b><br>
-99</b>: Suchbefehl mit <b>neuserver -fd 2</b> bei Dateilink
-misslungen <b><br>
+99</b>: Suchbefehl mit <b>&quot;neuserver&quot; -fd 2</b>
+bei Dateilink misslungen <b><br>
 113</b>: Ein SQL-Befehl f&uuml;r die Mariadb-Datenbank
 scheiterte an sonstigem Fehler <b><br>
 115</b>: Eine Datenbankeintragung scheiterte an voller
 Festplatte <br>
-Nach Aufruf von <b>neuserver -vi</b> oder <b>neuserver
--vs</b> wird ggf. der R&uuml;ckgabewert von
-<b>vi</b>/<b>vim</b> weitergeleitet</p>
+Nach Aufruf von <b>&quot;neuserver&quot; -vi</b> oder
+<b>&quot;neuserver&quot; -vs</b> wird ggf. der
+R&uuml;ckgabewert von <b>vi</b>/<b>vim</b>
+weitergeleitet</p>
 
 <h2>FEHLER
 <a name="FEHLER_D"></a>
@@ -1332,7 +1348,7 @@ Nach Aufruf von <b>neuserver -vi</b> oder <b>neuserver
 
 
 <p style="margin-left:11%; margin-top: 1em">Fehler bitte
-mit u.a. dem Wort &rsquo;neuserver&rsquo; in der
+mit u.a. dem Wort &rsquo;&quot;neuserver&quot;&rsquo; in der
 Email-Ueberschrift melden. <br>
 Bitte auch melden, wenn sich &Auml;nderungsbedarf durch
 andere Hard- bzw. Software ergeben.</p>
@@ -1347,8 +1363,8 @@ von &rsquo;<b>sh viall</b>&rsquo; mit den &uuml;blichen
 &rsquo;<b>vim</b>&rsquo;-Befehlen, gefolgt von
 &rsquo;<b>make</b>&rsquo; und &rsquo;<b>make
 install</b>&rsquo; vom Installationsverzeichnis
-(&rsquo;<b>~/neuserver</b>) aus k&ouml;nnen Sie das
-Programm &auml;ndern.</p>
+(&rsquo;<b>~/&quot;neuserver&quot;</b>) aus k&ouml;nnen
+Sie das Programm &auml;ndern.</p>
 
 <h2>HAFTUNG
 <a name="HAFTUNG_D"></a>

@@ -39,13 +39,11 @@ fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
 blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
-bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"/DAT/{printf substr($6,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
-bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"/win/{printf substr($4,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
 istinfstab=0;
 Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
-mtpnr=0;
-runde2=0;
 # Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
 while read -r zeile; do
 #	echo "Hier: " $zeile;
@@ -59,9 +57,8 @@ while read -r zeile; do
 				ext*|btrfs|reiserfs)
 					while :;do	
 						abbruch=0;
-						[ -z "$bishDAT" ]&&abbruch=1;
 						# wenn der geplante Buchstabe noch nicht vergeben: Abbruch von while planen
-						eval "case "$Dnamnr" in "$bishDAT"):;;*)false;;esac;"||abbruch=1;
+						[ -z "$bishDAT" ]&&abbruch=1|| eval "case "$Dnamnr" in "$bishDAT"):;;*)false;;esac;"||abbruch=1;
 						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
 						[ $abbruch -eq 1 ]&&break;
 					done;
@@ -69,9 +66,8 @@ while read -r zeile; do
 				ntfs*|exfat*|vfat)
 					while :;do	
 						abbruch=0;
-						[ -z "$bishwin" ]&&abbruch=1;
-						eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
-						wnamnr=$(expr $Dnamnr + 1 );
+						[ -z "$bishwin" ]&&abbruch=1|| eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
+						wnamnr=$(expr $wnamnr + 1 );
 						[ $abbruch -eq 1 ]&&break;
 					done;
 					nam="win"$wnamnr;;
@@ -101,47 +97,25 @@ while read -r zeile; do
 					test $gemountet -eq 1&&mount /dev/$dev;;
 			esac;
     esac;
-	else
-		# wenn das Laufwerk schon ein Label hat
-		case "$nam" in 
-			"DATA")[ "$Dnamnr" = "A" ]&&Dnamnr=1;;
-			"DAT*")nr=$(echo $nam|cut -dT -f2);case nr in ''|*[!0-9]*);;*)Dnamnr=$(expr $nr + 1);;esac;;
-		esac;
 	fi;
 	mtp=$(echo $zeile|cut -d' ' -f6|cut -d= -f2|cut -d\" -f2);
-	if test $runde2 -eq 1; then
-		if test -z "$mtp"; then 
-			mtp="/DAT1"; 
-			mtpnr=2;
-		fi;
-		runde2=0;
-	fi;
-	if test -z "$byt"; then
-		if test -z "$mtp"; then 
-			mtp="/DATA"; 
-			mtpnr=1;
-	  fi;
-		runde2=1;
-	fi;
-	if test -z "$mtp"; then 
-		mtp="/DAT$mtpnr"; 
-		mtpnr=$(expr $mtpnr + 1);
-	fi;
+	[ -z "$mtp" ]&&mtp="/"$nam;
 	byt=$(echo $zeile|cut -d' ' -f2|cut -d= -f2|cut -d\" -f2);
 	uid=$(echo $zeile|cut -d' ' -f5|cut -d= -f2|cut -d\" -f2);
 	[ -n "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
-	obinfstab $mtp;
+	if test -z "$nam"; then
+		ident="UUID="$uid;
+	else 
+		ident="LABEL="$nam;
+	fi;
+	obinfstab $ident;
 	if test $istinfstab -eq 0; then
 		# echo $mtp $istinfstab;
 		eintr="\t $mtp\t $typ\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
 		if test "$typ" = "ntfs"; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
-		if test -z "$nam"; then
-			eintr="UUID="$uid$eintr;
-		else 
-			eintr="LABEL="$nam$eintr;
-		fi;
+		eintr=$ident$eintr;
 		echo -e $eintr >>/etc/fstab;
 		echo -e \"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.
 	fi;
@@ -173,7 +147,7 @@ obinfstab() {
 	istinfstab=0;
 	while read -r zeile; do
 #		echo dort: $zeile;
-		if test "$(echo $zeile|cut -d' ' -f2)" = "$1"; then istinfstab=1; break; fi;
+		if test "$(echo $zeile|cut -d' ' -f1)" = "$1"; then istinfstab=1; break; fi;
 	done << EOF
 $fstb
 EOF
