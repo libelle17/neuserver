@@ -107,15 +107,15 @@ while read -r zeile; do
 	else 
 		ident="LABEL="$nam;
 	fi;
-	mitfuell=$(echo "$ident"|sed 's/ /\\040/g');
-	obinfstab $mitfuell;
+	idohnelz=$(echo "$ident"|sed 's/ /\\040/g');
+	obinfstab "$idohnelz" "$uid" "$dev";
 	if test $istinfstab -eq 0; then
 		# echo $mtp $istinfstab;
 		eintr="\t $mtp\t $typ\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
 		if test "$typ" = "ntfs"; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
-		eintr=$mitfuell$eintr;
+		eintr=$idohnelz$eintr;
 		echo -e $eintr >>/etc/fstab;
 		echo -e \"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.
 	fi;
@@ -147,7 +147,14 @@ obinfstab() {
 	istinfstab=0;
 	while read -r zeile; do
 #		echo dort: $zeile;
-		if test "$(echo $zeile|cut -d' ' -f1)" = $1; then istinfstab=1; break; fi;
+    vgl=$(echo $zeile|cut -d' ' -f1);
+		if test "$vgl" = $1; then istinfstab=1; break; fi;
+		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
+		if test "$vgl" = "/dev/$3";then istinfstab=1; break; fi;
+		for dbid in $(find /dev/disk/by-id -lname "*$3"); do
+			if test "$vgl" = "$dbid";then istinfstab=1; break; fi;
+		done;
+		if test $istinfstab -eq 1; then break; fi;
 	done << EOF
 $fstb
 EOF
