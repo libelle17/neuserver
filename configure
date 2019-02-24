@@ -44,7 +44,7 @@ getIPR() {
 # openSUSE
 	{ [ $OSNR = 4 ]&&
 		{ 
-			Z=zypper;
+			Z=$(which zypper);
 			g=--gpg-auto-import-keys;
 			IdPR="$Z -n $g in -f ";
 			IP_R="${SUDC}$Z $g in ";
@@ -71,9 +71,9 @@ getIPR() {
 	} || 
 	{ [ $OSNR = 1 -o $OSNR = 2 -o $OSNR = 3 ]&&
 		{ 
-			IdPR="apt-get --assume-yes --allow-unauthenticated install --reinstall ";
+			IdPR="$(which apt-get) --assume-yes --allow-unauthenticated install --reinstall ";
 			IP_R="${SUDC}$IdPR";
-			UPR="${SUDC}apt-get -f install; ${SUDC}apt-get --auto-remove purge ";
+			UPR="${SUDC}$(which apt-get) -f install; ${SUDC}$(which apt-get) --auto-remove purge ";
 			dev=dev;
 			COMP="build-essential linux-headers-\$(shell uname -r)";
 			LT=${_LT}-${dev};
@@ -83,21 +83,21 @@ getIPR() {
 	} || 
 	{ [ $OSNR = 5 ]&&
 		{ 
-			IdPR="dnf -y install ";
-			UPR="${SUDC}dnf remove ";
+			IdPR="$(which dnf) -y install ";
+			UPR="${SUDC}$(which dnf) remove ";
 		} 
 	} || 
 	{ [ $OSNR = 6 ]&&
 		{ 
-			IdPR="yum -y install ";
-			UPR="${SUDC}yum remove ";
+			IdPR="$(which yum) -y install ";
+			UPR="${SUDC}$(which yum) remove ";
 		} 
 	} || 
 	{ [ $OSNR = 7 ]&&
 		{ 
-			IdPR="urpmi --auto --force ";
+			IdPR="$(which urpmi) --auto --force ";
 			IP_R="${SUDC}$IdPR";
-			UPR="${SUDC}urpme ";
+			UPR="${SUDC}$(which urpme) ";
 			dev=devel;
 			LT=${_LT}-${dev};
 			libmdb=lib64mariadb;
@@ -106,15 +106,15 @@ getIPR() {
 	} || 
 	{ [ $OSNR = 8 ]&&
 		{ 
-			IdPR="pacman -S ";
+			IdPR="$(which pacman) -S ";
 			IP_R="${SUDC}$IdPR";
 			dev=devel;
 			LT=${_LT}-${dev};
 			COMP="make automake base-devel";
 			UPR="${SUDC}pacman -R ";
-			SPR="pacman -Qi ";
+			SPR="$(which pacman) -Qi ";
 			libmdb=libmysqlclient;
-			UDPR="${SUDC}pacman -Rd ";
+			UDPR="${SUDC}$(which pacman) -Rd ";
 		};
 	}
 	[ $OSNR = 5 -o $OSNR = 6 ]&& 
@@ -130,22 +130,22 @@ getIPR() {
 	}
 	{ [ $OSNR -gt 3 -a $OSNR -lt 8 ]&&
 		{ 
-			SPR="rpm -q ";
+			SPR="$(which rpm) -q "; # in Makefile reicht hier der Pfad nicht immer
 			LACL=libacl-${dev};
 			LCURL=libcurl-${dev};
-			UDPR="${SUDC}rpm -e --nodeps ";
+			UDPR="${SUDC}$(which rpm) -e --nodeps ";
 		};
 	} || 
 	{ [ $OSNR -le 3 ]&&
 		{ 
-			SPR="dpkg -s ";
+			SPR="$(which dpkg) -s ";
 			LBOOST=libboost-${dev};
 			LBIO=libboost-iostreams-${dev};
 			LBLO=libboost-locale-${dev};
 			#   dpk -s libboost-dev, dpk -s libboost-iostream-dev, dpk -s libboost-locale-dev,   		
 			LACL=libacl1-${dev};
 			LCURL=libcurl4-openssl-${dev};
-			UDPR="${SUDC}apt-get -f install; ${SUDC}dpkg -r --force-depends ";
+			UDPR="${SUDC}$(which apt-get) -f install; ${SUDC}$(which dpkg) -r --force-depends ";
 		};
 	}
 	for A in $(ls|grep "\.cpp$\|\.h$");do [ -f "$A" ]&& grep -q "^#include[ ]*<mysql.h>" "$A" &&break;done ||libmdb=;
