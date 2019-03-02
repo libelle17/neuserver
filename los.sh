@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 blau="\033[1;34m";
 reset="\033[0m";
 prog="";
@@ -10,7 +10,7 @@ echo Setze Host;
 case $(hostname) in
 *-*) {
 		hostnamectl;
-		echo -e $blau"gewünschter Servername, dann Enter:"$reset;
+		printf "${blau}gewünschter Servername, dann Enter:$reset";
 		read SERVER;
 		hostnamectl set-hostname "$SERVER";
 		export HOST="$SERVER";
@@ -26,7 +26,7 @@ systemctl start smb 2>/dev/null||systemctl start smbd
 systemctl enable smb 2>/dev/null||systemctl enable smbd
 systemctl start nmb 2>/dev/null||systemctl start nmbd
 systemctl enable nmb 2>/dev/null||systemctl enable nmbd
-while read -u 3 -r zeile; do
+while read -r zeile <&3; do
 	user=${zeile%% \"*};
 	comm=\"${zeile#* \"};
 	testuser $user "$comm";
@@ -35,7 +35,8 @@ done 3< benutzer;
 
 mountlaufwerke() {
 # Laufwerke einhängen
-fstb=$(sed -n 's/ \+/ /gp' /etc/fstab|grep -v '^#'); # "^/$Dvz\>" ginge auch
+# in allen nicht auskommentierten Zeilen Leerzeichen durch einen Tab ersetzen
+fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' /etc/fstab); # "^/$Dvz\>" ginge auch
 blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
@@ -97,7 +98,7 @@ while read -r zeile; do
 			esac;
     esac;
 	fi;
-	mtp=$(echo $zeile|cut -d\" -f12);
+	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	[ -z "$mtp" ]&&mtp="/"$nam;
 	byt=$(echo $zeile|cut -d\" -f4);
 	uid=$(echo $zeile|cut -d\" -f10);
@@ -107,17 +108,17 @@ while read -r zeile; do
 	else 
 		ident="LABEL="$nam;
 	fi;
-	idohnelz=$(echo "$ident"|sed 's/ /\\040/g');
+	idohnelz=$(printf "$ident"|sed 's/[[:space:]]/\\\\040/g');
 	obinfstab "$idohnelz" "$uid" "$dev";
+	printf "Mountpoint: $blau$mtp$reset istinfstab: $blau$istinfstab$reset\n";
 	if test $istinfstab -eq 0; then
-		# echo $mtp $istinfstab;
 		eintr="\t $mtp\t $typ\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
 		if test "$typ" = "ntfs"; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
 		eintr=$idohnelz$eintr;
-		echo -e $eintr >>/etc/fstab;
-		echo -e \"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.
+		printf "$eintr\n" >>/etc/fstab;
+		printf "\"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.\n";
 	fi;
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
@@ -128,7 +129,7 @@ EOF
 }
 
 cleanstdin() {
-	while read -e -t 0.1; do : ; done
+	while read -e -t 0.1 2>/dev/null||read -t 0.1; do : ; done
 }
 
 testuser() {
@@ -137,26 +138,27 @@ testuser() {
 		passw="";
 		if test $obu -eq 1 -o $obs -eq 1; then {
 			while test -z "$passw"; do
-				echo -e "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:";
+				printf "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:\n";
 				read passw;
 			done;
 		} fi;
 		if test $obu -eq 1; then {
-			echo -e "erstelle Linux-Benutzer $blau$1$reset";
+			printf "erstelle Linux-Benutzer $blau$1$reset\n";
 			useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
 		if test $obs -eq 1; then {
-				echo -e "erstelle Samba-Benutzer $blau$1$reset"; # loeschen: pdbedit -x -u $1;
-				echo -ne "$passw\n$passw\n"|smbpasswd -a -s $1 # pruefen: smbclient -L //localhost/ -U $1
+				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
+				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
 		} fi;
 }
 
 obinfstab() {
 	istinfstab=0;
 	while read -r zeile; do
-#		echo dort: $zeile;
-    vgl=$(echo $zeile|cut -d' ' -f1);
-		if test "$vgl" = $1; then istinfstab=1; break; fi;
+		# echo "dort: $zeile;"
+		vgl=$(printf $zeile|cut -f1|sed 's/ //g')
+		# z.B.  LABEL=Seagate\040Expansion\040Drive
+		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
 		if test "$vgl" = "/dev/$3";then istinfstab=1; break; fi;
 		for dbid in $(find /dev/disk/by-id -lname "*$3"); do
@@ -180,6 +182,7 @@ obprogda() {
 }
 
 setzinstprog() {
+	printf "${blau}setinstprog()$reset:\n"
 case $OSNR in
 	1|2|3)
 		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
@@ -300,12 +303,13 @@ ersetzeprog() {
 }
 
 doinst() {
+	printf "${blau}doinst()$reset: $1\n"
 	ersetzeprog "$1";
 	[ -n "$2" ]&&obprogda "$2"&&return 0;
-	echo -e eprog: $blau$eprog$reset sprog: $blau$sprog$reset;
+	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	$psuch "$sprog" >/dev/null 2>&1&&return 0;
 	if [ -n "$eprog" ]; then
-		echo intalliere $eprog;
+		printf "installiere $blau$eprog$reset\n";
 		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
 			obnmr=0;
 			zypper mr -k --all;
@@ -320,7 +324,6 @@ instmaria() {
 			apt-get -y install apt-transport-https;
 			apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
 		*)
-			echo doinst mariadb;
 			doinst mariadb;
 			if [ $OSNR -eq 8 ]; then
 				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
@@ -375,7 +378,7 @@ mariadb() {
 		while mysql -e'\q' 2>/dev/null; do
 			mroot="";
 			while [ -z $mroot ]; do
-				printf "Admin für mysql: ";[ $0 = dash ]&&read mroot||read -e -i "root" mroot;
+				printf "Admin für mysql: ";read -e -i "root" mroot 2>/dev/null||read mroot;
 			done;
 			mrpwd="";
 			while [ -z $mrpwd ]; do
@@ -391,7 +394,8 @@ mariadb() {
 		done;
 		user="";
 		while [ -z "$user" ];do
-			printf "Mariadb Standardbenutzer: ";[ $0 = dash ]&&read user||read -e -i "praxis" user;
+			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
+			printf "Mariadb Standardbenutzer: ";read -e -i "praxis" user 2>/dev/null||read user;
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
@@ -413,14 +417,10 @@ mariadb() {
 }
 
 proginst() {
-	echo -e $blauproginst\(\)$reset: setinstprog
 	setzinstprog;
 	# fehlende Programme installieren
-	echo -e $blauproginst\(\)$reset: htop
 	doinst htop;
-	echo -e $blauproginst\(\)$reset: vsfptd
 	doinst vsftpd;
-	echo -e $blauproginst\(\)$reset: openssh
 	doinst openssh;
 # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
@@ -481,21 +481,24 @@ sambaconf() {
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
-	printf "Arbeitsgruppe des Sambaservers: ";[ $0 = dash ]&&read arbgr||read -e -i "$workgr" arbgr;
+	printf "Arbeitsgruppe des Sambaservers: ";read -e -i "$workgr" arbgr 2>/dev/null||read arbgr;
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' smbvars.sh;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
 	S2=smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
-		if [ "$zeile" = "/DATA" ];then avar="daten"; else avar=$(echo $zeile|awk '{s=substr($0,2);print s;}');fi;
-		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
+		avar=$(printf $zeile|cut -f1);
+		pfad=$(echo $zeile|sed 's/^\([^[:space:]]*\)[[:space:]]*\(.*\)/\2/');
+		if [ "$pfad" = "DATA" ];then avar="daten";fi;
+#		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
+		printf " A[$nr]=\"[$avar]\";\tP[$nr]=\"$pfad\";\n" >>$S2;
 		nr=$(expr $nr + 1);
-	# Einhängepunkte der interessanten Dateisysteme verwenden
+	# Einhängepunkte der interessanten Dateisysteme verwenden, von diesen die Pfadenden, jedes nur einmal
 	done << EOF
-	$(awk '{if(($3~"^ext"||$3~"^ntfs"||$3=="btrfs"||$3=="reiserfs"||$3=="vfat"||$3~"^exfat")&&$2!="/")print$2;}' /etc/fstab)
+	$(awk '{if(($3~"^ext"||$3~"^ntfs"||$3=="btrfs"||$3=="reiserfs"||$3=="vfat"||$3~"^exfat")&&$2!="/"){n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}}' /etc/fstab)
 EOF
-	echo "};" >>$S2;
+	printf "};\n" >>$S2;
 	awk -f smbd.sh $smbdt >smb.conf;
 	if ! diff -q smb.conf /etc/samba/smb.conf; then  
 		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
@@ -508,6 +511,19 @@ EOF
 	  systemctl restart nmbd 2>/dev/null;	
 	  systemctl restart nmb 2>/dev/null;	
 	fi;
+	ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
+	echo $ufwstatus;
+	ret=$?;
+	if [ $ret -eq 0 ]; then
+		if ! ufw status|grep '^Samba[[:space:]]*ALLOW' >/dev/null; then
+			ufw allow Samba;
+			if $(echo $ufwstatus|grep -q " active "); then
+				systemctl restart ufw;
+			fi;
+		else
+			printf "Samba in ufw schon erlaubt\n";
+		fi;
+	fi;
 }
 
 
@@ -517,10 +533,10 @@ test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort ein
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
-setzhost;
-setzbenutzer;
-mountlaufwerke;
-proginst;
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
+#proginst;
 sambaconf;
 echo hier Ende!
 
@@ -529,8 +545,8 @@ if false; then
 	tmp=vorcrontab;
 	if ! crontab -l|sed '^[^#]' >/dev/null 2>&1; then {
 		echo "$eintr" >$tmp; crontab <$tmp;
-		echo -e \"$blau$eintr$reset\" in crontab eingetragen.
+		printf "\"$blau$eintr$reset\" in crontab eingetragen.\n";
 	} else {
-	crontab -l|grep -q "^$eintr" ||{ crontab -l|sed "/^[^#]/i$eintr" >$tmp;crontab <$tmp;echo -e \"$blau$eintr$reset\" in crontab ergänzt.;};
+	crontab -l|grep -q "^$eintr" ||{ crontab -l|sed "/^[^#]/i$eintr" >$tmp;crontab <$tmp;printf "\"$blau$eintr$reset\" in crontab ergänzt.\n";};
 } fi;
 fi;

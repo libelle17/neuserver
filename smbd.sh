@@ -4,7 +4,7 @@ function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
 function druckabschnitt(i,Pfad) {
 		printf "   %s = ",Na[i];
-		if (i==0) print Pfad" (los.sh)";
+		if (i==0) printf "%s (los.sh %s)\n", Pfad,datum;
 		else if (i==1) print Pfad;
 		else if (Na[i]=="available") print (system("mountpoint -q '"Pfad"'")?"No":"Yes");
 		else print Ia[i];
@@ -15,6 +15,7 @@ BEGIN {
 # for(i in N) fertig[i]=0;
 IGNORECASE=1;
 FS="=";
+"date +%Y-%m-%d\\ %T"|getline datum;
 }
 # am Beginn eines neuen Abschnitts ...
 /^[[]/ {
@@ -23,11 +24,12 @@ FS="=";
 	else if (inglobal==1) {
 #   , und zwar des nächsten Abschnitts nach [global]: restliche [global]-Einstellungen nachtragen
 		inglobal=0;
+#		for(i in N) { printf "#i: %i fertig, N[i]: %s, I[i]: %s\n",i,N[i],I[i]; }
 		kommentiert=0;
 		for(i in N) {
 			if (fertig[i]==0) {
 				if (!kommentiert) {
-					print "# hinzugefügt (los.sh):";
+					printf "# hinzugefügt (los.sh %s):\n", datum;
 					kommentiert=1;
 				}
 				print "   "N[i]" = "I[i]  
@@ -41,7 +43,7 @@ FS="=";
 		for(i in Na) {
 			if (fertig[i]==0) {
 				if (!kommentiert) {
-					print "# hinzugefügt (los.sh):";
+					print "# hinzugefügt (los.sh %s):\n", datum;
 					kommentiert=1;
 				}
 				druckabschnitt(i,Pfad);
@@ -54,11 +56,13 @@ FS="=";
 			afertig[i]=1;
 			infstab=1;
 			Name=A[i];
+#			printf "# °°°°°°°°°°°°°°° %s °°°°°°°°°°°°°°\n",Name;
       Pfad=P[i];
 			delete fertig;
 			break;
 		}
 	}
+#	for (i in A) { printf "# i: %i, A[i]: %s\n",i,A[i]; }
 }
 # innerhalb eines Abchnitts, in Nicht-Kommentarzeile => pruefen
 /^[^[#;]/ && NF>1 {
@@ -68,12 +72,13 @@ FS="=";
 		for(i in N) {
 			if (trn==N[i]) {
 				if (tri==I[i]) {
-#					print "# belassen:"
+#					printf "# belassen (los.sh %s):\n", datum;
 					print $0;
 				} else {
-				print "# geändert (los.sh):";
+					printf "# geändert (los.sh %s):\n", datum;
 					print $1" = "I[i];
 				}
+#				printf "#i: %i fertig, N[i]: %s\n",i,N[i];
 				fertig[i]=1;
 				next;
 			}
@@ -88,7 +93,7 @@ FS="=";
 #					print "# belassen:"
 					print $0;
 				} else {
-					print "# geändert (los.sh):";
+					printf "# geändert (los.sh %s):\n", datum;
 					druckabschnitt(i,Pfad);
 				}
 				fertig[i]=1;
@@ -105,7 +110,7 @@ FS="=";
 END {
 for (j in A) {
 	if (afertig[j]==0) {
-		print "# ergänzt (los.sh):";
+		printf "# Abschnitt ergänzt (los.sh %s):\n", datum;
 		print A[j];
 		for (i in Na)  {
 			druckabschnitt(i,P[j]);
