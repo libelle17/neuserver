@@ -1,5 +1,6 @@
 #!/bin/sh
 blau="\033[1;34m";
+rot="\033[1;31m";
 reset="\033[0m";
 prog="";
 obnmr=1;
@@ -98,6 +99,7 @@ while read -r zeile; do
     esac;
 	fi;
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
+	echo "mtp: \"$mtp\"";
 	[ -z "$mtp" ]&&mtp="/"$nam;
 	byt=$(echo $zeile|cut -d\" -f4);
 	uid=$(echo $zeile|cut -d\" -f10);
@@ -147,12 +149,14 @@ pruefuser() {
 }
 
 obinfstab() {
+	printf "obinfstab($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
 	istinfstab=0;
 	while read -r zeile; do
 		# echo "dort: $zeile;"
-		vgl=$(printf "$zeile"|cut -f1|sed 's/ //g')
+		vgl=$(printf "$zeile"|cut -f1|sed 's/ /\\\\040/g')
 		# z.B.  LABEL=Seagate\040Expansion\040Drive
 		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
+#		printf "vgl: $rot$vgl$reset\n";
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
 		if test "$vgl" = "/dev/$3";then istinfstab=1; break; fi;
 		for dbid in $(find /dev/disk/by-id -lname "*$3"); do
@@ -162,6 +166,7 @@ obinfstab() {
 	done << EOF
 $fstb
 EOF
+#[ $istinfstab -eq 0 ]&&printf "(echo (echo 1..: $rot$(echo $(echo $1)|sed 's/ //g')$reset\n";
 }
 
 obprogda() {
@@ -554,11 +559,11 @@ test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort ein
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
-setzhost;
-setzbenutzer;
+#setzhost;
+#setzbenutzer;
 mountlaufwerke;
-proginst;
-sambaconf;
+#proginst;
+#sambaconf;
 echo hier Ende!
 
 if false; then
