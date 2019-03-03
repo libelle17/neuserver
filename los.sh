@@ -1,12 +1,13 @@
 #!/bin/sh
-blau="\033[1;34m";
-rot="\033[1;31m";
-reset="\033[0m";
+blau="\e[1;34m";
+dblau="\e[0;34;1;47m";
+rot="\e[1;31m";
+reset="\e[0m";
 prog="";
 obnmr=1;
 
 setzhost() {
-echo Setze Host;
+printf "${dblau}setzhost$reset()\n";
 # wenn Hostname z.B. linux-8zyu o.ä., dann korrigieren;
 case $(hostname) in
 *-*) {
@@ -20,6 +21,7 @@ esac;
 }
 
 setzbenutzer() {
+printf "${dblau}setzbenutzer$reset()\n";
 grep -q "^praxis:" /etc/group||groupadd praxis
 $SPR samba 2>/dev/null||$IPR samba
 systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
@@ -34,6 +36,7 @@ done 3< benutzer;
 }
 
 mountlaufwerke() {
+printf "${dblau}Hänge Laufwerke ein$reset()\n";
 # Laufwerke einhängen
 # in allen nicht auskommentierten Zeilen Leerzeichen durch einen Tab ersetzen
 fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' /etc/fstab); # "^/$Dvz\>" ginge auch
@@ -99,7 +102,7 @@ while read -r zeile; do
     esac;
 	fi;
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
-	echo "mtp: \"$mtp\"";
+	# echo "mtp: \"$mtp\"";
 	[ -z "$mtp" ]&&mtp="/"$nam;
 	byt=$(echo $zeile|cut -d\" -f4);
 	uid=$(echo $zeile|cut -d\" -f10);
@@ -130,6 +133,7 @@ EOF
 }
 
 pruefuser() {
+	printf "${dblau}pruefuser$reset($1)\n";
 		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
 		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
 		passw="";
@@ -149,7 +153,7 @@ pruefuser() {
 }
 
 obinfstab() {
-	printf "obinfstab($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
+	printf "${dblau}obinfstab$reset($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
 	istinfstab=0;
 	while read -r zeile; do
 		# echo "dort: $zeile;"
@@ -170,6 +174,7 @@ EOF
 }
 
 obprogda() {
+	printf "${dblau}obprogda$reset(${blau}$1$reset)\n";
  prog="";
  for verz in /usr/local/bin /usr/bin /usr/local/sbin /usr/sbin /sbin /bin /usr/libexec /run; do
 	 prog="$verz/$1";
@@ -181,7 +186,7 @@ obprogda() {
 }
 
 setzinstprog() {
-	printf "${blau}setinstprog()$reset:\n"
+	printf "${dblau}setzinstprog$reset()\n"
 case $OSNR in
 	1|2|3)
 		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
@@ -243,6 +248,7 @@ esac;
 }
 
 ersetzeprog() {
+	printf "${blau}ersetzeprog($reset$1): -> "
 	sprog="";
 	eprog=$1;
 	while true; do
@@ -299,13 +305,14 @@ ersetzeprog() {
  done;
  [ -z "$eprog" ]&&eprog="$1";
  [ -z "$sprog" ]&&sprog="$eprog";
+ printf " $sprog\n";
 }
 
 doinst() {
 	printf "${blau}doinst()$reset: $1\n"
 	ersetzeprog "$1";
 	[ -n "$2" ]&&obprogda "$2"&&return 0;
-	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
+#	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	for prog in "$1"; do
 		$psuch "$prog" >/dev/null 2>&1&&return 0;
 		printf "installiere $blau$prog$reset\n";
@@ -318,6 +325,7 @@ doinst() {
 }
 
 instmaria() {
+	printf "${blau}instmaria()$reset\n"
 	case $OSNR in
 		1|2|3)
 			apt-get -y install apt-transport-https;
@@ -331,6 +339,7 @@ instmaria() {
 }
 
 mariadb() {
+	printf "${blau}mariadb()$reset\n"
 	# Mariadb
 	case $OSNR in
 		1|2|3)
@@ -416,6 +425,7 @@ mariadb() {
 }
 
 proginst() {
+	printf "${dblau}proginst$reset()\n"
 	setzinstprog;
 	# fehlende Programme installieren
 	doinst htop;
@@ -445,6 +455,7 @@ proginst() {
 }
 
 nichtroot() {
+	printf "${dblau}nichtroot$reset()\n"
 	if test "$(id -u)" -ne 0; then
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
 			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
@@ -476,6 +487,7 @@ nichtroot() {
 }
 
 sambaconf() {
+	printf "${dblau}sambaconf$reset()\n"
 	dire="/etc/samba";[ -d "$dire" ]||mkdir -p /etc/samba;
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
@@ -550,19 +562,29 @@ EOF
 	fi;
 }
 
+fritzbox() {
+	printf "${dblau}fritzbox$reset()\n";
+	if ping fritz.box -c1 >/dev/null 2>&1; then
+   printf "Fritzbox gefunden!\n";
+	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
+	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
+	fi;
+}
 
 # Start
 # hier geht's los
+printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 nichtroot;
 case f in [^f]) schale=0;;*) schale=1;esac;# 0=dash,1=bash
-test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
+test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
 #setzhost;
 #setzbenutzer;
-mountlaufwerke;
+#mountlaufwerke;
 #proginst;
+fritzbox;
 #sambaconf;
 echo hier Ende!
 
