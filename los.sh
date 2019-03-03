@@ -10,8 +10,7 @@ echo Setze Host;
 case $(hostname) in
 *-*) {
 		hostnamectl;
-		printf "${blau}gewünschter Servername, dann Enter:$reset";
-		read SERVER;
+		printf "${blau}gewünschter Servername, dann Enter:$reset"; read SERVER;
 		hostnamectl set-hostname "$SERVER";
 		export HOST="$SERVER";
 		hostnamectl; 
@@ -22,14 +21,14 @@ esac;
 setzbenutzer() {
 grep -q "^praxis:" /etc/group||groupadd praxis
 $SPR samba 2>/dev/null||$IPR samba
-systemctl start smb 2>/dev/null||systemctl start smbd
-systemctl enable smb 2>/dev/null||systemctl enable smbd
-systemctl start nmb 2>/dev/null||systemctl start nmbd
-systemctl enable nmb 2>/dev/null||systemctl enable nmbd
+systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
+systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
+systemctl start nmb 2>/dev/null||systemctl start nmbd 2>/dev/null;
+systemctl enable nmb 2>/dev/null||systemctl enable nmbd 2>/dev/null;
 while read -r zeile <&3; do
 	user=${zeile%% \"*};
 	comm=\"${zeile#* \"};
-	testuser $user "$comm";
+	pruefuser $user "$comm";
 done 3< benutzer;
 }
 
@@ -128,18 +127,13 @@ EOF
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' /etc/fstab;
 }
 
-cleanstdin() {
-	while read -e -t 0.1 2>/dev/null||read -t 0.1; do : ; done
-}
-
-testuser() {
+pruefuser() {
 		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
 		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
 		passw="";
 		if test $obu -eq 1 -o $obs -eq 1; then {
 			while test -z "$passw"; do
-				printf "Bitte gewünschtes Passwort für Benutzer $blau$1$reset eingeben:\n";
-				read passw;
+				printf "Bitte gewünschtes Passwort für Linux-Benutzer $blau$1$reset eingeben: "; read passw;
 			done;
 		} fi;
 		if test $obu -eq 1; then {
@@ -156,7 +150,7 @@ obinfstab() {
 	istinfstab=0;
 	while read -r zeile; do
 		# echo "dort: $zeile;"
-		vgl=$(printf $zeile|cut -f1|sed 's/ //g')
+		vgl=$(printf "$zeile"|cut -f1|sed 's/ //g')
 		# z.B.  LABEL=Seagate\040Expansion\040Drive
 		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
@@ -285,7 +279,7 @@ ersetzeprog() {
 		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; break; fi;
 		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; break; fi;
 		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
-		if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
+		if [ "$1" = "openssh" ]; then eprog="openssh openssh-server openssh-clients"; break; fi;
 		;;
 	4) # suse
 		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; break; fi;
@@ -307,15 +301,15 @@ doinst() {
 	ersetzeprog "$1";
 	[ -n "$2" ]&&obprogda "$2"&&return 0;
 	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
-	$psuch "$sprog" >/dev/null 2>&1&&return 0;
-	if [ -n "$eprog" ]; then
-		printf "installiere $blau$eprog$reset\n";
+	for prog in "$1"; do
+		$psuch "$prog" >/dev/null 2>&1&&return 0;
+		printf "installiere $blau$prog$reset\n";
 		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
 			obnmr=0;
 			zypper mr -k --all;
 		fi;
-		$instp "$eprog";
-	fi;
+		$instp "$prog";
+	done;
 }
 
 instmaria() {
@@ -378,7 +372,7 @@ mariadb() {
 		while mysql -e'\q' 2>/dev/null; do
 			mroot="";
 			while [ -z $mroot ]; do
-				printf "Admin für mysql: ";read -e -i "root" mroot 2>/dev/null||read mroot;
+				printf "Admin für mysql: ";[ $schale -eq 1 ]&&read -rei root mroot||read mroot;
 			done;
 			mrpwd="";
 			while [ -z $mrpwd ]; do
@@ -395,7 +389,7 @@ mariadb() {
 		user="";
 		while [ -z "$user" ];do
 			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-			printf "Mariadb Standardbenutzer: ";read -e -i "praxis" user 2>/dev/null||read user;
+			printf "Mariadb Standardbenutzer: ";[ $schale -eq 1 ]&&read -rei praxis user||read user;
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
@@ -481,7 +475,7 @@ sambaconf() {
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
-	printf "Arbeitsgruppe des Sambaservers: ";read -e -i "$workgr" arbgr 2>/dev/null||read arbgr;
+	printf "Arbeitsgruppe des Sambaservers: ";[ $schale -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' smbvars.sh;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
 	S2=smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
@@ -490,7 +484,7 @@ sambaconf() {
 	while read -r zeile; do
 		avar=$(printf $zeile|cut -f1);
 		pfad=$(echo $zeile|sed 's/^\([^[:space:]]*\)[[:space:]]*\(.*\)/\2/');
-		if [ "$pfad" = "DATA" ];then avar="daten";fi;
+		if [ "$pfad" = "/DATA" ];then avar="daten";fi;
 #		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
 		printf " A[$nr]=\"[$avar]\";\tP[$nr]=\"$pfad\";\n" >>$S2;
 		nr=$(expr $nr + 1);
@@ -500,7 +494,45 @@ sambaconf() {
 EOF
 	printf "};\n" >>$S2;
 	awk -f smbd.sh $smbdt >smb.conf;
-	if ! diff -q smb.conf /etc/samba/smb.conf; then  
+	zustarten=0;
+	if which ufw >/dev/null 2>&1; then
+		ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
+		echo $ufwstatus;
+		ret=$?;
+		if [ $ret -eq 0 ]; then
+			if ! ufw status|grep '^Samba[[:space:]]*ALLOW' >/dev/null; then
+				ufw allow Samba;
+				if $(echo $ufwstatus|grep -q " active "); then
+					systemctl restart ufw;
+					zustarten=1;
+				fi;
+			else
+				printf "Samba in ufw schon erlaubt\n";
+			fi;
+		fi;
+	fi;
+	if which setsebool >/dev/null 2>&1; then
+		for ro in samba_export_all_ro samba_export_all_rw; do
+			rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
+			[ -z "$rostatus" -o "$rostatus" = "off" ]&&{ setsebool -P $ro=1; zustarten=1;}
+		done;
+	fi;
+	# fehlt evtl: noch: semanage fcontext –at samba_share_t "/finance(/.*)?"
+	# und: restorecon /finance
+	if which firewall-cmd >/dev/null 2>&1; then
+		fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
+		echo $fwstatus;
+		ret=$?;
+		if [ $ret -eq 0 ]; then
+			if ! firewall-cmd --list-services|grep "samba[^-]"; then
+				firewall-cmd --permanent --add-service=samba;
+				firewall-cmd --reload;
+				zustarten=1;
+			fi;
+		fi;
+	fi;
+
+	if ! diff -q smb.conf /etc/samba/smb.conf ||[ $zustarten = 1 ]; then  
 		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
 		mv /etc/samba/smb1.conf /etc/samba/smb2.conf 2>/dev/null;
 		mv /etc/samba/smb0.conf /etc/samba/smb1.conf 2>/dev/null;
@@ -511,32 +543,21 @@ EOF
 	  systemctl restart nmbd 2>/dev/null;	
 	  systemctl restart nmb 2>/dev/null;	
 	fi;
-	ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
-	echo $ufwstatus;
-	ret=$?;
-	if [ $ret -eq 0 ]; then
-		if ! ufw status|grep '^Samba[[:space:]]*ALLOW' >/dev/null; then
-			ufw allow Samba;
-			if $(echo $ufwstatus|grep -q " active "); then
-				systemctl restart ufw;
-			fi;
-		else
-			printf "Samba in ufw schon erlaubt\n";
-		fi;
-	fi;
 }
 
 
 # Start
+# hier geht's los
 nichtroot;
+case f in [^f]) schale=0;;*) schale=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ echo "Wechsle zu root, bitte ggf. dessen Passwort eingeben:";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
-#proginst;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
+proginst;
 sambaconf;
 echo hier Ende!
 

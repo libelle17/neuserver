@@ -93,7 +93,7 @@ FS="=";
 #					print "# belassen:"
 					print $0;
 				} else {
-					printf "# geändert (los.sh %s):\n", datum;
+				  if (Na[i]!="available") printf "# geändert (los.sh %s):\n", datum;
 					druckabschnitt(i,Pfad);
 				}
 				fertig[i]=1;

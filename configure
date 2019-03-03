@@ -19,12 +19,10 @@ kf() {
 # IdPR wird benötigt für: sudo
 # IPR wird verwendet in: einricht, dieses für: make, ctags, gtags, vim (in viall)
 # IP_R wird verwendet für: Makefile
-getIPR() {
-	CTAGS=ctags;
+getOS() {
 #	OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
-	os=$(cat /etc/os-release|grep '^NAME=')
-	[ -z "$os" ]&& os=$(cat /etc/lsb-release|grep '^DISTRIB_ID=')
-	os=$(echo $os|cut -d= -f2|sed 's/^[[:space:]]*//'|sed 's/"\(.*\)"/\1/')
+	os=$(sed -n '/^NAME=/{s/[^=]*=\(.*\)/\1/;s/^[[:space:]]*//;s/"\(.*\)"/\1/;p}' /etc/os-release);
+	[ -z $os ]&& os=$(sed -n '/^DISTRIB_ID=/{s/[^=]*=\(.*\)/\1/;s/^[[:space:]]*//;s/"\(.*\)"/\1/;p}' /etc/lsb-release);
 	# echo $os
 	case "$os" in 
 		*Mint*) OSNR=1;;
@@ -41,6 +39,10 @@ getIPR() {
 			leise which rpm&&{ { leise which zypper&&OSNR=4; }||{ leise which dnf&&OSNR=5; }||{ leise which yum&&OSNR=6; }||
 		{ leise which urpmi.update&&OSNR=7; } }|| { leise which pacman&&OSNR=8; } }
 #	echo OSNR: $OSNR;
+}
+
+getIPR() {
+	CTAGS=ctags;
 # openSUSE
 	{ [ $OSNR = 4 ]&&
 		{ 
@@ -279,6 +281,9 @@ else :; fi
 }
 
 # hier geht's los ...
+OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
+getOS;
+if [ "$1" = "nuros" ];then echo $OSNR;exit;fi;
 printf "Fuehre aus/executing: $0 $1 $2 $3 $4 ...\r"
 #// string substitution geht nur in bash, nicht in dash, was auf deb-Systemen standardmaessig durch sh aufgerufen wird
 #// => in diesem Fall Aufruf in bash-Aufruf umwandeln; dies wird zwar hier nicht gebraucht, jedoch sourct dieses Programm
@@ -293,7 +298,6 @@ PGROFF="groff-base groff"
 dev=devel
 libmdb="libmariadb libmariadbclient libmysql libmysqlclient"
 LCURS=ncurses;
-OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 Z=""
 [ "$(id -u)" -ne "0" ]&&SUDC="sudo "
 if test "$ICH" != install.sh -a "$ICH" != ${DPROG}_inst.sh -a "$ICH" != transfer; then

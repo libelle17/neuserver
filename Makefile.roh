@@ -44,9 +44,9 @@
 ICH::=$(firstword $(MAKEFILE_LIST))
 SRCS::=$(wildcard *.cpp)
 OBJ::=$(SRCS:.cpp=.o)
-DN::=>/dev/null # DevNull
-KR::= $(DN) 2>&1 # keine Rueckmeldung
-KF::= 2$(DN) # keine Fehlermeldung
+DN::=>/dev/null# DevNull
+KR::= $(DN) 2>&1# keine Rueckmeldung
+KF::= 2$(DN)# keine Fehlermeldung
 # wenn aus vi aufgerufen, kein unnoetigen Ausgaben, BA=bedingte Ausgabe, BFA=bedingte Fehlerausgabe
 BA::=>&1
 BFA::=2>>fehler.txt
@@ -72,7 +72,15 @@ MINGCCNR::=6
 #// endif
 # maximal verfügbare g++-Version, falls die Verknüpfungen in /usr/bin stehen und evtl. /usr/bin/g++ nicht auf die höchste verknüpft ist
 # deren Hauptversionsnummer
-MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i $(KR)&&{ erg=$$i;break;};done;echo $$erg) # {50..1} geht bei dash nicht
+MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i $(KR)&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
+CCName::=Nix
+ifeq ($(MAXGCCNR),0)
+	MAXGCCNR::=$(shell erg=$$(g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
+	ifeq ($(MAXGCCNR)a,a)
+		MAXGCCNR::=0
+	endif
+	CCName::=g++
+endif
 #1=verfügbare Version höher als die minimal notwendige, 0=nicht
 # 1=minimal notwendige Version verfügbar, 0=nicht
 GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
@@ -97,7 +105,9 @@ endif
 ifeq ($(shell expr $(MAXGCCNR) \> $(MINGCCNR)),1)
 	MINGCCNR::=$(MAXGCCNR)
 endif
-CCName::=g++-$(MINGCCNR)
+ifeq ($(CCName),Nix)
+	CCName::=g++-$(MINGCCNR)
+endif
 ifeq ($(shell expr $(OSNR) \<\= 3),1)
 	CCInst::=gcc-$(MINGCCNR) g++-$(MINGCCNR)
 	DName::="Debian/Ubuntu/Mint"
@@ -147,7 +157,7 @@ INSTEXEC::=$(EXPFAD)/$(EXEC)
 GDAT::=$(DTN:inst.log=)
 GDAT::=$(GDAT:uninstallinv=)
 GDAT::=$(GDAT:Makefile=Makefile.roh)
-CC::=$(CCName) # CC=$(SUDC)$(CCName)
+CC::=$(CCName)# CC=$(SUDC)$(CCName)
 pgd::=postgresql-$(dev)
 SUDC::=
 ifneq ($(shell echo $$EUID),0)
@@ -226,7 +236,7 @@ optg: neu
 altc: CFLAGS+= -std=gnu++11
 altc: CCInst::=gcc-c++
 altc: CCName::=g++
-altc: CC::=$(CCName) # CC=$(SUDC)$(CCName)
+altc: CC::=$(CCName)# CC=$(SUDC)$(CCName)
 altc: opts
 new: neu
 neu: anzeig clean weiter
@@ -234,7 +244,6 @@ endif
 
 .PHONY: weiter
 weiter: compiler $(EXEC) $(GZS) 
-
 
 define setz_gitv
 	 @D=$(1)/.git/config; GITV=$$([ -f $$D ]&&sed -n '/ *url =.*com/{s/.*com\/\([^/]*\).*/\1/p}' $$D);\
@@ -282,6 +291,8 @@ pull:
 ifeq (,$(SRCS))
 else
 anzeig:
+	@if test "$$(./configure nuros)" != "$(OSNR)"; then ./configure;:;echo "$$@";make "$$@";\
+		echo "Die folgende Fehlermeldung gilt nicht/ The following error message is invalid:";false;fi;
 # 'echo -e' geht nicht z.B. in ubuntu
 	@[ "$(DPROG)" ]||{ printf "Datei/File %b'vars'%b fehlerhaft/faulty, bitte vorher/please call %b'./install.sh'%b aufrufen/before!\n" \
 	       $(blau) $(reset) $(blau) $(reset);let 0;}
@@ -335,15 +346,16 @@ $(DEPDIR)/%.d: ;
 ifeq (,$(SRCS))
 else
 compiler:
-	@printf " DISTR: %b%s%b, untersuche/examining Compiler ...\n" $(blau) "$(DName)" $(reset) $(BA)
-	@printf " Untersuche/Examining Compiler ...\n" $(BA)
-	@if test "$(GCCOK)" = "0"; then printf " GCCOK: %b%s%b\n" $(blau) "$(GCCOK)" $(reset); fi;
-	@if test "$(GCCOK)" = "0"; then printf " MINVGCC: %b%s%b\n" $(blau) "$(MINVGCC)" $(reset); fi;
-	@if test "$(GCCOK)" = "0"; then printf " MINGCCNR: %b%s%b\n" $(blau) "$(MINGCCNR)" $(reset); fi;
-	@if test "$(GCCOK)" = "0"; then printf " MAXGCCNR: %b%s%b\n" $(blau) "$(MAXGCCNR)" $(reset); fi;
-	@if test "$(GCCOK)" = "0"; then printf " COMP:   %b%s%b\n" $(blau) "$(COMP)" $(reset); fi;
-	@if test "$(GCCOK)" = "0"; then printf " CCInst: %b%s%b\n" $(blau) "$(CCInst)" $(reset); fi;
-	@printf " CC: %b%s%b\n" $(blau) "$(CC)" $(reset)
+	@printf " DISTR: %b%s%b, untersuche/examining Compiler ..." $(blau) "$(DName)" $(reset) $(BA)
+	@if test "$(GCCOK)" = "0"; then printf "\n"; fi;
+	@if test "$(GCCOK)" = "0"; then printf " GCCOK: \"%b%s%b\"\n" $(blau) "$(GCCOK)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " MINVGCC: \"%b%s%b\"\n" $(blau) "$(MINVGCC)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " MINGCCNR: \"%b%s%b\"\n" $(blau) "$(MINGCCNR)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " MAXGCCNR: \"%b%s%b\"\n" $(blau) "$(MAXGCCNR)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " COMP:   \"%b%s%b\"\n" $(blau) "$(COMP)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " CCName: \"%b%s%b\"\n" $(blau) "$(CCName)" $(reset); fi;
+	@if test "$(GCCOK)" = "0"; then printf " CCInst: \"%b%s%b\"\n" $(blau) "$(CCInst)" $(reset); fi;
+	@printf " CC: \"%b%s%b\"\n" $(blau) "$(CC)" $(reset)
 ifeq ('$(SPR)','')
 $(warning Variable 'SPR' not assigned, please call './install.sh' before!)
 $(error Variable 'SPR' nicht belegt, bitte vorher './install.sh' aufrufen!)
