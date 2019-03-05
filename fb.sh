@@ -1,8 +1,6 @@
 #!/bin/bash
 blau="\e[1;34m";
 reset="\e[0m";
-credentials="libelle17:bach17raga"
-#credentials="schade:Stra_enbahn8"
 FB="http://fritz.box:49000"
 Ausgabe=neueurl.xml
 # curl $FB/tr64desc.xml
@@ -27,11 +25,6 @@ serviceType=DeviceConfig:1
 Action=X_AVM-DE_CreateUrlSID
 ParIn=
 
-controlURL=x_filelinks
-serviceType=X_AVM-DE_Filelinks:1
-Action=GetFilelinkListPath
-ParIn=
-
 controlURL=hosts
 serviceType=Hosts:1
 Action=X_AVM-DE_GetHostListPath
@@ -43,6 +36,21 @@ Action=X_AVM-DE_DialNumber
 ParIn=NewX_AVM-DE_PhoneNumber
 Inhalt="616380";
 
+controlURL=x_filelinks
+serviceType=X_AVM-DE_Filelinks:1
+Action=GetFilelinkListPath
+ParIn=
+
+obneu=0;
+for para in $@; do
+	[ "$para" = "-neu" ]&&obneu=1;
+	case $para in
+		-c*) controlURL=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');;# alles hinter -c ohne Anführungszeichen; einleitd.Leerz.verboten
+		-s*) serviceType=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');;
+		-a*) Action=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');; 
+	esac
+done
+
 case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac;
 case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac;
 printf "controlURL: $blau$controlURL$reset\n"
@@ -50,6 +58,15 @@ printf "serviceType: $blau$serviceType$reset\n"
 printf "Action: $blau$Action$reset\n"
 [ -n "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n";
 [ -n "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n";
+
+credfile="$(getent passwd|grep $(whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
+crede=$(cat $credfile 2>/dev/null);
+if [ -z "$crede" -o $obneu = 1 ]; then
+	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
+	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
+	 crede="$fbuser:$fbpwd";
+	 printf "$crede" >"$credfile";
+fi;
 
 Soap="http://schemas.xmlsoap.org/soap";
 XML='<?xml version="1.0" encoding="utf-8"?>
@@ -60,7 +77,7 @@ XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging a
 printf "XML derAbfrage: \n$blau$XML$reset\n"
 
 for ipv in 6 4;do
-erg=$(curl -$ipv -k --anyauth -u "${credentials}"                                   \
+erg=$(curl -$ipv -k --anyauth -u "$crede"                                   \
   "$FB$controlURL"                                     \
   -H 'Content-Type: text/xml; charset="utf-8"'                           \
   -H 'SoapAction: '$serviceType'#'$Action \

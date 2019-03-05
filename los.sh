@@ -564,10 +564,17 @@ EOF
 
 fritzbox() {
 	printf "${dblau}fritzbox$reset()\n";
-	if ping fritz.box -c1 >/dev/null 2>&1; then
+	ip4=$(ping -4c1 fritz.box 2>&1);
+  erg=$?;
+	if [ $erg -eq 0 ]; then
+	 ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); # z.B. 192.168.178.1
+	 ip6=$(ping -6c1 fritz.box 2>&1);
+	 ipv6=$(echo $ip6|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/'); # z.B. fd00::a96:d7ff:fe49:19ca, umgeben von zwei Klammern
+	 echo $ipv4;
+	 echo $ipv6;
    printf "Fritzbox gefunden!\n";
-	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
-	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
+#	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
+#	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 	fi;
 }
 
