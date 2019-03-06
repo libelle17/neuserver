@@ -5,6 +5,7 @@ rot="\e[1;31m";
 reset="\e[0m";
 prog="";
 obnmr=1;
+ftb=/etc/fstab;
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -39,7 +40,7 @@ mountlaufwerke() {
 printf "${dblau}Hänge Laufwerke ein$reset()\n";
 # Laufwerke einhängen
 # in allen nicht auskommentierten Zeilen Leerzeichen durch einen Tab ersetzen
-fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' /etc/fstab); # "^/$Dvz\>" ginge auch
+fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb); # "^/$Dvz\>" ginge auch
 blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
@@ -121,15 +122,15 @@ while read -r zeile; do
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
 		eintr=$idohnelz$eintr;
-		printf "$eintr\n" >>/etc/fstab;
-		printf "\"$blau$eintr$reset\" in $blau/etc/fstab$reset eingetragen.\n";
+		printf "$eintr\n" >>$ftb;
+		printf "\"$blau$eintr$reset\" in $blau$ftb$reset eingetragen.\n";
 	fi;
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
 $(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|UUID=""'|tac) 
 EOF
   mount -a;
-  awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' /etc/fstab;
+  awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
 }
 
 pruefuser() {
@@ -499,6 +500,7 @@ sambaconf() {
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
+		printf "fstab--> Samba-Eintrag: $blau$zeile$reset\n"
 		avar=$(printf $zeile|cut -f1);
 		pfad=$(echo $zeile|sed 's/^\([^[:space:]]*\)[[:space:]]*\(.*\)/\2/');
 		if [ "$pfad" = "/DATA" ];then avar="daten";fi;
@@ -507,7 +509,7 @@ sambaconf() {
 		nr=$(expr $nr + 1);
 	# Einhängepunkte der interessanten Dateisysteme verwenden, von diesen die Pfadenden, jedes nur einmal
 	done << EOF
-	$(awk '{if(($3~"^ext"||$3~"^ntfs"||$3=="btrfs"||$3=="reiserfs"||$3=="vfat"||$3~"^exfat")&&$2!="/"){n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}}' /etc/fstab)
+	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
 	awk -f smbd.sh $smbdt >smb.conf;
@@ -565,14 +567,26 @@ EOF
 fritzbox() {
 	printf "${dblau}fritzbox$reset()\n";
 	ip4=$(ping -4c1 fritz.box 2>&1);
-  erg=$?;
-	if [ $erg -eq 0 ]; then
-	 ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); # z.B. 192.168.178.1
-	 ip6=$(ping -6c1 fritz.box 2>&1);
-	 ipv6=$(echo $ip6|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/'); # z.B. fd00::a96:d7ff:fe49:19ca, umgeben von zwei Klammern
-	 echo $ipv4;
-	 echo $ipv6;
-   printf "Fritzbox gefunden!\n";
+  erg4=$?;
+  ip6=$(ping -6c1 fritz.box 2>&1);
+  erg6=$?;
+	if [ $erg4 -eq 0 -o $erg6 -eq 0 ]; then
+	 [ $erg6 -eq 0 ]&&{ ipv6=$(echo $ip6|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/'); ipv=$ipv6;} # z.B. fd00::a96:d7ff:fe49:19ca, umgeben von zwei Klammern
+	 [ $erg4 -eq 0 ]&&{ ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); ipv=$ipv4;} # z.B. 192.168.178.1
+	 desc=$(curl $ipv:49000/tr64desc.xml 2>/dev/null);
+	 fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
+#	 fbuuid=$(echo "$desc"|sed -n '/UDN/{s/^[^>]*>\([^<]*\).*/\1/;s/:/=/;p;q}'|tr '[:lower:]' '[:upper:]'); # geht scheinbar nicht
+	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
+	 mkdir -p /mnt/$fbnameklein;
+	 credfile="$(getent passwd $(logname)|cut -d: -f6)/.smbcredentials"; # ~  # $HOME
+	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
+   if [ ! -f "$credfile" ]; then
+		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
+		 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
+		 printf "username=$fbuser\npassword=$fbpwd" >$credfile;
+	 fi;
+#	 echo "$desc";
+   printf "Fritzbox gefunden, Name: $blau$fbname$reset, ipv4: $blau$ipv4$reset, ipv6: $blau$ipv6$reset\n";
 #	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 #	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 	fi;
@@ -592,7 +606,7 @@ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 #mountlaufwerke;
 #proginst;
 fritzbox;
-#sambaconf;
+sambaconf;
 echo hier Ende!
 
 if false; then

@@ -59,7 +59,7 @@ printf "Action: $blau$Action$reset\n"
 [ -n "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n";
 [ -n "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n";
 
-credfile="$(getent passwd|grep $(whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
+credfile="$(getent passwd $(logname)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
 crede=$(cat $credfile 2>/dev/null);
 if [ -z "$crede" -o $obneu = 1 ]; then
 	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;

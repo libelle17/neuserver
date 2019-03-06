@@ -22,7 +22,7 @@ kf() {
 getOS() {
 #	OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 	os=$(sed -n '/^NAME=/{s/[^=]*=\(.*\)/\1/;s/^[[:space:]]*//;s/"\(.*\)"/\1/;p}' /etc/os-release);
-	[ -z $os ]&& os=$(sed -n '/^DISTRIB_ID=/{s/[^=]*=\(.*\)/\1/;s/^[[:space:]]*//;s/"\(.*\)"/\1/;p}' /etc/lsb-release);
+	[ -z "$os" ]&& os=$(sed -n '/^DISTRIB_ID=/{s/[^=]*=\(.*\)/\1/;s/^[[:space:]]*//;s/"\(.*\)"/\1/;p}' /etc/lsb-release);
 	# echo $os
 	case "$os" in 
 		*Mint*) OSNR=1;;
