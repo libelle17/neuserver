@@ -631,8 +631,8 @@ musterserver() {
 }
 
 variablen() {
- sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >vars.sh
-. ./vars.sh
+ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
+. ./shvars
  HOME=$(getent passwd $(whoami)|cut -d: -f6); # logname
 }
 
