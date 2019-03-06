@@ -408,7 +408,7 @@ mariadb() {
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
-			read -p "Passwort für '$user': " pwd;
+			read -p "Mariadb: Passwort für '$user': " pwd;
 		done;
 		if mysql -u"$user" -p"$pwd" -e'\q' 2>/dev/null; then
 			echo Benutzer "$user"  war schon eingerichtet;
@@ -627,13 +627,13 @@ test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${bl
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars>vars.sh
 . ./vars.sh
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
-#proginst;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
+proginst;
 fritzbox;
 sambaconf;
-echo hier Ende!
+echo Ende von $0!
 
 if false; then
 	eintr="@reboot mount /$Dvz";

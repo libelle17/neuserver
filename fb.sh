@@ -41,15 +41,21 @@ serviceType=X_AVM-DE_Filelinks:1
 Action=GetFilelinkListPath
 ParIn=
 
-obneu=0;
-for para in $@; do
-	[ "$para" = "-neu" ]&&obneu=1;
+obneu=0; # Fritzboxbenutzer und Passwort neu eingeben
+while [ $# -gt 0 ]; do
+	para="$1";
 	case $para in
+		-neu) obneu=1;;
+		-c)  controlURL="$2";shift;; # das mit den Anführungszeichen unten war eine Gratis-Übung: Bash und Dash streichen sie selbst ...
 		-c*) controlURL=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');;# alles hinter -c ohne Anführungszeichen; einleitd.Leerz.verboten
+		-s)  serviceType="$2";shift;;
 		-s*) serviceType=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');;
+		-a)  Action="$2";shift;;
 		-a*) Action=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,3))}');; 
 	esac
-done
+	echo $para;
+	shift;
+done;
 
 case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac;
 case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac;
