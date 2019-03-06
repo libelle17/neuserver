@@ -619,6 +619,7 @@ fritzbox() {
 }
 
 musterserver() {
+ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read server0;
 }
 
 # Start
