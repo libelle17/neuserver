@@ -4,7 +4,7 @@
 .pc
 .TH man 1 "05.03.19" "Version 0.47265" "Manual-Seite für ²DPROG²"
 .SH NAME
-\fB²DPROG² \- FaxServer-Funktionalität\fR: veranlasst automatischen Faxversand von Dateien, Benennung empfangener Faxe und Protokollierung aller Faxe in einer Datenbank 
+\fB²DPROG² \- Linux-Server neu einrichten\fR: richtet einen Linux-Server für die diabetologische Gemeinschaftspraxis Dachau neu ein 
 .br
 (manpage available in english: 'man ²DPROG²' or 'man -Len ²DPROG²')
 .SH SYNOPSIS
