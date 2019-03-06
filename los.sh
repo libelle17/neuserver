@@ -618,6 +618,9 @@ fritzbox() {
 	fi;
 }
 
+musterserver() {
+}
+
 # Start
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
@@ -633,6 +636,7 @@ mountlaufwerke;
 proginst;
 fritzbox;
 sambaconf;
+musterserver;
 echo Ende von $0!
 
 if false; then
