@@ -604,7 +604,7 @@ fritzbox() {
 #	 fbuuid=$(echo "$desc"|sed -n '/UDN/{s/^[^>]*>\([^<]*\).*/\1/;s/:/=/;p;q}'|tr '[:lower:]' '[:upper:]'); # geht scheinbar nicht
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
-	 credfile="$(getent passwd $(logname)|cut -d: -f6)/.smbcredentials"; # ~  # $HOME
+	 credfile="$HOME/.smbcredentials"; # ~  # $HOME
 	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
    if [ ! -f "$credfile" ]; then
 		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
@@ -620,8 +620,20 @@ fritzbox() {
 
 musterserver() {
  printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read server0;
- if [ "server0" ]; then
+ if [ "$server0" ]; then
+	 idpub=$HOME/.ssh/id_rsa.pub;
+	 while [ ! -f "$idpub" ]; do
+	  printf "Es fehlt noch: $blau$idpub$reset\n";
+	  ssh-keygen -t rsa; # return, return, return
+	 done;
+	 cat "$idpub"|ssh $(whoami)@$server0 'umask 077; cat >> .ssh/authorized_keys'; # unter der Annahme des gleichnamigen Benutzers
  fi;
+}
+
+variablen() {
+ sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >vars.sh
+. ./vars.sh
+ HOME=$(getent passwd $(whoami)|cut -d: -f6); # logname
 }
 
 # Start
@@ -631,14 +643,13 @@ nichtroot;
 case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
-sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >vars.sh
-. ./vars.sh
-setzhost;
-setzbenutzer;
-mountlaufwerke;
-proginst;
-fritzbox;
-sambaconf;
+variablen;
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
+#proginst;
+#fritzbox;
+#sambaconf;
 musterserver;
 echo Ende von $0!
 
