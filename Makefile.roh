@@ -55,7 +55,7 @@ ifdef ausvi
 endif
 #PROGRAM::=$(shell basename $(CURDIR))
 #EXPFAD=/usr/local/sbin
-EXPFAD::=$(shell echo $(PATH) | tr -s ':' '\n' | grep /usr/ | head -n 1)
+EXPFAD::=$(shell echo $(PATH) | tr -s ':' '\n' | grep /usr/ | head -n1)
 EXPFAD::=$(shell echo $(PATH) | tr -s ':' '\n' | grep /usr/ | awk '{ print length, $$0 }' | sort -n -s | cut -d" " -f2- | head -n1)
 
 #// ifneq ($(shell g++-6 --version $(KR); echo $$?),0)
@@ -577,7 +577,7 @@ tumitzieh:
 	blau="\033[1;34m";reset="\033[0m";\
 	while true;do \
 		case "$$TZL" in "$(DPROG)"|""|.*);;*)TZL="../$$TZL";;esac;\
-		[ -n "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" -a -d "$$TZL" ]&&break;\
+		[ "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" -a -d "$$TZL" ]&&break;\
 		Fg="Please enter target/ bitte Ziel eingeben z.B.: ";\
 		for a in $$(find .. -mindepth 2 -maxdepth 2 -name kons.cpp|cut -d/ -f2|sort);do Fg=$$Fg$$blau$$a$$reset,;done;\
 		Fg="$$Fg\b: ";printf "$$Fg";[ "$$0" = "dash" ]&&read TZL||read -e -i "$$TZL" TZL;:;\
@@ -614,7 +614,7 @@ dotrans:
 	blau="\033[1;34m";reset="\033[0m";\
 	while true;do \
 		case "$$TZL" in "$(DPROG)"|""|.*);;*)TZL="../$$TZL";;esac;\
-		[ -n "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" ]&&break;\
+		[ "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" ]&&break;\
 		Fg="Please enter target/ bitte Ziel eingeben, nicht: ";\
 		for a in $$(find .. -mindepth 2 -maxdepth 2 -name kons.cpp|cut -d/ -f2|sort);do Fg=$$Fg$$blau$$a$$reset,;done;\
 		Fg="$$Fg\b: ";printf "$$Fg";[ "$$0" = "dash" ]&&read TZL||read -e -i "$$TZL" TZL;:;\
@@ -670,7 +670,7 @@ tuneuproj:
 	@TZL=$(nZiel);\
 	blau="\033[1;34m";reset="\033[0m";\
 	while true;do \
-		[ -n "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" -a ! -d "../$$TZL" ]&&break;\
+		[ "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" -a ! -d "../$$TZL" ]&&break;\
 		Fg="Programmname/program name, nicht: ";\
 		for a in $$(find .. -mindepth 2 -maxdepth 2 -name kons.cpp|cut -d/ -f2|sort);do Fg=$$Fg$$blau$$a$$reset,;done;\
 		Fg="$$Fg\b: ";printf "$$Fg";[ "$$0" = "dash" ]&&read TZL||read -e -i "$$TZL" TZL;:;\

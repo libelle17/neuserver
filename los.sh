@@ -107,7 +107,7 @@ while read -r zeile; do
 	[ -z "$mtp" ]&&mtp="/"$nam;
 	byt=$(echo $zeile|cut -d\" -f4);
 	uid=$(echo $zeile|cut -d\" -f10);
-	[ -n "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
+	[ "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
 	if test -z "$nam"; then
 		ident="UUID="$uid;
 	else 
@@ -312,7 +312,7 @@ ersetzeprog() {
 doinst() {
 	printf "${blau}doinst()$reset: $1\n"
 	ersetzeprog "$1";
-	[ -n "$2" ]&&obprogda "$2"&&return 0;
+	[ "$2" ]&&obprogda "$2"&&return 0;
 #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	for prog in "$1"; do
 		$psuch "$prog" >/dev/null 2>&1&&return 0;
@@ -367,14 +367,14 @@ mariadb() {
 		if [ -z "$datadir" ]; then
 			mycnfpfad=$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null);
 			[ -z "$mycnfpfad" ]&&mycnfpfad=$(find $HOME -name .my.cnf -printf '%p\\n' -quit);
-			if [ -n "$mycnfpfad" ]; then
+			if [ "$mycnfpfad" ]; then
 				for aktdir in $(sed 's/#.*$//g' "$mycnfpfad"| grep '!includedir' | sed 's/^[ \t]//g' | cut -d' ' -f2-);do
 					mycnfpfad="$myconfpfad $(find $aktdir -not -type d)";
 				done;
 			fi;
 			for aktzz in $mycnfpfad; do
 				datadir=$(sed 's/#.*$//g' "$aktzz"|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
-				[ -n "$datadir" ]&&break;
+				[ "$datadir" ]&&break;
 			done;
 		fi;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
@@ -479,7 +479,7 @@ nichtroot() {
 			echo editiere $D;
 			sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
 			#  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
-			if test -n "$DISPLAY"; then 
+			if test "$DISPLAY"; then 
 				echo xset r rate $rd $rr;
 				xset r rate $rd $rr;
 			fi;
@@ -620,6 +620,8 @@ fritzbox() {
 
 musterserver() {
  printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read server0;
+ if [ "server0" ]; then
+ fi;
 }
 
 # Start
