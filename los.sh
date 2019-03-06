@@ -543,13 +543,39 @@ EOF
 		echo $fwstatus;
 		ret=$?;
 		if [ $ret -eq 0 ]; then
-			if ! firewall-cmd --list-services|grep "samba[^-]"; then
-				firewall-cmd --permanent --add-service=samba;
-				firewall-cmd --reload;
-				zustarten=1;
+			if firewall-cmd --list-services 2>/dev/null; then
+				if ! firewall-cmd --list-services|grep "samba[^-]"; then
+					firewall-cmd --permanent --add-service=samba;
+					firewall-cmd --reload;
+					zustarten=1;
+				fi;
 			fi;
 		fi;
 	fi;
+	susestatus=$(systemctl list-units --full -all|grep SuSEfirewall2.service);
+	echo $susestatus;
+	ret=$?;
+	if [ $ret -eq 0 ]; then
+		# das folgende aus kons.cpp
+   susefw="/etc/sysconfig/SuSEfirewall2";
+	 if [ -f "$susefw" ]; then
+		 for endg in EXT INT DMZ; do
+			 for prart in "samba-server" "samba-client" "samba"; do
+				 echo grep "^FW_CONFIGURATIONS_$endg=\".*$prart" $susefw;
+				 nichtfrei=$(grep "^FW_CONFIGURATIONS_$endg=\".*$prart[ "\""]" $susefw);
+				 echo $nichtfrei $endg $prart
+				 if [ -z "$nichtfrei" ]; then
+				 echo bearbeite $nichtfrei $endg $prart
+					 sed -i.bak$i "s/\(^FW_CONFIGURATIONS_$endg=\".*\)\(\".*$\)/\1 $prart\2/g" $susefw;
+				 fi
+			 done;
+		 done;
+		 if $(echo $susestatus|grep -q " active "); then
+			systemctl restart SuSEfirewall2;
+			zustarten=1;
+		 fi;
+	 fi
+	fi
 
 	if ! diff -q smb.conf /etc/samba/smb.conf ||[ $zustarten = 1 ]; then  
 		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
