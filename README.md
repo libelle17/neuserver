@@ -178,8 +178,9 @@ cannot be set via the command line, but only via the
 configuration file, which can be edited directly by
 &rsquo;<b>neuserver -vi</b>&rsquo; or interactively by
 &rsquo;<b>neuserver -rf</b>&rsquo;. <br>
-Programm: <b>/root/autofax/autofax</b>, V: <b>0.47265</b>
-Verwende: <b>Fritzbox</b>, <b>Capisuite</b>, <b>Hylafax <br>
+Programm: <b>/home/schade/autofax/autofax</b>, V:
+<b>0.47265</b> Verwende: <b>Fritzbox</b>, <b>Capisuite</b>,
+<b>Hylafax <br>
 Options which are not saved (current value in parentheses):
 <br>
 -delf, --deletefax</b>: delete a fax with query (<b>0</b>)
@@ -239,7 +240,7 @@ with &rsquo;:qa&rsquo;) (<b>0</b>) <b><br>
 -vi, --vi</b>: edit/view configuration file , log file etc.
 (finish with &rsquo;:qa&rsquo;) (<b>0</b>) <b><br>
 -vs, --vs</b>: edit/view source files in
-<b>/root/autofax</b>(finish with &rsquo;:qa&rsquo;)
+<b>/home/schade/autofax</b>(finish with &rsquo;:qa&rsquo;)
 (<b>0</b>) <b><br>
 -autoupd, --autoupdate &lt;zahl&gt;</b>: Update program
 automatically (<b>1</b>) <b><br>
@@ -1011,8 +1012,9 @@ werden, die wiederum &uuml;ber &rsquo;<b>neuserver
 -vi</b>&rsquo; direkt editiert oder auch &uuml;ber
 &rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
 werden kann. <br>
-Programm: <b>/root/autofax/autofax</b>, V: <b>0.47265</b>
-Verwende: <b>Fritzbox</b>, <b>Capisuite</b>, <b>Hylafax <br>
+Programm: <b>/home/schade/autofax/autofax</b>, V:
+<b>0.47265</b> Verwende: <b>Fritzbox</b>, <b>Capisuite</b>,
+<b>Hylafax <br>
 Optionen, die nicht gespeichert werden (aktueller Wert in
 Klammern): <br>
 -loef, --loeschefax</b>: ein Fax nach Rueckfrage loeschen
@@ -1074,7 +1076,7 @@ Konfigurationsdatei &lt;string&gt; anstatt (&rsquo;&rsquo;)
 -vi, --vi</b>: Konfigurationsdatei , Logdatei usw.
 bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
 <b><br>
--vs, --vs</b>: Quelldateien in <b>/root/autofax</b>
+-vs, --vs</b>: Quelldateien in <b>/home/schade/autofax</b>
 bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
 <b><br>
 -autoakt, --autoaktual &lt;zahl&gt;</b>: Programm

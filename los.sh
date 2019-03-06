@@ -387,7 +387,7 @@ mariadb() {
 		while mysql -e'\q' 2>/dev/null; do
 			mroot="";
 			while [ -z $mroot ]; do
-				printf "Admin für mysql: ";[ $schale -eq 1 ]&&read -rei root mroot||read mroot;
+				printf "Admin für mysql: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
 			done;
 			mrpwd="";
 			while [ -z $mrpwd ]; do
@@ -404,7 +404,7 @@ mariadb() {
 		user="";
 		while [ -z "$user" ];do
 			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-			printf "Mariadb Standardbenutzer: ";[ $schale -eq 1 ]&&read -rei praxis user||read user;
+			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei praxis user||read user;
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
@@ -493,7 +493,7 @@ sambaconf() {
 	smbdt="/etc/samba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
-	printf "Arbeitsgruppe des Sambaservers: ";[ $schale -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
+	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' smbvars.sh;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
 	S2=smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
@@ -628,7 +628,7 @@ musterserver() {
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 nichtroot;
-case f in [^f]) schale=0;;*) schale=1;esac;# 0=dash,1=bash
+case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >vars.sh
