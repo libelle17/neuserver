@@ -6,7 +6,7 @@ BEGIN {
 	N[3]="ntlm auth"; 							I[3]="yes";
 	N[4]="wins server"; 						I[4]="";
 	N[5]="wins support"; 						I[5]="No";
-	N[6]="WORKGROUP"; 							I[6]="GSHEIM";
+	N[6]="WORKGROUP"; 							I[6]="gspraxis";
 	N[7]="map to guest"; 						I[7]="bad user";
 	N[8]="logon drive";							I[8]="P:";
   N[9]="unix charset"; 						I[9]="UTF-8";

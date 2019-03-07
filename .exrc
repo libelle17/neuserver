@@ -27,7 +27,8 @@ set visualbell
 set t_vb=
 set tm=500
 syntax enable
-" colorscheme desert
+colo peachpuff
+" colorscheme desert, delek, zellner,slate
 " set background=dark
 set encoding=utf8
 set ffs=unix,dos,mac
