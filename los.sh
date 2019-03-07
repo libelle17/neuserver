@@ -619,24 +619,26 @@ fritzbox() {
 }
 
 musterserver() {
- printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read server0;
- if [ "$server0" ]; then
-	 idpub=$HOME/.ssh/id_rsa.pub;
+ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
+ if [ "$srv0" ]; then
+	 idpub="$HOME/.ssh/id_rsa.pub";
 	 while [ ! -f "$idpub" ]; do
 	  printf "Es fehlt noch: $blau$idpub$reset\n";
 	  ssh-keygen -t rsa; # return, return, return
 	 done;
-	 cat "$idpub"|ssh $(whoami)@$server0 'umask 077; cat >> .ssh/authorized_keys'; # unter der Annahme des gleichnamigen Benutzers
-	 echo $server0
+	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F=.ssh/authorized_keys;grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
+	 printf "Bitte aktuelles Linux-Passwort eingeben: ";read passw;
+	 hn=$(hostname);ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";echo $HOME;idpub=\"$HOME/.ssh/id_rsa.pub\"; echo \"$idpub\"; <\"$idpub\" xargs -i ssh $(whoami):$passw@$hn 'umask 077;F=.ssh/authorized_keys;grep -q \"{}\" $F||echo \"{}\" >>$F'";
+	 echo $srv0
 	 echo $HOME
-	 rsync -avuz $server0:$HOME/.vim $HOME/
+	 rsync -avuz $srv0:$HOME/.vim $HOME/
  fi;
 }
 
 variablen() {
  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
 . ./shvars
- HOME=$(getent passwd $(whoami)|cut -d: -f6); # logname
+ HOME="$(getent passwd $(whoami)|cut -d: -f6)"; # logname
 }
 
 # Start
@@ -647,12 +649,12 @@ case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-setzhost;
-setzbenutzer;
-mountlaufwerke;
-proginst;
-fritzbox;
-sambaconf;
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
+#proginst;
+#fritzbox;
+#sambaconf;
 musterserver;
 echo Ende von $0!
 
