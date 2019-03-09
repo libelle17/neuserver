@@ -480,6 +480,7 @@ nichtroot() {
 			sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
 			#  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
 			if test "$DISPLAY"; then 
+				echo DISPLAY: $DISPLAY
 				echo xset r rate $rd $rr;
 				xset r rate $rd $rr;
 			fi;
@@ -627,10 +628,9 @@ musterserver() {
 	  ssh-keygen -t rsa; # return, return, return
 	 done;
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F=.ssh/authorized_keys;grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
-	 printf "Bitte aktuelles Linux-Passwort eingeben: ";read passw;
-	 hn=$(hostname);ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";echo $HOME;idpub=\"$HOME/.ssh/id_rsa.pub\"; echo \"$idpub\"; <\"$idpub\" xargs -i ssh $(whoami):$passw@$hn 'umask 077;F=.ssh/authorized_keys;grep -q \"{}\" $F||echo \"{}\" >>$F'";
-	 echo $srv0
-	 echo $HOME
+	 KS=$HOME/.ssh/authorized_keys;
+	 test -f "$KS"||touch "$KS";
+	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
 	 rsync -avuz $srv0:$HOME/.vim $HOME/
  fi;
 }
