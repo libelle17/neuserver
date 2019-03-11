@@ -514,69 +514,7 @@ sambaconf() {
 EOF
 	printf "};\n" >>$S2;
 	awk -f smbd.sh $smbdt >smb.conf;
-	zustarten=0;
-	if which ufw >/dev/null 2>&1; then
-		ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
-		echo $ufwstatus;
-		ret=$?;
-		if [ $ret -eq 0 ]; then
-			if ! ufw status|grep '^Samba[[:space:]]*ALLOW' >/dev/null; then
-				ufw allow Samba;
-				if $(echo $ufwstatus|grep -q " active "); then
-					systemctl restart ufw;
-					zustarten=1;
-				fi;
-			else
-				printf "Samba in ufw schon erlaubt\n";
-			fi;
-		fi;
-	fi;
-	if which setsebool >/dev/null 2>&1; then
-		for ro in samba_export_all_ro samba_export_all_rw; do
-			rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
-			[ -z "$rostatus" -o "$rostatus" = "off" ]&&{ setsebool -P $ro=1; zustarten=1;}
-		done;
-	fi;
-	# fehlt evtl: noch: semanage fcontext –at samba_share_t "/finance(/.*)?"
-	# und: restorecon /finance
-	if which firewall-cmd >/dev/null 2>&1; then
-		fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
-		echo $fwstatus;
-		ret=$?;
-		if [ $ret -eq 0 ]; then
-			if firewall-cmd --list-services 2>/dev/null; then
-				if ! firewall-cmd --list-services|grep "samba[^-]"; then
-					firewall-cmd --permanent --add-service=samba;
-					firewall-cmd --reload;
-					zustarten=1;
-				fi;
-			fi;
-		fi;
-	fi;
-	susestatus=$(systemctl list-units --full -all|grep SuSEfirewall2.service);
-	echo $susestatus;
-	ret=$?;
-	if [ $ret -eq 0 ]; then
-		# das folgende aus kons.cpp
-   susefw="/etc/sysconfig/SuSEfirewall2";
-	 if [ -f "$susefw" ]; then
-		 for endg in EXT INT DMZ; do
-			 for prart in "samba-server" "samba-client" "samba"; do
-				 echo grep "^FW_CONFIGURATIONS_$endg=\".*$prart" $susefw;
-				 nichtfrei=$(grep "^FW_CONFIGURATIONS_$endg=\".*$prart[ "\""]" $susefw);
-				 echo $nichtfrei $endg $prart
-				 if [ -z "$nichtfrei" ]; then
-				 echo bearbeite $nichtfrei $endg $prart
-					 sed -i.bak$i "s/\(^FW_CONFIGURATIONS_$endg=\".*\)\(\".*$\)/\1 $prart\2/g" $susefw;
-				 fi
-			 done;
-		 done;
-		 if $(echo $susestatus|grep -q " active "); then
-			systemctl restart SuSEfirewall2;
-			zustarten=1;
-		 fi;
-	 fi
-	fi
+	firewall samba;
 
 	if ! diff -q smb.conf /etc/samba/smb.conf ||[ $zustarten = 1 ]; then  
 		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
@@ -589,6 +527,87 @@ EOF
 	  systemctl restart nmbd 2>/dev/null;	
 	  systemctl restart nmb 2>/dev/null;	
 	fi;
+}
+
+firewall() {
+	tufirewall 
+	while [ $# -gt 0 ]; do
+		para="$1";
+		case $para in
+			samba) p1=Samba; p2=samba_export_all_ro; p3=samba_export_all_rw; p4=samba; p5="samba-server"; p6="samba-client"; p7=samba;
+		esac
+		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
+		shift;
+	done;
+}
+
+tufirewall() {
+	zustarten=0;
+	if which ufw >/dev/null 2>&1; then
+		ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
+		echo $ufwstatus;
+		ret=$?;
+		if [ $ret -eq 0 ]; then
+			if ! ufw status|grep "^$1[[:space:]]*ALLOW" >/dev/null; then
+				ufw allow $1;
+				if $(echo $ufwstatus|grep -q " active "); then
+					systemctl restart ufw;
+					zustarten=1;
+				fi;
+			else
+				printf "$1 in ufw schon erlaubt\n";
+			fi;
+		fi;
+	fi;
+	if which setsebool >/dev/null 2>&1; then
+		for ro in $2 $3; do
+			rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
+			[ -z "$rostatus" -o "$rostatus" = "off" ]&&{ setsebool -P $ro=1; zustarten=1;}
+		done;
+	fi;
+	# fehlt evtl: noch: semanage fcontext –at samba_share_t "/finance(/.*)?"
+	# und: restorecon /finance
+	if which firewall-cmd >/dev/null 2>&1; then
+		fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
+  #		echo $fwstatus;
+		ret=$?;
+		if [ $ret -eq 0 ]; then
+			if firewall-cmd --list-services >/dev/null 2>&1; then
+				if ! firewall-cmd --list-services|grep -q "$4[^-]"; then
+					printf "${blau}firewall-cmd --permanent --add-service=$4$reset\n";
+					firewall-cmd --permanent --add-service=$4;
+					firewall-cmd --reload;
+					zustarten=1;
+				fi;
+			fi;
+		fi;
+	fi;
+	susestatus=$(systemctl list-units --full -all|grep SuSEfirewall2.service);
+	#	echo $susestatus;
+	ret=$?;
+	if [ $ret -eq 0 ]; then
+		# das folgende aus kons.cpp
+   susefw="/etc/sysconfig/SuSEfirewall2";
+	 if [ -f "$susefw" ]; then
+		 for endg in EXT INT DMZ; do
+			 for prart in "$5" "$6" "$7"; do
+				 if [ "$prart" ]; then
+					 echo grep "^FW_CONFIGURATIONS_$endg=\".*$prart" $susefw;
+					 nichtfrei=$(grep "^FW_CONFIGURATIONS_$endg=\".*$prart[ "\""]" $susefw);
+					 echo $nichtfrei $endg $prart;
+					 if [ -z "$nichtfrei" ]; then
+						 echo bearbeite $nichtfrei $endg $prart;
+						 sed -i.bak$i "s/\(^FW_CONFIGURATIONS_$endg=\".*\)\(\".*$\)/\1 $prart\2/g" $susefw;
+					 fi;
+				 fi;
+			 done;
+		 done;
+		 if $(echo $susestatus|grep -q " active "); then
+			systemctl restart SuSEfirewall2;
+			zustarten=1;
+		 fi;
+	 fi
+	fi
 }
 
 fritzbox() {
@@ -758,6 +777,8 @@ case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
+firewall held schelm;
+exit;
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
