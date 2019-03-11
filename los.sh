@@ -639,6 +639,8 @@ teamviewer10() {
 	cd >/dev/null;
 	while true; do
 	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
+	 [ "$tversion" ]||tversion=0;
+	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 	 case $tversion in
 		 0)
 				case $OSNR in
@@ -651,11 +653,14 @@ teamviewer10() {
 			 if ! [ -f "$trpm" ]; then
 				 q1=/DATA/down;
 				 if [ -f "$q1/$trpm" ]; then
+					 printf "${blau}cp -ai "$q1/$trpm" .$reset\n";
 					 cp -ai "$q1/$trpm" .;
 				 elif [ "$srv0" ]; then
+					 printf "${blau}ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .$reset\n";
 					 ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .;
 				 else
 					 hname=teamviewer.i686.rpm;
+					 printf "${blau}wget "https://download.teamviewer.com/download/version_10x/$hname"$reset\n";
 					 wget "https://download.teamviewer.com/download/version_10x/$hname";
 					 mv -i "$hname" "$trpm";
 				 fi;
@@ -663,11 +668,22 @@ teamviewer10() {
 			 if [ -f "$trpm" ]; then
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
+					printf "${blau}apt install /$trpm$reset\n";
+					apt install /$trpm;
 					;;
-				4)
+				4) # opensuse
+					 printf "${blau}zypper --gpg-auto-import-keys in -l ./$trpm$reset\n";
 					 zypper --gpg-auto-import-keys in -l ./$trpm;
 					;;
-				5|6|7) # opensuse, fedora, mageia
+				5) # fedora,
+					 printf "${blau}dnf --nogpgcheck install ./$trpm$reset\n";
+					 dnf --nogpgcheck install ./$trpm;
+					 ;;
+				6) # fedoraalt
+					 printf "${blau}yum --nogpgcheck install ./$trpm$reset\n";
+					 yum --nogpgcheck install ./$trpm;
+					 ;;
+			  7) # mageia
 					;;
 				esac;
 			 fi;
@@ -678,6 +694,7 @@ teamviewer10() {
 				1|2|3) # mint, ubuntu, debian
 					;;
 				4)
+					 printf "${blau}zypper rm teamviewer$reset\n";
 					 zypper rm teamviewer; 
 					;;
 				5|6|7) # opensuse, fedora, mageia
@@ -694,28 +711,36 @@ teamviewer10() {
 		while ! [ -f "$qd" ]; do
 			qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
 			if ! [ -f "$HOME/$qqd" ]; then
-				wget "https://download.opensuse.org/update/leap/42.3/oss/x86_64/$qqd";
+				wget "https://download.opensuse.org/update/leap/42.3/oss/x86_64/$qqd";# geht auch für Fedora
 			fi;
 			rpm2cpio "$HOME/$qqd"|cpio -idmv
 		done;
 		cp -ai "$qd" "$zd";
 	done;
-	lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
-	if rpm -q "$lxcb" >/dev/null; then
-	 echo $? bei rpm -q "$lxcb";
-	 if ! [ -f "$lxcb" ]; then
-		 q1=/DATA/down;
-		 if [ -f "$q1/$lxcb" ]; then
-			 cp -ai "$q1/$lxcb" .;
-		 elif [ "$srv0" ]; then
-			 ssh "$srv0" "ls \"$q1/$lxcb\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$lxcb .;
-		 else
-		  wget http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64/$lxcb;
-		 fi;
-	 fi;
-	 rpm -i --force "./$lxcb";
-	 zypper addlock "$lxcb";
-	fi;
+				case $OSNR in
+				1|2|3) # mint, ubuntu, debian
+					;;
+				4) # opensuse
+					lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
+					if rpm -q "$lxcb" >/dev/null; then
+					 echo $? bei rpm -q "$lxcb";
+					 if ! [ -f "$lxcb" ]; then
+						 q1=/DATA/down;
+						 if [ -f "$q1/$lxcb" ]; then
+							 cp -ai "$q1/$lxcb" .;
+						 elif [ "$srv0" ]; then
+							 ssh "$srv0" "ls \"$q1/$lxcb\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$lxcb .;
+						 else
+							wget http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64/$lxcb;
+						 fi;
+					 fi;
+					 rpm -i --force "./$lxcb";
+					 zypper addlock "$lxcb";
+					fi;
+					;;
+				5|6|7) # fedora, mageia
+					;;
+				esac;
 	cd - >/dev/null;
 }
 
