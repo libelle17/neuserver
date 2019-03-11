@@ -636,7 +636,7 @@ musterserver() {
 }
 
 teamviewer10() {
-	cd;
+	cd >/dev/null;
 	while true; do
 	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
 	 case $tversion in
@@ -701,7 +701,8 @@ teamviewer10() {
 		cp -ai "$qd" "$zd";
 	done;
 	lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
-	if ! rpm -q "$lxcb"; then
+	if rpm -q "$lxcb" >/dev/null; then
+	 echo $? bei rpm -q "$lxcb";
 	 if ! [ -f "$lxcb" ]; then
 		 q1=/DATA/down;
 		 if [ -f "$q1/$lxcb" ]; then
@@ -715,7 +716,7 @@ teamviewer10() {
 	 rpm -i --force "./$lxcb";
 	 zypper addlock "$lxcb";
 	fi;
-	cd -;
+	cd - >/dev/null;
 }
 
 variablen() {
