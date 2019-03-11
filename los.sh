@@ -701,6 +701,7 @@ teamviewer10() {
 		cp -ai "$qd" "$zd";
 	done;
 	lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
+	if ! rpm -q "$lxcb"; then
 	 if ! [ -f "$lxcb" ]; then
 		 q1=/DATA/down;
 		 if [ -f "$q1/$lxcb" ]; then
@@ -711,7 +712,9 @@ teamviewer10() {
 		  wget http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64/$lxcb;
 		 fi;
 	 fi;
-	 rpm -i --force "./$lxcb"
+	 rpm -i --force "./$lxcb";
+	 zypper addlock "$lxcb";
+	fi;
 	cd -;
 }
 
