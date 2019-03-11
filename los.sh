@@ -635,6 +635,74 @@ musterserver() {
  fi;
 }
 
+teamviewer10() {
+	cd;
+	while true; do
+	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
+	 case $tversion in
+		 0)
+				case $OSNR in
+				1|2|3) # mint, ubuntu, debian
+					;;
+				4|5|6|7) # opensuse, fedora, mageia
+					trpm=teamviewer_10.0.95021.i686.rpm;
+					;;
+				esac;
+			 if ! [ -f "$trpm" ]; then
+				 q1=/DATA/down;
+				 if [ -f "$q1/$trpm" ]; then
+					 cp -ai "$q1/$trpm" .;
+				 elseif [ "$srv0" ]; then
+					 ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .;
+				 else
+					 hname=teamviewer.i686.rpm;
+					 wget "https://download.teamviewer.com/download/version_10x/$hname";
+					 mv -i "$hname" "$trpm";
+				 fi;
+			 fi;
+			 if [ -f "$trpm" ]; then
+				case $OSNR in
+				1|2|3) # mint, ubuntu, debian
+					;;
+				4)
+					 zypper --gpg-auto-import-keys in -l ./$trpm;
+					;;
+				5|6|7) # opensuse, fedora, mageia
+					;;
+				esac;
+			 fi;
+			 ;;
+		 10) break;;
+		 *) 
+				case $OSNR in
+				1|2|3) # mint, ubuntu, debian
+					;;
+				4)
+					 zypper rm teamviewer; 
+					;;
+				5|6|7) # opensuse, fedora, mageia
+					;;
+				esac;
+			 continue;;
+	 esac;
+	done;
+	zvz=/opt/teamviewer/tv_bin/wine/lib;
+	zd=$zvz/libfreetype.so.6;
+	while true; do
+		[ -f "$zd" ]&&break;
+		qd=$HOME/usr/lib/libfreetype.so.6.12.3;
+		while ! [ -f "$qd" ]; do
+			qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
+			if ! [ -f "$HOME/$qqd" ]; then
+				wget "https://download.opensuse.org/update/leap/42.3/oss/x86_64/$qqd";
+			fi;
+			rpm2cpio "$HOME/$qqd"|cpio -idmv
+		done;
+		cp -ai "$qd" "$zd";
+	done;
+	cd -;
+}
+
 variablen() {
  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
 . ./shvars
@@ -656,6 +724,7 @@ variablen;
 #fritzbox;
 #sambaconf;
 musterserver;
+teamviewer10;
 echo Ende von $0!
 
 if false; then
