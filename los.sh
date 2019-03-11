@@ -700,6 +700,18 @@ teamviewer10() {
 		done;
 		cp -ai "$qd" "$zd";
 	done;
+	lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
+	 if ! [ -f "$lxcb" ]; then
+		 q1=/DATA/down;
+		 if [ -f "$q1/$lxcb" ]; then
+			 cp -ai "$q1/$lxcb" .;
+		 elif [ "$srv0" ]; then
+			 ssh "$srv0" "ls \"$q1/$lxcb\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$lxcb .;
+		 else
+		  wget http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64/$lxcb;
+		 fi;
+	 fi;
+	 rpm -i --force "./$lxcb"
 	cd -;
 }
 
