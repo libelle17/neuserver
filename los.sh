@@ -652,7 +652,7 @@ teamviewer10() {
 				 q1=/DATA/down;
 				 if [ -f "$q1/$trpm" ]; then
 					 cp -ai "$q1/$trpm" .;
-				 elseif [ "$srv0" ]; then
+				 elif [ "$srv0" ]; then
 					 ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .;
 				 else
 					 hname=teamviewer.i686.rpm;
