@@ -102,9 +102,10 @@ while read -r zeile; do
 			esac;
     esac;
 	fi;
+	# printf "zeile: $blau$zeile$reset\n"
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	# echo "mtp: \"$mtp\"";
-	[ -z "$mtp" ]&&mtp="/"$nam;
+	[ "$mtp" ]||mtp="/"$(echo $nam|sed 's/[[:space:]]//g');
 	byt=$(echo $zeile|cut -d\" -f4);
 	uid=$(echo $zeile|cut -d\" -f10);
 	[ "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
@@ -160,8 +161,9 @@ obinfstab() {
 		# echo "dort: $zeile;"
 		vgl=$(printf "$zeile"|cut -f1|sed 's/ /\\\\040/g')
 		# z.B.  LABEL=Seagate\040Expansion\040Drive
+#		printf "vgl: $rot$vgl$reset vs: $rot$(echo $(echo $1)|sed 's/ //g')$reset\n";
 		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
-#		printf "vgl: $rot$vgl$reset\n";
+		if test "$vgl" = "$1"; then istinfstab=1; break; fi;
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
 		if test "$vgl" = "/dev/$3";then istinfstab=1; break; fi;
 		for dbid in $(find /dev/disk/by-id -lname "*$3"); do
@@ -396,8 +398,10 @@ mariadb() {
 				# auskommentiert werden und der Service neu gestartet werden
 			done;
 			echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+			printf "Passwort für root: ";
 			mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
 			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
+			printf "Passwort für root: ";
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
 		done;
@@ -414,8 +418,10 @@ mariadb() {
 			echo Benutzer "$user"  war schon eingerichtet;
 		else
 			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			printf "Passwort für root: ";
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
 			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			printf "Passwort für root: ";
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
 		fi;
 		echo datadir: $datadir;
@@ -711,6 +717,8 @@ teamviewer10() {
 		 *) 
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
+					printf "${blau}apt remove teamviewer$reset\n";
+					apt remove teamviewer;
 					;;
 				4)
 					 printf "${blau}zypper rm teamviewer$reset\n";
@@ -773,16 +781,17 @@ variablen() {
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 nichtroot;
-case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
+#case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
+echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
-#proginst;
-#fritzbox;
-#sambaconf;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
+proginst;
+fritzbox;
+sambaconf;
 musterserver;
 teamviewer10;
 echo Ende von $0!
