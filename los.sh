@@ -777,8 +777,6 @@ case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-firewall held schelm;
-exit;
 #setzhost;
 #setzbenutzer;
 #mountlaufwerke;
