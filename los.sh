@@ -691,7 +691,7 @@ teamviewer10() {
 					apt install /$trpm;
 					;;
 				4) # opensuse
-					 printf "${blau}zypper --gpg-auto-import-keys in -l ./$trpm$reset\n";
+					 printf "${blau}zypper --no-gpg-checks in -l ./$trpm$reset\n";
 					 zypper --gpg-auto-import-keys in -l ./$trpm;
 					;;
 				5) # fedora,
