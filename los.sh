@@ -55,7 +55,10 @@ while read -r zeile; do
 	dev=$(echo $zeile|cut -d\" -f2);
 	typ=$(echo $zeile|cut -d\" -f6);
 	nam=$(echo $zeile|cut -d\" -f8);
+	uid=$(echo $zeile|cut -d\" -f10);
+	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	if test -z "$nam"; then
+		echo "fehlender Name bei uid: "$uid", mtp: "$mtp
 		case "$typ" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
 			case "$typ" in 
 				ext*|btrfs|reiserfs)
@@ -76,7 +79,7 @@ while read -r zeile; do
 					done;
 					nam="win"$wnamnr;;
 			esac;
-			case typ in 
+			case $typ in 
 				ext*)
 					echo e2label /dev/$dev "$nam";
 					e2label /dev/$dev "$nam";;
@@ -103,11 +106,9 @@ while read -r zeile; do
     esac;
 	fi;
 	# printf "zeile: $blau$zeile$reset\n"
-	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	# echo "mtp: \"$mtp\"";
 	[ "$mtp" ]||mtp="/"$(echo $nam|sed 's/[[:space:]]//g');
 	byt=$(echo $zeile|cut -d\" -f4);
-	uid=$(echo $zeile|cut -d\" -f10);
 	[ "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
 	if test -z "$nam"; then
 		ident="UUID="$uid;
@@ -787,13 +788,13 @@ test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${bl
 echo Starte mit los.sh...
 variablen;
 setzhost;
-setzbenutzer;
+#setzbenutzer;
 mountlaufwerke;
-proginst;
-fritzbox;
-sambaconf;
-musterserver;
-teamviewer10;
+#proginst;
+#fritzbox;
+#sambaconf;
+#musterserver;
+#teamviewer10;
 echo Ende von $0!
 
 if false; then
