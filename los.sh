@@ -539,23 +539,39 @@ EOF
 firewall() {
 	while [ $# -gt 0 ]; do
 		para="$1";
+	  p1="";p2="";p3="";p4="";p5="";p6="";p7="";	
 		case $para in
-			samba) p1=Samba; p2=samba_export_all_ro; p3=samba_export_all_rw; p4=samba; p5="samba-server"; p6="samba-client"; p7=samba;
+			samba) p1=Samba; p2=samba_export_all_ro; p3=samba_export_all_rw; p4=samba; p5="samba-server"; p6="samba-client"; p7=samba;;
+			http) p1="80/tcp";;
+			https) p1="443/tcp";;
+			dhcp) p1="67,68/udp";;
+			postgresql) p1=5432;;
+			ssh) p1=22/tcp;;
+			smtp) p1=25/tcp;;
+			imap) p1=143/tcp;;
+			imaps) p1=993/tcp;;
+			pop3) p1=110/tcp;;
+			pop3s) p1=995/tcp;;
+			vsftp) p1="20,21,990,40000:50000/tcp";;
+			mysql) p1=3306;;
+			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
 		esac
 		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
 		shift;
 	done;
 }
 
+# $1 = ufw allow .., $2 $3 = setsebol -P ..=1, $4 = firewall-cmd --permanent --add-service=.., $5 $6 $7 = /etc/sysconfig/SuSEfirewall2
 tufirewall() {
 	zustarten=0;
 	if which ufw >/dev/null 2>&1; then
-		ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
-		echo $ufwstatus;
-		ret=$?;
-		if [ $ret -eq 0 ]; then
+		if [ -z "$ufwret" ]; then
+			ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
+			ufwret=$?;
+		fi;
+		if [ $ufwret -eq 0 ]; then
 			if ! ufw status|grep "^$1[[:space:]]*ALLOW" >/dev/null; then
-				ufw allow $1;
+				ufw show added|grep "allow $1\$" >/dev/null 2>&1 ||{ printf "${blau}ufw allow $1$reset\n"; ufw allow "$1";};
 				if $(echo $ufwstatus|grep -q " active "); then
 					systemctl restart ufw;
 					zustarten=1;
@@ -567,23 +583,27 @@ tufirewall() {
 	fi;
 	if which setsebool >/dev/null 2>&1; then
 		for ro in $2 $3; do
-			rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
-			[ -z "$rostatus" -o "$rostatus" = "off" ]&&{ setsebool -P $ro=1; zustarten=1;}
+			if [ "$ro" != "-" ]; then
+				rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
+				[ -z "$rostatus" -o "$rostatus" = "off" ]&&{ setsebool -P $ro=1; zustarten=1;}
+			fi;
 		done;
 	fi;
 	# fehlt evtl: noch: semanage fcontext –at samba_share_t "/finance(/.*)?"
 	# und: restorecon /finance
-	if which firewall-cmd >/dev/null 2>&1; then
-		fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
-  #		echo $fwstatus;
-		ret=$?;
-		if [ $ret -eq 0 ]; then
-			if firewall-cmd --list-services >/dev/null 2>&1; then
-				if ! firewall-cmd --list-services|grep -q "$4[^-]"; then
-					printf "${blau}firewall-cmd --permanent --add-service=$4$reset\n";
-					firewall-cmd --permanent --add-service=$4;
-					firewall-cmd --reload;
-					zustarten=1;
+	if [ "$4" != "-" ]; then
+		if which firewall-cmd >/dev/null 2>&1; then
+			fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
+		#		echo $fwstatus;
+			ret=$?;
+			if [ $ret -eq 0 ]; then
+				if firewall-cmd --list-services >/dev/null 2>&1; then
+					if ! firewall-cmd --list-services|grep -q "$4[^-]"; then
+						printf "${blau}firewall-cmd --permanent --add-service=$4$reset\n";
+						firewall-cmd --permanent --add-service=$4;
+						firewall-cmd --reload;
+						zustarten=1;
+					fi;
 				fi;
 			fi;
 		fi;
@@ -660,53 +680,74 @@ musterserver() {
  fi;
 }
 
+#holt Datei $1 entweder aus /DATA/down oder $srv0 oder $2 auf /root/Downloads; $3 = potentieller hol-Name
+hol3() {
+	printf "${dblau}hol3 $1 $2 $3$reset()\n";
+	[ "$3" ]&&hname=$3||hname=$1;
+	printf "${dblau}hol3 $1 $2$reset()\n";
+	if ! [ -f "$Dw/$1" ]; then
+		if [ -f "$q1/$1" ]; then
+			printf "${blau}cp -ai "$q1/$1" $Dw/$reset\n";
+			cp -ai "$q1/$1" "$Dw/";
+		elif [ "$srv0" ]; then
+		  printf "${blau}ssh $srv0 ls \"$q1/$1\" >/dev/null 2>&1&& scp -p $srv0:$q1/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q1/\n";
+			ssh "$srv0" "ls \"$q1/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q1/$1" "$Dw/"&&cp -ai "$Dw/$1" "$q1/";
+		else
+			printf "${blau}wget "$2/$hname"$reset\n";
+			wget "$2/$hname";
+			printf "mv -i $hname $Dw/$1\n";
+			mv -i "$hname" "$Dw/$1";
+			[ -f "$Dw/$1" -a -d "$q1" ]&&cp -ai "$Dw/$1" $q1/;
+			[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$q1/";
+		fi;
+	fi;
+}
+
 teamviewer10() {
+	printf "${dblau}teamviewer$reset()\n";
 	cd >/dev/null;
+	Dw=Downloads;
+	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
 	while true; do
 	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
 	 [ "$tversion" ]||tversion=0;
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 	 case $tversion in
 		 0)
+				q1=/DATA/down;
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
+					trpm=teamviewer_10.0.95021_i386.deb;
+					hname=teamviewer_i386.deb;
+					npng=libpng12-0_1.2.54-1ubuntu1.1_i386.deb;
+					hol3 "$npng" "http://security.ubuntu.com/ubuntu/pool/main/libp/libpng";
+					if ! dpkg -s libpng12-0:i386 >/dev/null 2>&1; then
+						dpkg -i "$Dw/$npng";
+					fi;
 					;;
 				4|5|6|7) # opensuse, fedora, mageia
-					trpm=teamviewer_10.0.95021.i686.rpm;
+					trpm=teamviewer_10.0.95021.i386.rpm;
+					hname=teamviewer.i686.rpm;
 					;;
 				esac;
-			 if ! [ -f "$trpm" ]; then
-				 q1=/DATA/down;
-				 if [ -f "$q1/$trpm" ]; then
-					 printf "${blau}cp -ai "$q1/$trpm" .$reset\n";
-					 cp -ai "$q1/$trpm" .;
-				 elif [ "$srv0" ]; then
-					 printf "${blau}ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .$reset\n";
-					 ssh "$srv0" "ls \"$q1/$trpm\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$trpm .;
-				 else
-					 hname=teamviewer.i686.rpm;
-					 printf "${blau}wget "https://download.teamviewer.com/download/version_10x/$hname"$reset\n";
-					 wget "https://download.teamviewer.com/download/version_10x/$hname";
-					 mv -i "$hname" "$trpm";
-				 fi;
-			 fi;
-			 if [ -f "$trpm" ]; then
+				hol3 "$trpm" "https://download.teamviewer.com/download/version_10x" "$hname";
+			 if [ -f "$Dw/$trpm" ]; then
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
-					printf "${blau}apt install /$trpm$reset\n";
-					apt install /$trpm;
+					printf "${blau}apt install ./$Dw/$trpm$reset\n";
+					apt install ./$Dw/$trpm;
 					;;
 				4) # opensuse
-					 printf "${blau}zypper --no-gpg-checks in -l ./$trpm$reset\n";
-					 zypper --gpg-auto-import-keys in -l ./$trpm;
+					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
+					 zypper --gpg-auto-import-keys in -l ./$Dw/$trpm;
 					;;
 				5) # fedora,
-					 printf "${blau}dnf --nogpgcheck install ./$trpm$reset\n";
-					 dnf --nogpgcheck install ./$trpm;
+					 printf "${blau}dnf --nogpgcheck install ./$Dw/$trpm$reset\n";
+					 dnf --nogpgcheck install $Dw/$trpm;
 					 ;;
 				6) # fedoraalt
-					 printf "${blau}yum --nogpgcheck install ./$trpm$reset\n";
-					 yum --nogpgcheck install ./$trpm;
+					 printf "${blau}yum --nogpgcheck install ./$Dw/$trpm$reset\n";
+					 yum --nogpgcheck install $Dw/$trpm;
 					 ;;
 			  7) # mageia
 					;;
@@ -732,18 +773,39 @@ teamviewer10() {
 	done;
 	zvz=/opt/teamviewer/tv_bin/wine/lib;
 	zd=$zvz/libfreetype.so.6;
-	while true; do
-		[ -f "$zd" ]&&break;
-		qd=$HOME/usr/lib/libfreetype.so.6.12.3;
-		while ! [ -f "$qd" ]; do
-			qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
-			if ! [ -f "$HOME/$qqd" ]; then
-				wget "https://download.opensuse.org/update/leap/42.3/oss/x86_64/$qqd";# geht auch für Fedora
-			fi;
-			rpm2cpio "$HOME/$qqd"|cpio -idmv
-		done;
-		cp -ai "$qd" "$zd";
-	done;
+	case $OSNR in
+		1|2|3)
+					npng=libfreetype6_2.6.1-0.1ubuntu2.3_i386.deb;
+					hol3 "$npng" "http://security.ubuntu.com/ubuntu/pool/main/f/freetype";
+					zdatei=/opt/teamviewer/tv_bin/wine/lib/libfreetype.so.6.12.1;
+					if ! [ -f "$zdatei" ]; then
+						cd "$Dw";
+            echo ar -xv "$npng";
+            ar -xv "$npng";
+						tar -xvf data.tar.xz;
+						cp -ai $(find usr -type f -name "libfreetype*") /opt/teamviewer/tv_bin/wine/lib/;
+						cp -ai $(find usr -type l -name "libfreetype*") /opt/teamviewer/tv_bin/wine/lib/;
+						cd -;
+						# cp ./libfreetype6_2.6.1-0.1ubuntu2.3_i386/usr/lib/i386-linux-gnu/* /opt/teamviewer/tv_bin/wine/lib;
+					fi;
+					;;
+		4) # opensuse
+			while :; do
+				[ -f "$zd" ]&&break;
+				qd=$Dw/usr/lib/libfreetype.so.6.12.3;
+				hol3 "$qd"
+				while ! [ -f "$qd" ]; do
+					qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
+					# geht auch für Fedora
+					hol3 "$qqd" "https://download.opensuse.org/update/leap/42.3/oss/x86_64"
+					cd "$Dw";
+					rpm2cpio "$qqd"|cpio -idmv
+					cd -;
+				done;
+				echo cp -ai "$Dw/$qd" "$zd";
+				cp -ai "$Dw/$qd" "$zd";
+			done;;
+	esac;
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
 					;;
@@ -751,17 +813,8 @@ teamviewer10() {
 					lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
 					if rpm -q "$lxcb" >/dev/null; then
 					 echo $? bei rpm -q "$lxcb";
-					 if ! [ -f "$lxcb" ]; then
-						 q1=/DATA/down;
-						 if [ -f "$q1/$lxcb" ]; then
-							 cp -ai "$q1/$lxcb" .;
-						 elif [ "$srv0" ]; then
-							 ssh "$srv0" "ls \"$q1/$lxcb\" >/dev/null 2>&1"&& scp -p $srv0:$q1/$lxcb .;
-						 else
-							wget http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64/$lxcb;
-						 fi;
-					 fi;
-					 rpm -i --force "./$lxcb";
+					 hol3 "$lxcb" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
+					 rpm -i --force "$Dw/$lxcb";
 					 zypper addlock "$lxcb";
 					fi;
 					;;
@@ -789,14 +842,15 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-setzhost;
+#setzhost;
 #setzbenutzer;
-mountlaufwerke;
+#mountlaufwerke;
 #proginst;
 #fritzbox;
-sambaconf;
+#sambaconf;
 #musterserver;
-#teamviewer10;
+#firewall http https dhcp postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql;
+teamviewer10;
 echo Ende von $0!
 
 if false; then
