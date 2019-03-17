@@ -557,6 +557,9 @@ firewall() {
 			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4=vsftpd;p5=vsftp;;
 			mysql) p1=3306;p2=mysqld_disable_trans;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
 			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
+			turbomed) p1="6001/tcp";p2="-";p3="-";p4="6001/tcp";p5="6001/tcp";;
+#			firebird) p1="3050/tcp";p2="-";p3="-";p4="3050/tcp";p5="3050/tcp";;# soll nach speedguide.net Vulnerabilität haben
+			# vpn: 1701
 			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
 		esac
 		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
@@ -604,8 +607,9 @@ tufirewall() {
 			if [ $ret -eq 0 ]; then
 				if firewall-cmd --list-services >/dev/null 2>&1; then
 					if ! firewall-cmd --list-services|grep -qE "(^|\s)$4(\s|$)"; then
-						printf "${blau}firewall-cmd --permanent --add-service=$4$reset\n";
-						firewall-cmd --permanent --add-service=$4;
+						case "$4" in [0-9]*/*) was=port;; *) was=service;; esac;
+						printf "${blau}firewall-cmd --permanent --add-$was=$4$reset\n";
+						firewall-cmd --permanent --add-$was=$4;
 						firewall-cmd --reload;
 						zustarten=1;
 					fi;
@@ -815,12 +819,13 @@ teamviewer10() {
 				1|2|3) # mint, ubuntu, debian
 					;;
 				4) # opensuse
-					lxcb=libxcb1-32bit-1.11.1-9.1.x86_64.rpm;
-					if rpm -q "$lxcb" >/dev/null; then
+					lxcb=libxcb1-32bit-1.11.1-9.1.x86_64;
+					if ! rpm -q "$lxcb" >/dev/null; then
 					 echo $? bei rpm -q "$lxcb";
-					 hol3 "$lxcb" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
-					 rpm -i --force "$Dw/$lxcb";
+					 hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
+					 rpm -i --force "$Dw/$lxcb.rpm";
 					 zypper addlock "$lxcb";
+					echo Stelle 5
 					fi;
 					;;
 				5|6|7) # fedora, mageia
@@ -854,7 +859,7 @@ variablen;
 #fritzbox;
 #sambaconf;
 #musterserver;
-firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql;
+firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 teamviewer10;
 echo Ende von $0!
 
