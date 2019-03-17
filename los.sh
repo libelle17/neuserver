@@ -542,18 +542,20 @@ firewall() {
 	  p1="";p2="";p3="";p4="";p5="";p6="";p7="";	
 		case $para in
 			samba) p1=Samba; p2=samba_export_all_ro; p3=samba_export_all_rw; p4=samba; p5="samba-server"; p6="samba-client"; p7=samba;;
-			http) p1="80/tcp";;
-			https) p1="443/tcp";;
-			dhcp) p1="67,68/udp";;
-			postgresql) p1=5432;;
-			ssh) p1=22/tcp;;
-			smtp) p1=25/tcp;;
-			imap) p1=143/tcp;;
-			imaps) p1=993/tcp;;
-			pop3) p1=110/tcp;;
-			pop3s) p1=995/tcp;;
-			vsftp) p1="20,21,990,40000:50000/tcp";;
-			mysql) p1=3306;;
+			http) p1="80/tcp"; p2=httpd_can_network_connect; p3=httpd_can_network_connect_db;p4=http;;
+			https) p1="443/tcp"; p2=httpd_disable_trans; p3=httpd_enable_cgi;p4=https;;
+			dhcp) p1="67,68/udp"; p2=dhcpc_disable_trans; p3=dhcpd_disable_trans;p4=dhcp;;
+			dhcpv6) p1="-"; p2="-"; p3="-";p4=dhcpv6;;
+			dhcpv6c) p1="-"; p2="-"; p3="-";p4=dhcpv6-client;;
+			postgresql) p1=5432;p2=postgresql_disable_trans;p3=allow_user_postgresql_connect;p4=postgresql;;
+			ssh) p1=22/tcp;p2=ssh_keygen_disable_trans;p3="-";p4=ssh;;
+			smtp) p1=25/tcp;p2="-";p3="-";p4=smtp;;
+			imap) p1=143/tcp;p2="-";p3="-";p4=imap;;
+			imaps) p1=993/tcp;p2="-";p3="-";p4=imaps;;
+			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;;
+			pop3s) p1=995/tcp;p2="-";p3="-";p4=pop3s;;
+			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4=vsftpd;;
+			mysql) p1=3306;p2=mysqld_disable_trans;p3=allow_user_mysql_connect;p4=mysql;;
 			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
 		esac
 		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
@@ -564,20 +566,22 @@ firewall() {
 # $1 = ufw allow .., $2 $3 = setsebol -P ..=1, $4 = firewall-cmd --permanent --add-service=.., $5 $6 $7 = /etc/sysconfig/SuSEfirewall2
 tufirewall() {
 	zustarten=0;
-	if which ufw >/dev/null 2>&1; then
-		if [ -z "$ufwret" ]; then
-			ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
-			ufwret=$?;
-		fi;
-		if [ $ufwret -eq 0 ]; then
-			if ! ufw status|grep "^$1[[:space:]]*ALLOW" >/dev/null; then
-				ufw show added|grep "allow $1\$" >/dev/null 2>&1 ||{ printf "${blau}ufw allow $1$reset\n"; ufw allow "$1";};
-				if $(echo $ufwstatus|grep -q " active "); then
-					systemctl restart ufw;
-					zustarten=1;
+	if [ "$1" != "-" ]; then
+		if which ufw >/dev/null 2>&1; then
+			if [ -z "$ufwret" ]; then
+				ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
+				ufwret=$?;
+			fi;
+			if [ $ufwret -eq 0 ]; then
+				if ! ufw status|grep "^$1[[:space:]]*ALLOW" >/dev/null; then
+					ufw show added|grep "allow $1\$" >/dev/null 2>&1 ||{ printf "${blau}ufw allow $1$reset\n"; ufw allow "$1";};
+					if $(echo $ufwstatus|grep -q " active "); then
+						systemctl restart ufw;
+						zustarten=1;
+					fi;
+				else
+					printf "$1 in ufw schon erlaubt\n";
 				fi;
-			else
-				printf "$1 in ufw schon erlaubt\n";
 			fi;
 		fi;
 	fi;
@@ -598,7 +602,7 @@ tufirewall() {
 			ret=$?;
 			if [ $ret -eq 0 ]; then
 				if firewall-cmd --list-services >/dev/null 2>&1; then
-					if ! firewall-cmd --list-services|grep -q "$4[^-]"; then
+					if ! firewall-cmd --list-services|grep -qE "(^|\s)$4(\s|$)"; then
 						printf "${blau}firewall-cmd --permanent --add-service=$4$reset\n";
 						firewall-cmd --permanent --add-service=$4;
 						firewall-cmd --reload;
@@ -849,7 +853,7 @@ variablen;
 #fritzbox;
 #sambaconf;
 #musterserver;
-#firewall http https dhcp postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql;
+firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql;
 teamviewer10;
 echo Ende von $0!
 
