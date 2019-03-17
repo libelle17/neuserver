@@ -537,7 +537,6 @@ EOF
 }
 
 firewall() {
-	tufirewall 
 	while [ $# -gt 0 ]; do
 		para="$1";
 		case $para in
@@ -773,8 +772,11 @@ teamviewer10() {
 }
 
 variablen() {
- sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
-. ./shvars
+ while :; do
+  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
+  . ./shvars
+  if test "$(./configure nuros)" != "$OSNR"; then ./configure;:;else break;fi;
+ done;
  HOME="$(getent passwd $(whoami)|cut -d: -f6)"; # logname
 }
 
@@ -792,7 +794,7 @@ setzhost;
 mountlaufwerke;
 #proginst;
 #fritzbox;
-#sambaconf;
+sambaconf;
 #musterserver;
 #teamviewer10;
 echo Ende von $0!
