@@ -854,13 +854,13 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
-#proginst;
-#fritzbox;
-#sambaconf;
-#musterserver;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
+proginst;
+fritzbox;
+sambaconf;
+musterserver;
 firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 teamviewer10;
 echo Ende von $0!
