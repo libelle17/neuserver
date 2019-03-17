@@ -549,7 +549,7 @@ firewall() {
 			dhcpv6c) p1="-"; p2="-"; p3="-";p4=dhcpv6-client;p5=dhcpv6-client;;
 			postgresql) p1=5432;p2=postgresql_disable_trans;p3=allow_user_postgresql_connect;p4=postgresql;p5=postgresql;;
 			ssh) p1=22/tcp;p2=ssh_keygen_disable_trans;p3="-";p4=ssh;p5=sshd;;
-			smtp) p1=25/tcp;p2="-";p3="-";p4=smtp;p5=smtp;
+			smtp) p1=25/tcp;p2="-";p3="-";p4=smtp;p5=smtp;;
 			imap) p1=143/tcp;p2="-";p3="-";p4=imap;p5=imap;;
 			imaps) p1=993/tcp;p2="-";p3="-";p4=imaps;;
 			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;p5=pop3;;
