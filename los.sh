@@ -859,7 +859,7 @@ setzbenutzer;
 mountlaufwerke;
 proginst;
 fritzbox;
-sambaconf;
+#sambaconf;
 musterserver;
 firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 teamviewer10;
