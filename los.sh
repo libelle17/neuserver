@@ -6,6 +6,8 @@ reset="\e[0m";
 prog="";
 obnmr=1;
 ftb=/etc/fstab;
+gitacc=libelle17;
+gruppe=praxis;
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -23,7 +25,7 @@ esac;
 
 setzbenutzer() {
 printf "${dblau}setzbenutzer$reset()\n";
-grep -q "^praxis:" /etc/group||groupadd praxis
+grep -q "^$gruppe:" /etc/group||groupadd $gruppe
 $SPR samba 2>/dev/null||$IPR samba
 systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
 systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
@@ -147,7 +149,7 @@ pruefuser() {
 		} fi;
 		if test $obu -eq 1; then {
 			printf "erstelle Linux-Benutzer $blau$1$reset\n";
-			useradd -p $(openssl passwd -1 $passw) -c"$2" -g praxis "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
+			useradd -p $(openssl passwd -1 $passw) -c"$2" -g $gruppe "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
@@ -409,7 +411,7 @@ mariadb() {
 		user="";
 		while [ -z "$user" ];do
 			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei praxis user||read user;
+			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei $gruppe user||read user;
 		done;
 		pwd="";
 		while [ -z "$pwd" ];do
@@ -836,6 +838,10 @@ teamviewer10() {
 	cd - >/dev/null;
 }
 
+github() {
+	git remote set-url origin git@github.com:$gitacc/$DPROG.git;
+}
+
 variablen() {
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
@@ -859,10 +865,11 @@ setzbenutzer;
 mountlaufwerke;
 proginst;
 fritzbox;
-#sambaconf;
+sambaconf;
 musterserver;
 firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 teamviewer10;
+github;
 echo Ende von $0!
 
 if false; then
