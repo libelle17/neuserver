@@ -542,20 +542,21 @@ firewall() {
 	  p1="";p2="";p3="";p4="";p5="";p6="";p7="";	
 		case $para in
 			samba) p1=Samba; p2=samba_export_all_ro; p3=samba_export_all_rw; p4=samba; p5="samba-server"; p6="samba-client"; p7=samba;;
-			http) p1="80/tcp"; p2=httpd_can_network_connect; p3=httpd_can_network_connect_db;p4=http;;
-			https) p1="443/tcp"; p2=httpd_disable_trans; p3=httpd_enable_cgi;p4=https;;
-			dhcp) p1="67,68/udp"; p2=dhcpc_disable_trans; p3=dhcpd_disable_trans;p4=dhcp;;
-			dhcpv6) p1="-"; p2="-"; p3="-";p4=dhcpv6;;
-			dhcpv6c) p1="-"; p2="-"; p3="-";p4=dhcpv6-client;;
-			postgresql) p1=5432;p2=postgresql_disable_trans;p3=allow_user_postgresql_connect;p4=postgresql;;
-			ssh) p1=22/tcp;p2=ssh_keygen_disable_trans;p3="-";p4=ssh;;
-			smtp) p1=25/tcp;p2="-";p3="-";p4=smtp;;
-			imap) p1=143/tcp;p2="-";p3="-";p4=imap;;
+			http) p1="80/tcp"; p2=httpd_can_network_connect; p3=httpd_can_network_connect_db;p4=http;p5=http;;
+			https) p1="443/tcp"; p2=httpd_disable_trans; p3=httpd_enable_cgi;p4=https;p5=https;;
+			dhcp) p1="67,68/udp"; p2=dhcpc_disable_trans; p3=dhcpd_disable_trans;p4=dhcp;p5=dhcp;;
+			dhcpv6) p1="-"; p2="-"; p3="-";p4=dhcpv6;p5=dhcpv6;;
+			dhcpv6c) p1="-"; p2="-"; p3="-";p4=dhcpv6-client;p5=dhcpv6-client;;
+			postgresql) p1=5432;p2=postgresql_disable_trans;p3=allow_user_postgresql_connect;p4=postgresql;p5=postgresql;;
+			ssh) p1=22/tcp;p2=ssh_keygen_disable_trans;p3="-";p4=ssh;p5=sshd;;
+			smtp) p1=25/tcp;p2="-";p3="-";p4=smtp;p5=smtp;
+			imap) p1=143/tcp;p2="-";p3="-";p4=imap;p5=imap;;
 			imaps) p1=993/tcp;p2="-";p3="-";p4=imaps;;
-			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;;
+			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;p5=pop3;;
 			pop3s) p1=995/tcp;p2="-";p3="-";p4=pop3s;;
-			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4=vsftpd;;
-			mysql) p1=3306;p2=mysqld_disable_trans;p3=allow_user_mysql_connect;p4=mysql;;
+			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4=vsftpd;p5=vsftp;;
+			mysql) p1=3306;p2=mysqld_disable_trans;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
+			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
 			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
 		esac
 		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
