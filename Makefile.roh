@@ -195,7 +195,7 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 
 rot::="\033[1;31m"
 gruen::="\033[0;32m"
-#blau="\033[0;34;1;47m"
+dblau::="\033[0;34;1;47m"
 blau::="\033[1;34m"
 reset::="\033[0m"
 
