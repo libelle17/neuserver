@@ -500,8 +500,8 @@ nichtroot() {
 
 sambaconf() {
 	printf "${dblau}sambaconf$reset()\n"
-	dire="/etc/samba";[ -d "$dire" ]||mkdir -p /etc/samba;
-	smbdt="/etc/samba/smb.conf";
+	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
+	smbdt="$etcsamba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
 	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
@@ -526,16 +526,17 @@ EOF
 	awk -f smbd.sh $smbdt >smb.conf;
 	firewall samba;
 
-	if ! diff -q smb.conf /etc/samba/smb.conf ||[ $zustarten = 1 ]; then  
-		mv /etc/samba/smb2.conf /etc/samba/smb3.conf 2>/dev/null;
-		mv /etc/samba/smb1.conf /etc/samba/smb2.conf 2>/dev/null;
-		mv /etc/samba/smb0.conf /etc/samba/smb1.conf 2>/dev/null;
-		mv /etc/samba/smb.conf /etc/samba/smb0.conf 2>/dev/null;
-		cp -a smb.conf /etc/samba/smb.conf;
-	  systemctl restart smbd 2>/dev/null;	
-	  systemctl restart smb 2>/dev/null;	
-	  systemctl restart nmbd 2>/dev/null;	
-	  systemctl restart nmb 2>/dev/null;	
+	if ! diff -q smb.conf $smbdt ||[ $zustarten = 1 ]; then  
+    for i in $(seq 100 -1 0); do
+			if [ -f $etcsamba/smb$i.conf ]; then
+				mv $etcsamba/smb$i.conf $etcsamba/smb$(echo $i|awk '{print $0+1}').conf 2>/dev/null;
+			fi;
+		done;
+		mv $smbdt $etcsamba/smb0.conf 2>/dev/null;
+		cp -a smb.conf $smbdt;
+		for serv in smbd smb nmbd nmb; do
+			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
+		done;
 	fi;
 }
 
@@ -871,12 +872,12 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
 #proginst;
 #fritzbox;
-#sambaconf;
+sambaconf;
 #musterserver;
 #firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 #teamviewer10;

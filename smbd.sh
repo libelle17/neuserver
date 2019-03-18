@@ -2,14 +2,16 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
-function druckabschnitt(i,Pfad) {
+function druckNaZeile(i,Pfad) {
 		printf "   %s = ",Na[i];
 		if (i==0) printf "%s (los.sh %s)\n", Pfad,datum;
 		else if (i==1) print Pfad;
 		else if (Na[i]=="available") print (system("mountpoint -q '"Pfad"'")?"No":"Yes");
 		else print Ia[i];
 }
+# Vorgaben für [global] (N[] und I[]) und fstab-Abschnitte (Na[] und Ia[])
 @include "smbvars.sh";
+# Namen (A[]) und Pfade (P[]) vorgegebener Abschnitte
 @include "smbab.sh";
 BEGIN {
 # for(i in N) fertig[i]=0;
@@ -43,10 +45,11 @@ FS="=";
 		for(i in Na) {
 			if (fertig[i]==0) {
 				if (!kommentiert) {
-					print "# hinzugefügt (los.sh %s):\n", datum;
+					printf "# hinzugefügt (los.sh %s):\n", datum;
 					kommentiert=1;
 				}
-				druckabschnitt(i,Pfad);
+				druckNaZeile(i,Pfad);
+				print $0;
 				next;
 			}
 		}
@@ -64,7 +67,7 @@ FS="=";
 	}
 #	for (i in A) { printf "# i: %i, A[i]: %s\n",i,A[i]; }
 }
-# innerhalb eines Abchnitts, in Nicht-Kommentarzeile => pruefen
+# innerhalb eines Abschnitts, in Nicht-Kommentarzeile => pruefen
 /^[^[#;]/ && NF>1 {
 	if (inglobal==1) {
 		trn=trim($1);
@@ -93,8 +96,8 @@ FS="=";
 #					print "# belassen:"
 					print $0;
 				} else {
-				  if (Na[i]!="available") printf "# geändert (los.sh %s):\n", datum;
-					druckabschnitt(i,Pfad);
+				  if (Na[i]!="available") printf "# abgewandelt (los.sh %s):\n", datum;
+					druckNaZeile(i,Pfad);
 				}
 				fertig[i]=1;
 				next;
@@ -113,7 +116,7 @@ for (j in A) {
 		printf "# Abschnitt ergänzt (los.sh %s):\n", datum;
 		print A[j];
 		for (i in Na)  {
-			druckabschnitt(i,P[j]);
+			druckNaZeile(i,P[j]);
 		}
 	}
 }
