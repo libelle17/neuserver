@@ -72,7 +72,7 @@ MINGCCNR::=6
 #// endif
 # maximal verfügbare g++-Version, falls die Verknüpfungen in /usr/bin stehen und evtl. /usr/bin/g++ nicht auf die höchste verknüpft ist
 # deren Hauptversionsnummer
-MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
+MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i $(KR)&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
 CCName::=Nix
 ifeq ($(MAXGCCNR),0)
 	MAXGCCNR::=$(shell erg=$$(! which g++&&echo 0||g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
