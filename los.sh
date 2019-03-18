@@ -7,7 +7,7 @@ prog="";
 obnmr=1;
 ftb=/etc/fstab;
 gitacc=libelle17;
-gruppe=praxis;
+gruppe=$(cat gruppe);
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -467,6 +467,7 @@ proginst() {
 nichtroot() {
 	printf "${dblau}nichtroot$reset()\n"
 	if test "$(id -u)" -ne 0; then
+		github;
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
 			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
 			gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
@@ -677,14 +678,18 @@ fritzbox() {
 	fi;
 }
 
-musterserver() {
- printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
- if [ "$srv0" ]; then
+machidpub() {
 	 idpub="$HOME/.ssh/id_rsa.pub";
 	 while [ ! -f "$idpub" ]; do
 	  printf "Es fehlt noch: $blau$idpub$reset\n";
 	  ssh-keygen -t rsa; # return, return, return
 	 done;
+}
+
+musterserver() {
+ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
+ if [ "$srv0" ]; then
+	 machidpub;
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F=.ssh/authorized_keys;grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 KS=$HOME/.ssh/authorized_keys;
 	 test -f "$KS"||touch "$KS";
@@ -839,6 +844,11 @@ teamviewer10() {
 }
 
 github() {
+	machidpub;
+	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$gitacc.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
+		curl -u "$gitacc" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
+	fi;
+#	curl -u "$gitacc:$passwd" ...
 	git remote set-url origin git@github.com:$gitacc/$DPROG.git;
 }
 
@@ -860,16 +870,15 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-setzhost;
-setzbenutzer;
-mountlaufwerke;
-proginst;
-fritzbox;
-sambaconf;
-musterserver;
-firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-teamviewer10;
-github;
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
+#proginst;
+#fritzbox;
+#sambaconf;
+#musterserver;
+#firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+#teamviewer10;
 echo Ende von $0!
 
 if false; then
