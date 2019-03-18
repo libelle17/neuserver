@@ -27,8 +27,8 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Fax server functionality</b>: induces automatic fax
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
+Fax server functionality</b>: induces automatic fax
 transmission of files, naming of received faxes and logging
 of all of them in a database <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
@@ -186,32 +186,32 @@ Options which are not saved (current value in parentheses):
 -delf, --deletefax</b>: delete a fax with query (<b>0</b>)
 <b><br>
 -delo, --deleteorphans</b>: delete entries from
-&lsquo;<b>spool</b>&lsquo; without detection of file in
+&rsquo;<b>spool</b>&rsquo; without detection of file in
 waiting directory or capisuite fax or hylafax (<b>0</b>)
 <b><br>
 -dela, --deleteallwaiting</b>: delete all waiting faxes and
-associated entries from &lsquo;<b>spool</b>&lsquo;
+associated entries from &rsquo;<b>spool</b>&rsquo;
 (<b>0</b>) <b><br>
 -again, --receiveagain</b>: present a received fax again
 (<b>0</b>) <b><br>
 -red, --redirect</b>: redirect outgoing fax ahead by the
 other channel (<b>0</b>) <b><br>
 -csf, --correctsuccessflag</b>: in the database table
-&lsquo;<b>outa</b>&lsquo; the success flag is being
+&rsquo;<b>outa</b>&rsquo; the success flag is being
 corrected (<b>0</b>) <b><br>
 -rod, --reorderdir</b>: Examine files in waiting,failed
 a.faxed directory against the tables
-&lsquo;<b>outa</b>&lsquo; and put them to order (<b>0</b>)
+&rsquo;<b>outa</b>&rsquo; and put them to order (<b>0</b>)
 <b><br>
 -st, --stop</b>: stop autofax (<b>0</b>) <b><br>
 -listo, --listoutg</b>: lists entries from
-&lsquo;<b>outa</b>&lsquo; with success flag (<b>0</b>)
+&rsquo;<b>outa</b>&rsquo; with success flag (<b>0</b>)
 <b><br>
 -listf, --listfailed</b>: lists entries from
-&lsquo;<b>outa</b>&lsquo; without success flag (<b>0</b>)
+&rsquo;<b>outa</b>&rsquo; without success flag (<b>0</b>)
 <b><br>
 -listi, --listinca</b>: lists entries from
-&lsquo;<b>inca</b>&lsquo; (<b>0</b>) <b><br>
+&rsquo;<b>inca</b>&rsquo; (<b>0</b>) <b><br>
 -listw, --listwaiting</b>: lists waiting faxes (<b>0</b>)
 <b><br>
 -reconly, --receiveonly</b>: receives only (<b>0</b>)
@@ -846,10 +846,10 @@ caused by the program.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Linux-Server neu einrichten</b>: richtet einen
-Linux-Server f&uuml;r die diabetologische
-Gemeinschaftspraxis Dachau neu ein <br>
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
+Linux-Server neu einrichten</b>: richtet einen Linux-Server
+f&uuml;r die diabetologische Gemeinschaftspraxis Dachau
+neu ein <br>
 (manpage available in english: &rsquo;man neuserver&rsquo;
 or &rsquo;man -Len neuserver&rsquo;)</p>
 
@@ -1020,32 +1020,32 @@ Klammern): <br>
 -loef, --loeschefax</b>: ein Fax nach Rueckfrage loeschen
 (<b>0</b>) <b><br>
 -loew, --loeschewaise</b>: Eintraege aus
-&lsquo;<b>spool</b>&lsquo; loeschen, zu denen keine Datei im
+&rsquo;<b>spool</b>&rsquo; loeschen, zu denen keine Datei im
 Wartevz.und kein Capi- oder Hylafax nachweisbar ist
 (<b>0</b>) <b><br>
 -loea, --loescheallew</b>: alle wartenden Faxe und
-zugehoerige Eintraege aus &lsquo;<b>spool</b>&lsquo;
+zugehoerige Eintraege aus &rsquo;<b>spool</b>&rsquo;
 loeschen (<b>0</b>) <b><br>
 -erneut, --erneutempf</b>: empfangenes Fax erneut
 bereitstellen (<b>0</b>) <b><br>
 -uml, --umleiten</b>: ausgehendes Fax vorzeitig auf zweitem
 Weg schicken (<b>0</b>) <b><br>
 -kez, --korrerfolgszeichen</b>: in der Datenbanktabelle
-&lsquo;<b>outa</b>&lsquo; wird das Erfolgszeichen korrigiert
+&rsquo;<b>outa</b>&rsquo; wird das Erfolgszeichen korrigiert
 (<b>0</b>) <b><br>
 -bvz, --bereinigevz</b>: Dateien aus
 Wartevz.,Gescheitertenvz.u.Gefaxtvz.gegen
-&lsquo;<b>outa</b>&lsquo; pruefen und ggf. aufraeumen
+&rsquo;<b>outa</b>&rsquo; pruefen und ggf. aufraeumen
 (<b>0</b>) <b><br>
 -st, --stop</b>: autofax anhalten (<b>0</b>) <b><br>
 -lista, --listausg</b>: listet Datensaetze aus
-&lsquo;<b>outa</b>&lsquo; mit Erfolgskennzeichen auf
+&rsquo;<b>outa</b>&rsquo; mit Erfolgskennzeichen auf
 (<b>0</b>) <b><br>
 -listf, --listfehlgeschl</b>: listet Datensaetze aus
-&lsquo;<b>outa</b>&lsquo; ohne Erfolgskennzeichen auf
+&rsquo;<b>outa</b>&rsquo; ohne Erfolgskennzeichen auf
 (<b>0</b>) <b><br>
 -liste, --listeing</b>: listet Datensaetze aus
-&lsquo;<b>inca</b>&lsquo; auf (<b>0</b>) <b><br>
+&rsquo;<b>inca</b>&rsquo; auf (<b>0</b>) <b><br>
 -listw, --listwartende</b>: listet wartende Faxe auf
 (<b>0</b>) <b><br>
 -nurempf, --nurempfangen</b>: empfaengt nur (<b>0</b>)

@@ -44,7 +44,7 @@
 ICH::=$(firstword $(MAKEFILE_LIST))
 SRCS::=$(wildcard *.cpp)
 OBJ::=$(SRCS:.cpp=.o)
-DN::=>/dev/null# DevNull
+DN::= >/dev/null# DevNull
 KR::= $(DN) 2>&1# keine Rueckmeldung
 KF::= 2$(DN)# keine Fehlermeldung
 # wenn aus vi aufgerufen, kein unnoetigen Ausgaben, BA=bedingte Ausgabe, BFA=bedingte Fehlerausgabe
@@ -72,15 +72,16 @@ MINGCCNR::=6
 #// endif
 # maximal verfügbare g++-Version, falls die Verknüpfungen in /usr/bin stehen und evtl. /usr/bin/g++ nicht auf die höchste verknüpft ist
 # deren Hauptversionsnummer
-MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i $(KR)&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
+MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
 CCName::=Nix
 ifeq ($(MAXGCCNR),0)
-	MAXGCCNR::=$(shell erg=$$(g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
+	MAXGCCNR::=$(shell erg=$$(! which g++&&echo 0||g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
 	ifeq ($(MAXGCCNR)a,a)
 		MAXGCCNR::=0
 	endif
 	CCName::=g++
 endif
+	
 #1=verfügbare Version höher als die minimal notwendige, 0=nicht
 # 1=minimal notwendige Version verfügbar, 0=nicht
 GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
@@ -694,5 +695,12 @@ tuneuproj:
 	sed -i.bak '/\$DTN [^'\'']/s/\$DTN /\$DTN +'\''tabfirst|tab sview ..\/$(DPROG)\/$(DPROG).cpp|tabnext|tab sview ..\/$(DPROG)\/$(DPROG).h|tabfirst'\'' /' viall;\
 	sh viall;\
 	echo Weiter mit/Go on with: \"cd ../"$$TZL"\" $(DN);
+
+.PHONY: mausgeb
+mausgeb:
+	@echo MAXGCCNR: $(MAXGCCNR)
+	@echo MINGCCNR: $(MINGCCNR)
+	@echo OSNR: $(OSNR)
+	@echo MINVGCC: $(MINVGCC)
 
 -include $(patsubst %,$(DEPDIR)/%.d,$(basename $(SRCS)))
