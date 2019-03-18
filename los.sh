@@ -6,7 +6,7 @@ reset="\e[0m";
 prog="";
 obnmr=1;
 ftb=/etc/fstab;
-gitacc=libelle17;
+GITACC=libelle17;
 gruppe=$(cat gruppe);
 
 setzhost() {
@@ -845,11 +845,12 @@ teamviewer10() {
 
 github() {
 	machidpub;
-	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$gitacc.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
-		curl -u "$gitacc" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
+	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
+		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 	fi;
-#	curl -u "$gitacc:$passwd" ...
-	git remote set-url origin git@github.com:$gitacc/$DPROG.git;
+#	curl -u "$GITACC:$passwd" ...
+	git remote set-url origin git@github.com:$GITACC/$DPROG.git;
+# git clone ssh://git@github.com/$GITACC/$DPROG.git 
 }
 
 variablen() {
