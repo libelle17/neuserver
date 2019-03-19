@@ -50,8 +50,8 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-offers quasi the functionality of a fax server, which can be
-useful for some also behind a fast data line. <b><br>
+supplies the file los.sh, which configures the server with
+some callbacks. <b><br>
 neuserver</b> is a command line program to remit files of a
 certain directory automatically to <b>hylafax</b> (in case a
 linux-compatible modem is installed) and/or <b>capisuite</b>
