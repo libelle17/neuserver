@@ -10,7 +10,7 @@
 .SH SYNOPSIS
 \fB²DPROG² [-<kurzopt>|--<langopt> [<ergänzung>]] ...\fR
 .SH KURZBESCHREIBUNG
-\fB²DPROG²\fR bietet quasi die Funktionalität eines Faxservers, welcher für manche auch hinter einer schnellen Datenleitung sinnvoll sein kann.
+\fB²DPROG²\fR stellt das shell-script los.sh zur Verfügung, das den Server mit einigen Rückfragen einrichtet.
 .br
 \fB²DPROG²\fR ist ein Befehlszeilenprogramm, mit dem Dateien in einem bestimmten Verzeichnis automatisch an \fBhylafax\fR (falls ein linux-kompatibles Fax-Modem angeschlossen ist) und/oder \fBcapisuite\fR (falls eine Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet werden, wenn die Faxnummer im Dateinamen wie vorgesehen eingetragen ist,
 und das weiterhin die versandten Faxe in einer MariaDB-Datenbank abspeichert. 

@@ -869,9 +869,9 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-bietet quasi die Funktionalit&auml;t eines Faxservers,
-welcher f&uuml;r manche auch hinter einer schnellen
-Datenleitung sinnvoll sein kann. <b><br>
+stellt das shell-script los.sh zur Verf&uuml;gung, das
+den Server mit einigen R&uuml;ckfragen einrichtet.
+<b><br>
 neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
 in einem bestimmten Verzeichnis automatisch an
 <b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
