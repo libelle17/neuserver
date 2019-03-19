@@ -627,18 +627,19 @@ tufirewall() {
 	#	echo $susestatus;
 	ret=$?;
 	if [ $ret -eq 0 ]; then
-		# das folgende aus kons.cpp
+	 # das folgende abgewandelt aus kons.cpp
    susefw="/etc/sysconfig/SuSEfirewall2";
 	 if [ -f "$susefw" ]; then
 		 for endg in EXT INT DMZ; do
 			 for prart in "$5" "$6" "$7"; do
 				 if [ "$prart" ]; then
-					 echo grep "^FW_CONFIGURATIONS_$endg=\".*$prart" $susefw;
+				   prartu=$(echo "$prart"|sed 's/\//\\\//g');
+					 # echo grep "^FW_CONFIGURATIONS_$endg=\".*$prart" $susefw;
 					 nichtfrei=$(grep "^FW_CONFIGURATIONS_$endg=\".*$prart[ "\""]" $susefw);
-					 echo $nichtfrei $endg $prart;
+					 # echo $nichtfrei $endg $prart $prartu;
 					 if [ -z "$nichtfrei" ]; then
-						 echo bearbeite $nichtfrei $endg $prart;
-						 sed -i.bak$i "s/\(^FW_CONFIGURATIONS_$endg=\".*\)\(\".*$\)/\1 $prart\2/g" $susefw;
+						 # echo bearbeite $nichtfrei $endg $prart $prartu;
+						 sed -i.bak$i "s/\(^FW_CONFIGURATIONS_$endg=\".*\)\(\".*$\)/\1 $prartu\2/g" $susefw;
 					 fi;
 				 fi;
 			 done;
@@ -872,15 +873,15 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-setzhost;
-setzbenutzer;
-mountlaufwerke;
+#setzhost;
+#setzbenutzer;
+#mountlaufwerke;
 #proginst;
 #fritzbox;
-sambaconf;
+#sambaconf;
 #musterserver;
-#firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-#teamviewer10;
+firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+teamviewer10;
 echo Ende von $0!
 
 if false; then
