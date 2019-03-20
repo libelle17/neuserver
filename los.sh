@@ -879,7 +879,7 @@ variablen;
 #proginst;
 #fritzbox;
 #sambaconf;
-#musterserver;
+musterserver;
 firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
 teamviewer10;
 echo Ende von $0!
