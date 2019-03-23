@@ -1,4 +1,0 @@
-/OwningManagerAccountName\s*=/ {
-	split($0,a,"=");
-	printf a[2]"\n";
-}
