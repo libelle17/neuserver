@@ -531,14 +531,9 @@ EOF
 	awk -f $LOSVERZ/smbd.sh $smbdt >$LOSVERZ/smb.conf;
 	firewall samba;
 
-	if ! diff -q smb.conf $smbdt ||[ $zustarten = 1 ]; then  
-    for i in $(seq 100 -1 0); do
-			if [ -f $etcsamba/smb$i.conf ]; then
-				mv $etcsamba/smb$i.conf $etcsamba/smb$(echo $i|awk '{print $0+1}').conf 2>/dev/null;
-			fi;
-		done;
-		mv $smbdt $etcsamba/smb0.conf 2>/dev/null;
-		cp -a smb.conf $smbdt;
+	if ! diff -q $LOSVERZ/smb.conf $smbdt ||[ $zustarten = 1 ]; then  
+		backup "$etcsamba/smb" "$smbdt"
+		cp -a $LOSVERZ/smb.conf $smbdt;
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
@@ -669,6 +664,7 @@ fritzbox() {
 	 [ $erg4 -eq 0 ]&&{ ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); ipv=$ipv4;} # z.B. 192.168.178.1
 	 desc=$(curl $ipv:49000/tr64desc.xml 2>/dev/null);
 	 fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
+	 echo fbname: $fbname
 #	 fbuuid=$(echo "$desc"|sed -n '/UDN/{s/^[^>]*>\([^<]*\).*/\1/;s/:/=/;p;q}'|tr '[:lower:]' '[:upper:]'); # geht scheinbar nicht
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
@@ -852,15 +848,10 @@ teamviewer10() {
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
 	tvh="$LOSVERZ/tvglobal.conf";
-  awk -f $LOSVERZ/tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >$tvh;
-	if ! diff $tvconf $tvh >/dev/null; then
-    for i in $(seq 100 -1 0); do
-			if [ -f ${tvconf}_$i ]; then
-				mv ${tvconf}_$i ${tvconf}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
-			fi;
-		done;
-		mv $tvconf ${tvconf}_0;
-		cp -a "$tvh" $tvconf;
+  awk -f $LOSVERZ/tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >"$tvh";
+	if ! diff "$tvconf" "$tvh" >/dev/null; then
+		backup "$tvconf"
+		cp -a "$tvh" "$tvconf";
 	fi;
 }
 
@@ -885,24 +876,25 @@ variablen() {
  HOME="$(getent passwd $(whoami)|cut -d: -f6)"; # logname
 }
 
+backup() {
+	printf "${dblau}backup$reset($1,$2)\n";
+		for i in $(seq 100 -1 0); do
+			if [ -f ${1}_$i ]; then
+				mv ${1}_$i ${1}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
+			fi;
+		done;
+		[ "$2" ]&&ursp="$2"||ursp="$1";
+		[ -f "$ursp" ]&& mv "$ursp" "${ursp}_0";
+}
+
 cron() {
 	printf "${dblau}cron$reset()\n";
 	chier=$LOSVERZ/cronhier;
 	csrv=$LOSVERZ/crons$srv0;
-	for i in $(seq 100 -1 0); do
-		if [ -f ${chier}_$i ]; then
-			mv ${chier}_$i ${chier}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
-		fi;
-	done;
-	[ -f "$chier" ]&&mv "$chier" "${chier}_0";
+	backup "$chier"
 	crontab -l >"$chier";
 	if [ "$srv0" ]; then
-		for i in $(seq 100 -1 0); do
-			if [ -f ${csrv}_$i ]; then
-				mv ${csrv}_$i ${csrv}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
-			fi;
-		done;
-		[ -f "$csrv" ]&& mv "$csrv" "${csrv}_0";
+		backup "$csrv"
 		crontab -l >$csrv;
 		echo csrv: $csrv;
 		ssh $(whoami)@$srv0 "crontab -l" >"$csrv";
@@ -913,20 +905,19 @@ cron() {
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 nichtroot;
-#case f in [^f]) obbash=0;;*) obbash=1;esac;# 0=dash,1=bash
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-#setzhost;
-#setzbenutzer;
-#mountlaufwerke;
-#proginst;
-#fritzbox;
-#sambaconf;
+setzhost;
+setzbenutzer;
+mountlaufwerke;
+proginst;
+fritzbox;
+sambaconf;
 musterserver;
-#firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-#teamviewer10;
+firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+teamviewer10;
 cron;
 echo Ende von $0!
 
