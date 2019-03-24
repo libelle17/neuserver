@@ -913,9 +913,9 @@ echo Starte mit los.sh...
 variablen;
 setzhost;
 setzbenutzer;
+fritzbox;
 mountlaufwerke;
 proginst;
-fritzbox;
 sambaconf;
 musterserver;
 firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
