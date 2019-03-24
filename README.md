@@ -873,10 +873,7 @@ stellt das shell-script los.sh zur Verf&uuml;gung, das
 den Server mit einigen R&uuml;ckfragen einrichtet.
 <b><br>
 neuserver</b> ist ein Befehlszeilenprogramm. <br>
-Au&szlig;erdem k&ouml;nnen von
-<b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
-nach dem Sender anhand dessen Faxnummer benannt und
-abgespeichert werden. <br>
+Au&szlig;erdem k&ouml;nnen . <br>
 Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
 mit nur einem Linuxrechner) geschieht durch automatischen
 Eintrag der f&uuml;r neuserver relevanten Verzeichnisse

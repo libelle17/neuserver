@@ -14,7 +14,7 @@
 .br
 \fB²DPROG²\fR ist ein Befehlszeilenprogramm. 
 .br
-Außerdem können von \fBhylafax\fR/\fBcapisuite\fR empfangene Faxe automatisch nach dem Sender anhand dessen Faxnummer benannt und abgespeichert werden.
+Außerdem können .
 .br
 Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk mit nur einem Linuxrechner) geschieht durch automatischen Eintrag der für ²DPROG² relevanten Verzeichnisse in einen Samba-Server. Sie könnte ergänzt werden durch eine Maske für die mariadb-Datenbank.
 .SH INSTALLATION
