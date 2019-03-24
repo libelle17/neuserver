@@ -662,6 +662,7 @@ fritzbox() {
 	if [ $erg4 -eq 0 -o $erg6 -eq 0 ]; then
 	 [ $erg6 -eq 0 ]&&{ ipv6=$(echo $ip6|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/'); ipv=$ipv6;} # z.B. fd00::a96:d7ff:fe49:19ca, umgeben von zwei Klammern
 	 [ $erg4 -eq 0 ]&&{ ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); ipv=$ipv4;} # z.B. 192.168.178.1
+	 echo ipv: $ipv
 	 desc=$(curl $ipv:49000/tr64desc.xml 2>/dev/null);
 	 fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
 	 echo fbname: $fbname
