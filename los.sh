@@ -843,6 +843,18 @@ teamviewer10() {
 					;;
 				esac;
 	cd - >/dev/null;
+	tvconf=/opt/teamviewer/config/global.conf;
+	tvh=tvglobal.conf;
+  awk -f tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >$tvh;
+	if ! diff $tvconf $tvh >/dev/null; then
+    for i in $(seq 100 -1 0); do
+			if [ -f ${tvconf}_$i ]; then
+				mv ${tvconf}_$i ${tvconf}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
+			fi;
+		done;
+		mv $tvconf ${tvconf}_0;
+		cp -a $tvh $tvconf;
+	fi;
 }
 
 github() {

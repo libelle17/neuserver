@@ -2,7 +2,7 @@
 # korrigiert oder ergänzt die aufgerufene Datei um Einträge in tvvars.sh
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
-function oA(s) {if (s~"\".*\""||s~"\'.*\'") return substr(s,2,length(s)-2);else return s}
+function oA(s) {if (s~"\".*\""||s~"'.*'") return substr(s,2,length(s)-2);else return s}
 function trim(s) { return oA(rtrim(ltrim(s)));}
 function pruefzeile(zeile) {
 #	printf zeile"\n";
@@ -12,7 +12,7 @@ function pruefzeile(zeile) {
 #	printf tN"="tW"\n";
   gefu=0;
 	for(i in N) {
-		if (tN~N[i]) {
+		if (tN==N[i]) {
 #			printf tN" ==? "N[i]"\n";
 			if (tW==W[i]) {
 				print $0;
