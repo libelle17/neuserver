@@ -7,7 +7,9 @@ prog="";
 obnmr=1;
 ftb=/etc/fstab;
 GITACC=libelle17;
-gruppe=$(cat gruppe);
+AUFRUFDIR=$(pwd)
+LOSVERZ="$(cd "$(dirname "$0")"&&pwd)"
+gruppe=$(cat $LOSVERZ/gruppe);
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -15,9 +17,9 @@ printf "${dblau}setzhost$reset()\n";
 case $(hostname) in
 *-*) {
 		hostnamectl;
-		printf "${blau}gewünschter Servername, dann Enter:$reset"; read SERVER;
-		hostnamectl set-hostname "$SERVER";
-		export HOST="$SERVER";
+		printf "${blau}gewünschter Servername, dann Enter:$reset"; read srvhier;
+		hostnamectl set-hostname "$srvhier";
+		export HOST="$srvhier";
 		hostnamectl; 
 };
 esac;
@@ -35,11 +37,12 @@ while read -r zeile <&3; do
 	user=${zeile%% \"*};
 	comm=\"${zeile#* \"};
 	pruefuser $user "$comm";
-done 3< benutzer;
+done 3< $LOSVERZ/benutzer;
 }
 
 mountlaufwerke() {
-printf "${dblau}Hänge Laufwerke ein$reset()\n";
+printf "${dblau}mountlaufwerke$reset()\n";
+#printf "${dblau}Hänge Laufwerke ein$reset()\n";
 # Laufwerke einhängen
 # in allen nicht auskommentierten Zeilen Leerzeichen durch einen Tab ersetzen
 fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb); # "^/$Dvz\>" ginge auch
@@ -315,7 +318,7 @@ ersetzeprog() {
 }
 
 doinst() {
-	printf "${blau}doinst()$reset: $1\n"
+	printf "${blau}doinst($reset$1)\n"
 	ersetzeprog "$1";
 	[ "$2" ]&&obprogda "$2"&&return 0;
 #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
@@ -331,7 +334,7 @@ doinst() {
 }
 
 instmaria() {
-	printf "${blau}instmaria()$reset\n"
+	printf "${blau}instmaria$reset()\n"
 	case $OSNR in
 		1|2|3)
 			apt-get -y install apt-transport-https;
@@ -345,7 +348,7 @@ instmaria() {
 }
 
 mariadb() {
-	printf "${blau}mariadb()$reset\n"
+	printf "${blau}mariadb$reset()\n"
 	# Mariadb
 	case $OSNR in
 		1|2|3)
@@ -441,7 +444,8 @@ proginst() {
 	doinst htop;
 	doinst vsftpd;
 	doinst openssh;
-# putty auch fuer root erlauben:
+	doinst zsh;
+	# putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
 	if ! grep "^$W[[:space:]]*Yes$" $D; then
@@ -503,11 +507,12 @@ sambaconf() {
 	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
 	smbdt="$etcsamba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
-	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' smbvars.sh);
+	smbvars=$LOSVERZ/smbvars.sh;
+	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' $smbvars);
 	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
-	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' smbvars.sh;
+	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
-	S2=smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
+	S2=$LOSVERZ/smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
@@ -523,7 +528,7 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	awk -f smbd.sh $smbdt >smb.conf;
+	awk -f $LOSVERZ/smbd.sh $smbdt >$LOSVERZ/smb.conf;
 	firewall samba;
 
 	if ! diff -q smb.conf $smbdt ||[ $zustarten = 1 ]; then  
@@ -541,6 +546,7 @@ EOF
 }
 
 firewall() {
+	printf "${dblau}firewall$reset()\n";
 	while [ $# -gt 0 ]; do
 		para="$1";
 	  p1="";p2="";p3="";p4="";p5="";p6="";p7="";	
@@ -689,6 +695,7 @@ machidpub() {
 }
 
 musterserver() {
+	printf "${dblau}musterserver$reset()\n";
  printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
  if [ "$srv0" ]; then
 	 machidpub;
@@ -702,9 +709,9 @@ musterserver() {
 
 #holt Datei $1 entweder aus /DATA/down oder $srv0 oder $2 auf /root/Downloads; $3 = potentieller hol-Name
 hol3() {
-	printf "${dblau}hol3 $1 $2 $3$reset()\n";
+	printf "${dblau}hol3($1$reset,$dblau$2$reset,$dblau$3)$reset()\n";
+	cd "$LOSVERZ";
 	[ "$3" ]&&hname=$3||hname=$1;
-	printf "${dblau}hol3 $1 $2$reset()\n";
 	if ! [ -f "$Dw/$1" ]; then
 		if [ -f "$q1/$1" ]; then
 			printf "${blau}cp -ai "$q1/$1" $Dw/$reset\n";
@@ -725,7 +732,8 @@ hol3() {
 
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
-	cd >/dev/null;
+	cd $LOSVERZ >/dev/null;
+	echo Wir befinden uns in: $(pwd);
 	Dw=Downloads;
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
 	while true; do
@@ -836,7 +844,6 @@ teamviewer10() {
 					 hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
 					 rpm -i --force "$Dw/$lxcb.rpm";
 					 zypper addlock "$lxcb";
-					echo Stelle 5
 					fi;
 					;;
 				5|6|7) # fedora, mageia
@@ -844,8 +851,8 @@ teamviewer10() {
 				esac;
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
-	tvh=tvglobal.conf;
-  awk -f tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >$tvh;
+	tvh="$LOSVERZ/tvglobal.conf";
+  awk -f $LOSVERZ/tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >$tvh;
 	if ! diff $tvconf $tvh >/dev/null; then
     for i in $(seq 100 -1 0); do
 			if [ -f ${tvconf}_$i ]; then
@@ -853,11 +860,12 @@ teamviewer10() {
 			fi;
 		done;
 		mv $tvconf ${tvconf}_0;
-		cp -a $tvh $tvconf;
+		cp -a "$tvh" $tvconf;
 	fi;
 }
 
 github() {
+	printf "${dblau}github()$reset()\n";
 	machidpub;
 	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
 		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
@@ -868,12 +876,37 @@ github() {
 }
 
 variablen() {
+	printf "${dblau}variablen$reset()\n";
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
   . ./shvars
   if test "$(./configure nuros)" != "$OSNR"; then ./configure;:;else break;fi;
  done;
  HOME="$(getent passwd $(whoami)|cut -d: -f6)"; # logname
+}
+
+cron() {
+	printf "${dblau}cron$reset()\n";
+	chier=$LOSVERZ/cronhier;
+	csrv=$LOSVERZ/crons$srv0;
+	for i in $(seq 100 -1 0); do
+		if [ -f ${chier}_$i ]; then
+			mv ${chier}_$i ${chier}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
+		fi;
+	done;
+	[ -f "$chier" ]&&mv "$chier" "${chier}_0";
+	crontab -l >"$chier";
+	if [ "$srv0" ]; then
+		for i in $(seq 100 -1 0); do
+			if [ -f ${csrv}_$i ]; then
+				mv ${csrv}_$i ${csrv}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
+			fi;
+		done;
+		[ -f "$csrv" ]&& mv "$csrv" "${csrv}_0";
+		crontab -l >$csrv;
+		echo csrv: $csrv;
+		ssh $(whoami)@$srv0 "crontab -l" >"$csrv";
+	fi;
 }
 
 # Start
@@ -892,8 +925,9 @@ variablen;
 #fritzbox;
 #sambaconf;
 musterserver;
-firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-teamviewer10;
+#firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+#teamviewer10;
+cron;
 echo Ende von $0!
 
 if false; then
