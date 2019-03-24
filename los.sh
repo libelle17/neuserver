@@ -445,6 +445,7 @@ proginst() {
 	doinst vsftpd;
 	doinst openssh;
 	doinst zsh;
+	doinst curl;
 	# putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
