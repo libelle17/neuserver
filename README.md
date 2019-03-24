@@ -872,14 +872,7 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 stellt das shell-script los.sh zur Verf&uuml;gung, das
 den Server mit einigen R&uuml;ckfragen einrichtet.
 <b><br>
-neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
-in einem bestimmten Verzeichnis automatisch an
-<b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
-angeschlossen ist) und/oder <b>capisuite</b> (falls eine
-Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
-werden, wenn die Faxnummer im Dateinamen wie vorgesehen
-eingetragen ist, und das weiterhin die versandten Faxe in
-einer MariaDB-Datenbank abspeichert. <br>
+neuserver</b> ist ein Befehlszeilenprogramm. <br>
 Au&szlig;erdem k&ouml;nnen von
 <b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
 nach dem Sender anhand dessen Faxnummer benannt und
