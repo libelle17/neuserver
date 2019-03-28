@@ -10,6 +10,7 @@ GITACC=libelle17;
 AUFRUFDIR=$(pwd)
 LOSVERZ="$(cd "$(dirname "$0")"&&pwd)"
 gruppe=$(cat $LOSVERZ/gruppe);
+q1=/DATA/down;
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -741,7 +742,6 @@ teamviewer10() {
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 	 case $tversion in
 		 0)
-				q1=/DATA/down;
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
 					trpm=teamviewer_10.0.95021_i386.deb;
@@ -765,7 +765,8 @@ teamviewer10() {
 					apt install ./$Dw/$trpm;
 					;;
 				4) # opensuse
-					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
+#					 printf "${blau}zypper --no-gpg-checks in -l ./$Dw/$trpm$reset\n";
+					 printf "${blau}zypper --gpg-auto-import-keys in -l ./$Dw/$trpm$reset\n";
 					 zypper --gpg-auto-import-keys in -l ./$Dw/$trpm;
 					;;
 				5) # fedora,
