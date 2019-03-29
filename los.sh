@@ -510,12 +510,12 @@ sambaconf() {
 	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
 	smbdt="$etcsamba/smb.conf";
 	muster="/usr/share/samba/smb.conf";
-	smbvars=$LOSVERZ/smbvars.sh;
+	smbvars=$LOSVERZ/awksmb.inc;
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' $smbvars);
 	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
-	S2=$LOSVERZ/smbab.sh; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
+	S2=$LOSVERZ/awksmbap.inc; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
@@ -531,7 +531,7 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	awk -f $LOSVERZ/smbd.sh $smbdt >$LOSVERZ/smb.conf;
+	awk -f $LOSVERZ/awksmb.sh $smbdt >$LOSVERZ/smb.conf;
 	firewall samba;
 
 	if ! diff -q $LOSVERZ/smb.conf $smbdt ||[ $zustarten = 1 ]; then  
@@ -852,7 +852,7 @@ teamviewer10() {
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
 	tvh="$LOSVERZ/tvglobal.conf";
-  awk -f $LOSVERZ/tvconf.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >"$tvh";
+  awk -f $LOSVERZ/awktv.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >"$tvh";
 	if ! diff "$tvconf" "$tvh" >/dev/null; then
 		backup "$tvconf"
 		cp -a "$tvh" "$tvconf";

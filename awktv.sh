@@ -1,5 +1,5 @@
 #!/usr/bin/awk -f
-# korrigiert oder ergänzt die aufgerufene Datei um Einträge in tvvars.sh
+# korrigiert oder ergänzt die aufgerufene Datei um Einträge in awktv.inc
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function oA(s) {if (s~"\".*\""||s~"'.*'") return substr(s,2,length(s)-2);else return s}
@@ -30,7 +30,7 @@ function pruefzeile(zeile) {
 }
 
 # Eintraege
-@include "tvvars.sh";
+@include "awktv.inc";
 
 {
 	pruefzeile($0);

@@ -10,9 +10,9 @@ function druckNaZeile(i,Pfad) {
 		else print Ia[i];
 }
 # Vorgaben für [global] (N[] und I[]) und fstab-Abschnitte (Na[] und Ia[])
-@include "smbvars.sh";
+@include "awksmb.inc";
 # Namen (A[]) und Pfade (P[]) vorgegebener Abschnitte
-@include "smbab.sh";
+@include "awksmbap.inc";
 BEGIN {
 # for(i in N) fertig[i]=0;
 IGNORECASE=1;
