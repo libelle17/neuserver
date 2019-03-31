@@ -909,11 +909,12 @@ tu_turbomed() {
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
 	cp $outDir/TMLinux/TMWin/linux/config/license $POET_LICENSE_PATH;
-	for D in $outDir/TMLinux/TMWin/linux/archive/*.rpm; do rpm -q $(basename $D .rpm) >/dev/null||zypper in $D; done;
+	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
+	for D in $outDir/TMLinux/TMWin/linux/archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$instp $D; done;
 	echo sh TMsetup -tw;
 	sh $outDir/TMLinux/TMWin/linux/bin/TM_setup "$1";
 	systemctl daemon-reload;
-	for runde in $(seq 1 10);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl restart poetd;done;
+	for runde in $(seq 1 20);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl restart poetd;done;
 }
 
 turbomed() {
@@ -934,7 +935,7 @@ turbomed() {
 #		echo "export LD_LIBRARY_PATH=$POET_LICENSE_PATH;$LD_LIBRARY_PATH/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev;"
 		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev);
 #   12.0.2.208
-    [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers gg+. $instVers zu alt.\n";tu_turbomed "-uw";};
+    [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
 		tu_turbomed "-tw"
