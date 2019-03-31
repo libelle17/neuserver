@@ -585,9 +585,9 @@ tumitzieh:
 		Fg="$$Fg\b: ";printf "$$Fg";[ $$obbash -eq 1 ]&&read -e -i "$$TZL" TZL||read TZL;:;\
 	done;\
 	printf "adapt/ mitziehen von %b$$TZL%b\n" $(blau) $(reset);\
-	printf "cp -au $$blau.exrc Makefile install.sh man_?? viall configure $$reset\"$$TZL\";\n";\
-	cp -au .exrc Makefile install.sh man_?? viall configure "$$TZL";\
-	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\\$A\" -a -f \"\\$A\" ]&&cp -au \"\\$A\" \"$$TZL\";done;\n";\
+	printf "cp -au $$blau.exrc Makefile install.sh viall configure $$reset\"$$TZL\";\n";\
+	cp -au .exrc Makefile install.sh viall configure "$$TZL";\
+	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\$$A\" -a -f \"\$$A\" ]&&cp -au \"\$$A\" \"$$TZL\";done;\n";\
 	cd "$$TZL" $(DN);test -d ".git"&&git commit -m"vor mitzieh" $(KR);cd - $(DN);\
 	for A in kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h;do [ -f "$$TZL/$$A" -a -f "$$A" ]&&cp -au "$$A" "$$TZL";done;\
 	cd "$$TZL" $(DN); sh configure; cd - $(DN);

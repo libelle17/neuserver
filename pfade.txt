@@ -12,3 +12,5 @@ Mageia:          /usr/local/bin:/usr/bin:/usr/local/games:/usr/games:/usr/lib64/
 su -c Mageia:    /usr/local/bin:/usr/bin:/usr/local/games:/usr/games:/usr/lib64/qt4/bin:/usr/lib64/qt5/bin
 Tumble:          /home/schade/bin:/usr/local/bin:/usr/bin:/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin
 su -c Tumble:    /sbin:/bin:/usr/sbin:/usr/bin
+
+=> /usr/bin ist immer da

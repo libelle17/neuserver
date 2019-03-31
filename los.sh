@@ -10,7 +10,7 @@ GITACC=libelle17;
 AUFRUFDIR=$(pwd)
 LOSVERZ="$(cd "$(dirname "$0")"&&pwd)"
 gruppe=$(cat $LOSVERZ/gruppe);
-q1=/DATA/down;
+q0=/DATA/down;
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -713,19 +713,19 @@ hol3() {
 	cd "$LOSVERZ";
 	[ "$3" ]&&hname=$3||hname=$1;
 	if ! [ -f "$Dw/$1" ]; then
-		if [ -f "$q1/$1" ]; then
-			printf "${blau}cp -ai "$q1/$1" $Dw/$reset\n";
-			cp -ai "$q1/$1" "$Dw/";
+		if [ -f "$q0/$1" ]; then
+			printf "${blau}cp -ai "$q0/$1" $Dw/$reset\n";
+			cp -ai "$q0/$1" "$Dw/";
 		elif [ "$srv0" ]; then
-		  printf "${blau}ssh $srv0 ls \"$q1/$1\" >/dev/null 2>&1&& scp -p $srv0:$q1/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q1/\n";
-			ssh "$srv0" "ls \"$q1/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q1/$1" "$Dw/"&&cp -ai "$Dw/$1" "$q1/";
+		  printf "${blau}ssh $srv0 ls \"$q0/$1\" >/dev/null 2>&1&& scp -p $srv0:$q0/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q0/\n";
+			ssh "$srv0" "ls \"$q0/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q0/$1" "$Dw/"&&cp -ai "$Dw/$1" "$q0/";
 		else
 			printf "${blau}wget "$2/$hname"$reset\n";
 			wget "$2/$hname";
 			printf "mv -i $hname $Dw/$1\n";
 			mv -i "$hname" "$Dw/$1";
-			[ -f "$Dw/$1" -a -d "$q1" ]&&cp -ai "$Dw/$1" $q1/;
-			[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$q1/";
+			[ -f "$Dw/$1" -a -d "$q0" ]&&cp -ai "$Dw/$1" $q0/;
+			[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$q0/";
 		fi;
 	fi;
 }
@@ -862,7 +862,7 @@ teamviewer10() {
 github() {
 	printf "${dblau}github()$reset()\n";
 	machidpub;
-	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
+	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q0';}; then
 		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 	fi;
 #	curl -u "$GITACC:$passwd" ...
@@ -905,6 +905,16 @@ cron() {
 	fi;
 }
 
+turbomed() {
+	printf "${dblau}turbomed$reset()\n";
+	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
+	datei=$(find $q0 -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
+	# 19.1.1.3969
+	version=$(echo $datei|cut -d_ -f4);
+	outDir=$q0/TM${version}L;
+	[ -d  $outDir ]||7z x $datei -o$outDir;
+}
+
 # Start
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
@@ -913,16 +923,17 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-setzhost;
-setzbenutzer;
-fritzbox;
-mountlaufwerke;
-proginst;
-sambaconf;
-musterserver;
-firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-teamviewer10;
-cron;
+# setzhost;
+# setzbenutzer;
+# fritzbox;
+# mountlaufwerke;
+# proginst;
+# sambaconf;
+# musterserver;
+# firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+# teamviewer10;
+# cron;
+turbomed;
 echo Ende von $0!
 
 if false; then
