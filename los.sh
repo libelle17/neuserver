@@ -913,6 +913,10 @@ turbomed() {
 	version=$(echo $datei|cut -d_ -f4);
 	outDir=$q0/TM${version}L;
 	[ -d  $outDir ]||7z x $datei -o$outDir;
+	if systemctl list-units --all|grep poetd; then
+	else
+		$outDir/TMLinux/TMWin/linux/bin/TM_setup
+	endif
 }
 
 # Start
