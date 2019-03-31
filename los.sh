@@ -905,18 +905,40 @@ cron() {
 	fi;
 }
 
+tu_turbomed() {
+	echo Installations-Verzeichnis: $outDir;
+	mkdir -p $POET_LICENSE_PATH;
+	cp $outDir/TMLinux/TMWin/linux/config/license $POET_LICENSE_PATH;
+	for D in $outDir/TMLinux/TMWin/linux/archive/*.rpm; do rpm -q $(basename $D .rpm) >/dev/null||zypper in $D; done;
+	echo sh TMsetup -tw;
+	sh $outDir/TMLinux/TMWin/linux/bin/TM_setup "$1";
+	systemctl daemon-reload;
+	for runde in $(seq 1 10);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl restart poetd;done;
+}
+
 turbomed() {
 	printf "${dblau}turbomed$reset()\n";
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
 	datei=$(find $q0 -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4);
+	printf "Turbomed-Version: $blau$version$reset\n";
 	outDir=$q0/TM${version}L;
 	[ -d  $outDir ]||7z x $datei -o$outDir;
-	if systemctl list-units --all|grep poetd; then
+	instVers=$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f4);
+	TMsetup="$outDir/TMLinux/TMWin/linux/bin/TM_setup";
+#		POET_LICENSE_PATH="/opt/FastObjects_t7_12.0/runtime/lib";
+#		POET_LICENSE_PATH="/opt/$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f-2)/runtime/lib";
+	POET_LICENSE_PATH=$(grep "POET_LICENSE_PATH=" $TMsetup|cut -d= -f2|sed 's/\"\(.*\)\"/\1/g');
+	if systemctl list-units --all|grep poetd >/dev/null; then
+#		echo "export LD_LIBRARY_PATH=$POET_LICENSE_PATH;$LD_LIBRARY_PATH/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev;"
+		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev);
+#   12.0.2.208
+    [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers gg+. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
-		$outDir/TMLinux/TMWin/linux/bin/TM_setup
-	endif
+		printf "Installiere Turbomed neu\n";
+		tu_turbomed "-tw"
+	fi;
 }
 
 # Start
