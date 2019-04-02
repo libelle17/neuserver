@@ -906,7 +906,12 @@ cron() {
 }
 
 tu_turbomed() {
-	echo Installations-Verzeichnis: $outDir;
+	printf "datei: $blau$datei$reset\n";
+	printf "Installations-Verzeichnis (outDir): $blau$outDir$reset, Parameter: $blau$1$reset\n";
+	printf "Turbomed-Version: $blau$version$reset\n";
+	printf "TMsetup: $blau$TMsetup$reset\n";
+	printf "POET_LICENSE_PATH: $blau$POET_LICENSE_PATH$reset\n";
+  pinntf "Bitte Taste für weiter: ";read weiter;
 	mkdir -p $POET_LICENSE_PATH;
 	cp $outDir/TMLinux/TMWin/linux/config/license $POET_LICENSE_PATH;
 	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
@@ -923,7 +928,6 @@ turbomed() {
 	datei=$(find $q0 -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4);
-	printf "Turbomed-Version: $blau$version$reset\n";
 	outDir=$q0/TM${version}L;
 	[ -d  $outDir ]||7z x $datei -o$outDir;
 	instVers=$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f4);
@@ -938,7 +942,7 @@ turbomed() {
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
-		tu_turbomed "-tw"
+		tu_turbomed "-iw"
 	fi;
 }
 
