@@ -81,35 +81,41 @@ commandline() {
 		para="$1";
 		case $para in
 			-neu|-new) obneu=1;;
-			-pcs|-nur|-bloß|-only) pcs=$2;; # kann komma-getrennte Liste zu weckender Geräte sein
-			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
-			-only*|-bloß*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; # Anführungszeichen und Parameternamen entfernen
-			-erl|-all|--erlaubt|--allowed) IFverb=;IFerl=$2;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
-			-erl*|-all*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,4))}');; # erlaubte Interfaces neu festlegen
-			--erlaubt*|--allowed*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');; # erlaubte Interfaces neu festlegen
-			-verbo|-forbi|--verboten|--forbidden) IFverb=$2;; # verbotene Interfaces neu festlegen
+      -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
+			-not*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; 
+			-nicht*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,7))}');; 
+			-pcs|-nur|-bloß|-only|--pcs|--nur|--bloß|--only) pcs=$2;shift;; # kann komma-getrennte Liste zu weckender Geräte sein
+			-pcs*|-nur*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # Anführungszeichen und Parameternamen entfernen
+			-only*|-bloß*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; 
+			-erl|-all|--erlaubt|--allowed) IFverb=;IFerl=$2;shift;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
+			-erl*|-all*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # erlaubte Interfaces neu festlegen
+			--erlaubt*|--allowed*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');;
+			-verbo|-forbi|--verboten|--forbidden) IFverb=$2;shift;; # verbotene Interfaces neu festlegen
 			-verbo*|-forbi*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; # verbotene Interfaces neu festlegen
 			--verboten*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,11))}');; # verbotene Interfaces neu festlegen
 			--forbidden*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,12))}');; # verbotene Interfaces neu festlegen
-			--alteliste|--oldlist) alteliste=1;;
+			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
+			-al|-ol|--alteliste|--oldlist) alteliste=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
-				printf "$blau$0 [-neu] [-bloß[ ]<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [--alteliste] [-v] [-h|--hilfe|-?]$reset\n";
+				printf "$blau$0 [-neu] [-bloß[ ]<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
+        printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
 				printf "  $blau-bloß$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
 				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an\n";
-				printf "  $blau--alteliste$reset: aktualisiert die Geräteliste seltener\n";
+				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 			exit;;
 			--help|-help)
-				printf "$blau$0 [-new] [-only[ ]<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [--oldlist] [-v] [-h|--hilfe|-help]$reset\n";
+				printf "$blau$0 [-new] [-only[ ]<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
+        printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
 				printf "  $blau-only$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
 				printf "  $blau-show$reset: shows only the list of the devices\n";
-				printf "  $blau--oldlist$reset: updates the list of the devices not so often\n";
+				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 			exit;;
 		esac
 		[ "$verb" ]&&printf Parameter: "$blau$para$reset\n";
@@ -162,19 +168,15 @@ geraeteliste() {
 				esac;;
 			esac;
 			filter=$filter"};"; # Ende leerer Interface-Typ
-			# wenn Interfacetyp bei IFverb dabei, dann Zeile auslassen
-			[ "$IFverb" ]&&filter=$filter"/\\\("$(echo $IFverb|sed 's/,/\\\|/g')"\\\)</b;" 
-			# wenn dieser bei IFerl dabei, dann diesen bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
-			filter=$filter"/\\\("$(echo $IFerl|sed 's/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
+      # wenn Interfacetyp (außer -) bei IFverb dabei, dann Zeile auslassen
+			[ "$IFverb" ]&&filter=$filter"/\\\("$(echo $IFverb|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</b;" 
+      # wenn dieser (außer -) bei IFerl dabei, dann diesen bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
+			filter=$filter"/\\\("$(echo $IFerl|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
 			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
 		# fragab;exit; # fragab ohne filter würde die ganze xml-Datei erzeugen
 			fragab "$filter"; # der fertige Filter wird mit -v angezeigt
   	fi;
-		if [ "$zeig" ];then # zeigt die Liste an
-			awk '{printf "%i: '$blau'%s '$lila'%s '$blau'%s '$lila'%s'$reset'\n",z++,$1,$2,$3,$4}' $Ausgabe;
-			exit;
-		fi;
 }
 
 # alle oder gewünschte Geräte wecken
@@ -184,17 +186,24 @@ wecken() {
 	# wecken
 	zahl=0;
 	geszahl=$(wc -l <$Ausgabe);
+	npc=$(echo "$npc"|sed 's/,/ /g');
 	pcs=$(echo "$pcs"|sed 's/,/ /g');
 	[ -f "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset not found/nicht gefunden\n";exit;};
 	[ -s "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset empty/leer\n";exit;};
 	while read -r zeile; do
-		[ "$pcs" ]&&{ gefu=;for pc in $pcs;do echo $zeile|sed -n '/'$pc'/q1'||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; # falls pcs angegeben, dann danach filtern
+    # falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
+		[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
+		[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
 		zahl=$(printf $zahl|awk '{print $0+1}');
-		printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
-		for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
-			fragab;
-			break;
-		done;
+		if [ "$zeig" ];then # zeigt die Liste an
+			echo "$zeile"|awk '{printf "'$zahl'/'$geszahl': '$blau'%s '$lila'%s '$blau'%s '$lila'%s'$reset'\n",$1,$2,$3,$4}';
+    else
+      printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
+      for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
+        fragab;
+        break;
+      done;
+    fi;
 	done << EOF
 $(cat $Ausgabe)
 EOF
