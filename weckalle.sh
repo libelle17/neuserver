@@ -9,7 +9,7 @@ FB="http://fritz.box:49000"
 Ausgabe=ergtr64.txt
 # curl $FB/tr64desc.xml
 
-# Funktion für ein bis zwei TR-064-Abfragen
+# Funktion für ein bis zwei TR-64-Abfragen
 fragab() {
 	if [ "$1" ];then filter="$1";else filter="sed -n p";fi;
   case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac;
