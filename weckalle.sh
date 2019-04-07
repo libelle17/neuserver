@@ -98,7 +98,7 @@ commandline() {
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
-				printf "$blau$0 [-neu] [-bloß[ ]<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
+				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [-bloß[ ]<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
 				printf "  $blau-bloß$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
@@ -108,7 +108,7 @@ commandline() {
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 			exit;;
 			--help|-help)
-				printf "$blau$0 [-new] [-only[ ]<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
+				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [-only[ ]<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
 				printf "  $blau-only$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
