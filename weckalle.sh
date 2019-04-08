@@ -58,11 +58,14 @@ fragab() {
 				nurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}')
 				case $nurl in *://*);;*)nurl=$FB$nurl;;esac
 				[ "$verb" ]&&printf "New/Neue Url:\n$blau$nurl$reset\n";
-				befehl="curl -m $curlmaxtime \"$nurl\" 2>protok|eval "$filter" >\"$Ausgabe\"";# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
-				[ "$verb" ]&&printf "$befehl\n";
-				eval $befehl;
-				ret=$?;
-				awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
+				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
+					befehl="curl -m ${curlmaxtime}$faktor \"$nurl\" 2>protok|eval "$filter" >\"$Ausgabe\"";# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
+					[ "$verb" ]&&printf "$befehl\n";
+					eval $befehl;
+					ret=$?;
+					[ "$verb" ]&&awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
+					[ -s "$Ausgabe" ]&&break;
+  			done;
 				[ "$verb" ]&&\
 					printf "its return/deren Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$Ausgabe$reset)\nRueckmeldung:\n$rot%b$reset\n" "$(cat protok)"
 				[ "$ret" -eq 0 ]&&break;
@@ -84,9 +87,9 @@ commandline() {
       -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
 			-not*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; 
 			-nicht*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,7))}');; 
-			-pcs|-nur|-bloß|-only|--pcs|--nur|--bloß|--only) pcs=$2;shift;; # kann komma-getrennte Liste zu weckender Geräte sein
-			-pcs*|-nur*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # Anführungszeichen und Parameternamen entfernen
-			-only*|-bloß*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; 
+#			-pcs|-nur|-bloß|-only|--pcs|--nur|--bloß|--only) pcs=$2;shift;; # kann komma-getrennte Liste zu weckender Geräte sein
+#			-pcs*|-nur*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # Anführungszeichen und Parameternamen entfernen
+#			-only*|-bloß*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; 
 			-erl|-all|--erlaubt|--allowed) IFverb=;IFerl=$2;shift;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
 			-erl*|-all*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # erlaubte Interfaces neu festlegen
 			--erlaubt*|--allowed*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');;
@@ -98,30 +101,44 @@ commandline() {
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
-				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [-bloß[ ]<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
+				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
-				printf "  $blau-bloß$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
+				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
 				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an\n";
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 			exit;;
 			--help|-help)
-				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [-only[ ]<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
+				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
-				printf "  $blau-only$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
+				printf "  $blau[<pc1>[,pc2...]]$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
 				printf "  $blau-show$reset: shows only the list of the devices\n";
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 			exit;;
+			*) pcs="$para";;
 		esac
-		[ "$verb" ]&&printf Parameter: "$blau$para$reset\n";
+		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
 		shift;
 	done;
-	if [ "$verb" ];then
+	[ "$npc" ]&&npc=$(echo "$npc"|sed 's/,/ /g');
+	if [ "$pcs" ]; then 
+		pcs=$(echo "$pcs"|sed 's/,/ /g');
+		if [ -z "$zeig" ]; then
+			nurmac=1; # nur MAC-Acressen angegeben => $Ausgabe muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
+			for pc in $pcs; do
+				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&{ nurmac=;break;}; # wenn $pc keine mac
+			done;
+		fi;
+	fi;
+	if [ "$verb" ]; then
+		[ "$pcs" ]&&printf "pcs: $blau$pcs$reset\n";
+		printf "nurmac: $blau$nurmac$reset\n";
+		[ "$npc" ]&&printf "npc: $blau$npc$reset\n";
 		printf "allowed/erlaubte Interfaces: $blau$IFerl$reset\n";
 		printf "forbidden/verbotene Interfaces: $blau$IFverb$reset\n";
 	fi;
@@ -185,33 +202,40 @@ wecken() {
 	ParIn=NewMACAddress
 	# wecken
 	zahl=0;
-	geszahl=$(wc -l <$Ausgabe);
-	npc=$(echo "$npc"|sed 's/,/ /g');
-	pcs=$(echo "$pcs"|sed 's/,/ /g');
-	[ -f "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset not found/nicht gefunden\n";exit;};
-	[ -s "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset empty/leer\n";exit;};
-	while read -r zeile; do
-    # falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
-		[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
-		[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
-		zahl=$(printf $zahl|awk '{print $0+1}');
-		if [ "$zeig" ];then # zeigt die Liste an
-			echo "$zeile"|awk '{printf "'$zahl'/'$geszahl': '$blau'%s '$lila'%s '$blau'%s '$lila'%s'$reset'\n",$1,$2,$3,$4}';
-    else
-      printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
-      for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
-        fragab;
-        break;
-      done;
-    fi;
-	done << EOF
+	if [ "$nurmac" ]; then
+		geszahl=$(echo "$pcs"|awk 'END{print NF}');
+		for Inhalt in $pcs; do
+		  zahl=$(printf $zahl|awk '{print $0+1}');
+			printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
+			fragab;
+		done;
+	else
+		geszahl=$(wc -l <$Ausgabe);
+		[ -f "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset not found/nicht gefunden\n";exit;};
+		[ -s "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset empty/leer\n";exit;};
+		while read -r zeile; do
+			# falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
+			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
+			[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
+			zahl=$(printf $zahl|awk '{print $0+1}');
+			if [ "$zeig" ];then # zeigt die Liste an
+				echo "$zeile"|awk '{printf "'$zahl'/'$geszahl': '$blau'%s '$lila'%s '$blau'%s '$lila'%s'$reset'\n",$1,$2,$3,$4}';
+			else
+				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
+				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
+					fragab;
+					break;
+				done;
+			fi;
+		done << EOF
 $(cat $Ausgabe)
 EOF
+ fi;
 }
 
 # hier geht's los
 vorgaben;
 commandline "$@";
 authorize;
-geraeteliste;
+[ -z "$nurmac" ]&&geraeteliste;
 wecken;
