@@ -105,6 +105,7 @@ commandline() {
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
 				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
+				printf "                    Wenn bloß MAC-Adressen angegeben werden, so arbeitet das Programm ohne Geräteliste (und schneller).\n";
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
 				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an\n";
@@ -115,6 +116,7 @@ commandline() {
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
 				printf "  $blau[<pc1>[,pc2...]]$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
+				printf "                    If only MAC-addresses are given, the program works without the list of devices (and faster).\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
 				printf "  $blau-show$reset: shows only the list of the devices\n";
