@@ -4,10 +4,10 @@
 
 vorgaben() {
 # eher veränderbare Vorgaben
-	ausgdt=ergtr64.txt; # Ausgabe des geraeteliste-Abfrage
-	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste-Abfragen
+	ausgdt=ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
+	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen
 	logdt=logtr64.txt; # log-Datei für TR-064-Abfragen
-	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $ausgdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
+	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
 	curlmaxtime=20;
 	IFerl=; # "802.11,Ethernet,-"; # erlaubte Interfaces
@@ -18,7 +18,7 @@ vorgaben() {
 	lila="\033[1;35m";
 	reset="\033[0m";
 	FritzboxAdressen="fritz.box 169.254.1.1";
-# Parameter für fragab: für beide tr-064-Abfragen (geraeteliste und wecken)
+# Parameter für fragab: für beide tr-064-Abfragen (geraeteliste() und wecken())
 	controlURL=hosts
 	serviceType=Hosts:1
 # for FB in $FritzboxAdressen;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; # Möglichkeiten von tr-064 anzeigen
