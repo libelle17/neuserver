@@ -5,7 +5,7 @@
 vorgaben() {
 # eher veränderbare Vorgaben
 	ausgdt=ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
-	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen
+	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
 	logdt=logtr64.txt; # log-Datei für TR-064-Abfragen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
@@ -16,19 +16,20 @@ vorgaben() {
 	blau="\033[1;34m";
 	rot="\033[1;31m";
 	lila="\033[1;35m";
-	reset="\033[0m";
-	FritzboxAdressen="fritz.box 169.254.1.1";
-# Parameter für fragab: für beide tr-064-Abfragen (geraeteliste() und wecken())
+	reset="\033[0m"; # Farben zurücksetzen
+	FritzboxAdressen="fritz.box 169.254.1.1"; # wenn fritz.box nicht geht, dann geht 169.254.1.1
+# TR-064-Parameter für fragab(): für beide Abfragen (geraeteliste() und wecken())
 	controlURL=hosts
 	serviceType=Hosts:1
-# for FB in $FritzboxAdressen;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; # Möglichkeiten von tr-064 anzeigen
+# Möglichkeiten von tr-064 anzeigen:
+# for FB in $FritzboxAdressen;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; 
 }
 
 # Funktion für ein bis zwei TR-064-Abfragen
 fragab() {
-	if [ "$1" ];then filter="$1";else filter="sed -n p";fi;
-  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac;
-  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac;
+	if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
+  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # immer gleiche Vorsilben
+  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # immer gleiche Vorsilben
   [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"
   [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n"
   [ "$verb" ]&&printf "Action: $blau$Action$reset\n"
@@ -57,15 +58,16 @@ fragab() {
 			[ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]&&printf "Command/Befehl: $blau%b$reset\nRueckmeldung:\n$rot%b$reset\n" "$befehl" "$(cat $logdt)"
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
 			[ "$erg" ]&&[ "$verb" ]&&printf "\nReturn/Rueckgabe: \n$blau$erg$reset\n";
+			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
 			case $erg in *.lua*)
-				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}')
-				case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac
+				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
+				case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac # ... ggf. um den Fritzbox-Namen erweitert werden ...
 				[ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
 				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
 					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>$logdt|eval "$filter" >\"$ausgdt\"";
 					[ "$verb" ]&&printf "$befehl\n";
-					eval $befehl;
+					eval $befehl; # ... und dann nochmal mit curl aufgerufen werden
 					ret=$?;
 					[ "$verb" ]&&awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
 					[ -s "$ausgdt" ]&&break;
@@ -91,9 +93,6 @@ commandline() {
       -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
 			-not*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; 
 			-nicht*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,7))}');; 
-#			-pcs|-nur|-bloß|-only|--pcs|--nur|--bloß|--only) pcs=$2;shift;; # kann komma-getrennte Liste zu weckender Geräte sein
-#			-pcs*|-nur*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # Anführungszeichen und Parameternamen entfernen
-#			-only*|-bloß*) pcs=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; 
 			-erl|-all|--erlaubt|--allowed) IFverb=;IFerl=$2;shift;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
 			-erl*|-all*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # erlaubte Interfaces neu festlegen
 			--erlaubt*|--allowed*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');;
@@ -132,7 +131,7 @@ commandline() {
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
 		shift;
 	done;
-	[ "$npc" ]&&npc=$(echo "$npc"|sed 's/,/ /g');
+	[ "$npc" ]&&npc=$(echo "$npc"|sed 's/,/ /g'); # Komma-Liste in Leerzeichen-getrennte Liste umwandeln
 	if [ "$pcs" ]; then 
 		pcs=$(echo "$pcs"|sed 's/,/ /g');
 		if [ -z "$zeig" ]; then
@@ -246,12 +245,12 @@ wecken() {
 	ParIn=NewMACAddress
 	# wecken
 	zahl=0;
-	if [ "$nurmac" ]; then
+	if [ "$nurmac" ]; then # wecken ohne geraeteliste(), wenn nur MAC-Adressen angegeben
 		geszahl=$(echo "$pcs"|awk 'END{print NF}');
 		for Inhalt in $pcs; do
 		  zahl=$(printf $zahl|awk '{print $0+1}');
 			printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
-			fragab;
+			fragab; # hier geschieht das Wecken
 		done;
 	else
 		geszahl=$(wc -l <$gesausdt);
@@ -267,7 +266,7 @@ wecken() {
 			else
 				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
-					fragab;
+					fragab; # hier geschieht das Wecken
 					break;
 				done;
 			fi;
