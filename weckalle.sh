@@ -4,21 +4,24 @@
 
 vorgaben() {
 # eher veränderbare Vorgaben
-	Ausgabe=ergtr64.txt;
-	listenintervall=7; # alle $listenintervall Tage wird $Ausgabe erneuert
-	curlmaxtime=40;
-	# IFerl="802.11,Ethernet,-"; # erlaubte Interfaces
-	IFverb="802.11"; #verbotene Interfaces
+	ausgdt=ergtr64.txt; # Ausgabe des geraeteliste-Abfrage
+	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste-Abfragen
+	logdt=logtr64.txt; # log-Datei für TR-064-Abfragen
+	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $ausgdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
+  loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
+	curlmaxtime=20;
+	IFerl=; # "802.11,Ethernet,-"; # erlaubte Interfaces
+	IFverb="802.11"; #verbotene Interfaces (kommagetrennt)
 # eher starre Vorgaben
 	blau="\033[1;34m";
 	rot="\033[1;31m";
 	lila="\033[1;35m";
 	reset="\033[0m";
-	FBadn="fritz.box 169.254.1.1";
+	FritzboxAdressen="fritz.box 169.254.1.1";
 # Parameter für fragab: für beide tr-064-Abfragen (geraeteliste und wecken)
 	controlURL=hosts
 	serviceType=Hosts:1
-# for FB in $FBadn;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; # Möglichkeiten von tr-064 anzeigen
+# for FB in $FritzboxAdressen;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; # Möglichkeiten von tr-064 anzeigen
 }
 
 # Funktion für ein bis zwei TR-064-Abfragen
@@ -39,7 +42,7 @@ fragab() {
   XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
   # printf "XML derAbfrage: \n$blau$XML$reset\n"
   for ipv in 4 6;do
-		for adr in $FBadn;do
+		for adr in $FritzboxAdressen;do
 			FB=http://$adr:49000;
 			printf "Trying/versuche ipv$ipv\r";
 			befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
@@ -47,27 +50,28 @@ fragab() {
 						-H \"SoapAction: $serviceType#$Action\" \\n\
 						\"$FB$controlURL\" \\n\
 						-d '$XML'";
-			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>protok);
+			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>$logdt);
 			ret=$?;
 			awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
 			[ $ret -ne 0 ]&&continue; # z.B. fritz.box konnte nicht aufgelöst werden
-			[ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]&&printf "Command/Befehl: $blau%b$reset\nRueckmeldung:\n$rot%b$reset\n" "$befehl" "$(cat protok)"
+			[ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]&&printf "Command/Befehl: $blau%b$reset\nRueckmeldung:\n$rot%b$reset\n" "$befehl" "$(cat $logdt)"
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
 			[ "$erg" ]&&[ "$verb" ]&&printf "\nReturn/Rueckgabe: \n$blau$erg$reset\n";
 			case $erg in *.lua*)
-				nurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}')
-				case $nurl in *://*);;*)nurl=$FB$nurl;;esac
-				[ "$verb" ]&&printf "New/Neue Url:\n$blau$nurl$reset\n";
+				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}')
+				case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac
+				[ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
 				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
-					befehl="curl -m ${curlmaxtime}$faktor \"$nurl\" 2>protok|eval "$filter" >\"$Ausgabe\"";# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
+					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
+					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>$logdt|eval "$filter" >\"$ausgdt\"";
 					[ "$verb" ]&&printf "$befehl\n";
 					eval $befehl;
 					ret=$?;
 					[ "$verb" ]&&awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
-					[ -s "$Ausgabe" ]&&break;
+					[ -s "$ausgdt" ]&&break;
   			done;
 				[ "$verb" ]&&\
-					printf "its return/deren Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$Ausgabe$reset)\nRueckmeldung:\n$rot%b$reset\n" "$(cat protok)"
+					printf "its return/deren Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$ausgdt$reset)\nRueckmeldung:\n$rot%b$reset\n" "$(cat $logdt)"
 				[ "$ret" -eq 0 ]&&break;
 				;;
 				*) [ "$ret" -eq 0 ]&&break;;
@@ -132,7 +136,7 @@ commandline() {
 	if [ "$pcs" ]; then 
 		pcs=$(echo "$pcs"|sed 's/,/ /g');
 		if [ -z "$zeig" ]; then
-			nurmac=1; # nur MAC-Acressen angegeben => $Ausgabe muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
+			nurmac=1; # nur MAC-Acressen angegeben => $ausgdt muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
 			for pc in $pcs; do
 				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&{ nurmac=;break;}; # wenn $pc keine mac
 			done;
@@ -159,12 +163,14 @@ authorize() {
 	fi;
 }
 
-# Liste aller von der Fritzbox gemerkten Geräte ggf. abfragen und in $Ausgabe speichern
+# Liste aller von der Fritzbox gemerkten Geräte ggf. abfragen und in $ausgdt speichern
 geraeteliste() {
 	  if [ -z "$alteliste" ]; then
 			neueliste=1;
-		elif ! find . -mtime -$listenintervall -name "$Ausgabe"|grep -q .; then
-			neueliste=1;
+		elif [ "$listenintervall" != 0 ]; then
+			if ! find . -mtime -$listenintervall -name "$ausgdt"|grep -q .; then
+				neueliste=1;
+			fi;
 		fi;
 	  if [ "$neueliste" ]; then
 			Action=X_AVM-DE_GetHostListPath;
@@ -195,9 +201,41 @@ geraeteliste() {
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
 			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
       if [ "$ungefiltert" ]; then
-        fragab; # fragab ohne filter würde die ganze xml-Datei erzeugen
+        fragab; # fragab ohne filter erzeugt die ganze xml-Datei
       else
         fragab "$filter"; # der fertige Filter wird mit -v angezeigt
+				# gesausdt alle $loeschintervall Tage löschen und ganz erneuern
+				if [ "$loeschintervall" != 0 ]; then
+					if ! find . -mtime -$loeschintervall -name "$gesausdt"|grep -q .; then
+						rm $gesausdt;
+					fi;
+				fi;
+				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen
+				     ab="function liesein(var,datei) {"
+				ab=${ab}"	i=0;"
+				ab=${ab}"	while ((getline var[++i] < datei)>0) {"
+				ab=${ab}"	}"
+				ab=${ab}" delete var[i];"
+				ab=${ab}" close(datei);"
+				ab=${ab}"}"
+				ab=${ab}"BEGIN {"
+				ab=${ab}" liesein(ch,\"$gesausdt\");"
+				ab=${ab}"}"
+				ab=${ab}"{"
+				ab=${ab}" if (\$0!=\"\") {"
+				ab=${ab}"  obschreib=1;"
+				ab=${ab}"  for(i in ch) {"
+				ab=${ab}"   if (ch[i]==\$0) {"
+				ab=${ab}"     obschreib=0;"
+				ab=${ab}"   }"
+				ab=${ab}"  }"
+				ab=${ab}"  if (obschreib) {"
+				ab=${ab}"    print \$0 >> (\"$gesausdt\");"
+				ab=${ab}"  }"
+				ab=${ab}" }"
+				ab=${ab}"}"
+				[ "$verb" ]&&printf "awk $blau$ab$reset $ausgdt\n";
+				awk "$ab" $ausgdt;
       fi;
   	fi;
 }
@@ -216,9 +254,9 @@ wecken() {
 			fragab;
 		done;
 	else
-		geszahl=$(wc -l <$Ausgabe);
-		[ -f "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset not found/nicht gefunden\n";exit;};
-		[ -s "$Ausgabe" ]||{ printf "File/Datei $blau$Ausgabe$reset empty/leer\n";exit;};
+		geszahl=$(wc -l <$gesausdt);
+		[ -f "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset not found/nicht gefunden\n";exit;};
+		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
 			# falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
 			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
@@ -234,7 +272,7 @@ wecken() {
 				done;
 			fi;
 		done << EOF
-$(cat $Ausgabe)
+$(cat $gesausdt)
 EOF
  fi;
 }
