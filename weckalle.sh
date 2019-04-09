@@ -6,7 +6,7 @@ vorgaben() {
 # eher veränderbare Vorgaben
 	Ausgabe=ergtr64.txt;
 	listenintervall=7; # alle $listenintervall Tage wird $Ausgabe erneuert
-	curlmaxtime=20;
+	curlmaxtime=40;
 	# IFerl="802.11,Ethernet,-"; # erlaubte Interfaces
 	IFverb="802.11"; #verbotene Interfaces
 # eher starre Vorgaben
@@ -98,6 +98,7 @@ commandline() {
 			--verboten*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,11))}');; # verbotene Interfaces neu festlegen
 			--forbidden*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,12))}');; # verbotene Interfaces neu festlegen
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
+			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
@@ -193,8 +194,11 @@ geraeteliste() {
 			filter=$filter"/\\\("$(echo $IFerl|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
 			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
-		# fragab;exit; # fragab ohne filter würde die ganze xml-Datei erzeugen
-			fragab "$filter"; # der fertige Filter wird mit -v angezeigt
+      if [ "$ungefiltert" ]; then
+        fragab; # fragab ohne filter würde die ganze xml-Datei erzeugen
+      else
+        fragab "$filter"; # der fertige Filter wird mit -v angezeigt
+      fi;
   	fi;
 }
 
