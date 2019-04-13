@@ -152,7 +152,7 @@ commandline() {
 
 # Autorisierung ermitteln/festlegen
 authorize() {
-	credfile="$(getent passwd $(logname 2>/dev/null||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
+	credfile="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
 	crede=$(cat $credfile 2>/dev/null);
 	if [ -z "$crede" -o $obneu = 1 ]; then
 		 printf "Please enter the fritz box user/Bitte Fritzboxbenutzer eingeben: ";read fbuser;
