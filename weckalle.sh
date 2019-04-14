@@ -45,7 +45,7 @@ fragab() {
   for ipv in 4 6;do
 		for adr in $FritzboxAdressen;do
 			FB=http://$adr:49000;
-			printf "Trying/versuche ipv$ipv\r";
+			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset\r";
 			befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
 						-H \"Content-Type: text/xml; charset=utf-8\" \\n\
 						-H \"SoapAction: $serviceType#$Action\" \\n\
@@ -53,7 +53,7 @@ fragab() {
 						-d '$XML'";
 			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>$logdt);
 			ret=$?;
-			awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
+			awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 			[ $ret -ne 0 ]&&continue; # z.B. fritz.box konnte nicht aufgelöst werden
 			[ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]&&printf "Command/Befehl: $blau%b$reset\nRueckmeldung:\n$rot%b$reset\n" "$befehl" "$(cat $logdt)"
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
@@ -66,10 +66,10 @@ fragab() {
 				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
 					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>$logdt|eval "$filter" >\"$ausgdt\"";
-					[ "$verb" ]&&printf "$befehl\n";
+					[ "$verb" ]&&printf "$befehl\n"||printf "Rufe ab/Evaluating: $blau$neuurl$reset ...\r";
 					eval $befehl; # ... und dann nochmal mit curl aufgerufen werden
 					ret=$?;
-					[ "$verb" ]&&awk 'BEGIN {while (c++<100) printf " ";printf "\r";}' # Zeile wieder säubern
+					[ -z "$verb" ]&&awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 					[ -s "$ausgdt" ]&&break;
   			done;
 				[ "$verb" ]&&\
@@ -152,6 +152,7 @@ commandline() {
 
 # Autorisierung ermitteln/festlegen
 authorize() {
+  # auf mint geht logname nicht mehr, dafür Ersatzbefehl
 	credfile="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
 	crede=$(cat $credfile 2>/dev/null);
 	if [ -z "$crede" -o $obneu = 1 ]; then
