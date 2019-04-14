@@ -50,12 +50,17 @@ fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb); # "^/$Dvz\>" ginge auch
 blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
-bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
-bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,16,length($4)-16)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+echo $bishDAT;
+exit;
+bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
 istinfstab=0;
 Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
 # Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
+# lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|FSTYPE=".*_member"\|UUID=""'|tac
+fstabteil=$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|FSTYPE=".*_member"\|UUID=""'|tac);
+printf "fstabteil:\n$blau$fstabteil$reset\n";
 while read -r zeile; do
 #	echo "Hier: " $zeile;
 	dev=$(echo $zeile|cut -d\" -f2);
@@ -72,23 +77,23 @@ while read -r zeile; do
 						abbruch=0;
 						# wenn der geplante Buchstabe noch nicht vergeben: Abbruch von while planen
 						[ -z "$bishDAT" ]&&abbruch=1|| eval "case "$Dnamnr" in "$bishDAT"):;;*)false;;esac;"||abbruch=1;
-						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
 						[ $abbruch -eq 1 ]&&break;
+						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
 					done;
 					nam="DAT"$Dnamnr;;
 				ntfs*|exfat*|vfat)
 					while :;do	
 						abbruch=0;
 						[ -z "$bishwin" ]&&abbruch=1|| eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
-						wnamnr=$(expr $wnamnr + 1 );
 						[ $abbruch -eq 1 ]&&break;
+						wnamnr=$(expr $wnamnr + 1 );
 					done;
 					nam="win"$wnamnr;;
 			esac;
 			case $typ in 
 				ext*)
 					echo e2label /dev/$dev "$nam";
-					e2label /dev/$dev "$nam";;
+          e2label /dev/$dev "$nam" 2>/dev/null||e2label /dev/$(echo $dev|sed 's/-/\//') "$nam";;
 				btrfs)
 					echo btrfs filesystem label /dev/$dev "$nam";
 					btrfs filesystem label /dev/$dev "$nam";;
@@ -135,7 +140,7 @@ while read -r zeile; do
 	fi;
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
-$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|UUID=""'|tac) 
+$fstabteil;
 EOF
   mount -a;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
@@ -718,7 +723,7 @@ hol3() {
 			cp -ai "$q0/$1" "$Dw/";
 		elif [ "$srv0" ]; then
 		  printf "${blau}ssh $srv0 ls \"$q0/$1\" >/dev/null 2>&1&& scp -p $srv0:$q0/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q0/\n";
-			ssh "$srv0" "ls \"$q0/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q0/$1" "$Dw/"&&cp -ai "$Dw/$1" "$q0/";
+			ssh "$srv0" "ls \"$q0/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q0/$1" "$Dw/"&&{ [ -d "$q0" ]&&cp -ai "$Dw/$1" "$q0/";};
 		else
 			printf "${blau}wget "$2/$hname"$reset\n";
 			wget "$2/$hname";
@@ -753,7 +758,7 @@ teamviewer10() {
 					fi;
 					;;
 				4|5|6|7) # opensuse, fedora, mageia
-					trpm=teamviewer_10.0.95021.i386.rpm;
+					trpm=teamviewer_10.0.95021.i686.rpm; # der 6er stimmmt hier
 					hname=teamviewer.i686.rpm;
 					;;
 				esac;
@@ -830,8 +835,8 @@ teamviewer10() {
 					rpm2cpio "$qqd"|cpio -idmv
 					cd -;
 				done;
-				echo cp -ai "$Dw/$qd" "$zd";
-				cp -ai "$Dw/$qd" "$zd";
+				echo cp -ai "$qd" "$zd";
+				cp -ai "$qd" "$zd";
 			done;;
 	esac;
 				case $OSNR in
@@ -953,7 +958,7 @@ variablen;
 # setzhost;
 # setzbenutzer;
 # fritzbox;
-# mountlaufwerke;
+ mountlaufwerke;
 # proginst;
 # sambaconf;
 # musterserver;

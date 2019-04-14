@@ -4,9 +4,10 @@
 
 vorgaben() {
 # eher veränderbare Vorgaben
-	ausgdt=ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
-	gesausdt=gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
-	logdt=logtr64.txt; # log-Datei für TR-064-Abfragen
+  meinpfad="$(dirname "$(readlink -f "$0")")";
+	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
+	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
+	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
 	curlmaxtime=20;
@@ -51,11 +52,15 @@ fragab() {
 						-H \"SoapAction: $serviceType#$Action\" \\n\
 						\"$FB$controlURL\" \\n\
 						-d '$XML'";
-			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>$logdt);
-			ret=$?;
-			awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+      tufrag "$befehl" umw "$FB$controlURL";
+#			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>"$logdt");
+#			ret=$?;
+#			awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 			[ $ret -ne 0 ]&&continue; # z.B. fritz.box konnte nicht aufgelöst werden
-			[ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]&&printf "Command/Befehl: $blau%b$reset\nRueckmeldung:\n$rot%b$reset\n" "$befehl" "$(cat $logdt)"
+#			if [ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]; then
+#        printf "Command/Befehl: $blau%b$reset\n" "$befehl";
+#        printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
+#      fi;
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
 			[ "$erg" ]&&[ "$verb" ]&&printf "\nReturn/Rueckgabe: \n$blau$erg$reset\n";
 			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
@@ -65,15 +70,18 @@ fragab() {
 				[ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
 				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
-					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>$logdt|eval "$filter" >\"$ausgdt\"";
-					[ "$verb" ]&&printf "$befehl\n"||printf "Rufe ab/Evaluating: $blau$neuurl$reset ...\r";
-					eval $befehl; # ... und dann nochmal mit curl aufgerufen werden
-					ret=$?;
-					[ -z "$verb" ]&&awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
+          tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
+#					[ "$verb" ]&&printf "Befehl/Command: $blau$befehl$reset\n"||printf "Rufe ab/Evaluating: $blau$neuurl$reset ...\r";
+#					eval $befehl; # ... und dann nochmal mit curl aufgerufen werden
+#					ret=$?;
+#					[ -z "$verb" ]&&awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 					[ -s "$ausgdt" ]&&break;
   			done;
-				[ "$verb" ]&&\
-					printf "its return/deren Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$ausgdt$reset)\nRueckmeldung:\n$rot%b$reset\n" "$(cat $logdt)"
+#				if [ "$verb" ]; then
+#					printf " its return/dessen Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$ausgdt$reset)\n";
+#          printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
+#        fi;
 				[ "$ret" -eq 0 ]&&break;
 				;;
 				*) [ "$ret" -eq 0 ]&&break;;
@@ -82,6 +90,33 @@ fragab() {
 	 [ $ret -eq 0 ]&&break;
   done;
 }
+
+# die tatsächliche TR-064-Abfrage durchführen
+tufrag() {
+  if [ "$verb" ]; then
+    printf "Befehl/Command: $blau%b$reset\n" "$1";
+  else
+    printf "Rufe ab/Evaluating: $blau$3$reset ...\r";
+  fi;
+  if [ "$2" ]; then
+    befehl="$(echo "$1"|sed 's/\\n//g;s/\\t//g')";
+  else
+    befehl="$1";
+  fi;
+  erg=$(eval "$befehl" 2>"$logdt");
+  ret=$?;
+  if [ "$verb" ]; then
+    if [ "$4" ]; then
+      printf " its return/dessen Rueckgabe: $blau$ret$reset";
+      [ -s "$3" ]&&printf "(Result/Ergebnis in: $blau$3$reset)";
+      printf "\n";
+    fi;
+    printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
+  else
+    awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+  fi;
+}
+
 
 # Befehlszeilenparameter auswerten
 commandline() {
@@ -168,7 +203,7 @@ geraeteliste() {
 	  if [ -z "$alteliste" ]; then
 			neueliste=1;
 		elif [ "$listenintervall" != 0 ]; then
-			if ! find . -mtime -$listenintervall -name "$ausgdt"|grep -q .; then
+			if ! find "$meinpfad" -mtime -$listenintervall -wholename "$ausgdt"|grep -q .; then
 				neueliste=1;
 			fi;
 		fi;
@@ -206,8 +241,8 @@ geraeteliste() {
         fragab "$filter"; # der fertige Filter wird mit -v angezeigt
 				# gesausdt alle $loeschintervall Tage löschen und ganz erneuern
 				if [ "$loeschintervall" != 0 ]; then
-					if ! find . -mtime -$loeschintervall -name "$gesausdt"|grep -q .; then
-						rm $gesausdt;
+					if ! find "$meinpfad" -mtime -$loeschintervall -wholename "$gesausdt"|grep -q .; then
+						rm "$gesausdt";
 					fi;
 				fi;
 				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen
@@ -234,8 +269,8 @@ geraeteliste() {
 				ab=${ab}"  }"
 				ab=${ab}" }"
 				ab=${ab}"}"
-				[ "$verb" ]&&printf "awk $blau$ab$reset $ausgdt\n";
-				awk "$ab" $ausgdt;
+				[ "$verb" ]&&printf "awk \"$blau$ab$reset\" $ausgdt:\n";
+				awk "$ab" "$ausgdt";
       fi;
   	fi;
 }
@@ -254,7 +289,7 @@ wecken() {
 			fragab; # hier geschieht das Wecken
 		done;
 	else
-		geszahl=$(wc -l <$gesausdt);
+		geszahl=$(wc -l <"$gesausdt");
 		[ -f "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset not found/nicht gefunden\n";exit;};
 		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
@@ -272,7 +307,7 @@ wecken() {
 				done;
 			fi;
 		done << EOF
-$(cat $gesausdt)
+$(cat "$gesausdt")
 EOF
  fi;
 }
