@@ -1,10 +1,10 @@
 #!/bin/sh
-# versucht (alle) PCs an der Fritzbox zu wecken; 
+# versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken; 
 # zusammengeschrieben von/written together by: Gerald Schade 6.4.2019
 
 vorgaben() {
-# eher veränderbare Vorgaben
   meinpfad="$(dirname "$(readlink -f "$0")")";
+# eher veränderbare Vorgaben
 	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
 	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
 	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
@@ -113,7 +113,7 @@ tufrag() {
     fi;
     printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
   else
-    awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+    awk 'BEGIN {while (c++<130) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
   fi;
 }
 
@@ -140,6 +140,9 @@ commandline() {
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
+        printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
+        printf "  zusammengeschrieben von: Gerald Schade 6.4.2019\n";
+        printf "  Benutzung:\n";
 				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
@@ -147,10 +150,13 @@ commandline() {
 				printf "                    Wenn bloß MAC-Adressen angegeben werden, so arbeitet das Programm ohne Geräteliste (und schneller).\n";
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
-				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an\n";
+				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an statt diese aufzuwecken\n";
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 			exit;;
 			--help|-help)
+        printf "Program $blau$0$reset: tries to wake up one, several or all pcs at a fritzbox,\n";
+        printf "  written together by: Gerald Schade 6.4.2019\n";
+        printf "  Usage:\n";
 				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
@@ -158,7 +164,7 @@ commandline() {
 				printf "                    If only MAC-addresses are given, the program works without the list of devices (and faster).\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
-				printf "  $blau-show$reset: shows only the list of the devices\n";
+				printf "  $blau-show$reset: shows only the list of the devices instead of waking them up\n";
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 			exit;;
 			*) pcs="$para";;
@@ -211,12 +217,13 @@ geraeteliste() {
 			Action=X_AVM-DE_GetHostListPath;
 			ParIn=;
 			Inhalt=;
-			# XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet;
-			filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;h};" # Namen angeben, IP-Adresse ins hold-Register stellen
-			filter=$filter"/'\\\$I' \/>/{s/.*/-/;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
+      # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
+      filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Namen angeben
+      filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" # IP-Adresse mit 15 Zeichen ins hold-Register stellen
+			filter=$filter"/'\\\$I' \/>/{s/.*/-              /;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
 			filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
 			filter=$filter"/'\\\$M' \/>/{s/.*//;x;b;};" # Mac-Zeile ohne Mac-Adresse: Hold-Register löschen
-			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;H;};" # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname anhängen
+			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;s/$/                             /;s/^\(.\{30\}\).*/\1/;H;};" # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname mit 20 Zeichen anhängen
 			filter=$filter"/<'\\\$T'/{"; # Zeile, die <InterfaceType enthält
 			filter=$filter"x;/^$/b;x;" # falls Hold-Register leer, Zeile auslassen
 			filter=$filter"/<'\\\$T' \/>/{"; # falls diese Zeile einen leeren Interface-Typ enthält
@@ -337,7 +344,7 @@ wecken() {
 			[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
 			zahl=$(printf $zahl|awk '{print $0+1}');
 			if [ "$zeig" ];then # zeigt die Liste an
-				echo "$zeile"|awk '{printf "'$zahl'/'$geszahl': '$blau'%s '$lila'%s '$blau'%s '$lila'%s'$reset'\n",$1,$2,$3,$4}';
+				echo "$zeile"|awk '{printf "%4s/%4s: '$blau'%17s '$lila'%-15s '$blau'%-20s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2,$3,$4}';
 			else
 				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
