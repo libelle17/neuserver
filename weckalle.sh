@@ -11,13 +11,14 @@ vorgaben() {
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
 	curlmaxtime=20;
-	IFerl=; # "802.11,Ethernet,-"; # erlaubte Interfaces
-	IFverb="802.11"; #verbotene Interfaces (kommagetrennt)
+	IFerl=; # IFerl="802.11,Ethernet,-"; # erlaubte Interfaces
+	IFverb=; # IFverb="802.11"; #verbotene Interfaces (kommagetrennt)
 # eher starre Vorgaben
 	blau="\033[1;34m";
 	rot="\033[1;31m";
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
+  Pkt=" ......................................";
 	FritzboxAdressen="fritz.box 169.254.1.1"; # wenn fritz.box nicht geht, dann geht 169.254.1.1
 # TR-064-Parameter für fragab(): für beide Abfragen (geraeteliste() und wecken())
 	controlURL=hosts
@@ -53,14 +54,7 @@ fragab() {
 						\"$FB$controlURL\" \\n\
 						-d '$XML'";
       tufrag "$befehl" umw "$FB$controlURL";
-#			erg=$(eval $(echo $befehl|sed 's/\\n//g;s/\\t//g') 2>"$logdt");
-#			ret=$?;
-#			awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 			[ $ret -ne 0 ]&&continue; # z.B. fritz.box konnte nicht aufgelöst werden
-#			if [ $ret -eq 0 -o $ipv -eq 4 ]&&[ "$verb" ]; then
-#        printf "Command/Befehl: $blau%b$reset\n" "$befehl";
-#        printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
-#      fi;
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
 			[ "$erg" ]&&[ "$verb" ]&&printf "\nReturn/Rueckgabe: \n$blau$erg$reset\n";
 			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
@@ -72,16 +66,8 @@ fragab() {
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
 					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
           tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
-#					[ "$verb" ]&&printf "Befehl/Command: $blau$befehl$reset\n"||printf "Rufe ab/Evaluating: $blau$neuurl$reset ...\r";
-#					eval $befehl; # ... und dann nochmal mit curl aufgerufen werden
-#					ret=$?;
-#					[ -z "$verb" ]&&awk 'BEGIN {while (c++<99) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
 					[ -s "$ausgdt" ]&&break;
   			done;
-#				if [ "$verb" ]; then
-#					printf " its return/dessen Rueckgabe: $blau$ret$reset (Result/Ergebnis in: $blau$ausgdt$reset)\n";
-#          printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
-#        fi;
 				[ "$ret" -eq 0 ]&&break;
 				;;
 				*) [ "$ret" -eq 0 ]&&break;;
@@ -227,19 +213,22 @@ geraeteliste() {
 			filter=$filter"/<'\\\$T'/{"; # Zeile, die <InterfaceType enthält
 			filter=$filter"x;/^$/b;x;" # falls Hold-Register leer, Zeile auslassen
 			filter=$filter"/<'\\\$T' \/>/{"; # falls diese Zeile einen leeren Interface-Typ enthält
-			case "$IFverb" in *-*) # wenn IFverb '-' als Symbol für leeres Interface enthält
-				filter=$filter"b;";; # dann Zeile auslassen
-				*)
-				case "$IFerl" in ""|*-*) # wenn IFerl leer oder '-' als Symbol für leeres Interface angegeben wurde
-					filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;";; # dann '-' als Symbol für leeres Interface anhängen und drucken	
-					*) filter=$filter"b;";; # sonst Zeile auslassen
-				esac;;
-			esac;
+#			case "$IFverb" in *-*) # wenn IFverb '-' als Symbol für leeres Interface enthält
+#				filter=$filter"b;";; # dann Zeile auslassen
+#				*)
+#				case "$IFerl" in ""|*-*) # wenn IFerl leer oder '-' als Symbol für leeres Interface angegeben wurde
+					filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;" # dann '-' als Symbol für leeres Interface anhängen und drucken	
+#          ;;
+#					*) filter=$filter"b;";; # sonst Zeile auslassen
+#				esac;;
+#			esac;
 			filter=$filter"};"; # Ende leerer Interface-Typ
       # wenn Interfacetyp (außer -) bei IFverb dabei, dann Zeile auslassen
-			[ "$IFverb" ]&&filter=$filter"/\\\("$(echo $IFverb|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</b;" 
+#			[ "$IFverb" ]&&filter=$filter"/\\\("$(echo $IFverb|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</b;" 
       # wenn dieser (außer -) bei IFerl dabei, dann diesen bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
-			filter=$filter"/\\\("$(echo $IFerl|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
+#			filter=$filter"/\\\("$(echo $IFerl|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
+      # Interfacetyp bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
+			filter=$filter"/<'\\\$T'>/{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
 			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
       if [ "$ungefiltert" ]; then
@@ -340,11 +329,13 @@ wecken() {
 		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
 			# falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
+      [ "$IFverb" ]&&{ echo "$zeile"|awk '{if (match("'$IFverb'",$4)) exit 1;}' || continue;};
+      [ "$IFerl" ]&&{ echo "$zeile"|awk '{if (!match("'$IFerl'",$4)) exit 1;}' || continue;};
 			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
 			[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
 			zahl=$(printf $zahl|awk '{print $0+1}');
 			if [ "$zeig" ];then # zeigt die Liste an
-				echo "$zeile"|awk '{printf "%4s/%4s: '$blau'%17s '$lila'%-15s '$blau'%-20s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2,$3,$4}';
+				echo "$zeile"|awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
 			else
 				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
