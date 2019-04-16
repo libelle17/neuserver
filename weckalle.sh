@@ -11,8 +11,8 @@ vorgaben() {
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
 	curlmaxtime=20;
-	IFerl=; # IFerl="802.11,Ethernet,-"; # erlaubte Interfaces
-	IFverb=; # IFverb="802.11"; #verbotene Interfaces (kommagetrennt)
+	IFerlau=; # IFerlau="802.11,Ethernet,-"; # erlaubte Interfaces
+	IFverbo=; # IFverbo="802.11"; #verbotene Interfaces (kommagetrennt)
 # eher starre Vorgaben
 	blau="\033[1;34m";
 	rot="\033[1;31m";
@@ -114,13 +114,13 @@ commandline() {
       -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
 			-not*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; 
 			-nicht*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,7))}');; 
-			-erl|-all|--erlaubt|--allowed) IFverb=;IFerl=$2;shift;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
-			-erl*|-all*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # erlaubte Interfaces neu festlegen
-			--erlaubt*|--allowed*) IFverb=;IFerl=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');;
-			-verbo|-forbi|--verboten|--forbidden) IFverb=$2;shift;; # verbotene Interfaces neu festlegen
-			-verbo*|-forbi*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; # verbotene Interfaces neu festlegen
-			--verboten*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,11))}');; # verbotene Interfaces neu festlegen
-			--forbidden*) IFverb=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,12))}');; # verbotene Interfaces neu festlegen
+			-erl|-all|--erlaubt|--allowed) IFverbo=;IFerlau=$2;shift;; # erlaubte Interfaces neu festlegen, dazu keine verbieten
+			-erl*|-all*) IFverbo=;IFerlau=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; # erlaubte Interfaces neu festlegen
+			--erlaubt*|--allowed*) IFverbo=;IFerlau=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,10))}');;
+			-verbo|-forbi|--verboten|--forbidden) IFverbo=$2;shift;; # verbotene Interfaces neu festlegen
+			-verbo*|-forbi*) IFverbo=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,6))}');; # verbotene Interfaces neu festlegen
+			--verboten*) IFverbo=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,11))}');; # verbotene Interfaces neu festlegen
+			--forbidden*) IFverbo=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,12))}');; # verbotene Interfaces neu festlegen
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
 			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
@@ -172,8 +172,8 @@ commandline() {
 		[ "$pcs" ]&&printf "pcs: $blau$pcs$reset\n";
 		printf "nurmac: $blau$nurmac$reset\n";
 		[ "$npc" ]&&printf "npc: $blau$npc$reset\n";
-		printf "allowed/erlaubte Interfaces: $blau$IFerl$reset\n";
-		printf "forbidden/verbotene Interfaces: $blau$IFverb$reset\n";
+		printf "allowed/erlaubte Interfaces: $blau$IFerlau$reset\n";
+		printf "forbidden/verbotene Interfaces: $blau$IFverbo$reset\n";
 	fi;
 }
 
@@ -205,28 +205,19 @@ geraeteliste() {
 			Inhalt=;
       # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
       filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Namen angeben
-      filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" # IP-Adresse mit 15 Zeichen ins hold-Register stellen
+      # IP-Adresse mit 15 Zeichen ins hold-Register stellen
+      filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" 
 			filter=$filter"/'\\\$I' \/>/{s/.*/-              /;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
-			filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
+      # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
+			filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" 
 			filter=$filter"/'\\\$M' \/>/{s/.*//;x;b;};" # Mac-Zeile ohne Mac-Adresse: Hold-Register löschen
-			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;s/$/                             /;s/^\(.\{30\}\).*/\1/;H;};" # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname mit 20 Zeichen anhängen
+      # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname mit 20 Zeichen anhängen
+			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;s/$/                             /;s/^\(.\{30\}\).*/\1/;H;};" 
 			filter=$filter"/<'\\\$T'/{"; # Zeile, die <InterfaceType enthält
 			filter=$filter"x;/^$/b;x;" # falls Hold-Register leer, Zeile auslassen
 			filter=$filter"/<'\\\$T' \/>/{"; # falls diese Zeile einen leeren Interface-Typ enthält
-#			case "$IFverb" in *-*) # wenn IFverb '-' als Symbol für leeres Interface enthält
-#				filter=$filter"b;";; # dann Zeile auslassen
-#				*)
-#				case "$IFerl" in ""|*-*) # wenn IFerl leer oder '-' als Symbol für leeres Interface angegeben wurde
-					filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;" # dann '-' als Symbol für leeres Interface anhängen und drucken	
-#          ;;
-#					*) filter=$filter"b;";; # sonst Zeile auslassen
-#				esac;;
-#			esac;
+      filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;" # dann '-' als Symbol für leeres Interface anhängen und drucken	
 			filter=$filter"};"; # Ende leerer Interface-Typ
-      # wenn Interfacetyp (außer -) bei IFverb dabei, dann Zeile auslassen
-#			[ "$IFverb" ]&&filter=$filter"/\\\("$(echo $IFverb|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</b;" 
-      # wenn dieser (außer -) bei IFerl dabei, dann diesen bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
-#			filter=$filter"/\\\("$(echo $IFerl|sed 's/-,//g;s/,*-//g;s/,/\\\|/g')"\\\)</{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
       # Interfacetyp bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
 			filter=$filter"/<'\\\$T'>/{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
@@ -329,13 +320,14 @@ wecken() {
 		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
 			# falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
-      [ "$IFverb" ]&&{ echo "$zeile"|awk '{if (match("'$IFverb'",$4)) exit 1;}' || continue;};
-      [ "$IFerl" ]&&{ echo "$zeile"|awk '{if (!match("'$IFerl'",$4)) exit 1;}' || continue;};
+      [ "$IFverbo" ]&&{ echo "$zeile"|awk '{if  (match("'$IFverbo'",$4)) exit 1;}' || continue;};
+      [ "$IFerlau" ]&&{ echo "$zeile"|awk '{if (!match("'$IFerlau'",$4)) exit 1;}' || continue;};
 			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
 			[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
 			zahl=$(printf $zahl|awk '{print $0+1}');
 			if [ "$zeig" ];then # zeigt die Liste an
-				echo "$zeile"|awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
+				echo "$zeile"|
+          awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
 			else
 				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
