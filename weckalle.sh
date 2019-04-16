@@ -242,35 +242,58 @@ geraeteliste() {
 				# gesausdt alle $loeschintervall Tage löschen und ganz erneuern
 				if [ "$loeschintervall" != 0 ]; then
 					if ! find "$meinpfad" -mtime -$loeschintervall -wholename "$gesausdt"|grep -q .; then
-						rm "$gesausdt";
+						rm -f "$gesausdt";
 					fi;
 				fi;
-				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen
-				     ab="function liesein(var,datei) {"
-				ab=${ab}"	i=0;"
-				ab=${ab}"	while ((getline var[++i] < datei)>0) {"
-				ab=${ab}"	}"
-				ab=${ab}" delete var[i];"
-				ab=${ab}" close(datei);"
-				ab=${ab}"}"
-				ab=${ab}"BEGIN {"
-				ab=${ab}" liesein(ch,\"$gesausdt\");"
-				ab=${ab}"}"
-				ab=${ab}"{"
-				ab=${ab}" if (\$0!=\"\") {"
-				ab=${ab}"  obschreib=1;"
-				ab=${ab}"  for(i in ch) {"
-				ab=${ab}"   if (ch[i]==\$0) {"
-				ab=${ab}"     obschreib=0;"
-				ab=${ab}"   }"
-				ab=${ab}"  }"
-				ab=${ab}"  if (obschreib) {"
-				ab=${ab}"    print \$0 >> (\"$gesausdt\");"
-				ab=${ab}"  }"
-				ab=${ab}" }"
-				ab=${ab}"}"
-				[ "$verb" ]&&printf "awk \"$blau$ab$reset\" $ausgdt:\n";
-				awk "$ab" "$ausgdt";
+				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen, solche mit - als Netz durch andere ersetzen
+        begz=$(echo $LINENO|awk '{print $0+1}');
+        awk '
+          function liesein(var,datei) {
+            i=0;
+            while ((getline var[++i] < datei)>0) {
+              split(var[i],arr," ");
+              mac[i]=arr[1];
+              ip[i]=arr[2];
+              name[i]=arr[3];
+              netz[i]=arr[4]
+            }
+            delete var[i];
+            close(datei);
+          }
+          BEGIN {
+            ausg="'$gesausdt'";
+            liesein(ch,ausg);
+          }
+          {
+           if ($0!="") {
+              obschreib=1;
+              for(j in ch) {
+                if (ch[j]==$0) {
+                  obschreib=0;
+                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-") {
+                  obschreib=0;
+                  ch[j]=$0;
+                  netz[j]=$4;
+                }
+              }
+              if (obschreib) {
+                ch[length(ch)+1]=$0;
+              }
+            }
+          }
+          END {
+            for(j=10;j>0;j--) {
+              system("mv "ausg"_"j" "ausg"_"j+1" 2>/dev/null");
+            }
+            system("mv "ausg" "ausg"_1 2>/dev/null");
+            for(j in ch) {
+              print ch[j] >> (ausg);
+            }
+          }
+        ' "$ausgdt";
+        endz=$(echo $LINENO|awk '{print $0-1}');
+#        [ "$verb" ]&&sed "$begz,$endz!d" "$meinpfad/$0"; 
+        [ "$verb" ]&&printf "$blau$gesausdt$reset += $blau$ausgdt$reset (mit awk (Zeilen $begz-$endz in $meinpfad/$0))\n";
       fi;
   	fi;
 }
