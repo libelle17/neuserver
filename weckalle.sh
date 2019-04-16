@@ -47,7 +47,7 @@ fragab() {
   for ipv in 4 6;do
 		for adr in $FritzboxAdressen;do
 			FB=http://$adr:49000;
-			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset\r";
+			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset ";
 			befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
 						-H \"Content-Type: text/xml; charset=utf-8\" \\n\
 						-H \"SoapAction: $serviceType#$Action\" \\n\
@@ -99,7 +99,7 @@ tufrag() {
     fi;
     printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
   else
-    awk 'BEGIN {while (c++<130) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+    awk 'BEGIN {while (c++<170) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
   fi;
 }
 
@@ -237,9 +237,9 @@ geraeteliste() {
         awk '
           function sortorder(i1,v1,i2,v2,li,re) { # Sortierfunktion für asort() kurz vor der Ausgabe
             split(v1,arr1," ");
-            li=arr1[3]arr[2];
+            li=arr1[3]arr1[1];
             split(v2,arr2," ");
-            re=arr2[3]arr[2];
+            re=arr2[3]arr2[1];
             if (li<re) return -1;
             if (li==re) return 0;
             return 1;
