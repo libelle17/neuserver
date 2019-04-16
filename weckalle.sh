@@ -213,7 +213,7 @@ geraeteliste() {
 			Inhalt=;
 			# XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet;
 			filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;h};" # Namen angeben, IP-Adresse ins hold-Register stellen
-			filter=$filter"/'\\\$I' \/>/{s/.*//;x;b;};" # falls keine IP-Adresse angegeben, dann hold-Register (von der letzten Zeile her noch) löschen
+			filter=$filter"/'\\\$I' \/>/{s/.*/-/;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
 			filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
 			filter=$filter"/'\\\$M' \/>/{s/.*//;x;b;};" # Mac-Zeile ohne Mac-Adresse: Hold-Register löschen
 			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;H;};" # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname anhängen
@@ -248,7 +248,16 @@ geraeteliste() {
 				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen, solche mit - als Netz durch andere ersetzen
         begz=$(echo $LINENO|awk '{print $0+1}');
         awk '
-          function liesein(var,datei) {
+          function sortorder(i1,v1,i2,v2,li,re) { # Sortierfunktion für asort() kurz vor der Ausgabe
+            split(v1,arr1," ");
+            li=arr1[3]arr[2];
+            split(v2,arr2," ");
+            re=arr2[3]arr[2];
+            if (li<re) return -1;
+            if (li==re) return 0;
+            return 1;
+          }
+          function liesein(var,datei) { # liest die bisherigen Datensätze (aus $gesausdt) ein
             i=0;
             while ((getline var[++i] < datei)>0) {
               split(var[i],arr," ");
@@ -265,34 +274,41 @@ geraeteliste() {
             liesein(ch,ausg);
           }
           {
-           if ($0!="") {
+           if ($0!="") { # falls keine Leerzeile
               obschreib=1;
               for(j in ch) {
-                if (ch[j]==$0) {
+                if (ch[j]==$0 || (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && $4=="-")) { # falls Zeile schon da oder schon aussagekräftiger da ...
+                  obschreib=0;    # dann nicht schreiben
+                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-") { # falls Zeile aussagekräftiger ...
                   obschreib=0;
-                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-") {
-                  obschreib=0;
-                  ch[j]=$0;
+                  if (0'$verb'==1) system("printf \"Ersetze: '$blau'"$0"'$reset'\\n\"");
+                  ch[j]=$0; # dann ersetzen
                   netz[j]=$4;
                 }
               }
-              if (obschreib) {
+              if (obschreib) { # falls nicht "nicht schreiben" ermittelt oder ersetzt, dann Datensatz anfügen
                 ch[length(ch)+1]=$0;
+                if (0'$verb'==1) system("printf \"Ergaenze: '$blau'"$0"'$reset'\\n\"");
               }
             }
           }
           END {
             for(j=10;j>0;j--) {
-              system("mv "ausg"_"j" "ausg"_"j+1" 2>/dev/null");
+              system("mv "ausg"_"j" "ausg"_"j+1" 2>/dev/null"); # alte Sicherungskopien verrutschen ...
             }
             system("mv "ausg" "ausg"_1 2>/dev/null");
-            for(j in ch) {
-              print ch[j] >> (ausg);
+            asort(ch,chs,"sortorder"); # sortieren s.o.
+            for(j in chs) {
+              if (j==1 || chs[j]!=chs[j-1]) { # keine doppelten Zeilen drucken
+                print chs[j] >> (ausg);
+              } else {
+                if (0'$verb'==1) system("printf \"Doppelt: '$blau'"chs[j]"'$reset'\\n\"");
+              }
             }
           }
         ' "$ausgdt";
         endz=$(echo $LINENO|awk '{print $0-1}');
-#        [ "$verb" ]&&sed "$begz,$endz!d" "$meinpfad/$0"; 
+#        [ "$verb" ]&&sed "$begz,$endz!d" "$meinpfad/$0";  # wär doch a bißl lang ...
         [ "$verb" ]&&printf "$blau$gesausdt$reset += $blau$ausgdt$reset (mit awk (Zeilen $begz-$endz in $meinpfad/$0))\n";
       fi;
   	fi;
