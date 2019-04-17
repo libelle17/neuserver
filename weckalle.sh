@@ -108,7 +108,6 @@ tufrag() {
     printf "Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
   else
     awk 'BEGIN {while (c++<'$spzahl') printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
-  exit
   fi;
 }
 
