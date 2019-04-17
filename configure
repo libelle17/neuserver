@@ -330,7 +330,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 	SUG="admin\|root\|sudo\|wheel\|ntadmin";
 
 	# ab hier wird etwas getan ...
-	echo \"$GITV\">gitvdt
+	while true; do echo \"$GITV\" 2>/dev/null >gitvdt && break; su -c "rm gitvdt"; done;
 	# falls der Benutzer 'sudo' fehlt oder der aktuelle Benutzer ihn nicht aufrufen darf, weil er nicht Mitglied einer Administratorgruppe ist ...
 	INSTP=sudo;still which $INSTP|| 
 	{
@@ -371,7 +371,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		#// $SPR make >$DN 2>&1 ||{ echo Installing/ Installiere 'make' ....; id su >$DN 2>&1 && { su -c "$IPR make;";:;} || ${SUDC}$IPR make; grep -q make $AUNF||printf "${UPR}make\necho \"${UPR}make\"\n">>$AUNF; }
 		# in kons.cpp steht gleichnamig spath=\n#include spath\n;\n
 		# sfftobmp, vom source code in /usr/local/bin installiert, wurde unter Fedora 14 LX nicht bei der source-code-Installation von capisuite gefunden
-		${SUDC}sh -c 'echo \"$PATH$(D=/usr/local/bin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")$(D=/usr/local/sbin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")\"'>spath
+		while true; do ${SUDC}sh -c 'echo \"$PATH$(D=/usr/local/bin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")$(D=/usr/local/sbin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")\"' 2>/dev/null >spath && break; ${SUDC}rm spath; done;
 		exportvars;
 		Mf=Makefile;Mfr=$Mf.roh; test -f $Mfr && mv $Mfr $Mf
 	fi
