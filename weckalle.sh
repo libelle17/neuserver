@@ -1,62 +1,65 @@
 #!/bin/sh
 # versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken; 
 # zusammengeschrieben von/written together by: Gerald Schade 6.4.2019
+# verwendet Tr-064 zur Kommunikation mit der Fritzbox (zum Aufwecken angeschlossener PCs und ggf. vorherigem Abfragen deren hierfür nötigen MAC-Adressen)
 
 vorgaben() {
-  meinpfad="$(dirname "$(readlink -f "$0")")";
-# eher veränderbare Vorgaben
+  meinpfad="$(dirname "$(readlink -f "$0")")"; # Pfad dieses Programms
+# eher veränderbare Vorgaben:
 	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
 	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
 	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
-  loeschintervall=1; # Intervall zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
-	curlmaxtime=20;
-	IFerlau=; # IFerlau="802.11,Ethernet,-"; # erlaubte Interfaces
-	IFverbo=; # IFverbo="802.11"; #verbotene Interfaces (kommagetrennt)
+  loeschintervall=0; # Intervall in Tagen zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
+	curlmaxtime=20; # Maximalzeit für 2. curl-Befehl (Abfrage der vom 1. Befehl zurückgegebenen lua-Adresse), wird bei Erfolglosigkeit automatisch erweitert
+	IFerlau=; # IFerlau="802.11,Ethernet,-"; # erlaubte Interfaces (kommagetrennt ohne Leerzeichen)
+	IFverbo=; # IFverbo="802.11"; # verbotene Interfaces (kommagetrennt ohne Leerzeichen)
 # eher starre Vorgaben
-	blau="\033[1;34m";
+	blau="\033[1;34m"; # für Programmausgaben
 	rot="\033[1;31m";
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
-  Pkt=" ......................................";
-	FritzboxAdressen="fritz.box 169.254.1.1"; # wenn fritz.box nicht geht, dann geht 169.254.1.1
-# TR-064-Parameter für fragab(): für beide Abfragen (geraeteliste() und wecken())
+  Pkt=" ......................................"; # als Tabulatorfüllzeichen für Tabellenausgabe
+	FritzboxAdressen="fritz.box 169.254.1.1"; # wenn "fritz.box" nicht geht, dann geht "169.254.1.1"
+# TR-064-Parameter für fragab(): für die beide Abfragen geraeteliste() und wecken()
 	controlURL=hosts
 	serviceType=Hosts:1
 # Möglichkeiten von tr-064 anzeigen:
 # for FB in $FritzboxAdressen;do curl http://$FB:49000/tr64desc.xml 2>/dev/null&&break;done;exit; 
 }
 
-# Funktion für ein bis zwei TR-064-Abfragen
+# Funktion für eine oder (falls deren Rückgabe als http-Adresse für eine zweite verwendet werden muss) zwei TR-064-Abfragen
+# Parameter: 1 (optional): sed-filter für die zweite Abfrage
 fragab() {
+	[ "$verb" ]&&printf "fragab()\n";
 	if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
-  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # immer gleiche Vorsilben
-  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # immer gleiche Vorsilben
-  [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"
-  [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n"
-  [ "$verb" ]&&printf "Action: $blau$Action$reset\n"
-  [ "$ParIn" ]&&[ "$verb" ]&&printf "Parin: $blau$ParIn$reset\n";
-  [ "$Inhalt" ]&&[ "$verb" ]&&printf "Inhalt: $blau$Inhalt$reset\n";
+  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
+  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
+  [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"; # im gesprächigen Modus tr-064-Parameter anzeigen ...
+  [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n";
+  [ "$verb" ]&&printf "Action: $blau$Action$reset\n";
+  [ "$verb" ]&&[ "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n"; # Parametername für Eingaben
+  [ "$verb" ]&&[ "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n"; # dessen Inhalt
   Soap="http://schemas.xmlsoap.org/soap";
   XML='<?xml version="1.0" encoding="utf-8"?>
   <s:Envelope s:encodingStyle="'$Soap'/encoding/" xmlns:s="'$Soap'/envelope/">
-    <s:Body><u:'$Action' xmlns:u="'$serviceType'"'
+    <s:Body><u:'$Action' xmlns:u="'$serviceType'"';
   [ "$ParIn" ]&&XML=$XML'><'$ParIn'>'${Inhalt}'</'$ParIn'></u:'$Action'>'||XML=$XML' />'
   XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
   # printf "XML derAbfrage: \n$blau$XML$reset\n"
-  for ipv in 4 6;do
+  for ipv in 4 6;do # der Reihe nach ipv4 und ipv6 versuchen
 		for adr in $FritzboxAdressen;do
 			FB=http://$adr:49000;
-			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset ";
+			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
 			befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
 						-H \"Content-Type: text/xml; charset=utf-8\" \\n\
 						-H \"SoapAction: $serviceType#$Action\" \\n\
 						\"$FB$controlURL\" \\n\
 						-d '$XML'";
       tufrag "$befehl" umw "$FB$controlURL";
-			[ $ret -ne 0 ]&&continue; # z.B. fritz.box konnte nicht aufgelöst werden
+			[ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
-			[ "$erg" ]&&[ "$verb" ]&&printf "\nReturn/Rueckgabe: \n$blau$erg$reset\n";
+			[ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
 			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
 			case $erg in *.lua*)
 				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
@@ -66,38 +69,39 @@ fragab() {
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
 					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
           tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
-					[ -s "$ausgdt" ]&&break;
+					[ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
   			done;
-				[ "$ret" -eq 0 ]&&break;
+				[ "$ret" -eq 0 ]&&break; # wenn nach 2. curl-Befehl in tufrag Fehlercode 0
 				;;
-				*) [ "$ret" -eq 0 ]&&break;;
+				*) [ "$ret" -eq 0 ]&&break;; # wenn nach 1. curl-Befehl in tufrag Fehlercode 0
 			esac;
 	 done;
 	 [ $ret -eq 0 ]&&break;
   done;
+	[ "$verb" ]&&printf "Ende fragab()\n";
 }
 
 # die tatsächliche TR-064-Abfrage durchführen
+# Parameter: 1: befehl, 2: umw (ob befehl umgewandelt werden soll), 3: html-Adresse, 4: Datei, in die Ausgabe umgeleitet wurde
 tufrag() {
   if [ "$verb" ]; then
-    printf "Befehl/Command: $blau%b$reset\n" "$1";
+    printf "\nBefehl/Command: $blau%b$reset\n" "$1";
   else
-    printf "Rufe ab/Evaluating: $blau$3$reset ...\r";
+    printf ", url für/for tr-064: $blau$3$reset ...\r";
   fi;
   if [ "$2" ]; then
-    befehl="$(echo "$1"|sed 's/\\n//g;s/\\t//g')";
+    befehl="$(echo "$1"|sed 's/\\n//g;s/\\t//g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
   else
     befehl="$1";
   fi;
-  erg=$(eval "$befehl" 2>"$logdt");
+  erg=$(eval "$befehl" 2>"$logdt"); # hier wird der Befehl ausgeführt
   ret=$?;
   if [ "$verb" ]; then
     if [ "$4" ]; then
-      printf " its return/dessen Rueckgabe: $blau$ret$reset";
-      [ -s "$3" ]&&printf "(Result/Ergebnis in: $blau$3$reset)";
-      printf "\n";
+      printf " its return/dessen Rueckgabe: $blau$ret$reset\n";
+      [ -s "$4" ]&&printf "(Ergebnis in: $blau$4$reset)\n"; # Ausgabedatei
     fi;
-    printf " Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
+    printf "Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
   else
     awk 'BEGIN {while (c++<170) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
   fi;
@@ -106,7 +110,7 @@ tufrag() {
 
 # Befehlszeilenparameter auswerten
 commandline() {
-	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben
+	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	while [ $# -gt 0 ]; do
 		para="$1";
 		case $para in
@@ -159,30 +163,31 @@ commandline() {
 		shift;
 	done;
 	[ "$npc" ]&&npc=$(echo "$npc"|sed 's/,/ /g'); # Komma-Liste in Leerzeichen-getrennte Liste umwandeln
-	if [ "$pcs" ]; then 
-		pcs=$(echo "$pcs"|sed 's/,/ /g');
-		if [ -z "$zeig" ]; then
-			nurmac=1; # nur MAC-Acressen angegeben => $ausgdt muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
-			for pc in $pcs; do
-				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&{ nurmac=;break;}; # wenn $pc keine mac
+	if [ "$pcs" ]; then  # falls PCs angegeben
+		pcs=$(echo "$pcs"|sed 's/,/ /g'); # Kommas durch Leerzeichen ersetzen
+		if [ -z "$zeig" ]; then # mit zeigen gäbe obnurmac=1 keinen Sinn
+			obnurmac=1; # nur MAC-Acressen angegeben => $ausgdt muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
+			for pc in $pcs; do  # jeden PC prüfen ...
+				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&{ obnurmac=;break;}; # ... ob keine MAC-Adresse
 			done;
 		fi;
 	fi;
 	if [ "$verb" ]; then
-		[ "$pcs" ]&&printf "pcs: $blau$pcs$reset\n";
-		printf "nurmac: $blau$nurmac$reset\n";
-		[ "$npc" ]&&printf "npc: $blau$npc$reset\n";
-		printf "allowed/erlaubte Interfaces: $blau$IFerlau$reset\n";
-		printf "forbidden/verbotene Interfaces: $blau$IFverbo$reset\n";
+		printf "obnurmac: $blau\"$obnurmac\"$reset\n";
+		printf "pcs: $blau\"$pcs\"$reset\n";
+		printf "npc: $blau\"$npc\"$reset\n";
+		printf "allowed/erlaubte Interfaces: $blau\"$IFerlau\"$reset\n";
+		printf "forbidden/verbotene Interfaces: $blau\"$IFverbo\"$reset\n";
 	fi;
 }
 
 # Autorisierung ermitteln/festlegen
 authorize() {
+	# in $credfile werden in dem Verzeichnis, in dem auch private SSH-Schlüssel untergebracht sind, Benutzer und Passwort für die Fritzbox gespeichert
   # auf mint geht logname nicht mehr, dafür Ersatzbefehl
 	credfile="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
-	crede=$(cat $credfile 2>/dev/null);
-	if [ -z "$crede" -o $obneu = 1 ]; then
+	crede=$(cat $credfile 2>/dev/null); # der Inhalt von crede
+	if [ -z "$crede" -o $obneu = 1 ]; then # falls Inhalt leer oder erneuert werden soll ...
 		 printf "Please enter the fritz box user/Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 		 printf "Please enter the password for/Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 		 crede="$fbuser:$fbpwd";
@@ -192,19 +197,19 @@ authorize() {
 
 # Liste aller von der Fritzbox gemerkten Geräte ggf. abfragen und in $ausgdt speichern
 geraeteliste() {
-	  if [ -z "$alteliste" ]; then
+	  if [ -z "$alteliste" ]; then # Befehlszeilenparameter, dass die zeitaufwendige Abfrage ausgelassen werden soll ...
 			neueliste=1;
-		elif [ "$listenintervall" != 0 ]; then
-			if ! find "$meinpfad" -mtime -$listenintervall -wholename "$ausgdt"|grep -q .; then
+		elif [ "$listenintervall" != 0 ]; then # ... oder die alte Liste ist zu alt ...
+			if ! find "$meinpfad" -mtime -$listenintervall -wholename "$ausgdt"|grep -q .; then # ob Datei mit Höchstalter an der Stelle zu finden ...
 				neueliste=1;
 			fi;
 		fi;
 	  if [ "$neueliste" ]; then
 			Action=X_AVM-DE_GetHostListPath;
-			ParIn=;
+			ParIn=; # diese Abfrage hat keinen solchen Parameter
 			Inhalt=;
       # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
-      filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Namen angeben
+      filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Variablen für XML-Namen angeben
       # IP-Adresse mit 15 Zeichen ins hold-Register stellen
       filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" 
 			filter=$filter"/'\\\$I' \/>/{s/.*/-              /;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
@@ -222,17 +227,17 @@ geraeteliste() {
 			filter=$filter"/<'\\\$T'>/{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
 			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
 			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
-      if [ "$ungefiltert" ]; then
-        fragab; # fragab ohne filter erzeugt die ganze xml-Datei
+      if [ "$ungefiltert" ]; then # Debugging-Funktion, mit der die ganze XML-Datei in 
+        fragab; # fragab ohne filter erzeugt die ganze xml-Datei in $ausgdt gespeichert wird
       else
-        fragab "$filter"; # der fertige Filter wird mit -v angezeigt
+        fragab "$filter"; # der fertige Filter wird mit -v unter "Befehl/command" nach ... eval  angezeigt
 				# gesausdt alle $loeschintervall Tage löschen und ganz erneuern
 				if [ "$loeschintervall" != 0 ]; then
-					if ! find "$meinpfad" -mtime -$loeschintervall -wholename "$gesausdt"|grep -q .; then
-						rm -f "$gesausdt";
+					if ! find "$meinpfad" -mtime -$loeschintervall -wholename "$gesausdt"|grep -q .; then # wenn die Summendatei zu alt ist ...
+						rm -f "$gesausdt"; # .. dann loeschen
 					fi;
 				fi;
-				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen, solche mit - als Netz durch andere ersetzen
+				# neue Zeilen in Datei $ausgdt an $gesausdt anhängen, solche mit "-" als Netz durch andere ersetzen
         begz=$(echo $LINENO|awk '{print $0+1}');
         awk '
           function sortorder(i1,v1,i2,v2,li,re) { # Sortierfunktion für asort() kurz vor der Ausgabe
@@ -284,17 +289,17 @@ geraeteliste() {
               system("mv "ausg"_"j" "ausg"_"j+1" 2>/dev/null"); # alte Sicherungskopien verrutschen ...
             }
             system("mv "ausg" "ausg"_1 2>/dev/null");
-            asort(ch,chs,"sortorder"); # sortieren s.o.
+            asort(ch,chs,"sortorder"); # die Sätze sortieren s.o. ...
             for(j in chs) {
               if (j==1 || chs[j]!=chs[j-1]) { # keine doppelten Zeilen drucken
-                print chs[j] >> (ausg);
+                print chs[j] >> (ausg); # die eindeutigen Sätze alle in die Gesamtdatei schreiben
               } else {
-                if (0'$verb'==1) system("printf \"Doppelt: '$blau'"chs[j]"'$reset'\\n\"");
+								if (0'$verb'==1) system("printf \"Doppelt: '$blau'"chs[j]"'$reset'\\n\""); # evtl. doppelte (weggelassene) anzeigen
               }
             }
           }
         ' "$ausgdt";
-        endz=$(echo $LINENO|awk '{print $0-1}');
+        endz=$(echo $LINENO|awk '{print $0-1}'); # Zeilennummer merken
 #        [ "$verb" ]&&sed "$begz,$endz!d" "$meinpfad/$0";  # wär doch a bißl lang ...
         [ "$verb" ]&&printf "$blau$gesausdt$reset += $blau$ausgdt$reset (mit awk (Zeilen $begz-$endz in $meinpfad/$0))\n";
       fi;
@@ -305,17 +310,16 @@ geraeteliste() {
 wecken() {
 	Action=X_AVM-DE_WakeOnLANByMACAddress
 	ParIn=NewMACAddress
-	# wecken
 	zahl=0;
-	if [ "$nurmac" ]; then # wecken ohne geraeteliste(), wenn nur MAC-Adressen angegeben
+	if [ "$obnurmac" ]; then # wecken ohne geraeteliste(), wenn nur MAC-Adressen angegeben => geht schneller
 		geszahl=$(echo "$pcs"|awk 'END{print NF}');
-		for Inhalt in $pcs; do
-		  zahl=$(printf $zahl|awk '{print $0+1}');
+		for Inhalt in $pcs; do # hier keine Anführungszeichen!
+		  zahl=$(printf $zahl|awk '{print $0+1}'); # zahl++
 			printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
 			fragab; # hier geschieht das Wecken
 		done;
 	else
-		geszahl=$(wc -l <"$gesausdt");
+		geszahl=$(wc -l <"$gesausdt"); # Zeilenzahl von $gesausdt
 		[ -f "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset not found/nicht gefunden\n";exit;};
 		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
@@ -324,7 +328,7 @@ wecken() {
       [ "$IFerlau" ]&&{ echo "$zeile"|awk '{if (!match("'$IFerlau'",$4)) exit 1;}' || continue;};
 			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 
 			[ "$pcs" ]&&{ gefu=;for pc in $pcs;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]||continue;}; 
-			zahl=$(printf $zahl|awk '{print $0+1}');
+			zahl=$(printf $zahl|awk '{print $0+1}'); # zahl++
 			if [ "$zeig" ];then # zeigt die Liste an
 				echo "$zeile"|
           awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
@@ -332,7 +336,7 @@ wecken() {
 				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
 					fragab; # hier geschieht das Wecken
-					break;
+					break; # Ip, Name und Interface überspringen
 				done;
 			fi;
 		done << EOF
@@ -343,7 +347,7 @@ EOF
 
 # hier geht's los
 vorgaben;
-commandline "$@";
+commandline "$@"; # alle Befehlszeilenparameter übergeben
 authorize;
-[ -z "$nurmac" ]&&geraeteliste;
+[ -z "$obnurmac" ]&&geraeteliste;
 wecken;
