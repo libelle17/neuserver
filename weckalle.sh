@@ -4,14 +4,18 @@
 # verwendet Tr-064 zur Kommunikation mit der Fritzbox (zum Aufwecken angeschlossener PCs und ggf. vorherigem Abfragen deren hierfür nötigen MAC-Adressen)
 
 vorgaben() {
-  meinpfad="$(dirname "$(readlink -f "$0")")"; # Pfad dieses Programms
+# vom Programmaufruf abhängige Parameter
+  meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
+  meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
+  # Spaltenzahl des Bildschirms
+  spzahl=$(stty -a <$(tty)|sed -n 's/.*columns \([0-9]\+\).*/\1/;Ta;p;:a'); # um nicht zu schreiben: ..|grep -Po '(?<=columns )\d+'
 # eher veränderbare Vorgaben:
 	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
 	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
 	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=0; # Intervall in Tagen zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
-	curlmaxtime=20; # Maximalzeit für 2. curl-Befehl (Abfrage der vom 1. Befehl zurückgegebenen lua-Adresse), wird bei Erfolglosigkeit automatisch erweitert
+	curlmaxtime=20; # maximale ms für 2. curl-Befehl (Abfrage der lua-Adresse aus dem 1.Befehl), wird bei Erfolglosigkeit automatisch erweitert
 	IFerlau=; # IFerlau="802.11,Ethernet,-"; # erlaubte Interfaces (kommagetrennt ohne Leerzeichen)
 	IFverbo=; # IFverbo="802.11"; # verbotene Interfaces (kommagetrennt ohne Leerzeichen)
 # eher starre Vorgaben
@@ -103,7 +107,8 @@ tufrag() {
     fi;
     printf "Ausgabe/output:\n$rot%b$reset\n" "$([ -f "$logdt" ]&&cat "$logdt"||echo ' (fehlt/missing)')";
   else
-    awk 'BEGIN {while (c++<170) printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+    awk 'BEGIN {while (c++<'$spzahl') printf " ";printf "\r";}' # Zeile wieder weitgehend säubern
+  exit
   fi;
 }
 
@@ -144,13 +149,13 @@ commandline() {
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 			exit;;
 			--help|-help)
-        printf "Program $blau$0$reset: tries to wake up one, several or all pcs at a fritzbox,\n";
+        printf "Program $blau$0$reset: tries to wake one, several or all pcs at a fritzbox,\n";
         printf "  written together by: Gerald Schade 6.4.2019\n";
         printf "  Usage:\n";
-				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [<pc1>[,pc2...]] [-forbi[ ]<Interface1>[,Interface2...]] [-all[ ]<Interface1>[,Interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
+				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [<pc1>[,pc2...]] [-forbi[ ]<interface1>[,interface2...]] [-all[ ]<interface1>[,interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
-				printf "  $blau[<pc1>[,pc2...]]$reset: tries to wake up only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
+				printf "  $blau[<pc1>[,pc2...]]$reset: tries to wake only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
 				printf "                    If only MAC-addresses are given, the program works without the list of devices (and faster).\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
@@ -168,7 +173,8 @@ commandline() {
 		if [ -z "$zeig" ]; then # mit zeigen gäbe obnurmac=1 keinen Sinn
 			obnurmac=1; # nur MAC-Acressen angegeben => $ausgdt muß nicht verwendet werden, geraeteliste nicht aufgerufen werden
 			for pc in $pcs; do  # jeden PC prüfen ...
-				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&{ obnurmac=;break;}; # ... ob keine MAC-Adresse
+				echo $pc|sed -n '/^[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}:[0-9a-fA-F]\{2\}$/q1'&&\
+          { obnurmac=;break;}; # ... ob keine MAC-Adresse
 			done;
 		fi;
 	fi;
@@ -242,16 +248,17 @@ geraeteliste() {
         awk '
           function sortorder(i1,v1,i2,v2,li,re) { # Sortierfunktion für asort() kurz vor der Ausgabe
             split(v1,arr1," ");
-            li=arr1[3]arr1[1];
+            li=arr1[3]arr1[1]arr1[2]arr1[4];
             split(v2,arr2," ");
-            re=arr2[3]arr2[1];
+            re=arr2[3]arr2[1]arr2[2]arr2[4];
             if (li<re) return -1;
             if (li==re) return 0;
             return 1;
           }
-          function liesein(var,datei) { # liest die bisherigen Datensätze (aus $gesausdt) ein
+          function liesein(var,datei) { # liest die bisherigen Datensätze (aus $gesausdt) abzgl. doppelter/abschließender Leerzeichen ein
             i=0;
-            while ((getline var[++i] < datei)>0) {
+            while ((getline zwi < datei)>0) {
+              var[++i]=gtrim(zwi);
               split(var[i],arr," ");
               mac[i]=arr[1];
               ip[i]=arr[2];
@@ -260,27 +267,33 @@ geraeteliste() {
             }
             delete var[i];
             close(datei);
+          } 
+          function gtrim(s) {  # loesche Leerzeichen am Schluss und ersetze mehrere in der Mitte durch eines 
+            sub(/[ \t\r\n]+$/,"",s); 
+            s2=gensub(/[ \t\r\n]+/," ","g",s);
+            return s2;
           }
           BEGIN {
             ausg="'$gesausdt'";
             liesein(ch,ausg);
           }
-          {
-           if ($0!="") { # falls keine Leerzeile
+          {                  # Abschnitt für jede Zeile aus $ausgdt:
+           trimzl=gtrim($0);
+           if (trimzl!="") { # falls keine Leerzeile
               obschreib=1;
               for(j in ch) {
-                if (ch[j]==$0 || (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && $4=="-")) { # falls Zeile schon da oder schon aussagekräftiger da ...
+                if (ch[j]==trimzl ||(mac[j]==$1 && ip[j]==$2 && name[j]==$3 && $4=="-")) { # falls Zeile schon da oder schon aussagekräftiger da ...
                   obschreib=0;    # dann nicht schreiben
                 } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-") { # falls Zeile aussagekräftiger ...
                   obschreib=0;
-                  if (0'$verb'==1) system("printf \"Ersetze: '$blau'"$0"'$reset'\\n\"");
-                  ch[j]=$0; # dann ersetzen
+                  if (0'$verb'==1) system("printf \"Ersetze: '$blau'"trimzl"'$reset'\\n\"");
+                  ch[j]=trimzl; # dann ersetzen
                   netz[j]=$4;
                 }
               }
               if (obschreib) { # falls nicht "nicht schreiben" ermittelt oder ersetzt, dann Datensatz anfügen
-                ch[length(ch)+1]=$0;
-                if (0'$verb'==1) system("printf \"Ergaenze: '$blau'"$0"'$reset'\\n\"");
+                ch[length(ch)+1]=trimzl;
+                if (0'$verb'==1) system("printf \"Ergaenze: '$blau'"trimzl"'$reset'\\n\"");
               }
             }
           }
@@ -290,6 +303,7 @@ geraeteliste() {
             }
             system("mv "ausg" "ausg"_1 2>/dev/null");
             asort(ch,chs,"sortorder"); # die Sätze sortieren s.o. ...
+            # for(j in chs) system("printf \""chs[j]"\" | xxd -ps -c 200 | tr -d \\\\n; echo \" \""chs[j]); # Debugging evtl. kryptischer Zeichen
             for(j in chs) {
               if (j==1 || chs[j]!=chs[j-1]) { # keine doppelten Zeilen drucken
                 print chs[j] >> (ausg); # die eindeutigen Sätze alle in die Gesamtdatei schreiben
@@ -301,7 +315,7 @@ geraeteliste() {
         ' "$ausgdt";
         endz=$(echo $LINENO|awk '{print $0-1}'); # Zeilennummer merken
 #        [ "$verb" ]&&sed "$begz,$endz!d" "$meinpfad/$0";  # wär doch a bißl lang ...
-        [ "$verb" ]&&printf "$blau$gesausdt$reset += $blau$ausgdt$reset (mit awk (Zeilen $begz-$endz in $meinpfad/$0))\n";
+        [ "$verb" ]&&printf "$blau$gesausdt$reset += $blau$ausgdt$reset (mit awk (Zeilen $begz-$endz in $meingespfad))\n";
       fi;
   	fi;
 }
