@@ -877,7 +877,7 @@ github() {
 variablen() {
 	printf "${dblau}variablen$reset()\n";
  while :; do
-  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' vars >shvars
+  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' $LOSVERZ/vars >shvars
   . ./shvars
   if test "$(./configure nuros)" != "$OSNR"; then ./configure;:;else break;fi;
  done;
