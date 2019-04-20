@@ -81,7 +81,7 @@ software packages&rsquo; and &rsquo;implications&rsquo;
 below. Then, if connected to the internet, call (e.g. by
 coying the line and pasting it into a terminal): <b><br>
 N=neuserver;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com//$N/master/install.sh
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
 neuserver</b> <br>
@@ -897,7 +897,7 @@ n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
 N=neuserver;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com//$N/master/install.sh
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
 neuserver</b> <br>

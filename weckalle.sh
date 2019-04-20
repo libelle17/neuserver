@@ -11,8 +11,11 @@ vorgaben() {
   spzahl=$(stty -a <$(tty)|sed -n 's/.*columns \([0-9]\+\).*/\1/;Ta;p;:a'); # um nicht zu schreiben: ..|grep -Po '(?<=columns )\d+'
 # eher veränderbare Vorgaben:
 	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
+	[ -f "$ausgdt" -a ! -w "$ausgdt" ]&&sudo rm "$ausgdt" # wenn die Datei schon da ist und nicht beschreibbar, dann loeschen
 	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
+	[ -f "$gesausdt" -a ! -w "$gesausdt" ]&&sudo chown $(whoami):users "$gesausdt" # wenn die Datei schon da ist und nicht beschreibbar, dann das ändern
 	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
+	[ -f "$logdt" -a ! -w "$logdt" ]&&sudo rm "$logdt" # wenn die Datei schon da ist und nicht beschreibbar, dann loeschen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=0; # Intervall in Tagen zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
 	curlmaxtime=20; # maximale ms für 2. curl-Befehl (Abfrage der lua-Adresse aus dem 1.Befehl), wird bei Erfolglosigkeit automatisch erweitert
@@ -72,6 +75,7 @@ fragab() {
 				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
 					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
 					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
+					printf "Folgeaufruf/Second call: ";
           tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
 					[ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
   			done;
@@ -264,7 +268,6 @@ geraeteliste() {
               name[i]=arr[3];
               netz[i]=arr[4]
             }
-            delete var[i];
             close(datei);
           } 
           function gtrim(s) {  # loesche Leerzeichen am Schluss und ersetze mehrere in der Mitte durch eines 
@@ -283,11 +286,13 @@ geraeteliste() {
               for(j in ch) {
                 if (ch[j]==trimzl ||(mac[j]==$1 && ip[j]==$2 && name[j]==$3 && $4=="-")) { # falls Zeile schon da oder schon aussagekräftiger da ...
                   obschreib=0;    # dann nicht schreiben
-                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-") { # falls Zeile aussagekräftiger ...
+									break;
+                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-" && $4!="-") { # falls Zeile aussagekräftiger ...
                   obschreib=0;
                   if (0'$verb'==1) system("printf \"Ersetze: '$blau'"trimzl"'$reset'\\n\"");
                   ch[j]=trimzl; # dann ersetzen
                   netz[j]=$4;
+									break;
                 }
               }
               if (obschreib) { # falls nicht "nicht schreiben" ermittelt oder ersetzt, dann Datensatz anfügen
@@ -298,9 +303,9 @@ geraeteliste() {
           }
           END {
             for(j=10;j>0;j--) {
-              system("mv "ausg"_"j" "ausg"_"j+1" 2>/dev/null"); # alte Sicherungskopien verrutschen ...
+              system("mv -f "ausg"_"j" "ausg"_"j+1" 2>/dev/null"); # alte Sicherungskopien verrutschen ...
             }
-            system("mv "ausg" "ausg"_1 2>/dev/null");
+            system("mv -f "ausg" "ausg"_1 2>/dev/null");
             asort(ch,chs,"sortorder"); # die Sätze sortieren s.o. ...
             # for(j in chs) system("printf \""chs[j]"\" | xxd -ps -c 200 | tr -d \\\\n; echo \" \""chs[j]); # Debugging evtl. kryptischer Zeichen
             for(j in chs) {

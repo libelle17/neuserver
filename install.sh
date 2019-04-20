@@ -18,7 +18,7 @@ GITV=$([ -f .git/config ]&&sed -n '/ *url =.*com/{s/.*com\/\([^/]*\).*/\1/p}' .g
 #// wenn nicht vorhanden, dann schauen, ob gitvdt existiert
 #// [ -z $GITV ]&& [ -f gitvdt ]&& GITV=$(sed 's/"//g' gitvdt);
 # die naechste Zeile wird im Makefile in transfer: und git: editiert
-[ -z $GITV ]&& GITV=libelle17;
+[ -z $GITV ]&& GITV=;
 #// echo vor Entscheidung,DPROG: $DPROG, GITV: $GITV
 # diese Datei wird wegen obigem in configure und indirekt in viall gesourct, soll dann hier abbrechen
 if test "$ICH" != configure -a "$ICH" != viall -a "$ICH" != modziel.sh -a $AUFRUFE -lt 2; then
