@@ -162,7 +162,7 @@ commandline() {
 				printf "                    If only MAC-addresses are given, the program works without the list of devices (and faster).\n";
 				printf "  $blau-forbi$reset: ignores the comma separated interfaces ('-' for empty interface)\n";
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
-				printf "  $blau-show$reset: shows only the list of the devices instead of waking them up\n";
+				printf "  $blau-show$reset: shows only the list of the devices instead of waking them\n";
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 			exit;;
 			*) pcs="$para";;
@@ -333,7 +333,7 @@ wecken() {
 		geszahl=$(echo "$pcs"|awk 'END{print NF}');
 		for Inhalt in $pcs; do # hier keine Anführungszeichen!
 		  zahl=$(printf $zahl|awk '{print $0+1}'); # zahl++
-			printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
+			printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
 			fragab; # hier geschieht das Wecken
 		done;
 	else
@@ -351,7 +351,7 @@ wecken() {
 				echo "$zeile"|
           awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
 			else
-				printf "${lila}Waking up/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
+				printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
 				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
 					fragab; # hier geschieht das Wecken
 					break; # Ip, Name und Interface überspringen
