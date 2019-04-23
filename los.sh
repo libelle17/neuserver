@@ -378,11 +378,11 @@ mariadb() {
 	if [ $installiert -eq 1 ]; then
 		datadir=$(sed 's/#.*$//g' $($mysqlbef --help|sed -n '/Default options/{n;p}') 2>/dev/null|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
 		if [ -z "$datadir" ]; then
-			mycnfpfad=$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null);
-			[ -z "$mycnfpfad" ]&&mycnfpfad=$(find $HOME -name .my.cnf -printf '%p\\n' -quit);
+			mycnfpfad="$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null)";
+			[ -z "$mycnfpfad" ]&&mycnfpfad="$(find $HOME -name .my.cnf -printf '%p\\n' -quit)";
 			if [ "$mycnfpfad" ]; then
 				for aktdir in $(sed 's/#.*$//g' "$mycnfpfad"| grep '!includedir' | sed 's/^[ \t]//g' | cut -d' ' -f2-);do
-					mycnfpfad="$myconfpfad $(find $aktdir -not -type d)";
+					mycnfpfad="$mycnfpfad $(find $aktdir -not -type d)";
 				done;
 			fi;
 			for aktzz in $mycnfpfad; do
@@ -512,13 +512,14 @@ nichtroot() {
 sambaconf() {
 	printf "${dblau}sambaconf$reset()\n"
 	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
-	smbdt="$etcsamba/smb.conf";
-	muster="/usr/share/samba/smb.conf";
+	smbconf="smb.conf";
+	zusmbconf="$etcsamba/$smbconf";
+	muster="/usr/share/samba/$smbconf";
 	smbvars=$LOSVERZ/awksmb.inc;
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' $smbvars);
 	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
-	[ ! -f "$smbdt" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$smbdt";cp -ai "$muster" "$smbdt";};
+	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2=$LOSVERZ/awksmbap.inc; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
@@ -535,12 +536,12 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	awk -f $LOSVERZ/awksmb.sh $smbdt >$LOSVERZ/smb.conf;
+	awk -f $LOSVERZ/awksmb.sh "$zusmbconf" >"$LOSVERZ/$smbconf";
 	firewall samba;
 
-	if ! diff -q $LOSVERZ/smb.conf $smbdt ||[ $zustarten = 1 ]; then  
-		backup "$etcsamba/smb" "$smbdt"
-		cp -a $LOSVERZ/smb.conf $smbdt;
+	if ! diff -q "$LOSVERZ/smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
+		backup "$etcsamba/smb" "$zusmbconf"
+		cp -a "$LOSVERZ/$smbconf" "$zusmbconf";
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
@@ -736,7 +737,7 @@ hol3() {
 
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
-	cd $LOSVERZ >/dev/null;
+	cd "$LOSVERZ" >/dev/null;
 	echo Wir befinden uns in: $(pwd);
 	Dw=Downloads;
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
@@ -803,6 +804,7 @@ teamviewer10() {
 			 continue;;
 	 esac;
 	done;
+# 2) libfreetype
 	zvz=/opt/teamviewer/tv_bin/wine/lib;
 	zd=$zvz/libfreetype.so.6;
 	case $OSNR in
@@ -838,25 +840,34 @@ teamviewer10() {
 				cp -ai "$qd" "$zd";
 			done;;
 	esac;
-				case $OSNR in
-				1|2|3) # mint, ubuntu, debian
-					;;
-				4) # opensuse
-					lxcb=libxcb1-32bit-1.11.1-9.1.x86_64;
-					if ! rpm -q "$lxcb" >/dev/null; then
-					 echo $? bei rpm -q "$lxcb";
-					 hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
-					 rpm -i --force "$Dw/$lxcb.rpm";
-					 zypper addlock "$lxcb";
-					fi;
-					;;
-				5|6|7) # fedora, mageia
-					;;
-				esac;
+# 3) lxcb
+	case $OSNR in
+	1|2|3) # mint, ubuntu, debian
+		;;
+	4) # opensuse
+		lxcb=libxcb1-32bit-1.11.1-9.1.x86_64;
+		if ! rpm -q "$lxcb" >/dev/null; then
+		 echo $? bei rpm -q "$lxcb";
+		 hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
+		 rpm -i --force "$Dw/$lxcb.rpm";
+		 zypper addlock "$lxcb";
+		fi;
+		;;
+	5|6|7) # fedora, mageia
+		;;
+	esac;
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
 	tvh="$LOSVERZ/tvglobal.conf";
-  awk -f $LOSVERZ/awktv.sh $tvconf|sed '/^\s*$/d'|sort -Vt] -k2 >"$tvh";
+	echo vor systemctl stop teamviewerd
+	systemctl stop teamviewerd
+	echo vor awk
+	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
+  awk -f "$LOSVERZ/awktv.sh" "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
+#	sed -i '/^\s*$/d' "$tvh";
+	echo nach awk
+	systemctl start teamviewerd;
+	echo nach systemctl start teamviewerd;
 	if ! diff "$tvconf" "$tvh" >/dev/null; then
 		backup "$tvconf"
 		cp -a "$tvh" "$tvconf";

@@ -28,10 +28,8 @@ function pruefzeile(zeile) {
 		print $0;
 	}
 }
-
 # Eintraege
 @include "awktv.inc";
-
 {
 	pruefzeile($0);
 }

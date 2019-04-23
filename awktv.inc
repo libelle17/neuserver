@@ -1,7 +1,7 @@
 # Einträge 
 BEGIN {
- N[0]="[strng] OwningManagerAccountName"; W[0]="Gerald Schade"; 
- N[1]="[strng] OwningManagerCompanyName"; W[1]="Diabetologische Gemeinschaftspraxis Dachau";
+ N[0]="[strng] OwningManagerAccountName"; W[0]="\"Gerald Schade\""; 
+ N[1]="[strng] OwningManagerCompanyName"; W[1]="\"Diabetologische Gemeinschaftspraxis Dachau\"";
  N[2]="[int32] Always_Online"; W[2] = 1;
  N[3]="[int32] EulaAccepted"; W[3] = 1;
  N[4]="[int32] EulaAcceptedRevision";W[4]=6;
