@@ -767,6 +767,9 @@ teamviewer10() {
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
 					printf "${blau}apt install ./$Dw/$trpm$reset\n";
+					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
+					# sudo apt install libjpeg62:i386 libxtst6:i386 
+					# sudo dpkg -i ./Downloads/teamviewer_10.0.95021_i386.deb 
 					apt install ./$Dw/$trpm;
 					;;
 				4) # opensuse
@@ -877,9 +880,11 @@ teamviewer10() {
 github() {
 	printf "${dblau}github()$reset()\n";
 	machidpub;
-	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q0';}; then
+	echo Stelle 2: $GITACC $idpub
+	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);echo key: $key; curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q0';}; then
 		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 	fi;
+	echo Stelle 1
 #	curl -u "$GITACC:$passwd" ...
 	git remote set-url origin git@github.com:$GITACC/$DPROG.git;
 # git clone ssh://git@github.com/$GITACC/$DPROG.git 
