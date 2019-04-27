@@ -23,7 +23,7 @@ commandline() {
 	while [ $# -gt 0 ]; do
 		para="$1";
 		case $para in
-			-neu|-new) obneu=1;obschreiben=1;;
+			-neu|-new) obneu=1; obschreiben=1;;
 			-v|--verbose) verb=1;;
 		esac;
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
