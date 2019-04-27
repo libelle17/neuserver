@@ -978,9 +978,9 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
 echo Starte mit los.sh...
 variablen;
-# setzhost;
-# setzbenutzer;
-# fritzbox;
+setzhost;
+setzbenutzer;
+fritzbox;
  mountlaufwerke;
 # proginst;
 # sambaconf;
