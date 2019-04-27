@@ -166,7 +166,7 @@ commandline() {
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 			exit;;
 			*) pcs="$para";;
-		esac
+		esac;
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
 		shift;
 	done;

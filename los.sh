@@ -8,9 +8,57 @@ obnmr=1;
 ftb=/etc/fstab;
 GITACC=libelle17;
 AUFRUFDIR=$(pwd)
-LOSVERZ="$(cd "$(dirname "$0")"&&pwd)"
-gruppe=$(cat $LOSVERZ/gruppe);
+# meinpfad="$(cd "$(dirname "$0")"&&pwd)"
+meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
+meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
+echo $meinpfad
+Dw=$meinpfad/Downloads;
+gruppe=$(cat $meinpfad/gruppe);
 q0=/DATA/down;
+obschreiben=0;
+
+# Befehlszeilenparameter auswerten
+commandline() {
+	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
+	while [ $# -gt 0 ]; do
+		para="$1";
+		case $para in
+			-neu|-new) obneu=1;obschreiben=1;;
+			-v|--verbose) verb=1;;
+		esac;
+		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
+		shift;
+	done;
+	if [ "$verb" ]; then
+		printf "obneu: $blau\"$obneu\"$reset\n";
+		printf "obschreiben: $blau\"$obschreiben\"$reset\n";
+	fi;
+}
+
+variablen() {
+ printf "${dblau}variablen$reset()\n";
+ while :; do
+  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
+  . "$meinpfad/shvars"
+  if test "$("$meinpfad/configure" nuros)" != "$OSNR"; then "$meinpfad/configure";:;else break;fi;
+ done;
+ HOME="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
+ loscred="$HOME/.loscred"; # ~  # $HOME
+ test -f "$loscred"&&. "$loscred";
+}
+
+speichern() {
+	echo obschreiben: $obschreiben, loscred: $loscred;
+	if test $obschreiben -ne 0; then
+	  printf "muser=$muser\n"  >"$loscred";
+	  printf "mpwd=$mpwd\n"  >>"$loscred";
+	  printf "mroot=$mroot\n" >>"$loscred";
+	  printf "mrpwd=$mrpwd\n" >>"$loscred";
+	  printf "arbgr=$arbgr\n" >>"$loscred";
+	  printf "srv0=$srv0\n"   >>"$loscred";
+	fi;
+}
+
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -38,7 +86,7 @@ while read -r zeile <&3; do
 	user=${zeile%% \"*};
 	comm=\"${zeile#* \"};
 	pruefuser $user "$comm";
-done 3< $LOSVERZ/benutzer;
+done 3<"$meinpfad/benutzer";
 }
 
 mountlaufwerke() {
@@ -157,7 +205,7 @@ pruefuser() {
 		} fi;
 		if test $obu -eq 1; then {
 			printf "erstelle Linux-Benutzer $blau$1$reset\n";
-			useradd -p $(openssl passwd -1 $passw) -c"$2" -g $gruppe "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
+			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
@@ -352,6 +400,25 @@ instmaria() {
 	esac;
 }
 
+pruefmroot() {
+	while true; do
+		[ "$mrfertig" ]&&break;
+		[ $obneu -eq 0 -a "$mroot" ]&&break;
+		printf "Admin für mysql: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
+		obschreiben=1;
+		[ "$mroot" ]&&{ mrfertig="1";break;};
+	done;
+	while true; do
+		[ "$mpfertig" ]&break;
+		[ $obneu -eq 0 -a "$mrpwd" ]&&break;
+		printf "Passwort für '$mroot': ";read mrpwd;
+		[ "$mrpwd" ]&&{ mpfertig="1";break;};
+		obschreiben=1;
+		# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
+		# auskommentiert werden und der Service neu gestartet werden
+	done;
+}
+
 mariadb() {
 	printf "${blau}mariadb$reset()\n"
 	# Mariadb
@@ -398,16 +465,7 @@ mariadb() {
 			systemctl start mysql;
 		fi;
 		while mysql -e'\q' 2>/dev/null; do
-			mroot="";
-			while [ -z $mroot ]; do
-				printf "Admin für mysql: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
-			done;
-			mrpwd="";
-			while [ -z $mrpwd ]; do
-				printf "Passwort für '$mroot': ";read mrpwd;
-				# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
-				# auskommentiert werden und der Service neu gestartet werden
-			done;
+			pruefmroot;
 			echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
 			printf "Passwort für root: ";
 			mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
@@ -416,27 +474,31 @@ mariadb() {
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
 			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
 		done;
-		user="";
-		while [ -z "$user" ];do
+		while true; do
+			[ $obneu -eq 0 -a "$muser" ]&&break;
 			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei $gruppe user||read user;
+			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" muser||read muser;
+			obschreiben=1;
+			[ "$muser" ]&&break;
 		done;
-		pwd="";
-		while [ -z "$pwd" ];do
-			read -p "Mariadb: Passwort für '$user': " pwd;
+		while true; do
+			[ $obneu -eq 0 -a "$mpwd" ]&&break;
+			read -p "Mariadb: Passwort für '$muser': " mpwd;
+			obschreiben=1;
+			[ "$mpwd" ]&&break;
 		done;
-		if mysql -u"$user" -p"$pwd" -e'\q' 2>/dev/null; then
-			echo Benutzer "$user"  war schon eingerichtet;
+		if mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
+			echo Benutzer "$muser"  war schon eingerichtet;
 		else
-			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			pruefmroot;
+			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION'";
 			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'localhost' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
-			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION'";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION";
+			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION'";
 			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$user'@'%' IDENTIFIED BY '$pwd' WITH GRANT OPTION";
+			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION";
 		fi;
 		echo datadir: $datadir;
-		echo user: $user;
 		echo Jetzt konfigurieren;
 	fi;
 	echo installiert: $installiert;
@@ -515,12 +577,13 @@ sambaconf() {
 	smbconf="smb.conf";
 	zusmbconf="$etcsamba/$smbconf";
 	muster="/usr/share/samba/$smbconf";
-	smbvars=$LOSVERZ/awksmb.inc;
-	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' $smbvars);
-	printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;
+	smbvars="$meinpfad/awksmb.inc";
+	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' "$smbvars");
+	[ -z "$arbgr" ]&&obneu=1;
+	[ $obneu -ne 0 ]&&{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
 	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
-	S2=$LOSVERZ/awksmbap.inc; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
+	S2="$meinpfad/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
@@ -536,12 +599,12 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	awk -f $LOSVERZ/awksmb.sh "$zusmbconf" >"$LOSVERZ/$smbconf";
+	awk -f $meinpfad/awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
 	firewall samba;
 
-	if ! diff -q "$LOSVERZ/smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
+	if ! diff -q "$meinpfad/smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
-		cp -a "$LOSVERZ/$smbconf" "$zusmbconf";
+		cp -a "$meinpfad/$smbconf" "$zusmbconf";
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
@@ -700,8 +763,9 @@ machidpub() {
 }
 
 musterserver() {
-	printf "${dblau}musterserver$reset()\n";
- printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
+ printf "${dblau}musterserver$reset()\n";
+ [ -z "$srv0" ]&&obneu=1;
+ [ $obneu -ne 0 ]&&{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;};
  if [ "$srv0" ]; then
 	 machidpub;
 	 KS=$HOME/.ssh/authorized_keys;
@@ -715,7 +779,6 @@ musterserver() {
 #holt Datei $1 entweder aus /DATA/down oder $srv0 oder $2 auf /root/Downloads; $3 = potentieller hol-Name
 hol3() {
 	printf "${dblau}hol3($1$reset,$dblau$2$reset,$dblau$3)$reset()\n";
-	cd "$LOSVERZ";
 	[ "$3" ]&&hname=$3||hname=$1;
 	if ! [ -f "$Dw/$1" ]; then
 		if [ -f "$q0/$1" ]; then
@@ -725,11 +788,9 @@ hol3() {
 		  printf "${blau}ssh $srv0 ls \"$q0/$1\" >/dev/null 2>&1&& scp -p $srv0:$q0/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q0/\n";
 			ssh "$srv0" "ls \"$q0/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q0/$1" "$Dw/"&&{ [ -d "$q0" ]&&cp -ai "$Dw/$1" "$q0/";};
 		else
-			printf "${blau}wget "$2/$hname"$reset\n";
-			wget "$2/$hname";
-			printf "mv -i $hname $Dw/$1\n";
-			mv -i "$hname" "$Dw/$1";
-			[ -f "$Dw/$1" -a -d "$q0" ]&&cp -ai "$Dw/$1" $q0/;
+			printf "${blau}wget $2/$hname -P $Dw$reset\n";
+			wget "$2/$hname" -P "$Dw";
+			[ -f "$Dw/$1" -a -d "$q0" ]&&cp -ai "$Dw/$1" "$q0/";
 			[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$q0/";
 		fi;
 	fi;
@@ -743,12 +804,10 @@ tvversion() {
 
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
-	cd "$LOSVERZ" >/dev/null;
-	echo Wir befinden uns in: $(pwd);
-	Dw=Downloads;
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
 	while true; do
 	 tvversion;
+	 ps -Alf|grep -i "/opt/teamviewer.*tvguislave"|grep -v grep >/dev/null&&[ "$tversion" = 10 ]&&return;
 	 case $tversion in
 		 0)
 				case $OSNR in
@@ -770,27 +829,27 @@ teamviewer10() {
 			 if [ -f "$Dw/$trpm" ]; then
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
-					printf "${blau}apt install ./$Dw/$trpm$reset\n";
-					apt install ./$Dw/$trpm;
+					printf "${blau}apt install $Dw/$trpm$reset\n";
+					apt install $Dw/$trpm;
 					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
 					tvversion;
 					if [ "$tversion" != 10 ]; then
 					 apt remove teamviewer;
 					 apt install libjpeg62:i386 libxtst6:i386;
-					 dpkg -i ./$Dw/$trpm;# ./Downloads/teamviewer_10.0.95021_i386.deb;
+					 dpkg -i $Dw/$trpm;# ./Downloads/teamviewer_10.0.95021_i386.deb;
 					fi;
 					;;
 				4) # opensuse
-#					 printf "${blau}zypper --no-gpg-checks in -l ./$Dw/$trpm$reset\n";
-					 printf "${blau}zypper --gpg-auto-import-keys in -l ./$Dw/$trpm$reset\n";
-					 zypper --gpg-auto-import-keys in -l ./$Dw/$trpm;
+#					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
+					 printf "${blau}zypper --gpg-auto-import-keys in -l $Dw/$trpm$reset\n";
+					 zypper --gpg-auto-import-keys in -l $Dw/$trpm;
 					;;
 				5) # fedora,
-					 printf "${blau}dnf --nogpgcheck install ./$Dw/$trpm$reset\n";
+					 printf "${blau}dnf --nogpgcheck install $Dw/$trpm$reset\n";
 					 dnf --nogpgcheck install $Dw/$trpm;
 					 ;;
 				6) # fedoraalt
-					 printf "${blau}yum --nogpgcheck install ./$Dw/$trpm$reset\n";
+					 printf "${blau}yum --nogpgcheck install $Dw/$trpm$reset\n";
 					 yum --nogpgcheck install $Dw/$trpm;
 					 ;;
 			  7) # mageia
@@ -838,11 +897,11 @@ teamviewer10() {
 			while :; do
 				[ -f "$zd" ]&&break;
 				qd=$Dw/usr/lib/libfreetype.so.6.12.3;
-				hol3 "$qd"
+				hol3 "$qd";
 				while ! [ -f "$qd" ]; do
 					qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
 					# geht auch für Fedora
-					hol3 "$qqd" "https://download.opensuse.org/update/leap/42.3/oss/x86_64"
+					hol3 "$qqd" "https://download.opensuse.org/update/leap/42.3/oss/x86_64";
 					cd "$Dw";
 					rpm2cpio "$qqd"|cpio -idmv
 					cd -;
@@ -869,12 +928,12 @@ teamviewer10() {
 	esac;
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
-	tvh="$LOSVERZ/tvglobal.conf";
+	tvh="$meinpfad/tvglobal.conf";
 	echo vor systemctl stop teamviewerd
 	systemctl stop teamviewerd
 	echo vor awk
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
-  awk -f "$LOSVERZ/awktv.sh" "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
+  awk -f "$meinpfad/awktv.sh" "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
 #	sed -i '/^\s*$/d' "$tvh";
 	echo nach awk
 	systemctl start teamviewerd;
@@ -898,16 +957,6 @@ github() {
 # git clone ssh://git@github.com/$GITACC/$DPROG.git 
 }
 
-variablen() {
-	printf "${dblau}variablen$reset()\n";
- while :; do
-  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' $LOSVERZ/vars >shvars
-  . ./shvars
-  if test "$(./configure nuros)" != "$OSNR"; then ./configure;:;else break;fi;
- done;
- HOME="$(getent passwd $(whoami)|cut -d: -f6)"; # logname
-}
-
 backup() {
 	printf "${dblau}backup$reset($1,$2)\n";
 		for i in $(seq 100 -1 0); do
@@ -921,8 +970,8 @@ backup() {
 
 cron() {
 	printf "${dblau}cron$reset()\n";
-	chier=$LOSVERZ/cronhier;
-	csrv=$LOSVERZ/crons$srv0;
+	chier=$meinpfad/cronhier;
+	csrv=$meinpfad/crons$srv0;
 	backup "$chier"
 	crontab -l >"$chier";
 	if [ "$srv0" ]; then
@@ -948,11 +997,11 @@ tu_turbomed() {
 turbomed() {
 	printf "${dblau}turbomed$reset()\n";
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
-	datei=$(find $q0 -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
+	datei=$(find "$q0" -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4);
 	printf "Turbomed-Version: $blau$version$reset\n";
-	outDir=$q0/TM${version}L;
+	outDir="$q0/TM${version}L";
 	[ -d  $outDir ]||7z x $datei -o$outDir;
 	instVers=$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f4);
 	TMsetup="$outDir/TMLinux/TMWin/linux/bin/TM_setup";
@@ -975,20 +1024,22 @@ turbomed() {
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 nichtroot;
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
-test "$(id -u)" -eq "0"||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c ./"$0";exit;};
+test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c "$meingespfad $@";exit;};
 echo Starte mit los.sh...
+commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
 setzhost;
 setzbenutzer;
 fritzbox;
  mountlaufwerke;
-# proginst;
-# sambaconf;
-# musterserver;
+ proginst;
+ sambaconf;
+ musterserver;
 # firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-teamviewer10;
-# cron;
+# teamviewer10;
+ cron;
 # turbomed;
+ speichern;
 echo Ende von $0!
 
 if false; then
