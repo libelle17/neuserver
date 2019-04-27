@@ -735,6 +735,12 @@ hol3() {
 	fi;
 }
 
+tvversion() {
+	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
+	 [ "$tversion" ]||tversion=0;
+	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
+}
+
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
 	cd "$LOSVERZ" >/dev/null;
@@ -742,9 +748,7 @@ teamviewer10() {
 	Dw=Downloads;
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
 	while true; do
-	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
-	 [ "$tversion" ]||tversion=0;
-	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
+	 tvversion;
 	 case $tversion in
 		 0)
 				case $OSNR in
@@ -767,10 +771,14 @@ teamviewer10() {
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
 					printf "${blau}apt install ./$Dw/$trpm$reset\n";
-					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
-					# sudo apt install libjpeg62:i386 libxtst6:i386 
-					# sudo dpkg -i ./Downloads/teamviewer_10.0.95021_i386.deb 
 					apt install ./$Dw/$trpm;
+					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
+					tvversion;
+					if [ "$tversion" != 10 ]; then
+					 apt remove teamviewer;
+					 apt install libjpeg62:i386 libxtst6:i386;
+					 dpkg -i ./$Dw/$trpm;# ./Downloads/teamviewer_10.0.95021_i386.deb;
+					fi;
 					;;
 				4) # opensuse
 #					 printf "${blau}zypper --no-gpg-checks in -l ./$Dw/$trpm$reset\n";
