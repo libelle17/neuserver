@@ -28,7 +28,7 @@ function pruefzeile(zeile) {
 		print $0;
 	}
 }
-# Eintraege
+# Eintraege, muss im gleichen Verzeichnis stehen
 @include "awktv.inc";
 {
 	pruefzeile($0);

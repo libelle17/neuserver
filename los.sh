@@ -599,10 +599,10 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	awk -f $meinpfad/awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
+	AWKPATH="$meinpfad";awk -f awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
 	firewall samba;
 
-	if ! diff -q "$meinpfad/smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
+	if ! diff -q "$meinpfad/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
 		cp -a "$meinpfad/$smbconf" "$zusmbconf";
 		for serv in smbd smb nmbd nmb; do
@@ -933,7 +933,7 @@ teamviewer10() {
 	systemctl stop teamviewerd
 	echo vor awk
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
-  awk -f "$meinpfad/awktv.sh" "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
+	AWKPATH="$meinpfad";awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
 #	sed -i '/^\s*$/d' "$tvh";
 	echo nach awk
 	systemctl start teamviewerd;
@@ -1002,15 +1002,17 @@ turbomed() {
 	version=$(echo $datei|cut -d_ -f4);
 	printf "Turbomed-Version: $blau$version$reset\n";
 	outDir="$q0/TM${version}L";
-	[ -d  $outDir ]||7z x $datei -o$outDir;
-	instVers=$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f4);
+	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
+	instVers=$(find "$outDir" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
 	TMsetup="$outDir/TMLinux/TMWin/linux/bin/TM_setup";
 #		POET_LICENSE_PATH="/opt/FastObjects_t7_12.0/runtime/lib";
 #		POET_LICENSE_PATH="/opt/$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f-2)/runtime/lib";
 	POET_LICENSE_PATH=$(grep "POET_LICENSE_PATH=" $TMsetup|cut -d= -f2|sed 's/\"\(.*\)\"/\1/g');
 	if systemctl list-units --all|grep poetd >/dev/null; then
 #		echo "export LD_LIBRARY_PATH=$POET_LICENSE_PATH;$LD_LIBRARY_PATH/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev;"
-		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev);
+		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^\s*//'|cut -d' ' -f1|rev);
+  	echo laufVers: "$laufVers"
+	  echo instVers: "$instVers";
 #   12.0.2.208
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
@@ -1028,17 +1030,17 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
-setzhost;
-setzbenutzer;
-fritzbox;
+ setzhost;
+ setzbenutzer;
+ fritzbox;
  mountlaufwerke;
  proginst;
  sambaconf;
  musterserver;
 # firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
-# teamviewer10;
+ teamviewer10;
  cron;
-# turbomed;
+ turbomed;
  speichern;
 echo Ende von $0!
 
