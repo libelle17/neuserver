@@ -704,9 +704,9 @@ musterserver() {
  printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;
  if [ "$srv0" ]; then
 	 machidpub;
-	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F=.ssh/authorized_keys;grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 KS=$HOME/.ssh/authorized_keys;
 	 test -f "$KS"||touch "$KS";
+	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
 	 rsync -avuz $srv0:$HOME/.vim $HOME/
  fi;
@@ -888,11 +888,11 @@ teamviewer10() {
 github() {
 	printf "${dblau}github()$reset()\n";
 	machidpub;
-	echo Stelle 2: $GITACC $idpub
-	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);echo key: $key; curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q0';}; then
+	# echo Stelle 2: $GITACC $idpub
+	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
+		echo curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 	fi;
-	echo Stelle 1
 #	curl -u "$GITACC:$passwd" ...
 	git remote set-url origin git@github.com:$GITACC/$DPROG.git;
 # git clone ssh://git@github.com/$GITACC/$DPROG.git 
