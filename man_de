@@ -2,7 +2,7 @@
 .\" Manual-Seite für ²DPROG²
 .\" Schreiben Sie an geraldschade@gmx.de, wenn Sie Fehler oder Mängel entdeckt haben
 .pc
-.TH man 1 "28.04.19" "Version 0.47247" "Manual-Seite für ²DPROG²"
+.TH man 1 "29.04.19" "Version 0.47247" "Manual-Seite für ²DPROG²"
 .SH NAME
 \fB²DPROG² \- Linux-Server neu einrichten\fR: richtet einen Linux-Server für die diabetologische Gemeinschaftspraxis Dachau neu ein 
 .br

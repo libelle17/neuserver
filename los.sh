@@ -92,20 +92,17 @@ done 3<"$meinpfad/benutzer";
 setzpfad() {
 	printf "${dblau}setzpfad$reset()\n";
 	RB=/root/bin;
+  echo "echo $PATH|grep \"$RB\""
   if ! echo $PATH|grep "$RB" >/dev/null; then
-		echo Stelle 1
 		EEN=/etc/environment;
 		if grep -q "^PATH=" "$EEN" 2>/dev/null; then # wirkt auch bei Fehlen von $EEN
-			echo Stelle 2
 			if ! grep -q "$RB" "$EEN" 2>/dev/null; then
-			  echo Stelle 3
   			sed -i.bak '/^PATH=/{s/=["'\'']\+\(.*\)["'\'']\+/="\1:'$(echo $RB|sed "s/\//\\\\\//g")'"/}' "$EEN";
 			fi;
 		else
-			echo Stelle 4
 			echo PATH=\"$PATH:$RB\" >>"$EEN";
 		fi;
-		. $EEN;
+		. "$EEN";
 	fi;
 }
 
