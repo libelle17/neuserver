@@ -99,7 +99,8 @@ tufrag() {
     printf ", url für/for tr-064: $blau$3$reset ...\r";
   fi;
   if [ "$2" ]; then
-    befehl="$(echo "$1"|sed 's/\\n//g;s/\\t//g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
+    # befehl="$(echo "$1"|sed ':a;N;$!ba;s/\n//g;s/\\n//g;s/\\t//g;s/\s\+/ /g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
+    befehl="$(echo "$1"|sed ':a;N;$!ba;s/\n//g;s/\s\+/ /g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
   else
     befehl="$1";
   fi;
@@ -214,6 +215,7 @@ geraeteliste() {
 				neueliste=1;
 			fi;
 		fi;
+		echo neueliste: $neueliste
 	  if [ "$neueliste" ]; then
 			Action=X_AVM-DE_GetHostListPath;
 			ParIn=; # diese Abfrage hat keinen solchen Parameter

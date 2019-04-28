@@ -1,8 +1,21 @@
 BEGIN {
- A[0]="[efi]";	P[0]="/boot/efi";
- A[1]="[daten]";	P[1]="/DATA";
- A[2]="[win]";	P[2]="/win";
- A[3]="[DAT1]";	P[3]="/DAT1";
- A[4]="[Wiederherstellung]";	P[4]="/Wiederherstellung";
- A[5]="[diabfb]";	P[5]="/mnt/diabfb";
+ A[0]="[debian]";	P[0]="/debian";
+ A[1]="[efi]";	P[1]="/efi";
+ A[2]="[fedora]";	P[2]="/fedora";
+ A[3]="[home]";	P[3]="/home";
+ A[4]="[leap]";	P[4]="/leap";
+ A[5]="[mint]";	P[5]="/mint";
+ A[6]="[tumble]";	P[6]="/tumble";
+ A[7]="[daten]";	P[7]="/DATA";
+ A[8]="[win]";	P[8]="/win";
+ A[9]="[arch]";	P[9]="/arch";
+ A[10]="[mageia]";	P[10]="/mageia";
+ A[11]="[manjaro]";	P[11]="/manjaro";
+ A[12]="[Boot]";	P[12]="/Boot";
+ A[13]="[winssd]";	P[13]="/winssd";
+ A[14]="[Leapa]";	P[14]="/Leapa";
+ A[15]="[bsd]";	P[15]="/bsd";
+ A[16]="[c20]";	P[16]="/c20";
+ A[17]="[SeagateExpansionDrive]";	P[17]="/SeagateExpansionDrive";
+ A[18]="[gsheim]";	P[18]="/mnt/gsheim";
 };

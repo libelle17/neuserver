@@ -425,8 +425,13 @@ endif
 
 .PHONY: shlist
 shlist:
-	-@L=shliste;Z=/root/bin;[ -f "$$L" -a -d "$$Z" ]&&for D in $$(cat $$L);do cp -ua "$$D" "$$Z/";grep -q "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";done;:
-
+	-@L=shliste;Z=/root/bin;\
+		[ -f "$$L" -a -d "$$Z" ]&&\
+		for D in $$(cat $$L);do \
+		  printf "$(SUDC)cp -au \""$$D"\" \""$$Z/"\"\n";\
+			$(SUDC)cp -au "$$D" "$$Z/";\
+			grep -q "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
+		done;:
 
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE
