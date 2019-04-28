@@ -53,8 +53,8 @@ getIPR() {
 			UPR="${SUDC}$Z rm -u ";
 			PGROFF=groff;
 			# die nächsten beiden Variablen dürften 26.3.17 unnötig werden
-			REPOS="${SUDC}$Z lr|grep 'g++\|devel_gcc'\>$KR||${SUDC}$Z ar http://download.opensuse.org/repositories/devel:/gcc/\`cat /etc/*-release|grep ^NAME= |cut -d'\"' -f2|sed 's/ /_/'\`_\`cat /etc/*-release|grep ^VERSION_ID= |cut -d'\"' -f2\`/devel:gcc.repo;";
-			UREPO="${SUDC}$Z lr|grep \\\\\"g++\\\\\|devel_gcc\\\\\"\>$KR && ${SUDC}$Z rr devel_gcc;";
+			REPOS="${SUDC}$Z lr|grep 'g++\|devel_gcc' \>$KR||${SUDC}$Z ar http://download.opensuse.org/repositories/devel:/gcc/\`cat /etc/*-release|grep ^NAME= |cut -d'\"' -f2|sed 's/ /_/'\`_\`cat /etc/*-release|grep ^VERSION_ID= |cut -d'\"' -f2\`/devel:gcc.repo;";
+			UREPO="${SUDC}$Z lr|grep \\\\\"g++\\\\\|devel_gcc\\\\\" \>$KR && ${SUDC}$Z rr devel_gcc;";
 			COMP="gcc gcc-c++"; # \$(CCInst)";
 			# sonst dauerts beim Editieren zu lang
 		  if test "$ICH" = viall; then
@@ -171,13 +171,13 @@ exportvars() {
 		eval nv=\$$v; 
 		printf "$v::=$nv\n" >>vars; 
 	done;
-#	printf "testvar::=rot gelb grün\n">>vars
+#	printf "testvar::=rot gelb grün\n" >>vars
 }
 
 ausricht() {
 	# im der letzten eingerückten Block der Bildschirmausgabe stehen die tatsächlich installierten Programme
 	# siehe int linst_cl::doinst(kons.cpp)
-	cat "$1" >> $GILOG
+	cat "$1" >> "$GILOG"
 	if [ $OSNR = 4 ]; then
 		# am Schluss hole hold-Register, entferne Zeilenumbrueche, fasse Leerzeichen zusammen; wenn nicht zwischen NEW package und leerer Zeile, loesche Zeile;
 		# loesche auch die letzten Suchmusterzeilen (NEW package und leere Zeile); haenge ans Hold-Register an;
@@ -201,25 +201,25 @@ ausricht() {
 	# noch ungünstiger die von libselinux ...
 	# s. doanfg(string& datei, string& inhalt, string& comment) in kons.cpp
 	IP=$(cat $1)
-	printf "IP: '$IP'\n">>$GILOG
+	printf "IP: '$IP'\n" >>"$GILOG"
 	#//	 for IP in $(cat $1); do
 	# wenn $AUNF fehlt oder eine der in $1 erwähnten Programm dort nicht aufgeführt ist, dann zuinstallieren=ja; "; vi ..." nicht zu werten
-	[ ! -f $AUNF ]&&zuinst=ja|| 
+	[ ! -f "$AUNF" ]&&zuinst=ja|| 
 	{
 		for E in $IP; do 
-			grep -q "[^;] $E" $AUNF||{ zuinst=ja;break;} 
+			grep -q "[^;] $E" "$AUNF"||{ zuinst=ja;break;} 
 		done;				
 	} 
-	[ -n "$zuinst" ]&& 
+	[ "$zuinst" ]&& 
 	{ 
 		T=${UDPR}$IP; 
-		printf "$T\n# $3\nprintf \"(Inst: $(date +%F\ %T)): \$blau%%s\$reset\\\n\" \"$T\"\n">>$AUNF;
-		[ $2/ = "vim/" ] &&{ printf "alias vi>$KR&&${SUDC}unalias vi\necho \"alias vi>$KR&&${SUDC}unalias vi\"\n">>$AUNF;}
+		printf "$T\n# $3\nprintf \"(Inst: $(date +%F\ %T)): \$blau%%s\$reset\\\n\" \"$T\"\n" >>"$AUNF";
+		[ $2/ = "vim/" ] &&{ printf "alias vi >$KR&&${SUDC}unalias vi\necho \"alias vi >$KR&&${SUDC}unalias vi\"\n" >>"$AUNF";}
 	}
 	#//	 done;
 	#//	 test -f $AUNF&&grep -q " $2" $AUNF||{
 	#//	  T=${UPR}$2;
-	#//		printf "$T\nprintf \"\$blau%%s\$reset\\\n\" \"$T\"\n">>$AUNF;
+	#//		printf "$T\nprintf \"\$blau%%s\$reset\\\n\" \"$T\"\n" >>$AUNF;
 	#//	 }
 }
 
@@ -257,7 +257,7 @@ einricht() {
 		[ _$(echo $1|cut -c1-3) = _"gcc" -o _$(echo $2|cut -c1-3) = _"gcc" ]&&{
 		CMD=${IP_R};
 		if test -n "$Z"; then
-			${SUDC}$Z lr|grep 'g++\|devel_gcc'>/dev/null 2>&1 ||{ 
+			${SUDC}$Z lr|grep 'g++\|devel_gcc' >/dev/null 2>&1 ||{ 
 				GREPO=http://download.opensuse.org/repositories/devel:/gcc/
 			GREPO=${GREPO}`cat /etc/*-release|grep ^NAME= |cut -d\" -f2|sed 's/ /_/'`_
 			GREPO=${GREPO}`cat /etc/*-release|grep ^VERSION_ID= |cut -d\" -f2`
@@ -270,8 +270,8 @@ einricht() {
 }
 LOG=inst_$(echo $2|sed 's/ //g').log; # Leerzeichen entfernen
 printf "${blau}Befehl/Command${reset}: ${CMD}$2\n";
-${CMD}$2|tee $LOG # "$2" geht bei mehreren Wörtern nicht, z.B. "groff-base groff"
-printf "\nRueckmeldung bei einricht $2:\n">>$GILOG;
+${CMD}$2|tee "$LOG" # "$2" geht bei mehreren Wörtern nicht, z.B. "groff-base groff"
+printf "\nRueckmeldung bei einricht $2:\n" >>"$GILOG";
 ausricht "$LOG" $1 "${IPR}$2";
 if [ "$1" = "g++" -o "$1" = "g++-6" ]&& [ -n "$Z" ]&& [ $rweg = 1 ]; then
 	printf "Removing Repository/ Entferne Repository ${blau}devel_gcc$reset again/ wieder\n";
@@ -306,9 +306,9 @@ fi
 #// echo nach sourcen von ./install.sh,DPROG: $DPROG, GITV: $GITV
 INSTVZ="$(dirname $(readlink -f "$0"))"
 ILOG=inst.log
-GILOG=$INSTVZ/$ILOG
-mkdir -p $INSTVZ
-AUNF=$INSTVZ/$UNF
+GILOG="$INSTVZ/$ILOG"
+mkdir -p "$INSTVZ"
+AUNF="$INSTVZ/$UNF"
 _LT="libtiff"
 LT5="${_LT}5"
 LM18=libmysqlclient18
@@ -338,7 +338,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		printf "Please enter ${blau}root$reset's password if asked:\n"
 		printf "Muss '$INSTP' einrichten. "
 		printf "Bitte geben Sie bei Fragen das Passwort von '${blau}root$reset' ein:\n";
-		#	test -f $AUNF&&grep -q "[^;] sudo" $AUNF||printf "${UPR}sudo\nprintf \"\$blau%%s\$reset\\\n\" \"${UPR}sudo\"\n">>$AUNF;
+		#	test -f $AUNF&&grep -q "[^;] sudo" $AUNF||printf "${UPR}sudo\nprintf \"\$blau%%s\$reset\\\n\" \"${UPR}sudo\"\n" >>$AUNF;
 		#	su -c "$IdPR sudo;";
 		# genauso in: linst_cl::linst_cl(int obverb,int oblog)
 		# wenn cdrom-Zeile vorkommt, vor ftp.-debian-Zeile steht und www.debian.org erreichbar ist, dann alle cdrom-Zeilen hinten anhängen
@@ -348,7 +348,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		LOG=inst_$INSTP.log;
 		printf "%bsu -c \"$IdPR $INSTP\"|tee \"$LOG\";%b\n" ${blau} ${reset}
 		su -c "$IdPR $INSTP"|tee "$LOG";
-		printf "\nRueckmeldung su -c \"$IdPR $INSTP\":\n">>$GILOG
+		printf "\nRueckmeldung su -c \"$IdPR $INSTP\":\n" >>"$GILOG"
 		ausricht "$LOG";
 	}
 	# 0=sudo aufrufbar
@@ -368,7 +368,7 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		#// which sudo >/dev/null && id -Gzn $USER|grep -qw "$SUG";}||{ 
 		# falls make fehlt, dann installieren ...
 		einricht make make
-		#// $SPR make >$DN 2>&1 ||{ echo Installing/ Installiere 'make' ....; id su >$DN 2>&1 && { su -c "$IPR make;";:;} || ${SUDC}$IPR make; grep -q make $AUNF||printf "${UPR}make\necho \"${UPR}make\"\n">>$AUNF; }
+		#// $SPR make >$DN 2>&1 ||{ echo Installing/ Installiere 'make' ....; id su >$DN 2>&1 && { su -c "$IPR make;";:;} || ${SUDC}$IPR make; grep -q make $AUNF||printf "${UPR}make\necho \"${UPR}make\"\n" >>$AUNF; }
 		# in kons.cpp steht gleichnamig spath=\n#include spath\n;\n
 		# sfftobmp, vom source code in /usr/local/bin installiert, wurde unter Fedora 14 LX nicht bei der source-code-Installation von capisuite gefunden
 		while true; do ${SUDC}sh -c 'echo \"$PATH$(D=/usr/local/bin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")$(D=/usr/local/sbin;[ "${PATH#*$D}" = "$PATH" -a -d $D ]&&echo :$D||echo "")\"' 2>/dev/null >spath && break; ${SUDC}rm spath; done;

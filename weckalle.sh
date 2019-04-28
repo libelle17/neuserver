@@ -10,11 +10,12 @@ vorgaben() {
   # Spaltenzahl des Bildschirms
   spzahl=$(stty -a <$(tty)|sed -n 's/.*columns \([0-9]\+\).*/\1/;Ta;p;:a'); # um nicht zu schreiben: ..|grep -Po '(?<=columns )\d+'
 # eher veränderbare Vorgaben:
-	ausgdt=$meinpfad/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
+  lgv=/var/log; # log-Verzeichnis
+	ausgdt=$lgv/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage
 	[ -f "$ausgdt" -a ! -w "$ausgdt" ]&&sudo rm "$ausgdt" # wenn die Datei schon da ist und nicht beschreibbar, dann loeschen
-	gesausdt=$meinpfad/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
+	gesausdt=$lgv/gestr64.txt; # Vereinigungsmenge aller geraeteliste()-Abfragen (notwendig, da einige Anfragen unvollständige Ergebnisse liefern!)
 	[ -f "$gesausdt" -a ! -w "$gesausdt" ]&&sudo chown $(whoami):users "$gesausdt" # wenn die Datei schon da ist und nicht beschreibbar, dann das ändern
-	logdt=$meinpfad/logtr64.txt; # log-Datei für TR-064-Abfragen
+	logdt=$lgv/logtr64.txt; # log-Datei für TR-064-Abfragen
 	[ -f "$logdt" -a ! -w "$logdt" ]&&sudo rm "$logdt" # wenn die Datei schon da ist und nicht beschreibbar, dann loeschen
 	listenintervall=7; # mit Parameter -al wird alle $listenintervall Tage die geraeteliste (in $gesausdt) durch eine neue TR-064-Abfrage ergänzt, 0 = nie
   loeschintervall=0; # Intervall in Tagen zum Löschen (und Neuerstellen) von $gesausdt, 0 = nie
