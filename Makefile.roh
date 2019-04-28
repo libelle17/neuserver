@@ -40,6 +40,7 @@
 # "make uninstall" => deinstalliert alles, frägt noch manchmal rück
 # "make allesweg" => deinstalliert alles, beantwortet Rückfragen automatisch mit 'y'
 # "make neuproj" => kopiert Dateien für neues Projekt in Verzeichnis fuer neues Projekt
+# "make shlist" => installiert die in "shliste" stehenden shell-Scripte (=bei make install dabei)
 
 ICH::=$(firstword $(MAKEFILE_LIST))
 SRCS::=$(wildcard *.cpp)
