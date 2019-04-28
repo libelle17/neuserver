@@ -807,7 +807,7 @@ teamviewer10() {
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
 	while true; do
 	 tvversion;
-	 ps -Alf|grep -i "/opt/teamviewer.*tvguislave"|grep -v grep >/dev/null&&[ "$tversion" = 10 ]&&return;
+	 pgrep -if "/opt/teamviewer.*tvguislave" >/dev/null&&[ "$tversion" = 10 ]&&return;
 	 case $tversion in
 		 0)
 				case $OSNR in
