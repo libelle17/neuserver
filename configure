@@ -162,7 +162,7 @@ getIPR() {
 			 `find . -maxdepth 1 \( -name '*.cpp' -or -name '*.h' \) -not -name "${DPROG}*" -printf '%f\\n'|sort|tr '\\n' ' '`\
 			  man_?? Makefile configure \
 			 `find . -maxdepth 1 -name '*.sh' -printf '%f '`\
-			  viall .exrc $UNF $ILOG"
+			  shliste viall .exrc $UNF $ILOG"
 }
 
 exportvars() {

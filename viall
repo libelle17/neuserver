@@ -9,7 +9,7 @@ FREQUENZ=5 # rufe gtags jedes 5. Mal auf
 exportvars
 einricht ctags "$CTAGS"
 tf=gtags.files;
-find . -maxdepth 1 -type f -regex ".*\.c\|.*\.cpp\|.*\.h\|.*\.sh\|.*\.inc\|./Makefile\|./configure\|viall" >"$tf";
+find . -maxdepth 1 -type f -regex ".*\.c\|.*\.cpp\|.*\.h\|.*\.sh\|.*\.inc\|./Makefile\|./configure\|viall\|shliste" >"$tf";
 ctags -V -L "$tf" >/dev/null; 
 test -f $ZD||echo 1 >$ZD; awk "BEGIN {print `cat $ZD`+1}" >$ZD
 expr $(cat $ZD) % $FREQUENZ >/dev/null 2>&1||{ 
