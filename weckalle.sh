@@ -8,7 +8,8 @@ vorgaben() {
   meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
   meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
   # Spaltenzahl des Bildschirms
-  spzahl=$(stty -a <$(tty)|sed -n 's/.*columns \([0-9]\+\).*/\1/;Ta;p;:a'); # um nicht zu schreiben: ..|grep -Po '(?<=columns )\d+'
+  spzahl=50;# Vorgabe, falls kein Terminal (wie in cron)
+  test -t 0 && spzahl=$(stty -a <$(tty)|sed -n 's/.*columns \([0-9]\+\).*/\1/;Ta;p;:a'); # um nicht zu schreiben: ..|grep -Po '(?<=columns )\d+'
 # eher veränderbare Vorgaben:
   lgv=/var/log; # log-Verzeichnis
 	ausgdt=$lgv/ergtr64.txt; # Ausgabe der aktuellen geraeteliste()-Abfrage

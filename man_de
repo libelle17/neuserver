@@ -65,6 +65,58 @@ Der Benutzer könnte also je nach Betriebssystem, Zugriffsmöglichkeit und Präf
 
 .SH OPTIONEN 
  '\fB²DPROG² -?\fR' oder '\fB²DPROG² -h\fR' zeigt die wichtigen Befehlszeilenoptionen und '\fB²DPROG² -lh\fR' alle. Einige Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten aus der Faxnummer) können nicht über die Befehlszeile, sondern nur über die Konfigurationsdatei eingegeben werden, die wiederum über '\fB²DPROG² -vi\fR' direkt editiert oder auch über '\fB²DPROG² -rf\fR' interaktiv gepflegt werden kann.
+.br
+    \fRProgramm: \fB/root/neuserver/neuserver\fR, V: \fB0.10001 \fR
+.br
+\fBOptionen, die nicht gespeichert werden (aktueller Wert in Klammern): \fR
+.br
+\fB -st, --stop\fR: neuserver anhalten (\fB0\fR)
+.br
+\fB -n, --dszahl <string>\fR: Zahl der aufzulistenden Datensaetze = <zahl> statt ('\fB30\fR')
+.br
+\fB -sqlw, --sql-wortreich\fR: Bildschirmausgabe mit SQL-Befehlen (\fB0\fR)
+.br
+\fB -w, --wortreich\fR: Bildschirmausgabe gespraechiger (\fB0\fR)
+.br
+\fB -ldn, --logdateineu\fR: logdatei vorher loeschen (\fB0\fR)
+.br
+\fB -kd, --konfdatei <string>\fR: verwendet Konfigurationsdatei <string> anstatt ('\fB\fR')
+.br
+\fB -h, --hilfe\fR: Erklaerung haeufiger Optionen (\fB3\fR)
+.br
+\fB -lh, --langhilfe\fR: Erklaerung aller Optionen (\fB3\fR)
+.br
+\fB -vi, --vi\fR: Konfigurationsdatei , Logdatei usw. bearbeiten/sehen (beenden mit ':qa') (\fB0\fR)
+.br
+\fB -vs, --vs\fR: Quelldateien in \fB/root/neuserver\fR bearbeiten/sehen (beenden mit ':qa') (\fB0\fR)
+.br
+\fB -autoakt, --autoaktual <zahl>\fR: Programm automatisch aktualisieren (\fB1\fR)
+.br
+\fB -rf, --rueckfragen\fR: alle Parameter werden abgefragt (darunter einige hier nicht gezeigte) (\fB0\fR)
+.br
+\fB -krf, --keinerueckfragen\fR: keine Rueckfragen, z.B. fuer Aufruf aus cron (\fB0\fR)
+.br
+\fB -info, --version\fR: Zeigt die Programmversion an (\fB0\fR)
+.br
+\fBOptionen z.Speich. i.Konfigur'datei (vorausg. '1'=doch nicht speichern, 'no'=Gegenteil, z.B. '-noocra','-1noocri'):\fR
+.br
+\fB -host, --host <string>\fR: verwendet die Datenbank auf Host <string> anstatt auf ('\fBlocalhost\fR')
+.br
+\fB -muser, --muser <string>\fR: verwendet fuer MySQL/MariaDB den Benutzer <string> anstatt ('\fB\fR')
+.br
+\fB -mpwd, --mpwd <string>\fR: verwendet fuer MySQL/MariaDB das Passwort <string>
+.br
+\fB -db, --datenbank <string>\fR: verwendet die Datenbank <string> anstatt ('\fB\fR')
+.br
+\fB -sp, --sprache <string>\fR: Language/Sprache/Lingue/Lingua [\fBd\fReutsch,\fBe\fRnglisch] ('\fBd\fR')
+.br
+\fB -lvz, --logvz <pfad>\fR: waehlt als Logverzeichnis <pfad>, derzeit ('\fB/var/log\fR')
+.br
+\fB -ld, --logdname <string>\fR: logdatei <string> (im Pfad '\fB/var/log\fR') wird verwendet anstatt ('\fBneuserver.log\fR')
+.br
+\fB -l, --log <zahl>\fR: protokolliert ausfuehrlich in Datei '\fB/var/log/neuserver.log\fR' (sonst knapper) (\fB0\fR)
+.br
+\fB -cm, --cronminuten <string>\fR: alle wieviel Minuten soll \fBneuserver\fR ueber crontab aufgerufen werden (0=gar nicht), anstatt  ('\fB0\fR')
 .SH FUNKTIONSWEISE
 .LP
 Beim Aufruf von '\fB²DPROG²\fR' geschieht folgendes:
