@@ -27,8 +27,8 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Fax server functionality</b>: induces automatic fax
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
+Fax server functionality</b>: induces automatic fax
 transmission of files, naming of received faxes and logging
 of all of them in a database <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
@@ -736,10 +736,10 @@ caused by the program.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Linux-Server neu einrichten</b>: richtet einen
-Linux-Server f&uuml;r die diabetologische
-Gemeinschaftspraxis Dachau neu ein <br>
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
+Linux-Server neu einrichten</b>: richtet einen Linux-Server
+f&uuml;r die diabetologische Gemeinschaftspraxis Dachau
+neu ein <br>
 (manpage available in english: &rsquo;man neuserver&rsquo;
 or &rsquo;man -Len neuserver&rsquo;)</p>
 

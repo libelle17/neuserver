@@ -851,7 +851,7 @@ teamviewer10() {
 					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
 					tvversion;
 					if [ "$tversion" != 10 ]; then
-					 apt remove teamviewer;
+					 apt remove teamviewer teamviewer:i386;
 					 apt install libjpeg62:i386 libxtst6:i386;
 					 dpkg -i $Dw/$trpm;# ./Downloads/teamviewer_10.0.95021_i386.deb;
 					fi;
@@ -1050,13 +1050,12 @@ variablen;
  setzhost;
  setzbenutzer;
  setzpfad;
- exit
  fritzbox;
  mountlaufwerke;
  proginst;
  sambaconf;
  musterserver;
-# firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+ firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
  teamviewer10;
  cron;
  turbomed;
