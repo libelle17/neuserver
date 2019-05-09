@@ -848,6 +848,7 @@ teamviewer10() {
 				1|2|3) # mint, ubuntu, debian
 					printf "${blau}apt install $Dw/$trpm$reset\n";
 					apt install $Dw/$trpm;
+					apt-mark hold teamviewer:i386;
 					# bei Ubuntu funktionierte nur (ohne automatisches Upgrade der Teamviewer-Version):
 					tvversion;
 					if [ "$tversion" != 10 ]; then
@@ -878,12 +879,12 @@ teamviewer10() {
 		 *) 
 				case $OSNR in
 				1|2|3) # mint, ubuntu, debian
-					printf "${blau}apt remove teamviewer$reset\n";
-					apt remove teamviewer;
+					printf "${blau}apt remove teamviewer teamviewer:i386$reset\n";
+					apt remove teamviewer teamviewer:i386;
 					;;
 				4)
-					 printf "${blau}zypper rm teamviewer$reset\n";
-					 zypper rm teamviewer; 
+					 printf "${blau}zypper rm teamviewer teamviewer:i386$reset\n";
+					 zypper rm teamviewer teamviewer:i386; 
 					;;
 				5|6|7) # opensuse, fedora, mageia
 					;;
