@@ -2,7 +2,7 @@
 .\" manual page for ²DPROG²
 .\" write to geraldschade@gmx.de if You discover an error or a deficit in the program
 .pc
-.TH man 1 "29.04.19" "Version 0.47247" "\fB²DPROG²\fR man page"
+.TH man 1 "05.05.19" "Version 0.10176" "\fB²DPROG²\fR man page"
 .SH NAME
 \fB²DPROG² \- Fax server functionality\fR: induces automatic fax transmission of files, naming of received faxes and logging of all of them in a database
 .br
@@ -10,7 +10,7 @@
 .SH SYNOPSIS
 \fB²DPROG² [-<shortopt>|--<longopt> [<supplement>]] ...\fR
 .SH SHORT DESCRIPTION 
-\fB²DPROG²\fR supplies the file los.sh, which configures the server with some callbacks.
+\fB²DPROG²\fR offers quasi the functionality of a fax server, which can be useful for some also behind a fast data line.
 .br
 \fB²DPROG²\fR is a command line program to remit files of a certain directory automatically to \fBhylafax\fR (in case a linux-compatible modem is installed) and/or \fBcapisuite\fR (in case a fritzcard 2.0 or 2.1 is installed), if the fax number is integrated in the file name as requested.
 Furthermore, ²DPROG² holds the posted faxes in a mariadb database.
@@ -67,11 +67,11 @@ Depending on operating system, accessability and preferences the users thus coul
 .SH OPTIONS 
  '\fB²DPROG² -?\fR' or '\fB²DPROG² -h\fR' shows the important command line options and '\fB²DPROG² -lh\fR' all of them. Some options (e.g. the sql commands for finding an addressee from the fax number) cannot be set via the command line, but only via the configuration file, which can be edited directly by '\fB²DPROG² -vi\fR' or interactively by '\fB²DPROG² -rf\fR'.
 .br
-    \fRProgramm: \fB/root/neuserver/neuserver\fR, V: \fB0.10001 \fR
+    \fRProgramm: \fB/root/termine/termine\fR, V: \fB0.10176 \fR
 .br
 \fBOptions which are not saved (current value in parentheses): \fR
 .br
-\fB -st, --stop\fR: stop neuserver (\fB0\fR)
+\fB -st, --stop\fR: stop termine (\fB0\fR)
 .br
 \fB -n, --reccount <string>\fR: No. of listed entries = <no> instead of ('\fB30\fR')
 .br
@@ -89,7 +89,7 @@ Depending on operating system, accessability and preferences the users thus coul
 .br
 \fB -vi, --vi\fR: edit/view configuration file , log file etc. (finish with ':qa') (\fB0\fR)
 .br
-\fB -vs, --vs\fR: edit/view source files in \fB/root/neuserver\fR(finish with ':qa') (\fB0\fR)
+\fB -vs, --vs\fR: edit/view source files in \fB/root/termine\fR(finish with ':qa') (\fB0\fR)
 .br
 \fB -autoupd, --autoupdate <zahl>\fR: Update program automatically (\fB1\fR)
 .br
@@ -113,11 +113,11 @@ Depending on operating system, accessability and preferences the users thus coul
 .br
 \fB -ldr, --logdir <path>\fR: choses <path> as log directory, currently ('\fB/var/log\fR')
 .br
-\fB -lf, --logfilename <string>\fR: log file <string> (in path '\fB/var/log\fR') will be used instead of ('\fBneuserver.log\fR')
+\fB -lf, --logfilename <string>\fR: log file <string> (in path '\fB/var/log\fR') will be used instead of ('\fBtermine.log\fR')
 .br
-\fB -l, --log <zahl>\fR: put detailed logs in file '\fB/var/log/neuserver.log\fR' (otherwise shorter) (\fB0\fR)
+\fB -l, --log <zahl>\fR: put detailed logs in file '\fB/var/log/termine.log\fR' (otherwise shorter) (\fB0\fR)
 .br
-\fB -cm, --cronminutes <string>\fR: every how many minutes shall \fBneuserver\fR be called in crontab (0=not at all), instead of  ('\fB0\fR')
+\fB -cm, --cronminutes <string>\fR: every how many minutes shall \fBtermine\fR be called in crontab (0=not at all), instead of  ('\fB0\fR')
 .SH FUNCTIONALITY
 .LP
 When called, '\fB²DPROG²\fR' accomplishes the following:

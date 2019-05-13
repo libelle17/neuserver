@@ -27,8 +27,8 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
-Fax server functionality</b>: induces automatic fax
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
+&minus; Fax server functionality</b>: induces automatic fax
 transmission of files, naming of received faxes and logging
 of all of them in a database <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
@@ -50,8 +50,8 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-supplies the file los.sh, which configures the server with
-some callbacks. <b><br>
+offers quasi the functionality of a fax server, which can be
+useful for some also behind a fast data line. <b><br>
 neuserver</b> is a command line program to remit files of a
 certain directory automatically to <b>hylafax</b> (in case a
 linux-compatible modem is installed) and/or <b>capisuite</b>
@@ -81,7 +81,7 @@ software packages&rsquo; and &rsquo;implications&rsquo;
 below. Then, if connected to the internet, call (e.g. by
 coying the line and pasting it into a terminal): <b><br>
 N=neuserver;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com//$N/master/install.sh
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
 neuserver</b> <br>
@@ -178,11 +178,10 @@ cannot be set via the command line, but only via the
 configuration file, which can be edited directly by
 &rsquo;<b>neuserver -vi</b>&rsquo; or interactively by
 &rsquo;<b>neuserver -rf</b>&rsquo;. <br>
-Programm: <b>/root/neuserver/neuserver</b>, V: <b>0.10001
-<br>
+Programm: <b>/root/termine/termine</b>, V: <b>0.10176 <br>
 Options which are not saved (current value in parentheses):
 <br>
--st, --stop</b>: stop neuserver (<b>0</b>) <b><br>
+-st, --stop</b>: stop termine (<b>0</b>) <b><br>
 -n, --reccount &lt;string&gt;</b>: No. of listed entries =
 &lt;no&gt; instead of (&rsquo;<b>30</b>&rsquo;) <b><br>
 -sqlv, --sql-verbose</b>: screen output with SQL commands
@@ -200,7 +199,7 @@ Options which are not saved (current value in parentheses):
 -vi, --vi</b>: edit/view configuration file , log file etc.
 (finish with &rsquo;:qa&rsquo;) (<b>0</b>) <b><br>
 -vs, --vs</b>: edit/view source files in
-<b>/root/neuserver</b>(finish with &rsquo;:qa&rsquo;)
+<b>/root/termine</b>(finish with &rsquo;:qa&rsquo;)
 (<b>0</b>) <b><br>
 -autoupd, --autoupdate &lt;zahl&gt;</b>: Update program
 automatically (<b>1</b>) <b><br>
@@ -231,14 +230,14 @@ Language/Sprache/Lingue/Lingua
 directory, currently (&rsquo;<b>/var/log</b>&rsquo;) <b><br>
 -lf, --logfilename &lt;string&gt;</b>: log file
 &lt;string&gt; (in path &rsquo;<b>/var/log</b>&rsquo;) will
-be used instead of (&rsquo;<b>neuserver.log</b>&rsquo;)
+be used instead of (&rsquo;<b>termine.log</b>&rsquo;)
 <b><br>
 -l, --log &lt;zahl&gt;</b>: put detailed logs in file
-&rsquo;<b>/var/log/neuserver.log</b>&rsquo; (otherwise
+&rsquo;<b>/var/log/termine.log</b>&rsquo; (otherwise
 shorter) (<b>0</b>) <b><br>
 -cm, --cronminutes &lt;string&gt;</b>: every how many
-minutes shall <b>neuserver</b> be called in crontab (0=not
-at all), instead of (&rsquo;<b>0</b>&rsquo;)</p>
+minutes shall <b>termine</b> be called in crontab (0=not at
+all), instead of (&rsquo;<b>0</b>&rsquo;)</p>
 
 <h2>FUNCTIONALITY
 <a name="FUNCTIONALITY_D"></a>
@@ -736,10 +735,10 @@ caused by the program.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver -
-Linux-Server neu einrichten</b>: richtet einen Linux-Server
-f&uuml;r die diabetologische Gemeinschaftspraxis Dachau
-neu ein <br>
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
+&minus; FaxServer-Funktionalit&auml;t</b>: veranlasst
+automatischen Faxversand von Dateien, Benennung empfangener
+Faxe und Protokollierung aller Faxe in einer Datenbank <br>
 (manpage available in english: &rsquo;man neuserver&rsquo;
 or &rsquo;man -Len neuserver&rsquo;)</p>
 
@@ -759,11 +758,21 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
-stellt das shell-script los.sh zur Verf&uuml;gung, das
-den Server mit einigen R&uuml;ckfragen einrichtet.
-<b><br>
-neuserver</b> ist ein Befehlszeilenprogramm. <br>
-Au&szlig;erdem k&ouml;nnen . <br>
+bietet quasi die Funktionalit&auml;t eines Faxservers,
+welcher f&uuml;r manche auch hinter einer schnellen
+Datenleitung sinnvoll sein kann. <b><br>
+neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
+in einem bestimmten Verzeichnis automatisch an
+<b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
+angeschlossen ist) und/oder <b>capisuite</b> (falls eine
+Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
+werden, wenn die Faxnummer im Dateinamen wie vorgesehen
+eingetragen ist, und das weiterhin die versandten Faxe in
+einer MariaDB-Datenbank abspeichert. <br>
+Au&szlig;erdem k&ouml;nnen von
+<b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
+nach dem Sender anhand dessen Faxnummer benannt und
+abgespeichert werden. <br>
 Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
 mit nur einem Linuxrechner) geschieht durch automatischen
 Eintrag der f&uuml;r neuserver relevanten Verzeichnisse
@@ -787,7 +796,7 @@ n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
 N=neuserver;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com//$N/master/install.sh
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
 neuserver</b> <br>
@@ -892,11 +901,10 @@ werden, die wiederum &uuml;ber &rsquo;<b>neuserver
 -vi</b>&rsquo; direkt editiert oder auch &uuml;ber
 &rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
 werden kann. <br>
-Programm: <b>/root/neuserver/neuserver</b>, V: <b>0.10001
-<br>
+Programm: <b>/root/termine/termine</b>, V: <b>0.10176 <br>
 Optionen, die nicht gespeichert werden (aktueller Wert in
 Klammern): <br>
--st, --stop</b>: neuserver anhalten (<b>0</b>) <b><br>
+-st, --stop</b>: termine anhalten (<b>0</b>) <b><br>
 -n, --dszahl &lt;string&gt;</b>: Zahl der aufzulistenden
 Datensaetze = &lt;zahl&gt; statt (&rsquo;<b>30</b>&rsquo;)
 <b><br>
@@ -916,7 +924,7 @@ Konfigurationsdatei &lt;string&gt; anstatt (&rsquo;&rsquo;)
 -vi, --vi</b>: Konfigurationsdatei , Logdatei usw.
 bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
 <b><br>
--vs, --vs</b>: Quelldateien in <b>/root/neuserver</b>
+-vs, --vs</b>: Quelldateien in <b>/root/termine</b>
 bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
 <b><br>
 -autoakt, --autoaktual &lt;zahl&gt;</b>: Programm
@@ -950,12 +958,12 @@ Language/Sprache/Lingue/Lingua
 <b><br>
 -ld, --logdname &lt;string&gt;</b>: logdatei &lt;string&gt;
 (im Pfad &rsquo;<b>/var/log</b>&rsquo;) wird verwendet
-anstatt (&rsquo;<b>neuserver.log</b>&rsquo;) <b><br>
+anstatt (&rsquo;<b>termine.log</b>&rsquo;) <b><br>
 -l, --log &lt;zahl&gt;</b>: protokolliert ausfuehrlich in
-Datei &rsquo;<b>/var/log/neuserver.log</b>&rsquo; (sonst
+Datei &rsquo;<b>/var/log/termine.log</b>&rsquo; (sonst
 knapper) (<b>0</b>) <b><br>
 -cm, --cronminuten &lt;string&gt;</b>: alle wieviel Minuten
-soll <b>neuserver</b> ueber crontab aufgerufen werden (0=gar
+soll <b>termine</b> ueber crontab aufgerufen werden (0=gar
 nicht), anstatt (&rsquo;<b>0</b>&rsquo;)</p>
 
 <h2>FUNKTIONSWEISE
