@@ -415,6 +415,7 @@ instmaria() {
 				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
 			fi;;
 	esac;
+	sed -i.bak 's/^\(bind-address.*\)/# \1/' /etc/mysql/mariadb.conf.d/50-server.cnf
 }
 
 pruefmroot() {
