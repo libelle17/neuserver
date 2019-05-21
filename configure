@@ -97,9 +97,9 @@ getIPR() {
 	} || 
 	{ [ $OSNR = 7 ]&&
 		{ 
-			IdPR="$(which urpmi) --auto --force ";
+			IdPR="$(PATH=$PATH:/usr/sbin;which urpmi) --auto --force ";
 			IP_R="${SUDC}$IdPR";
-			UPR="${SUDC}$(which urpme) ";
+			UPR="${SUDC}$(PATH=$PATH:/usr/sbin;which urpme) ";
 			dev=devel;
 			LT=${_LT}-${dev};
 			libmdb=lib64mariadb;
@@ -361,8 +361,9 @@ if test "$ICH" = configure -o "$ICH" = install.sh -o "$ICH" = ${DPROG}_inst.sh -
 		printf "Bitte geben Sie zweimal bei der Frage das Passwort von '${blau}root$reset' ein:\n";
 		printf "Danach können Sie ausgeloggt werden, andernfalls loggen Sie sich bitte aus und nochmal ein";
 		printf ", wechseln Sie nach '$blau$PWD$reset' und rufen Sie '${blau}sh install.sh$reset' auf!\n";
-		echo su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER"; && su -c \"pkill -u \\\"$USER\\\"\""
-		su -c "usermod -aG $(cut -d: -f1 /etc/group|grep -w "$SUG"|tail -n1) "$USER";" && su -c "pkill -u \"$USER\""
+		echo "su -c \"PATH=\\\$PATH:/usr/sbin;usermod -aG $(cut -d: -f1 /etc/group|grep -w \\\"$SUG\\\"|tail -n1) \\\"$USER\\\";\" && su -c \"pkill -u \\\"$USER\\\"\""
+		su -c "PATH=$PATH:/usr/sbin;usermod -aG $(cut -d: -f1 /etc/group|grep -w \"$SUG\"|tail -n1) \"$USER\";" && su -c "pkill -u \"$USER\""
+		echo danach
 	}
 	if test "$ICH" != viall; then
 		#// which sudo >/dev/null && id -Gzn $USER|grep -qw "$SUG";}||{ 
