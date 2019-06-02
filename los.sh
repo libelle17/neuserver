@@ -14,7 +14,7 @@ meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
 Dw=$meinpfad/Downloads;
 gruppe=$(cat $meinpfad/gruppe);
-q0=/DATA/down;
+q0="/DATA/down /DATA/daten/down";
 obschreiben=0;
 
 # Befehlszeilenparameter auswerten
@@ -683,7 +683,7 @@ tufirewall() {
 			fi;
 		fi;
 	fi;
-	if which setsebool >/dev/null 2>&1; then
+	if which setsebool >/dev/null 2>&1 && getsebool >/dev/null 2>&1; then
 		for ro in $2 $3; do
 			if [ "$ro" != "-" ]; then
 				rostatus=$(getsebool -a|grep $ro|sed 's/^[^>]*>[[:space:]]*\([^[:space:]]*\).*/\1/');
@@ -799,17 +799,23 @@ hol3() {
 	printf "${dblau}hol3($1$reset,$dblau$2$reset,$dblau$3)$reset()\n";
 	[ "$3" ]&&hname=$3||hname=$1;
 	if ! [ -f "$Dw/$1" ]; then
-		if [ -f "$q0/$1" ]; then
-			printf "${blau}cp -ai "$q0/$1" $Dw/$reset\n";
-			cp -ai "$q0/$1" "$Dw/";
-		elif [ "$srv0" ]; then
-		  printf "${blau}ssh $srv0 ls \"$q0/$1\" >/dev/null 2>&1&& scp -p $srv0:$q0/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $q0/\n";
-			ssh "$srv0" "ls \"$q0/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$q0/$1" "$Dw/"&&{ [ -d "$q0" ]&&cp -ai "$Dw/$1" "$q0/";};
-		else
-			printf "${blau}wget $2/$hname -P $Dw$reset\n";
-			wget "$2/$hname" -P "$Dw";
-			[ -f "$Dw/$1" -a -d "$q0" ]&&cp -ai "$Dw/$1" "$q0/";
-			[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$q0/";
+		echo find $q0 -maxdepth 1 -name "$1"
+	  datei=$(find $q0 -maxdepth 1 -name "$1");
+		if test "$datei"; then
+			datei=readlink -e $datei;
+			pfad=${datei%/*};
+			if [ -f "$pfad/$1" ]; then
+				printf "${blau}cp -ai "$pfad/$1" $Dw/$reset\n";
+				cp -ai "$pfad/$1" "$Dw/";
+			elif [ "$srv0" ]; then
+				printf "${blau}ssh $srv0 ls \"$pfad/$1\" >/dev/null 2>&1&& scp -p $srv0:$pfad/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $pfad/\n";
+				ssh "$srv0" "ls \"$pfad/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$pfad/$1" "$Dw/"&&{ [ -d "$pfad" ]&&cp -ai "$Dw/$1" "$pfad/";};
+			else
+				printf "${blau}wget $2/$hname -P $Dw$reset\n";
+				wget "$2/$hname" -P "$Dw";
+				[ -f "$Dw/$1" -a -d "$pfad" ]&&cp -ai "$Dw/$1" "$pfad/";
+				[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$pfad/";
+			fi;
 		fi;
 	fi;
 }
@@ -1016,11 +1022,13 @@ tu_turbomed() {
 turbomed() {
 	printf "${dblau}turbomed$reset()\n";
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
-	datei=$(find "$q0" -name "CGM_TURBOMED*LINUX.zip" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
+	tmsuch="CGM_TURBOMED*LINUX.zip";
+	datei=$(find $q0 -name "$tmsuch" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
+	if test -z "$datei"; then echo keine Datei \"$tmsuch\" in \"$q0\" gefunden; return; fi;
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4);
 	printf "Turbomed-Version: $blau$version$reset\n";
-	outDir="$q0/TM${version}L";
+	outDir="${datei%/*}/TM${version}L";
 	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
 	instVers=$(find "$outDir" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
 	TMsetup="$outDir/TMLinux/TMWin/linux/bin/TM_setup";
@@ -1049,6 +1057,7 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
+if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
@@ -1060,6 +1069,7 @@ variablen;
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
  teamviewer10;
  cron;
+fi;
  turbomed;
  speichern;
 echo Ende von $0!
