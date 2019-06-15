@@ -1,28 +1,68 @@
-# Suchverzeichnis
-Vz=/DATA/sql;
-# Zielverzeichnis
-Zvz=/DATA/sqlloe;
-muster="*????-??-??*.sql*";
-muster="quelle--????-??-??*.sql*";
-# Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
-gr1=730;
-# Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
-beh1="-01-";
-# Grenze, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
-gr2=90;
-# Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
-beh2="-01-08-15-22-";
-# dieses Programm soll ja nicht mit falsch eingestelltem Datum laufen => Internet-Zeit holen
-ntpdate ptbtime1.ptb.de||exit
-# auch die Bios-Uhr korrigieren
-/sbin/hwclock --systohc 
-# jetzt in Sekunden umrechnen
-jsec=$(date +%s);
-# die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
-Ausspar="-dp-office-";
+vorgaben() {
+# vom Programmaufruf abhängige Parameter
+  # Suchverzeichnis
+  Vz=/DATA/sql;
+  # Zielverzeichnis
+  Zvz=/DATA/sqlloe;
+  # Zielverzeichnis ggf. erstellen
+  mkdir -p "$Zvz";
+  # falls es fehlt, aufhören
+  test -d "$Zvz" ||exit
+  muster="*????-??-??*.sql*";
+  # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
+  gr1=730;
+  # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
+  beh1="-01-";
+  # Grenze, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
+  gr2=90;
+  # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
+  beh2="-01-08-15-22-";
+  # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
+  Ausspar="-dp-office-";
+# eher starre Vorgaben
+	blau="\033[1;34m"; # für Programmausgaben
+	rot="\033[1;31m";
+	lila="\033[1;35m";
+	reset="\033[0m"; # Farben zurücksetzen
+}
+
+# Befehlszeilenparameter auswerten
+commandline() {
+	while [ $# -gt 0 ]; do
+		para="$1";
+		case $para in
+			-v|--verbose) verb=1;;
+			-h|--h|--hilfe|-hilfe|-?|/?|--?)
+        printf "Programm $blau$0$reset: verschiebt einen Teil der Dateien nach Muster $blau$muster$reset aus $blau$Vz$reset nach $blau$Zvz$reset,\n";
+        printf "  zusammengeschrieben von: Gerald Schade 15.6.2019\n";
+        printf "  Benutzung:\n";
+				printf "  $blau$0 [-v] [-h|--hilfe|-?]$reset\n";
+			exit;;
+			--help|-help)
+        printf "Program $blau$0$reset: moves part of the files of pattern $blau$muster$reset from $blau$Vz$reset to $blau$Zvz$reset,\n";
+        printf "  written together by: Gerald Schade 15.6.2019\n";
+        printf "  Usage:\n";
+				printf "  $blau$0 [-v] [-h|--hilfe|-help]$reset\n";
+			exit;;
+			*) pcs="$para";;
+		esac;
+		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
+		shift;
+	done;
+}
+
+zeit() {
+  # dieses Programm soll ja nicht mit falsch eingestelltem Datum laufen => Internet-Zeit holen
+  bef="ntpdate ptbtime1.ptb.de";
+  [ "$verb" ]&&{ eval "$bef"||exit;:;}||{ eval "$bef" >/dev/null 2>&1||exit;};
+  # auch die Bios-Uhr korrigieren
+  /sbin/hwclock --systohc 
+  # jetzt in Sekunden umrechnen
+  jsec=$(date +%s);
+}
 
 # Zeittifferenz zwischen jetzt und der Zeit im ersten Parameter
-ddiff () {
+ddiff() {
   dsec=$(date -d "$1" +%s);
   datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 }
@@ -46,10 +86,9 @@ ermittledatum() {
   monat=${monat%-*};
 }
 
-# Zielverzeichnis ggf. erstellen
-mkdir -p $Zvz;
-# falls es fehlt, aufhören
-test -d $Zvz ||exit
+vorgaben;
+commandline "$@"; # alle Befehlszeilenparameter übergeben
+zeit;
 # alle Dateien mit dem Muster aus dem Quellverzeichnis raussuchen und den Namen verwenden
 for dt in $(find $Vz -name "$muster" -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
@@ -64,7 +103,7 @@ for dt in $(find $Vz -name "$muster" -printf '%f\n'); do
     vgr=$(eval 'echo $gr'"$runde");
     # Tage im Monat, mit denen die Datei in dieser Runde auf jeden Fall behalten wird
     vbeh=$(eval 'echo $beh'"$runde");
-    echo "!!!!!!!!!!! vbeh: $vbeh, Runde: $runde"
+#    echo "!!!!!!!!!!! vbeh: $vbeh, Runde: $runde"
 #    echo datediff: $datediff
 #    echo vgr: $vgr
 #    echo tag: $tag
@@ -76,29 +115,30 @@ for dt in $(find $Vz -name "$muster" -printf '%f\n'); do
        # $vbeh gleicht ..
        *-$tag-*)
         # dann Datei behalten
-        echo "$runde behalte: $dt, da $tag in $vbeh";;
+        [ "$verb" ]&&echo "$runde behalte: $dt, da $tag in $vbeh";
+        ;;
        *)
-        echo "$runde loesche vielleicht: $dt, da $tag nicht in $vbeh";
+        [ "$verb" ]&&echo "$runde loesche vielleicht: $dt, da $tag nicht in $vbeh";
         # ansonsten ...
 #        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$name--????-??-??*.sql*" -print -quit;"
         # schauen, ob es tatsächlich im gleichen Monat schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
         aelter=$(find "$Vz" -newermt "$jahr-$monat-01" -not -newermt "$datum" -name "$name--????-??-??*.sql*" -print -quit);
         # wenn also die Variable befüllt ...
         if test "$aelter"; then
-          echo $dt $name $datum $jahr $monat $tag $datediff;
-          echo "   Runde $runde, älter: $aelter, loesche: $dt";
+          # [ "$verb" ]&&echo $dt $name $datum $jahr $monat $tag $datediff;
+          [ "$verb" ]&&echo "   Runde $runde, älter: $aelter, loesche/verschiebe: $dt";
           # dann die Datei in das Zu-Löschen-Verzeichnis schieben
           mv -i $Vz/$dt $Zvz/
           # und nicht weiter prüfen
           break;
         else
           # ansonsten auch aufheben, obwohl der Tag nicht stimmt (weil dann die mit dem aufzuhebenden Tag wohl fehlt)
-          echo "Runde $runde nichts älter, behalte: $dt";
+          [ "$verb" ]&&echo "Runde $runde nichts älter, behalte: $dt";
         fi;;
       esac;
     else
       # ... sonst wird die Datei heute noch nicht untersucht.
-      echo "$dt: mit $datediff Tagen jünger als $vgr (Runde $runde)";
+      [ "$verb" ]&&echo "$dt: mit $datediff Tagen jünger als $vgr (Runde $runde)";
     fi;
   done;
 done;
