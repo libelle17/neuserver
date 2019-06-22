@@ -65,7 +65,7 @@ fragab() {
 						-H \"SoapAction: $serviceType#$Action\" \\n\
 						\"$FB$controlURL\" \\n\
 						-d '$XML'";
-      tufrag "$befehl" umw "$FB$controlURL";
+      tufrag "$befehl" 1 "$FB$controlURL";
 			[ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
 			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
 			[ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
@@ -92,7 +92,7 @@ fragab() {
 }
 
 # die tatsächliche TR-064-Abfrage durchführen
-# Parameter: 1: befehl, 2: umw (ob befehl umgewandelt werden soll), 3: html-Adresse, 4: Datei, in die Ausgabe umgeleitet wurde
+# Parameter: 1: befehl, 2: umw (ob Befehl umgewandelt werden soll), 3: html-Adresse, 4: Datei, in die Ausgabe umgeleitet wurde
 tufrag() {
   if [ "$verb" ]; then
     printf "\nBefehl/Command: $blau%b$reset\n" "$1";
@@ -100,7 +100,8 @@ tufrag() {
     printf ", url für/for tr-064: $blau$3$reset ...\r";
   fi;
   if [ "$2" ]; then
-    befehl="$(echo "$1"|sed ':a;N;$!ba;s/\n//g;s/\s\+/ /g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
+    befehl="$(echo "$1"|sed ':a;N;$!ba;s/\\n/ /g;s/\s\+/ /g')"; # Zeilenumbrüche und ggf. Tabulatoren entfernen
+    [ "$verb" ]&&printf "%b\n" "$befehl";
   else
     befehl="$1";
   fi;
@@ -188,6 +189,8 @@ commandline() {
 		printf "pcs: $blau\"$pcs\"$reset\n";
 		printf "npc: $blau\"$npc\"$reset\n";
 		printf "allowed/erlaubte Interfaces: $blau\"$IFerlau\"$reset\n";
+    printf "alteliste: $blau\"$alteliste\"$reset\n";
+    printf "listenintervall [Tage]: $blau\"$listenintervall\"$reset\n";
 		printf "forbidden/verbotene Interfaces: $blau\"$IFverbo\"$reset\n";
 	fi;
 }
@@ -208,14 +211,15 @@ authorize() {
 
 # Liste aller von der Fritzbox gemerkten Geräte ggf. abfragen und in $ausgdt speichern
 geraeteliste() {
-	  if [ -z "$alteliste" ]; then # Befehlszeilenparameter, dass die zeitaufwendige Abfrage ausgelassen werden soll ...
+	  if [ -z "$alteliste" ]; then # Befehlszeilenparaaltelistemeter, dass die zeitaufwendige Abfrage ausgelassen werden soll ...
+      [ "$verb" ]&& printf "erstelle Liste neu, da Parameter 'alteliste' \"$alteliste\".\n";
 			neueliste=1;
 		elif [ "$listenintervall" != 0 ]; then # ... oder die alte Liste ist zu alt ...
-			if ! find "$meinpfad" -mtime -$listenintervall -wholename "$ausgdt"|grep -q .; then # ob Datei mit Höchstalter an der Stelle zu finden ...
+			if ! find "$lgv" -mtime -$listenintervall -wholename "$ausgdt"|grep -q .; then # ob Datei mit Höchstalter an der Stelle zu finden ...
+        [ "$verb" ]&& printf "erstelle Liste neu, da '${blau}listenintervall$reset' \"$blau$listenintervall$reset\" (Tage) und keine so junge \"$blau$ausgdt$reset\" gefunden.\n";
 				neueliste=1;
 			fi;
 		fi;
-		echo neueliste: $neueliste
 	  if [ "$neueliste" ]; then
 			Action=X_AVM-DE_GetHostListPath;
 			ParIn=; # diese Abfrage hat keinen solchen Parameter
