@@ -758,7 +758,7 @@ fritzbox() {
 #	 fbuuid=$(echo "$desc"|sed -n '/UDN/{s/^[^>]*>\([^<]*\).*/\1/;s/:/=/;p;q}'|tr '[:lower:]' '[:upper:]'); # geht scheinbar nicht
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
-	 credfile="$HOME/.smbcredentials"; # ~  # $HOME
+	 credfile="/root/.fbcredentials"; # ~  # $HOME
 	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
    if [ ! -f "$credfile" ]; then
 		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
@@ -957,6 +957,8 @@ teamviewer10() {
 	echo vor systemctl stop teamviewerd
 	systemctl stop teamviewerd
 	echo vor awk
+	pwd
+	echo $tvconf
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
 	AWKPATH="$meinpfad";awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
 #	sed -i '/^\s*$/d' "$tvh";
@@ -1061,7 +1063,9 @@ if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
+fi;
  fritzbox;
+if false; then
  mountlaufwerke;
  proginst;
  sambaconf;
@@ -1069,9 +1073,9 @@ if false; then
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
  teamviewer10;
  cron;
-fi;
  turbomed;
  speichern;
+fi;
 echo Ende von $0!
 
 if false; then
