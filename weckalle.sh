@@ -139,7 +139,7 @@ commandline() {
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
 			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
-      -vi obvi=1;
+      -vi) obvi=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
