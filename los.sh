@@ -1057,20 +1057,20 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
-if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
  fritzbox;
  mountlaufwerke;
+if false; then
  proginst;
  sambaconf;
  musterserver;
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
  teamviewer10;
  cron;
-fi;
  turbomed;
+fi;
  speichern;
 echo Ende von $0!
 

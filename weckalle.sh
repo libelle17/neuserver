@@ -139,6 +139,7 @@ commandline() {
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
 			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
+      -vi obvi=1;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
@@ -190,9 +191,14 @@ commandline() {
 		printf "npc: $blau\"$npc\"$reset\n";
 		printf "allowed/erlaubte Interfaces: $blau\"$IFerlau\"$reset\n";
     printf "alteliste: $blau\"$alteliste\"$reset\n";
+    printf "vi: $blau\"$vi\"$reset\n";
     printf "listenintervall [Tage]: $blau\"$listenintervall\"$reset\n";
 		printf "forbidden/verbotene Interfaces: $blau\"$IFverbo\"$reset\n";
 	fi;
+  if [ "$obvi" ]; then
+    vi $gesausdt $ausgdt $0 -p
+    exit
+  fi;
 }
 
 # Autorisierung ermitteln/festlegen
