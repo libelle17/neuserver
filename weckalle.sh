@@ -139,12 +139,13 @@ commandline() {
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
 			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
+      -vi) obvi=1;;
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
         printf "  zusammengeschrieben von: Gerald Schade 6.4.2019\n";
         printf "  Benutzung:\n";
-				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-v] [-h|--hilfe|-?]$reset\n";
+				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-vi] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
 				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
@@ -153,6 +154,7 @@ commandline() {
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
 				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an statt diese aufzuwecken\n";
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
+				printf "  $blau-vi$reset: lädt die Gerätelisten und das Script in vi\n";
 			exit;;
 			--help|-help)
         printf "Program $blau$0$reset: tries to wake one, several or all pcs at a fritzbox,\n";
@@ -167,6 +169,7 @@ commandline() {
 				printf "  $blau-all$reset: doesn't allow other than the comma separated interfaces\n";
 				printf "  $blau-show$reset: shows only the list of the devices instead of waking them\n";
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
+				printf "  $blau-vi$reset: loads the device list and this script in vi\n";
 			exit;;
 			*) pcs="$para";;
 		esac;
@@ -190,9 +193,14 @@ commandline() {
 		printf "npc: $blau\"$npc\"$reset\n";
 		printf "allowed/erlaubte Interfaces: $blau\"$IFerlau\"$reset\n";
     printf "alteliste: $blau\"$alteliste\"$reset\n";
+    printf "vi: $blau\"$vi\"$reset\n";
     printf "listenintervall [Tage]: $blau\"$listenintervall\"$reset\n";
 		printf "forbidden/verbotene Interfaces: $blau\"$IFverbo\"$reset\n";
 	fi;
+  if [ "$obvi" ]; then
+    vi $gesausdt $ausgdt $0 -p
+    exit
+  fi;
 }
 
 # Autorisierung ermitteln/festlegen
