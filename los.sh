@@ -1062,10 +1062,10 @@ variablen;
  setzhost;
  setzbenutzer;
  setzpfad;
-fi;
  fritzbox;
 if false; then
  mountlaufwerke;
+fi;
 if false; then
  proginst;
  sambaconf;
@@ -1076,7 +1076,7 @@ if false; then
  turbomed;
 fi;
  speichern;
-fi;
+ firebird;
 echo Ende von $0!
 
 if false; then

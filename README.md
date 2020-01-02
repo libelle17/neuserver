@@ -177,7 +177,68 @@ commands for finding an addressee from the fax number)
 cannot be set via the command line, but only via the
 configuration file, which can be edited directly by
 &rsquo;<b>neuserver -vi</b>&rsquo; or interactively by
-&rsquo;<b>neuserver -rf</b>&rsquo;.</p>
+&rsquo;<b>neuserver -rf</b>&rsquo;. <br>
+Programm: <b>/root/neuserver/neuserver</b>, V: <b>0.10001
+<br>
+Options which are not saved (current value in parentheses):
+<br>
+-st, --stop</b>: stop neuserver (<b>0</b>) <b><br>
+-n, --reccount &lt;string&gt;</b>: No. of listed entries =
+&lt;no&gt; instead of (&rsquo;<b>30</b>&rsquo;) <b><br>
+-sqlv, --sql-verbose</b>: screen output with SQL commands
+(<b>0</b>) <b><br>
+-v, --verbose</b>: screen output more verbose (<b>0</b>)
+<b><br>
+-lfn, --logfilenew</b>: delete log file afore (<b>0</b>)
+<b><br>
+-cf, --conffile &lt;string&gt;</b>: uses configuration file
+&lt;string&gt; instead of (&rsquo;&rsquo;) <b><br>
+-h, --help</b>: Explanation of frequent options (<b>3</b>)
+<b><br>
+-lh, --longhelp</b>: Explanation of all options (<b>3</b>)
+<b><br>
+-vi, --vi</b>: edit/view configuration file , log file etc.
+(finish with &rsquo;:qa&rsquo;) (<b>0</b>) <b><br>
+-vs, --vs</b>: edit/view source files in
+<b>/root/neuserver</b>(finish with &rsquo;:qa&rsquo;)
+(<b>0</b>) <b><br>
+-autoupd, --autoupdate &lt;zahl&gt;</b>: Update program
+automatically (<b>1</b>) <b><br>
+-ia, --interactive</b>: all parameters will be prompted
+(some of them not shown here) (<b>0</b>) <b><br>
+-noia, --nointeraction</b>: no questions, e.g. for a call
+from within cron (<b>0</b>) <b><br>
+-info, --version</b>: shows the program version (<b>0</b>)
+<b><br>
+Options to be saved in the configuration file: (preced.
+&rsquo;1&rsquo;=don&rsquo;t save, &rsquo;no&rsquo;=contrary,
+e.g. &rsquo;-noocra&rsquo;,&rsquo;-1noocri&rsquo;): <br>
+-host, --host &lt;string&gt;</b>: takes the database on host
+&lt;string&gt; instead of (&rsquo;<b>localhost</b>&rsquo;)
+<b><br>
+-muser, --muser &lt;string&gt;</b>: takes the user
+&lt;string&gt; for MySQL/MariaDB instead of (&rsquo;&rsquo;)
+<b><br>
+-mpwd, --mpwd &lt;string&gt;</b>: takes the password
+&lt;string&gt; for MySQL/MariaDB <b><br>
+-db, --database &lt;string&gt;</b>: uses the database
+&lt;string&gt; instead of (&rsquo;&rsquo;) <b><br>
+-lg, --language &lt;string&gt;</b>:
+Language/Sprache/Lingue/Lingua
+[<b>d</b>eutsch,<b>e</b>nglisch] (&rsquo;<b>e</b>&rsquo;)
+<b><br>
+-ldr, --logdir &lt;path&gt;</b>: choses &lt;path&gt; as log
+directory, currently (&rsquo;<b>/var/log</b>&rsquo;) <b><br>
+-lf, --logfilename &lt;string&gt;</b>: log file
+&lt;string&gt; (in path &rsquo;<b>/var/log</b>&rsquo;) will
+be used instead of (&rsquo;<b>neuserver.log</b>&rsquo;)
+<b><br>
+-l, --log &lt;zahl&gt;</b>: put detailed logs in file
+&rsquo;<b>/var/log/neuserver.log</b>&rsquo; (otherwise
+shorter) (<b>0</b>) <b><br>
+-cm, --cronminutes &lt;string&gt;</b>: every how many
+minutes shall <b>neuserver</b> be called in crontab (0=not
+at all), instead of (&rsquo;<b>0</b>&rsquo;)</p>
 
 <h2>FUNCTIONALITY
 <a name="FUNCTIONALITY_D"></a>
@@ -840,7 +901,72 @@ sondern nur &uuml;ber die Konfigurationsdatei eingegeben
 werden, die wiederum &uuml;ber &rsquo;<b>neuserver
 -vi</b>&rsquo; direkt editiert oder auch &uuml;ber
 &rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
-werden kann.</p>
+werden kann. <br>
+Programm: <b>/root/neuserver/neuserver</b>, V: <b>0.10001
+<br>
+Optionen, die nicht gespeichert werden (aktueller Wert in
+Klammern): <br>
+-st, --stop</b>: neuserver anhalten (<b>0</b>) <b><br>
+-n, --dszahl &lt;string&gt;</b>: Zahl der aufzulistenden
+Datensaetze = &lt;zahl&gt; statt (&rsquo;<b>30</b>&rsquo;)
+<b><br>
+-sqlw, --sql-wortreich</b>: Bildschirmausgabe mit
+SQL-Befehlen (<b>0</b>) <b><br>
+-w, --wortreich</b>: Bildschirmausgabe gespraechiger
+(<b>0</b>) <b><br>
+-ldn, --logdateineu</b>: logdatei vorher loeschen (<b>0</b>)
+<b><br>
+-kd, --konfdatei &lt;string&gt;</b>: verwendet
+Konfigurationsdatei &lt;string&gt; anstatt (&rsquo;&rsquo;)
+<b><br>
+-h, --hilfe</b>: Erklaerung haeufiger Optionen (<b>3</b>)
+<b><br>
+-lh, --langhilfe</b>: Erklaerung aller Optionen (<b>3</b>)
+<b><br>
+-vi, --vi</b>: Konfigurationsdatei , Logdatei usw.
+bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
+<b><br>
+-vs, --vs</b>: Quelldateien in <b>/root/neuserver</b>
+bearbeiten/sehen (beenden mit &rsquo;:qa&rsquo;) (<b>0</b>)
+<b><br>
+-autoakt, --autoaktual &lt;zahl&gt;</b>: Programm
+automatisch aktualisieren (<b>1</b>) <b><br>
+-rf, --rueckfragen</b>: alle Parameter werden abgefragt
+(darunter einige hier nicht gezeigte) (<b>0</b>) <b><br>
+-krf, --keinerueckfragen</b>: keine Rueckfragen, z.B. fuer
+Aufruf aus cron (<b>0</b>) <b><br>
+-info, --version</b>: Zeigt die Programmversion an
+(<b>0</b>) <b><br>
+Optionen z.Speich. i.Konfigur&rsquo;datei (vorausg.
+&rsquo;1&rsquo;=doch nicht speichern,
+&rsquo;no&rsquo;=Gegenteil, z.B.
+&rsquo;-noocra&rsquo;,&rsquo;-1noocri&rsquo;): <br>
+-host, --host &lt;string&gt;</b>: verwendet die Datenbank
+auf Host &lt;string&gt; anstatt auf
+(&rsquo;<b>localhost</b>&rsquo;) <b><br>
+-muser, --muser &lt;string&gt;</b>: verwendet fuer
+MySQL/MariaDB den Benutzer &lt;string&gt; anstatt
+(&rsquo;&rsquo;) <b><br>
+-mpwd, --mpwd &lt;string&gt;</b>: verwendet fuer
+MySQL/MariaDB das Passwort &lt;string&gt; <b><br>
+-db, --datenbank &lt;string&gt;</b>: verwendet die Datenbank
+&lt;string&gt; anstatt (&rsquo;&rsquo;) <b><br>
+-sp, --sprache &lt;string&gt;</b>:
+Language/Sprache/Lingue/Lingua
+[<b>d</b>eutsch,<b>e</b>nglisch] (&rsquo;<b>d</b>&rsquo;)
+<b><br>
+-lvz, --logvz &lt;pfad&gt;</b>: waehlt als Logverzeichnis
+&lt;pfad&gt;, derzeit (&rsquo;<b>/var/log</b>&rsquo;)
+<b><br>
+-ld, --logdname &lt;string&gt;</b>: logdatei &lt;string&gt;
+(im Pfad &rsquo;<b>/var/log</b>&rsquo;) wird verwendet
+anstatt (&rsquo;<b>neuserver.log</b>&rsquo;) <b><br>
+-l, --log &lt;zahl&gt;</b>: protokolliert ausfuehrlich in
+Datei &rsquo;<b>/var/log/neuserver.log</b>&rsquo; (sonst
+knapper) (<b>0</b>) <b><br>
+-cm, --cronminuten &lt;string&gt;</b>: alle wieviel Minuten
+soll <b>neuserver</b> ueber crontab aufgerufen werden (0=gar
+nicht), anstatt (&rsquo;<b>0</b>&rsquo;)</p>
 
 <h2>FUNKTIONSWEISE
 <a name="FUNKTIONSWEISE_D"></a>
