@@ -59,31 +59,45 @@ speichern() {
 	fi;
 }
 
+# $2 = Farbe
+ausf() {
+  [ "$verb" -o "$2" ]&& printf "$2$1$reset\n";
+	resu=$(eval "$1");
+	ret=$?;
+}
+
+# direkt: ohne Result, bei Befehlen z.B. wie ... && Aktv=1
+ausfd() {
+  [ "$verb" -o "$2" ]&& printf "$2$1$reset\n";
+	eval "$1";
+	ret=$?;
+}
+
 firebird() {
 	printf "${dblau}firebird$reset()\n";
 	unset Vorv;
 	unset Aktv;
 	# zypper se -i firebird >/dev/null 2>&1 && Vorv=1;
 	# sleep 10;
-	eval "$insse FirebirdSS" >/dev/null 2>&1 && Aktv=1; # zypper se -i FirebirdSS >/dev/null 2>&1 && Aktv=1;
-	echo Vorv: $Vorv;
-	echo Aktv: $Aktv;
+	ausfd "$insse FirebirdSS >/dev/null 2>&1 && Aktv=1"; # zypper se -i FirebirdSS >/dev/null 2>&1 && Aktv=1;
+	[ "$verb" ]&& echo Vorv: $Vorv;
+	[ "$verb" ]&& echo Aktv: $Aktv;
 	[ ! $Aktv ]&&{
-		systemctl stop firebird 2>/dev/null;
-		sleep 10;
-		eval "$upr firebird"; # zypper rm
-	  [ -r /usr/lib/libstdc++.so.5 ]||eval "$instp ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm"; # zypper in 
-		pkill fbguard;
-		pkill fbserver;
-		eval "$insg ./FirebirdSS-2.1.7.18553-0.i686.rpm";
-		cp ./misc/firebird.init.d.suse /etc/init.d/firebird;
-		chown root.root /etc/init.d/firebird;
-		chmod 775 /etc/init.d/firebird;
-		rm -f /usr/sbin/rcfirebird;
-		ln -s /etc/init.d/firebird /usr/sbin/rcfirebird;
-		systemctl daemon-reload;
-		systemctl start firebird;
-		eval "$instp libreoffice-base libreoffice-base-drivers-firebird"; # zypper in 
+		ausf "systemctl stop firebird 2>/dev/null";
+		ausf "sleep 10";
+		ausf "$upr firebird"; # zypper rm
+	  ausf "[ -r /usr/lib/libstdc++.so.5 ]||eval $instp ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm"; # zypper in 
+		ausf "pkill fbguard";
+		ausf "pkill fbserver";
+		ausf "eval $insg ./FirebirdSS-2.1.7.18553-0.i686.rpm";
+		ausf "cp ./misc/firebird.init.d.suse /etc/init.d/firebird";
+		ausf "chown root.root /etc/init.d/firebird";
+		ausf "chmod 775 /etc/init.d/firebird";
+		ausf "rm -f /usr/sbin/rcfirebird";
+		ausf "ln -s /etc/init.d/firebird /usr/sbin/rcfirebird";
+		ausf "systemctl daemon-reload";
+		ausf "systemctl start firebird";
+		ausf "$instp libreoffice-base libreoffice-base-drivers-firebird"; # zypper in 
 	}
 }
 
@@ -670,7 +684,7 @@ EOF
 }
 
 firewall() {
-	printf "${dblau}firewall$reset()\n";
+	printf "${dblau}firewall$reset() $1\n";
 	while [ $# -gt 0 ]; do
 		para="$1";
 	  p1="";p2="";p3="";p4="";p5="";p6="";p7="";	
@@ -688,7 +702,7 @@ firewall() {
 			imaps) p1=993/tcp;p2="-";p3="-";p4=imaps;;
 			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;p5=pop3;;
 			pop3s) p1=995/tcp;p2="-";p3="-";p4=pop3s;;
-			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4="20,21,10090:10100/tcp";p5=vsftp;;
+			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4="20/tcp,21/tcp,10090-10100/tcp";p5=vsftp;;
 			mysql) p1=3306;p2=mysql_connect_any;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
 			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
 			turbomed) p1="6001/tcp";p2="-";p3="-";p4="6001/tcp";p5="6001/tcp";;
@@ -703,16 +717,22 @@ firewall() {
 
 # $1 = ufw allow .., $2 $3 = setsebol -P ..=1, $4 = firewall-cmd --permanent --add-service=.., $5 $6 $7 = /etc/sysconfig/SuSEfirewall2
 tufirewall() {
+	printf "${dblau}tufirewall$reset($1 $2 $3 $4 $5 $6 $7 $8 $9 ${10})\n";
 	zustarten=0;
 	if [ "$1" != "-" ]; then
 		if which ufw >/dev/null 2>&1; then
 			if [ -z "$ufwret" ]; then
-				ufwstatus=$(systemctl list-units --full -all 2>/dev/null|grep ufw.service);
-				ufwret=$?;
+				ausf "systemctl list-units --full -all 2>/dev/null|grep ufw.service";
+				ufwstatus="$resu";
+				echo ufwstatus: $ufwstatus;
+				ufwret="$ret";
+				echo ufwret: $ufwret;
+			else 
+				[ "$verb" ]&& echo ufwret vorhanden: $ufwret;
 			fi;
 			if [ $ufwret -eq 0 ]; then
 				if ! ufw status|grep "^$1[[:space:]]*ALLOW" >/dev/null; then
-					ufw show added|grep "allow $1\$" >/dev/null 2>&1 ||{ printf "${blau}ufw allow $1$reset\n"; ufw allow "$1";};
+					ausf "ufw show added|grep \"allow $1\$\" >/dev/null 2>&1 ||{ printf \"${blau}ufw allow $1$reset\n\"; ufw allow \"$1\";}";
 					if $(echo $ufwstatus|grep -q " active "); then
 						systemctl restart ufw;
 						zustarten=1;
@@ -721,7 +741,11 @@ tufirewall() {
 					printf "$1 in ufw schon erlaubt\n";
 				fi;
 			fi;
+		else
+			[ "$verb" ]&& echo kein ufw;
 		fi;
+	else
+		[ "$verb" ]&& echo kein ungleich -;
 	fi;
 	if which setsebool >/dev/null 2>&1 && getsebool >/dev/null 2>&1; then
 		for ro in $2 $3; do
@@ -735,27 +759,46 @@ tufirewall() {
 	# und: restorecon /finance
 	if [ "$4" != "-" ]; then
 		if which firewall-cmd >/dev/null 2>&1; then
-			fwstatus=$(systemctl list-units --full -all 2>/dev/null|grep firewalld.service);
+			ausf "systemctl 2>/dev/null|grep firewalld.service";
+			fwstatus="$resu";
+			[ $verb ]&& echo firewalld.service gefunden.
+			[ $verb ]&& echo Parameter 4: "$4", ret: "$ret";
 		#		echo $fwstatus;
-			ret=$?;
 			if [ $ret -eq 0 ]; then
-				if firewall-cmd --list-services >/dev/null 2>&1; then
-					if ! firewall-cmd --list-services|grep -qE "(^|\s)$4(\s|$)"; then
+				ausf "firewall-cmd --list-services 2>/dev/null";
+				services="$resu";
+				if [ $ret = 0 ]; then
 						case "$4" in [0-9]*/*) was=port;; *) was=service;; esac;
-						printf "${blau}firewall-cmd --permanent --add-$was=$4$reset\n";
-						if firewall-cmd --get-services|grep -E "(^|\s)$4(\s|$)"; then
-							firewall-cmd --permanent --add-$was=$4;
-							firewall-cmd --reload;
-  					fi;
+						if [ $was = service ]; then
+							ausf "echo \"$services\"|grep -qE \"(^|\s)$4(\s|$)\"";
+							if [ ! $ret = 0 ]; then
+								ausf "firewall-cmd --get-services|grep -E \"(^|\s)$4(\s|$)\"";
+								if [ $ret = 0 ]; then
+#									printf "${blau}firewall-cmd --permanent --add-$was=$4$reset\n";
+									ausf "firewall-cmd --permanent --add-$was=$4" "${blau}";
+									reload=1;
+								fi;
+							fi;
+						else
+							ausf "firewall-cmd --list-ports 2>/dev/null";
+							ports="$resu";
+							for p in $(echo $4|tr ',' ' '); do
+								ausf "echo \"$ports\"|grep -qE \"(^|\s)$p(\s|$)\"";
+								if [ ! $ret = 0 ]; then
+									ausf "firewall-cmd --permanent --add-$was=$p" "${blau}";
+									reload=1;
+								fi;
+							done;
+						fi;
 						zustarten=1;
-					fi;
+						[ "$reload" ]&&{ ausf "firewall-cmd --reload"; unset reload; };
 				fi;
 			fi;
 		fi;
 	fi;
-	susestatus=$(systemctl list-units --full -all|grep SuSEfirewall2.service);
-	#	echo $susestatus;
-	ret=$?;
+	ausf "systemctl list-units --full -all|grep SuSEfirewall2.service";
+	susestatus="$resu";
+	[ $verb ]&& echo susestatus: $susestatus, ret: $ret;
 	if [ $ret -eq 0 ]; then
 	 # das folgende abgewandelt aus kons.cpp
    susefw="/etc/sysconfig/SuSEfirewall2";
@@ -1116,9 +1159,9 @@ if false; then
  teamviewer10;
  cron;
  turbomed;
-fi;
  speichern;
  firebird;
+fi;
 printf "${dblau}Ende von $0$reset\n";
 
 if false; then
