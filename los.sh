@@ -48,7 +48,7 @@ variablen() {
 }
 
 speichern() {
-	echo obschreiben: $obschreiben, loscred: $loscred;
+	printf "${dblau}obschreiben$reset()obschreiben: $obschreiben, loscred: $loscred\n";
 	if test $obschreiben -ne 0; then
 	  printf "muser=$muser\n"  >"$loscred";
 	  printf "mpwd=$mpwd\n"  >>"$loscred";
@@ -59,6 +59,33 @@ speichern() {
 	fi;
 }
 
+firebird() {
+	printf "${dblau}firebird$reset()\n";
+	unset Vorv;
+	zypper se -i firebird >/dev/null &2>&1 && Vorv=1;
+	sleep 10;
+	[ -z $Vorv ]&&[ zypper se -i FirebirdSS ]&& Aktv=1;
+	echo Vorv: $Vorv;
+	echo Aktv: $Aktv;
+	[ $Vorv -a ! $Aktv ]&&{
+		systemctl stop firebird;
+	  printf 1 ;ps -Alf|grep zypper;
+		zypper rm firebird;
+	  printf 2 ;ps -Alf|grep zypper;
+	  [ -r /usr/lib/libstdc++.so.5 ]||zypper in ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm
+	  printf 3 ;ps -Alf|grep zypper;
+	  zypper --gpg-auto-import-keys in -f ./FirebirdSS-2.1.7.18553-0.i686.rpm
+	  printf 4 ;ps -Alf|grep zypper;
+		cp ./misc/firebird.init.d.suse /etc/init.d/firebird
+		chown root.root /etc/init.d/firebird
+		chmod 775 /etc/init.d/firebird
+		rm -f /usr/sbin/rcfirebird
+		ln -s /etc/init.d/firebird /usr/sbin/rcfirebird
+		systemctl daemon-reload
+		systemctl start firebird;
+	}
+	[ $Vorv -a ! $Aktv ]&& zypper in libreoffice-base libreoffice-base-drivers-firebird 
+}
 
 setzhost() {
 printf "${dblau}setzhost$reset()\n";
@@ -1059,11 +1086,11 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
+if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
  fritzbox;
-if false; then
  mountlaufwerke;
 fi;
 if false; then
@@ -1074,10 +1101,10 @@ if false; then
  teamviewer10;
  cron;
  turbomed;
-fi;
  speichern;
+fi;
  firebird;
-echo Ende von $0!
+printf "${dblau}Ende von $0$reset\n";
 
 if false; then
 	eintr="@reboot mount /$Dvz";

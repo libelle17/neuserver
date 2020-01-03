@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc.firebirdss
+#
+# Start/stop/restart the firebird super server.
+#
+
+# To run more instances of firebird:
+#   Copy /opt/firebird somewhere
+#   Copy this script under a new name
+#   Change INSTANCE and FIREBIRD below (all instance names should be unique)
+#   Edit the copied firebird.conf to change at least RemoteServicePort
+#   Optionally run rc-update to autostart the new service
+INSTANCE=default
+FIREBIRD=/opt/firebird
+
+# No changes needed below for multiple instances
+FBRunUser=firebird
+pidfile=/var/run/firebird/$INSTANCE.pid
+FULLNAME="Firebird server [$INSTANCE]"
+LD_LIBRARY_PATH=$FIREBIRD/lib
+
+export FIREBIRD LD_LIBRARY_PATH
+
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
+
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+
+# Check the file is there and is executable.
+[ -x $MANAGER ] || exit 0
+
+case "$1" in
+	'start')	echo -n "Starting $FULLNAME: "
+			echo $MANAGER -pidfile $pidfile -start -forever | su $FBRunUser ;;
+	'stop')		echo -n "Stopping $FULLNAME: "
+			if [ -f $pidfile ]; then kill `cat $pidfile`; echo "done."; else echo "error: no PID file."; fi ;;
+	'restart')	$0 stop ; sleep 1; $0 start ;;
+	*)		echo "usage $0 start|stop|restart" ;;
+esac

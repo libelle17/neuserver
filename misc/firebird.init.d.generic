@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# description: Start/Stop firebird database server
+
+# To run more instances of firebird:
+#   Copy /opt/firebird somewhere
+#   Copy this script under a new name
+#   Change INSTANCE and FIREBIRD below (all instance names should be unique)
+#   Edit the copied firebird.conf to change at least RemoteServicePort
+INSTANCE=default
+FIREBIRD=/opt/firebird
+
+# No changes needed below for multiple instances
+FBRunUser=firebird
+pidfile=/var/run/firebird/$INSTANCE.pid
+FULLNAME="Firebird server [$INSTANCE]"
+LD_LIBRARY_PATH=$FIREBIRD/lib
+
+export FIREBIRD LD_LIBRARY_PATH
+
+ISC_USER=
+ISC_PASSWORD=
+export ISC_USER ISC_PASSWORD
+
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+
+# Check the file is there and is executable.
+[ -x $MANAGER ] || exit 0
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting $FULLNAME: "
+	echo "$MANAGER -pidfile $pidfile -start -forever" | su $FBRunUser
+	RETVAL=$?
+	;;
+  stop)
+	echo -n "Stopping $FULLNAME: "
+	if [ -f $pidfile ]
+	then
+		kill `cat $pidfile`
+	fi
+	echo "stopped."
+	RETVAL=$?
+	;;
+  status)
+	if [ -f $pidfile ]
+	then
+		pid=`cat $pidfile`
+    	ps -p $pid >/dev/null 2>&1
+		RETVAL=$?
+	else
+		RETVAL=1
+	fi
+	if [ $RETVAL -eq 0 ]
+	then
+		echo "$FULLNAME is running, pid $pid"
+	else
+		echo "$FULLNAME is stopped."
+	fi
+	;;
+  restart|reload)
+	$0 stop
+	sleep 1
+	$0 start
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: firebird {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $RETVAL
+
