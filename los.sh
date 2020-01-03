@@ -706,7 +706,7 @@ firewall() {
 			mysql) p1=3306;p2=mysql_connect_any;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
 			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
 			turbomed) p1="6001/tcp";p2="-";p3="-";p4="6001/tcp";p5="6001/tcp";;
-#			firebird) p1="3050/tcp";p2="-";p3="-";p4="3050/tcp";p5="3050/tcp";;# soll nach speedguide.net Vulnerabilität haben
+			firebird) p1="3050/tcp";p2="-";p3="-";p4="3050/tcp";p5="3050/tcp";;# soll nach speedguide.net Vulnerabilität haben
 			# vpn: 1701
 			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
 		esac
@@ -719,6 +719,7 @@ firewall() {
 tufirewall() {
 	printf "${dblau}tufirewall$reset($1 $2 $3 $4 $5 $6 $7 $8 $9 ${10})\n";
 	zustarten=0;
+	# 1) ufw
 	if [ "$1" != "-" ]; then
 		if which ufw >/dev/null 2>&1; then
 			if [ -z "$ufwret" ]; then
@@ -747,6 +748,7 @@ tufirewall() {
 	else
 		[ "$verb" ]&& echo kein ungleich -;
 	fi;
+	# 2) sebool
 	if which setsebool >/dev/null 2>&1 && getsebool >/dev/null 2>&1; then
 		for ro in $2 $3; do
 			if [ "$ro" != "-" ]; then
@@ -757,6 +759,8 @@ tufirewall() {
 	fi;
 	# fehlt evtl: noch: semanage fcontext –at samba_share_t "/finance(/.*)?"
 	# und: restorecon /finance
+
+	# 3) firewalld
 	if [ "$4" != "-" ]; then
 		if which firewall-cmd >/dev/null 2>&1; then
 			ausf "systemctl 2>/dev/null|grep firewalld.service";
@@ -796,6 +800,7 @@ tufirewall() {
 			fi;
 		fi;
 	fi;
+	# 4) SuSEFirewall2
 	ausf "systemctl list-units --full -all|grep SuSEfirewall2.service";
 	susestatus="$resu";
 	[ $verb ]&& echo susestatus: $susestatus, ret: $ret;
@@ -873,7 +878,8 @@ musterserver() {
 	 test -f "$KS"||touch "$KS";
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
-	 rsync -avuz $srv0:$HOME/.vim $HOME/
+	 rsync -avu $srv0:$HOME/.vim $HOME/;
+	 rsync -avu $srv0:/root/bin /root/; 
  fi;
 }
 
@@ -1154,7 +1160,7 @@ if false; then
  sambaconf;
  musterserver;
 fi;
- firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+ firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
 if false; then
  teamviewer10;
  cron;
