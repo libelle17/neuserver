@@ -62,29 +62,29 @@ speichern() {
 firebird() {
 	printf "${dblau}firebird$reset()\n";
 	unset Vorv;
-	zypper se -i firebird >/dev/null &2>&1 && Vorv=1;
-	sleep 10;
-	[ -z $Vorv ]&&[ zypper se -i FirebirdSS ]&& Aktv=1;
+	unset Aktv;
+	# zypper se -i firebird >/dev/null 2>&1 && Vorv=1;
+	# sleep 10;
+	eval "$insse FirebirdSS" >/dev/null 2>&1 && Aktv=1; # zypper se -i FirebirdSS >/dev/null 2>&1 && Aktv=1;
 	echo Vorv: $Vorv;
 	echo Aktv: $Aktv;
-	[ $Vorv -a ! $Aktv ]&&{
-		systemctl stop firebird;
-	  printf 1 ;ps -Alf|grep zypper;
-		zypper rm firebird;
-	  printf 2 ;ps -Alf|grep zypper;
-	  [ -r /usr/lib/libstdc++.so.5 ]||zypper in ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm
-	  printf 3 ;ps -Alf|grep zypper;
-	  zypper --gpg-auto-import-keys in -f ./FirebirdSS-2.1.7.18553-0.i686.rpm
-	  printf 4 ;ps -Alf|grep zypper;
-		cp ./misc/firebird.init.d.suse /etc/init.d/firebird
-		chown root.root /etc/init.d/firebird
-		chmod 775 /etc/init.d/firebird
-		rm -f /usr/sbin/rcfirebird
-		ln -s /etc/init.d/firebird /usr/sbin/rcfirebird
-		systemctl daemon-reload
+	[ ! $Aktv ]&&{
+		systemctl stop firebird 2>/dev/null;
+		sleep 10;
+		eval "$upr firebird"; # zypper rm
+	  [ -r /usr/lib/libstdc++.so.5 ]||eval "$instp ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm"; # zypper in 
+		pkill fbguard;
+		pkill fbserver;
+		eval "$insg ./FirebirdSS-2.1.7.18553-0.i686.rpm";
+		cp ./misc/firebird.init.d.suse /etc/init.d/firebird;
+		chown root.root /etc/init.d/firebird;
+		chmod 775 /etc/init.d/firebird;
+		rm -f /usr/sbin/rcfirebird;
+		ln -s /etc/init.d/firebird /usr/sbin/rcfirebird;
+		systemctl daemon-reload;
 		systemctl start firebird;
+		eval "$instp libreoffice-base libreoffice-base-drivers-firebird"; # zypper in 
 	}
-	[ $Vorv -a ! $Aktv ]&& zypper in libreoffice-base libreoffice-base-drivers-firebird 
 }
 
 setzhost() {
@@ -300,7 +300,10 @@ case $OSNR in
 		psuch="dpkg -s "; # dpkg -l wuerde zwar genauer anzeigen, aber errorlevel nicht abhängig vom Installtationszustand
 		instp="apt-get install";
 		instyp="apt-get -y --force-yes --reinstall install ";
-		upr="apt-get -f install;apt-get --auto-remove purge ";
+		insg="apt-get --allow-unauthenticated -y install ";
+		insse="apt search installed ";
+		upr="apt-get -f install;apt-get purge ";
+		upru="apt-get -f install;apt-get --auto-remove purge ";
 		udpr="apt-get -f install;dpkg -r --force-depends ";
 		uypr="apt-get -f install;apt-get -y --auto-remove purge ";
 		upd="apt update;apt upgrade;";
@@ -314,8 +317,11 @@ case $OSNR in
 			4)
 				instp="zypper -n --gpg-auto-import-keys in ";	
 				instyp=$instp" -y -f ";
-				upr="zypper -n rm -u ";
-				uypr=$upr" -y ";
+				insg="zypper --no-gpg-checks in -y ";
+				insse="zypper se -i ";
+				upr="zypper -n rm ";
+				upru="zypper -n rm -u ";
+				uypr=$upru" -y ";
 				upd="zypper patch";
 				repos="zypper lr | grep 'g++\\|devel_gcc'>/dev/null 2>&1 ||zypper ar http://download.opensuse.org/repositories/devel:";
 				repos="${repos}/gcc/`cat /etc/*-release |grep ^NAME= | cut -d'\"' -f2 | sed 's/ /_/'`";
@@ -324,20 +330,26 @@ case $OSNR in
 			5)
 				instp="dnf install ";
 				instyp="dnf -y install ";
+				insg="dnf --nogpgcheck install ";
 				upr="dnf remove ";
+				upru="dnf autoremove ";
 				uypr="dnf -y remove ";
 				upd="dnf update";;
 			6)
 				instp="yum install ";
 				instyp="yum -y install ";
+				insg="yum --nogpgcheck install ";
 				upr="yum remove ";
+				upru="yum autoremove ";
 				uypr="yum -y remove ";
 				upd="yum update";;
 			7)
 				instp="urpmi --auto ";
 				instyp=$instp"--force ";
+				insg="urpmi bumblebee-nonfree-release ";
 				upr="urpme ";
-				uypr=$upr"--auto --force ";
+				upru="urpme ";
+				uypr=$upru"--auto --force ";
 				upd="urpmi.update -a";;
 		esac;
 		compil="make automake gcc-c++ kernel-devel";;
@@ -345,8 +357,9 @@ case $OSNR in
 		psuch="pacman -Qi";
 		instp="pacman -S ";
 		instyp=$instp"--noconfirm ";
-		upr="pacman -R -s ";
-		uypr=$upr"--noconfirm "; 
+		upr="pacman -R ";
+		upru="pacman -R -s ";
+		uypr=$upru"--noconfirm "; 
 		udpr="pacman -R -d -d ";
 		upd="pacman -Syu";
 		compil="gcc linux-headers-`uname -r`";;
@@ -1093,16 +1106,18 @@ if false; then
  fritzbox;
  mountlaufwerke;
 fi;
-if false; then
  proginst;
+if false; then
  sambaconf;
  musterserver;
+fi;
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed;
+if false; then
  teamviewer10;
  cron;
  turbomed;
- speichern;
 fi;
+ speichern;
  firebird;
 printf "${dblau}Ende von $0$reset\n";
 
