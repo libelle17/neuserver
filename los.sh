@@ -12,7 +12,7 @@ AUFRUFDIR=$(pwd)
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
-Dw=$meinpfad/Downloads;
+Dw=/root/Downloads;
 gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
 obschreiben=0;
@@ -66,9 +66,9 @@ ausf() {
 	ret=$?;
 }
 
-# direkt: ohne Result, bei Befehlen z.B. wie ... && Aktv=1
+# direkt: ohne Result, bei Befehlen z.B. wie "... && Aktv=1"
 ausfd() {
-  [ "$verb" -o "$2" ]&& printf "$2$1$reset\n";
+	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
 	eval "$1";
 	ret=$?;
 }
@@ -873,30 +873,32 @@ musterserver() {
  fi;
 }
 
-#holt Datei $1 entweder aus /DATA/down oder $srv0 oder $2 auf /root/Downloads; $3 = potentieller hol-Name
+#holt Datei $1 entweder aus "/DATA/down /DATA/daten/down" ($q0) oder $srv0 oder $2 auf /root/Downloads (=$Dw); $3 = potentieller hol-Name
 hol3() {
 	printf "${dblau}hol3($1$reset,$dblau$2$reset,$dblau$3)$reset()\n";
 	[ "$3" ]&&hname=$3||hname=$1;
 	if ! [ -f "$Dw/$1" ]; then
-		echo find $q0 -maxdepth 1 -name "$1"
-	  datei=$(find $q0 -maxdepth 1 -name "$1");
+    pfadda=0;
+    for hpf in $q0; do if test -d $hpf; then pfadda=1; break; fi; done;
+    if [ "$pfadda" = "0" ]; then for hpf in $q0; do mkdir -p $hpf; break; done; fi;  # dann das erste dort genannte Verzeichnis erstellen 
+    echo q0: $q0;
+    ausf "find $q0 -maxdepth 1 -name $1 2>/dev/null" "${blau}";
+    datei=$resu;
 		if test "$datei"; then
-			datei=readlink -e $datei;
-			pfad=${datei%/*};
-			if [ -f "$pfad/$1" ]; then
-				printf "${blau}cp -ai "$pfad/$1" $Dw/$reset\n";
-				cp -ai "$pfad/$1" "$Dw/";
-			elif [ "$srv0" ]; then
-				printf "${blau}ssh $srv0 ls \"$pfad/$1\" >/dev/null 2>&1&& scp -p $srv0:$pfad/$1 $Dw/$reset\n&&cp -ai $Dw/$1 $pfad/\n";
-				ssh "$srv0" "ls \"$pfad/$1\" >/dev/null 2>&1"&& scp -p "$srv0:$pfad/$1" "$Dw/"&&{ [ -d "$pfad" ]&&cp -ai "$Dw/$1" "$pfad/";};
-			else
-				printf "${blau}wget $2/$hname -P $Dw$reset\n";
-				wget "$2/$hname" -P "$Dw";
-				[ -f "$Dw/$1" -a -d "$pfad" ]&&cp -ai "$Dw/$1" "$pfad/";
-				[ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$pfad/";
-			fi;
-		fi;
+      datei=$(readlink -e $datei);
+			hpf=${datei%/*};
+			ausf "cp -ai \"$hpf/$1\" \"$Dw/\"" "${blau}";
+    fi;
+    spf=/DATA/down;
+    [ -f "$Dw/$1" ]||ausf "ssh \"$srv0\" \"ls \\\"$spf/$1\\\" >/dev/null 2>&1\"&& scp -p \"$srv0:$spf/$1\" \"$Dw/\"&&{ [ -d \"$hpf\" ]&&cp -ai \"$Dw/$1\" \"$hpf/\";};" "${blau}"
+    ausf "rm $Dw/$1" "${blau}"
+    [ -f "$Dw/$1" ]||{
+      ausf "wget \"$2/$hname\" -O\"$Dw/$1\";" "${blau}"
+      [ -f "$Dw/$1" -a -d "$hpf" ]&&cp -ai "$Dw/$1" "$hpf/";
+      [ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$spf/";
+    }
 	fi;
+  exit;
 }
 
 tvversion() {
@@ -1152,7 +1154,9 @@ if true; then
 fi;
 if false; then
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
+fi;
  teamviewer10;
+if false; then
  cron;
  turbomed;
  speichern;
