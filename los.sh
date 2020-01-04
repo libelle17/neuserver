@@ -879,7 +879,7 @@ musterserver() {
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
 	 rsync -avu $srv0:$HOME/.vim $HOME/;
-	 rsync -avu $srv0:/root/bin /root/; 
+	 rsync -avu --include='*.pdf' --exclude='*' $srv0:/root/bin /root/; 
  fi;
 }
 
