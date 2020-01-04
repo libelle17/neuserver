@@ -478,13 +478,14 @@ pruefmroot() {
 		[ $obneu -eq 0 -a "$mroot" ]&&break;
 		printf "Admin für mysql: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
 		obschreiben=1;
-		[ "$mroot" ]&&{ mrfertig="1";break;};
+		[ "$mroot" ]&& mrfertig="1";
 	done;
 	while true; do
-		[ "$mpfertig" ]&break;
+		[ "$mpfertig" ]&&break;
 		[ $obneu -eq 0 -a "$mrpwd" ]&&break;
-		printf "Passwort für '$mroot': ";read mrpwd;
-		[ "$mrpwd" ]&&{ mpfertig="1";break;};
+		printf "neues Passwort für '$mroot': ";read mrpwd;
+		printf "erneut das neue Passwort für '$mroot': ";read mrpwd2;
+		[ "$mrpwd" -a "$mrpwd/" = "$mrpwd2/" ]&& mpfertig="1";
 		obschreiben=1;
 		# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
 		# auskommentiert werden und der Service neu gestartet werden
@@ -538,13 +539,9 @@ mariadb() {
 		fi;
 		while mysql -e'\q' 2>/dev/null; do
 			pruefmroot;
-			echo "mysql -u"$mroot" -hlocalhost -e 'GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
-			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -e "GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
-			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION'";
-			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'";
+			ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "$reset";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "$reset";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "$reset";
 		done;
 		while true; do
 			[ $obneu -eq 0 -a "$muser" ]&&break;
