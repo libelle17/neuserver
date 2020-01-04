@@ -540,31 +540,32 @@ mariadb() {
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
 		done;
-		while true; do
-			[ "$muser" ]&&break;
-			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" muser||read muser;
-			obschreiben=1;
-		done;
-		while true; do
-			[ "$mpwd" ]&&break;
-			printf "Mariadb: neues Passwort für '$muser': ";read mpwd;
-			printf "Mariadb: erneut das Passwort für '$muser': ";read mpwd2;
-			[ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
-			obschreiben=1;
-		done;
-		if mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
-			echo Benutzer "$muser"  war schon eingerichtet;
-		else
-			pruefmroot;
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-		fi;
-		echo datadir: $datadir;
-		echo Jetzt konfigurieren;
+    if ! mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
+      while true; do
+        [ "$muser" ]&&break;
+        #			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
+        printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" muser||read muser;
+        obschreiben=1;
+      done;
+      while true; do
+        [ "$mpwd" ]&&break;
+        printf "Mariadb: neues Passwort für '$muser': ";read mpwd;
+        printf "Mariadb: erneut das Passwort für '$muser': ";read mpwd2;
+        [ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
+        obschreiben=1;
+      done;
+      if mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
+        echo Benutzer "$muser"  war schon eingerichtet;
+      else
+          pruefmroot;
+          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+      fi;
+      echo datadir: $datadir;
+      echo Jetzt konfigurieren;
+    fi;
 	fi;
-	echo minstalliert: $minstalliert;
+	[ "$verb" ]&& echo minstalliert: $minstalliert;
 }
 
 proginst() {
@@ -1137,7 +1138,7 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
-if false; then
+if true; then
  setzhost;
  setzbenutzer;
  setzpfad;
@@ -1145,12 +1146,12 @@ if false; then
  mountlaufwerke;
 fi;
  proginst;
-if false; then
+if true; then
  sambaconf;
  musterserver;
 fi;
- firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
 if false; then
+ firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  teamviewer10;
  cron;
  turbomed;
