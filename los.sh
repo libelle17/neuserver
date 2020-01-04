@@ -61,7 +61,7 @@ speichern() {
 
 # $2 = Farbe
 ausf() {
-  [ "$verb" -o "$2" ]&& printf "$2$1$reset\n";
+	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
 	resu=$(eval "$1");
 	ret=$?;
 }
@@ -474,18 +474,15 @@ instmaria() {
 
 pruefmroot() {
 	while true; do
-		[ "$mrfertig" ]&&break;
-		[ $obneu -eq 0 -a "$mroot" ]&&break;
-		printf "Admin für mysql: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
+		[ "$mroot" ]&&break;
+		printf "Mariadb: Admin: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
 		obschreiben=1;
-		[ "$mroot" ]&& mrfertig="1";
 	done;
 	while true; do
-		[ "$mpfertig" ]&&break;
-		[ $obneu -eq 0 -a "$mrpwd" ]&&break;
-		printf "neues Passwort für '$mroot': ";read mrpwd;
-		printf "erneut das neue Passwort für '$mroot': ";read mrpwd2;
-		[ "$mrpwd" -a "$mrpwd/" = "$mrpwd2/" ]&& mpfertig="1";
+		[ "$mrpwd" ]&&break;
+		printf "Mariadb: neues Passwort für '$mroot': ";read mrpwd;
+		printf "Mariadb: erneut das neue Passwort für '$mroot': ";read mrpwd2;
+		[ "$mrpwd/" = "$mrpwd2/" ]|| unset mrpwd;
 		obschreiben=1;
 		# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
 		# auskommentiert werden und der Service neu gestartet werden
@@ -504,18 +501,18 @@ mariadb() {
 	for iru in 1 2; do
 		systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
 		systemctl start $db_systemctl_name >/dev/null 2>&1;
-		installiert=1;
+		minstalliert=1;
 		mysqld="mysqld";
 		mysqlben="mysql";
 		mysqlbef="mysql";
-		! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&installiert=0;
-		[ $installiert -eq 1 ]&& obprogda $mysqlbef || installiert=0;
-		[ $installiert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || installiert=0;
-		[ $installiert -eq 1 ]&& $mysqlbef -V >/dev/null|| installiert=0;
-		[ $installiert -eq 1 ]&&break;
+		! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&minstalliert=0;
+		[ $minstalliert -eq 1 ]&& obprogda $mysqlbef || minstalliert=0;
+		[ $minstalliert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || minstalliert=0;
+		[ $minstalliert -eq 1 ]&& $mysqlbef -V >/dev/null|| minstalliert=0;
+		[ $minstalliert -eq 1 ]&&break;
 		instmaria;
 	done;
-	if [ $installiert -eq 1 ]; then
+	if [ $minstalliert -eq 1 ]; then
 		datadir=$(sed 's/#.*$//g' $($mysqlbef --help|sed -n '/Default options/{n;p}') 2>/dev/null|grep datadir|cut -d= -f2|sed 's/^[[:space:]]*//'|tail -n1);
 		if [ -z "$datadir" ]; then
 			mycnfpfad="$(find /etc /etc/mysql $MYSQL_HOME -name my.cnf -printf '%p\n' -quit 2>/dev/null)";
@@ -539,38 +536,35 @@ mariadb() {
 		fi;
 		while mysql -e'\q' 2>/dev/null; do
 			pruefmroot;
-			ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "$reset";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "$reset";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "$reset";
+			ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
 		done;
 		while true; do
-			[ $obneu -eq 0 -a "$muser" ]&&break;
+			[ "$muser" ]&&break;
 			#			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
 			printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" muser||read muser;
 			obschreiben=1;
-			[ "$muser" ]&&break;
 		done;
 		while true; do
-			[ $obneu -eq 0 -a "$mpwd" ]&&break;
-			read -p "Mariadb: Passwort für '$muser': " mpwd;
-			obschreiben=1;
 			[ "$mpwd" ]&&break;
+			printf "Mariadb: neues Passwort für '$muser': ";read mpwd;
+			printf "Mariadb: erneut das Passwort für '$muser': ";read mpwd2;
+			[ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
+			obschreiben=1;
 		done;
 		if mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
 			echo Benutzer "$muser"  war schon eingerichtet;
 		else
 			pruefmroot;
-			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION'";
-			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION";
-			echo "mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e 'GRANT ALL on *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION'";
-			printf "Passwort für root: ";
-			mysql -u"$mroot" -hlocalhost -p"$mrpwd" -e "GRANT ALL on *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
 		fi;
 		echo datadir: $datadir;
 		echo Jetzt konfigurieren;
 	fi;
-	echo installiert: $installiert;
+	echo minstalliert: $minstalliert;
 }
 
 proginst() {
@@ -648,9 +642,8 @@ sambaconf() {
 	muster="/usr/share/samba/$smbconf";
 	smbvars="$meinpfad/awksmb.inc";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' "$smbvars");
-	[ -z "$arbgr" ]&&obneu=1;
-	[ $obneu -ne 0 ]&&{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
-	[ "$arbgr"z = "$workgr"z ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
+	[ "$arbgr" ]||{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
+	[ "$arbgr/" = "$workgr/" ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2="$meinpfad/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
@@ -867,8 +860,7 @@ machidpub() {
 
 musterserver() {
  printf "${dblau}musterserver$reset()\n";
- [ -z "$srv0" ]&&obneu=1;
- [ $obneu -ne 0 ]&&{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;};
+ [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;};
  if [ "$srv0" ]; then
 	 machidpub;
 	 KS=$HOME/.ssh/authorized_keys;
