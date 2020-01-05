@@ -1090,8 +1090,25 @@ cron() {
   ca=$meinpfad/cronbefehle;
   rm -f $ca;
   touch $ca;
-  # nehme $csrv, entferne Kommentarzeilen, entferne Steuerungsangaben, Teile an Leerzeichen auf, entferne Ausdrücke mit Sonderzeichen, Leerzeilen, abschliessende ';', stelle jede Zeile in eine Variable $zeile, falls diese ausfuerhbar und kein Verzeichnis ist und nicht schon in $ca vorkommt und '#!' am Beginn der ersten Zeile aufweist, dann fuege es an $ca an
-  sed -nr '/^#/d;s/^([^ ]+ +){5}|^@[^ ]+ //;s/ /\n/g;p' $csrv|sed -r '/^-|[][>$|<:*"`'\''=&\\,}{]|^$/d;s/;$//'| while read zeile;do if test -x $zeile -a ! -d $zeile; then if ! grep -Fxq $zeile $ca; then sed -n '/^#!/!q1;q0' $zeile&&echo $zeile>>$ca;fi;fi;done;
+  # nehme $csrv, entferne Kommentarzeilen, entferne Steuerungsangaben, Teile an Leerzeichen auf, entferne Ausdrücke mit Sonderzeichen, Leerzeilen, abschliessende ';', stelle jede Zeile in eine Variable $zeile, falls diese lesebar (nicht: ausfuehrbar) und kein Verzeichnis ist und nicht schon in $ca vorkommt und '#!' am Beginn der ersten Zeile aufweist, dann fuege es an $ca an
+  sed -nr '/^#/d;s/^([^ ]+ +){5}|^@[^ ]+ //;s/ /\n/g;p' $csrv|sed -r '/^-|[][>$|<:*"`'\''=&\\,}{]|^$/d;s/;$//'| 
+  while read zeile;do 
+    if test -r $zeile -a ! -d $zeile; then
+      if ! grep -Fxq $zeile $ca; then 
+        sed -n '/^#!/!q1;q0' $zeile&&echo $zeile>>$ca;
+      fi;
+    fi;
+  done;
+  # in den in $ca stehenden Dateien Namen austauschen
+  while read z; do 
+    if grep -qe "\(\<$srv0\>\|\<$srvhier\>\)" $z; then
+      sed -i.bak 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $z;
+      printf "In $blau$z$reset $blau$srvhier$reset durch $blau${srvhier}ur$reset und $blau$srv0$reset durch $blau$srvhier$reset ersetzt\n";
+    else
+      [ "$verb" ]&& printf "${blau}$z$reset enthält kein ${blau}${srvhier}$reset oder ${blau}${srv0}$reset, wird belassen\n";
+    fi;
+  done <$ca;
+  crontab <$crh;
 }
 
 tu_turbomed() {
@@ -1161,8 +1178,8 @@ if false; then
 fi;
  teamviewer10;
  cron;
-if false; then
  turbomed;
+if false; then
  speichern;
  firebird;
 fi;
