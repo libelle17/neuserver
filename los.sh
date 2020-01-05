@@ -15,6 +15,7 @@ echo $meinpfad
 Dw=/root/Downloads;
 gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
+spf=/DATA/down; # Server-Pfad
 obschreiben=0;
 
 # Befehlszeilenparameter auswerten
@@ -42,7 +43,7 @@ variablen() {
   . "$meinpfad/shvars"
   if test "$("$meinpfad/configure" nuros)" != "$OSNR"; then "$meinpfad/configure";:;else break;fi;
  done;
- HOME="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
+ HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
  loscred="$HOME/.loscred"; # ~  # $HOME
  test -f "$loscred"&&. "$loscred";
 }
@@ -868,8 +869,10 @@ musterserver() {
 	 test -f "$KS"||touch "$KS";
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
-	 rsync -avu $srv0:$HOME/.vim $HOME/;
-	 rsync -avu --include='*.pdf' --exclude='*' $srv0:/root/bin /root/; 
+	 ausf "rsync -avu $srv0:$HOME/.vim $HOME/";
+	 ausf "rsync -avu $srv0:$HOME/bin/.vimrc $HOME/bin/";
+	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $srv0:/root/bin /root/";
+#	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
 }
 
@@ -889,16 +892,13 @@ hol3() {
 			hpf=${datei%/*};
 			ausf "cp -ai \"$hpf/$1\" \"$Dw/\"" "${blau}";
     fi;
-    spf=/DATA/down;
     [ -f "$Dw/$1" ]||ausf "ssh \"$srv0\" \"ls \\\"$spf/$1\\\" >/dev/null 2>&1\"&& scp -p \"$srv0:$spf/$1\" \"$Dw/\"&&{ [ -d \"$hpf\" ]&&cp -ai \"$Dw/$1\" \"$hpf/\";};" "${blau}"
-    ausf "rm $Dw/$1" "${blau}"
     [ -f "$Dw/$1" ]||{
       ausf "wget \"$2/$hname\" -O\"$Dw/$1\";" "${blau}"
       [ -f "$Dw/$1" -a -d "$hpf" ]&&cp -ai "$Dw/$1" "$hpf/";
       [ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$spf/";
     }
 	fi;
-  exit;
 }
 
 tvversion() {
@@ -1035,15 +1035,10 @@ teamviewer10() {
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
 	tvh="$meinpfad/tvglobal.conf";
-	echo vor systemctl stop teamviewerd
 	systemctl stop teamviewerd
-	echo vor awk
-	pwd
-	echo $tvconf
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
-	AWKPATH="$meinpfad";awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";
+	AWKPATH="$meinpfad";cd $meinpfad;awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";cd -;
 #	sed -i '/^\s*$/d' "$tvh";
-	echo nach awk
 	systemctl start teamviewerd;
 	echo nach systemctl start teamviewerd;
 	if ! diff "$tvconf" "$tvh" >/dev/null; then
@@ -1068,12 +1063,12 @@ github() {
 backup() {
 	printf "${dblau}backup$reset($1,$2)\n";
 		for i in $(seq 100 -1 0); do
-			if [ -f ${1}_$i ]; then
+			if [ -s ${1}_$i ]; then
 				mv ${1}_$i ${1}_$(echo $i|awk '{print $0+1}') 2>/dev/null;
 			fi;
 		done;
 		[ "$2" ]&&ursp="$2"||ursp="$1";
-		[ -f "$ursp" ]&& mv "$ursp" "${ursp}_0";
+		[ -s "$ursp" ]&& mv "$ursp" "${ursp}_0";
 }
 
 cron() {
@@ -1088,6 +1083,15 @@ cron() {
 		echo csrv: $csrv;
 		ssh $(whoami)@$srv0 "crontab -l" >"$csrv";
 	fi;
+  [ "$srvhier" ]||srvhier=$(uname -n);
+  crh=$meinpfad/cronshier; # cron-Datei des Quellservers mit korrigierten Namen
+  sed 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $csrv>$crh;
+  # hier die Scripte aus crontab eintragen, die auf gegegenwärtigem Server gespeichert sind
+  ca=$meinpfad/cronbefehle;
+  rm -f $ca;
+  touch $ca;
+  # nehme $csrv, entferne Kommentarzeilen, entferne Steuerungsangaben, Teile an Leerzeichen auf, entferne Ausdrücke mit Sonderzeichen, Leerzeilen, abschliessende ';', stelle jede Zeile in eine Variable $zeile, falls diese ausfuerhbar und kein Verzeichnis ist und nicht schon in $ca vorkommt und '#!' am Beginn der ersten Zeile aufweist, dann fuege es an $ca an
+  sed -nr '/^#/d;s/^([^ ]+ +){5}|^@[^ ]+ //;s/ /\n/g;p' $csrv|sed -r '/^-|[][>$|<:*"`'\''=&\\,}{]|^$/d;s/;$//'| while read zeile;do if test -x $zeile -a ! -d $zeile; then if ! grep -Fxq $zeile $ca; then sed -n '/^#!/!q1;q0' $zeile&&echo $zeile>>$ca;fi;fi;done;
 }
 
 tu_turbomed() {
@@ -1156,8 +1160,8 @@ if false; then
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
 fi;
  teamviewer10;
-if false; then
  cron;
+if false; then
  turbomed;
  speichern;
  firebird;
