@@ -16,6 +16,7 @@ Dw=/root/Downloads;
 gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
 spf=/DATA/down; # Server-Pfad
+tdpf=/DATA/turbomed # Turbomed-Dokumentenpfad
 obschreiben=0;
 
 # Befehlszeilenparameter auswerten
@@ -163,7 +164,7 @@ ausf "lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'rai
 blkvar=$resu;
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
-# bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+# bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}'); # "<- dieses Zeichen steht nur hier fuer die vi-Faerbung
 # echo bishDAT: $bishDAT;
 ausf "echo \"\$blkvar\"|awk '/=\\\"DAT/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/DAT/{printf substr(\$6,17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
 bishDAT=$resu;
@@ -280,7 +281,6 @@ EOF
 done; # nochmal
   mount -a;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
-exit;
 }
 
 pruefuser() {
@@ -611,7 +611,8 @@ proginst() {
 	doinst zsh;
 	doinst curl;
 	doinst cifs-utils;
-	# putty auch fuer root erlauben:
+  doinst convmv; # fuer Turbomed
+  # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
 	if ! grep "^$W[[:space:]]*Yes$" $D; then
@@ -1146,14 +1147,20 @@ cron() {
 tu_turbomed() {
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
-	cp $license $POET_LICENSE_PATH;
+	ausf "cp $license $POET_LICENSE_PATH" "${blau}";
 	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
 	for D in $archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$insg $D; done;
-  ausfd "sh $TMsetup $1" "${blau}";
-  echo nach ausf;
+  cd ${TMsetup%/*};
+  ausfd "sh TM_setup $1" "${blau}";
+  cd -;
+  convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
-	for runde in $(seq 1 20);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl restart poetd;done;
-  echo nach show poetd
+	for runde in $(seq 1 20);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl stop poetd;systemctl start poetd;done;
+  for S in PraxisDB StammDB DruckDB Dictionary; do
+    ausfd "rsync -avu $srv0:/opt/turbomed/$S /opt/turbomed/";
+  done;
+  ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
+  # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
 }
 
 turbomed() {
@@ -1165,27 +1172,29 @@ turbomed() {
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4|cut -d. -f1-2);
 	printf "Turbomed-Version: $blau$version$reset\n";
-	outDir="${datei%/*}/TM${version}L";
+#	outDir="${datei%/*}/TM${version}L";
+	outDir="${datei%/*}/TMWin"; # Name wird benötigt für setup
   echo version: $version
   echo datei: $datei
   echo outDir: $outDir
 	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
-  outDir=$(find $outDir -mindepth 1 -maxdepth 1 -type d);
-  echo outDir: $outDir
-	instVers=$(find "$outDir" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
-  TMsetup=$(find $outDir -name TM_setup -print -quit)
+  outDir2=$outDir/linux;
+#  outDir2=$(find $outDir -mindepth 1 -maxdepth 1 -type d);
+  [ -d "$outDir2" ]||mv $outDir/* $outDir2;
+	instVers=$(find "$outDir2" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
+  TMsetup=$(find $outDir2 -name TM_setup -print -quit)
   echo TMsetup: $TMsetup
-  archive=$(find $outDir -type d -name archive -print -quit)
+  archive=$(find $outDir2 -type d -name archive -print -quit)
   echo archive: $archive
-  license=$(find $outDir -name license -print -quit)
+  license=$(find $outDir2 -name license -print -quit)
   echo license: $license
 
-
 #		POET_LICENSE_PATH="/opt/FastObjects_t7_12.0/runtime/lib";
-#		POET_LICENSE_PATH="/opt/$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f-2)/runtime/lib";
+#		POET_LICENSE_PATH="/opt/$(find $outDir2 -name "*OpenSSL*" -printf "%f\n"|cut -d- -f-2)/runtime/lib";
 	POET_LICENSE_PATH=$(grep "POET_LICENSE_PATH=" $TMsetup|cut -d= -f2|sed 's/\"\(.*\)\"/\1/g');
   echo POET_LICENSE_PATH: $POET_LICENSE_PATH
-	if systemctl list-units --all|grep poetd >/dev/null; then
+#	if systemctl list-units --all|grep poetd >/dev/null; then
+  if [ -s /etc/init.d/poetd ]; then
 #		echo "export LD_LIBRARY_PATH=$POET_LICENSE_PATH;$LD_LIBRARY_PATH/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev;"
 		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^\s*//'|cut -d' ' -f1|rev);
   	echo laufVers: "$laufVers"
@@ -1194,7 +1203,7 @@ turbomed() {
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
-		tu_turbomed "-tw"
+		tu_turbomed "-iw" # -tw
 	fi;
 }
 
