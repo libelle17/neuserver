@@ -61,17 +61,20 @@ speichern() {
 }
 
 # $2 = Farbe
+# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
 	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
 	resu=$(eval "$1");
 	ret=$?;
+  [ "$verb" ]&&printf "ret: $blau$ret$reset, resu: $blau$resu$reset\n";
 }
 
-# direkt: ohne Result, bei Befehlen z.B. wie "... && Aktv=1"
+# direkt: ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ..."
 ausfd() {
 	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
 	eval "$1";
 	ret=$?;
+  [ "$verb" ]&&printf "ret: $blau$ret$reset\n";
 }
 
 firebird() {
@@ -150,34 +153,60 @@ setzpfad() {
 
 mountlaufwerke() {
 printf "${dblau}mountlaufwerke$reset()\n";
-#printf "${dblau}Hänge Laufwerke ein$reset()\n";
 # Laufwerke einhängen
 # in allen nicht auskommentierten Zeilen Leerzeichen durch einen Tab ersetzen
-fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb); # "^/$Dvz\>" ginge auch
-blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
+# fstb=$(sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb); # "^/$Dvz\>" ginge auch
+ausf "sed -n '/^#/!{s/[[:space:]]\+/\t/g;p}' $ftb"; # "^/$Dvz\>" ginge auch
+fstb=$resu;
+# blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
+ausf "lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE=\"\" LABEL=\"\"\|FSTYPE=\"swap\"'";
+blkvar=$resu;
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
-bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
-echo $bishDAT;
-bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+# bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+# echo bishDAT: $bishDAT;
+ausf "echo \"\$blkvar\"|awk '/=\\\"DAT/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/DAT/{printf substr(\$6,17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
+bishDAT=$resu;
+# bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
+ausf "echo \"\$blkvar\"|awk '/=\\\"win/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/win/{printf substr(\$4,17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
+bishwin=$resu;
 istinfstab=0;
 Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
 # Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
-# lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|FSTYPE=".*_member"\|UUID=""'|tac
-fstabteil=$(lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=""\|FSTYPE=".*_member"\|UUID=""'|tac);
-printf "fstabteil:\n$blau$fstabteil$reset\n";
+# ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=\"\"\|FSTYPE=\".*_member\"\|UUID=\"\"\|MOUNTPOINT=\"/\"'|tac";
+nochmal=1;
+while test "$nochmal"; do
+  unset nochmal;
+ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE -bidnspPx SIZE|tac"
+fstabteil=$resu;
+[ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
+[ "$fstabteil" ]||return;
 while read -r zeile; do
 #	echo "Hier: " $zeile;
 	dev=$(echo $zeile|cut -d\" -f2);
-	typ=$(echo $zeile|cut -d\" -f6);
-	nam=$(echo $zeile|cut -d\" -f8);
+	fty=$(echo $zeile|cut -d\" -f6);
+	lbl=$(echo $zeile|cut -d\" -f8);
 	uid=$(echo $zeile|cut -d\" -f10);
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
-	if test -z "$nam"; then
+	typ=$(echo $zeile|cut -d\" -f14);
+  case "$fty" in swap|iso|fat|".*_member") continue;; esac;
+  case "$typ" in rom) continue;; esac;
+  case "$mtp" in /|/boot/efi) continue;; esac;
+  case "$lbl" in EFI) continue;; esac;
+  if test -z "$fty"; then
+    case "$typ" in disk|part)
+      echo "Hier nochmal: " $zeile
+      mke2fs -t ext4 "$dev"; 
+      nochmal=1;
+      continue;
+    esac;
+  fi;
+  echo zeile: $zeile;
+	if test -z "$lbl"; then
 		echo "fehlender Name bei uid: "$uid", mtp: "$mtp
-		case "$typ" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
-			case "$typ" in 
+		case "$fty" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
+			case "$fty" in 
 				ext*|btrfs|reiserfs)
 					while :;do	
 						abbruch=0;
@@ -186,7 +215,7 @@ while read -r zeile; do
 						[ $abbruch -eq 1 ]&&break;
 						[ "$Dnamnr" = "A" ]&&Dnamnr=1||Dnamnr=$(expr $Dnamnr + 1 );
 					done;
-					nam="DAT"$Dnamnr;;
+					lbl="DAT"$Dnamnr;;
 				ntfs*|exfat*|vfat)
 					while :;do	
 						abbruch=0;
@@ -194,50 +223,50 @@ while read -r zeile; do
 						[ $abbruch -eq 1 ]&&break;
 						wnamnr=$(expr $wnamnr + 1 );
 					done;
-					nam="win"$wnamnr;;
+					lbl="win"$wnamnr;;
 			esac;
-			case $typ in 
+			case $fty in 
 				ext*)
-					echo e2label /dev/$dev "$nam";
-          e2label /dev/$dev "$nam" 2>/dev/null||e2label /dev/$(echo $dev|sed 's/-/\//') "$nam";;
+					echo e2label $dev "$lbl";
+          e2label $dev "$lbl" 2>/dev/null||e2label $(echo $dev|sed 's/-/\//') "$lbl";;
 				btrfs)
-					echo btrfs filesystem label /dev/$dev "$nam";
-					btrfs filesystem label /dev/$dev "$nam";;
+					echo btrfs filesystem label $dev "$lbl";
+					btrfs filesystem label $dev "$lbl";;
 				reiserfs)
-					echo reiserfstune -l "$nam" /dev/$dev;
-					reiserfstune -l "$nam" /dev/$dev;;
+					echo reiserfstune -l "$lbl" $dev;
+					reiserfstune -l "$lbl" $dev;;
 				ntfs*)
-					echo ntfslabel /dev/$dev "$nam";
-					ntfslabel /dev/$dev "$nam";;
+					echo ntfslabel $dev "$lbl";
+					ntfslabel $dev "$lbl";;
 				exfat*)
-					echo exfatlabel /dev/$dev "$nam";
-					exfatlabel /dev/$dev "$nam";;
+					echo exfatlabel $dev "$lbl";
+					exfatlabel $dev "$lbl";;
 				vfat)
 					echo mache vfat Label;
 					eingehaengt=0;
-					mountpoint -q /dev/$dev&&{ eingehaengt=1; umount /dev/$dev;};
-					env MTOOLS_SKIP_CHECK=1 mlabel -i /dev/$dev ::x;
-					dosfslabel /dev/$dev "$nam";
-					test $eingehaengt -eq 1&&mount /dev/$dev;;
+					mountpoint -q $dev&&{ eingehaengt=1; umount $dev;};
+					env MTOOLS_SKIP_CHECK=1 mlabel -i $dev ::x;
+					dosfslabel $dev "$lbl";
+					test $eingehaengt -eq 1&&mount $dev;;
 			esac;
     esac;
 	fi;
 	# printf "zeile: $blau$zeile$reset\n"
 	# echo "mtp: \"$mtp\"";
-	[ "$mtp" ]||mtp="/"$(echo $nam|sed 's/[[:space:]]//g');
+	[ "$mtp" ]||mtp="/"$(echo $lbl|sed 's/[[:space:]]//g');
 	byt=$(echo $zeile|cut -d\" -f4);
 	[ "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
-	if test -z "$nam"; then
+	if test -z "$lbl"; then
 		ident="UUID="$uid;
 	else 
-		ident="LABEL="$nam;
+		ident="LABEL="$lbl;
 	fi;
 	idohnelz=$(printf "$ident"|sed 's/[[:space:]]/\\\\040/g');
 	obinfstab "$idohnelz" "$uid" "$dev";
 	printf "Mountpoint: $blau$mtp$reset istinfstab: $blau$istinfstab$reset\n";
 	if test $istinfstab -eq 0; then
-		eintr="\t $mtp\t $typ\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
-		if test "$typ" = "ntfs"; then
+		eintr="\t $mtp\t $fty\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
+		if test "$fty" = "ntfs"; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
 		eintr=$idohnelz$eintr;
@@ -248,8 +277,10 @@ while read -r zeile; do
 done << EOF
 $fstabteil;
 EOF
+done; # nochmal
   mount -a;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
+exit;
 }
 
 pruefuser() {
@@ -275,6 +306,7 @@ pruefuser() {
 obinfstab() {
 	printf "${dblau}obinfstab$reset($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
 	istinfstab=0;
+  sdev=${3##*/}; # nur der letzte Name
 	while read -r zeile; do
 		# echo "dort: $zeile;"
 		vgl=$(printf "$zeile"|cut -f1|sed 's/ /\\\\040/g')
@@ -283,8 +315,8 @@ obinfstab() {
 		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
 		if test "$vgl" = "$1"; then istinfstab=1; break; fi;
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
-		if test "$vgl" = "/dev/$3";then istinfstab=1; break; fi;
-		for dbid in $(find /dev/disk/by-id -lname "*$3"); do
+		if test "$vgl" = "$3";then istinfstab=1; break; fi;
+		for dbid in $(find /dev/disk/by-id -lname "*$sdev"); do
 			if test "$vgl" = "$dbid";then istinfstab=1; break; fi;
 		done;
 		if test $istinfstab -eq 1; then break; fi;
@@ -1114,13 +1146,14 @@ cron() {
 tu_turbomed() {
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
-	cp $outDir/TMLinux/TMWin/linux/config/license $POET_LICENSE_PATH;
+	cp $license $POET_LICENSE_PATH;
 	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
-	for D in $outDir/TMLinux/TMWin/linux/archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$instp $D; done;
-	echo sh TMsetup -tw;
-	sh $outDir/TMLinux/TMWin/linux/bin/TM_setup "$1";
+	for D in $archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$insg $D; done;
+  ausfd "sh $TMsetup $1" "${blau}";
+  echo nach ausf;
 	systemctl daemon-reload;
 	for runde in $(seq 1 20);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl restart poetd;done;
+  echo nach show poetd
 }
 
 turbomed() {
@@ -1130,15 +1163,28 @@ turbomed() {
 	datei=$(find $q0 -name "$tmsuch" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
 	if test -z "$datei"; then echo keine Datei \"$tmsuch\" in \"$q0\" gefunden; return; fi;
 	# 19.1.1.3969
-	version=$(echo $datei|cut -d_ -f4);
+	version=$(echo $datei|cut -d_ -f4|cut -d. -f1-2);
 	printf "Turbomed-Version: $blau$version$reset\n";
 	outDir="${datei%/*}/TM${version}L";
+  echo version: $version
+  echo datei: $datei
+  echo outDir: $outDir
 	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
+  outDir=$(find $outDir -mindepth 1 -maxdepth 1 -type d);
+  echo outDir: $outDir
 	instVers=$(find "$outDir" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
-	TMsetup="$outDir/TMLinux/TMWin/linux/bin/TM_setup";
+  TMsetup=$(find $outDir -name TM_setup -print -quit)
+  echo TMsetup: $TMsetup
+  archive=$(find $outDir -type d -name archive -print -quit)
+  echo archive: $archive
+  license=$(find $outDir -name license -print -quit)
+  echo license: $license
+
+
 #		POET_LICENSE_PATH="/opt/FastObjects_t7_12.0/runtime/lib";
 #		POET_LICENSE_PATH="/opt/$(find $outDir -name "*OpenSSL*" -printf "%f\n"|cut -d- -f-2)/runtime/lib";
 	POET_LICENSE_PATH=$(grep "POET_LICENSE_PATH=" $TMsetup|cut -d= -f2|sed 's/\"\(.*\)\"/\1/g');
+  echo POET_LICENSE_PATH: $POET_LICENSE_PATH
 	if systemctl list-units --all|grep poetd >/dev/null; then
 #		echo "export LD_LIBRARY_PATH=$POET_LICENSE_PATH;$LD_LIBRARY_PATH/../bin/ptsu -help|grep Version|rev|sed 's/^[[:space:]]//'|cut -d' ' -f1|rev;"
 		laufVers=$(export LD_LIBRARY_PATH=$POET_LICENSE_PATH;"$LD_LIBRARY_PATH"/../bin/ptsu -help|grep Version|rev|sed 's/^\s*//'|cut -d' ' -f1|rev);
@@ -1161,22 +1207,18 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
-if true; then
  setzhost;
  setzbenutzer;
  setzpfad;
  fritzbox;
  mountlaufwerke;
-fi;
  proginst;
-if true; then
  sambaconf;
  musterserver;
-fi;
 if false; then
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
-fi;
  teamviewer10;
+fi;
  cron;
  turbomed;
 if false; then
