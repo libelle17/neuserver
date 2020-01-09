@@ -622,6 +622,26 @@ proginst() {
 			sed -i "/^#$W/a$W Yes" $D;
 		fi;
 	fi;
+  D=/etc/profile.local;S=NCURSES_NO_UTF8_ACS;W=1;[ -f "$D" ]&&grep "$S" "$D"||echo "$S"="$W" >>"$D";
+  D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S"="$W # geht auch" >>"$D";
+# dazu noch /.bashrc 
+# export LESS_TERMCAP_mb=$'\e[0;31m'     # begin bold => rot
+# export LESS_TERMCAP_md=$'\e[1;34m'     # begin blink -> blau
+# export LESS_TERMCAP_so=$'\e[01;44;37m' # begin reverse video
+# export LESS_TERMCAP_us=$'\e[0;36m'    # begin underline -> tuerkis
+# export LESS_TERMCAP_me=$'\e[0m'        # reset bold/blink
+# export LESS_TERMCAP_se=$'\e[0m'        # reset reverse video
+# export LESS_TERMCAP_ue=$'\e[0m'        # reset underline
+# export GROFF_NO_SGR=1                  # for konsole and gnome-terminal
+# TERM=xterm-256color
+# NCURSES_NO_UTF8_ACS=1;
+
+# dazu noch /etc/bash.bashrc.local:
+# GRUEN="\[$(tput setaf 2)\]"
+# ROT="\[$(printf '\e[1;31m')\]"
+# RESET="\[$(tput sgr0)\]"
+# PS1="${GRUEN}\u@\h: \w${RESET}>"
+
 
 	case $OSNR in
 	1|2|3) # mint, ubuntu, debian
