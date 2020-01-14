@@ -123,7 +123,7 @@ tufrag() {
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	while [ $# -gt 0 ]; do
-		para="$1";
+    para=$(echo "$1"|sed 's;^/;-;');
 		case $para in
 			-neu|-new) obneu=1;;
       -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
