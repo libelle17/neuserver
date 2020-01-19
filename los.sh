@@ -19,6 +19,27 @@ spf=/DATA/down; # Server-Pfad
 tdpf=/DATA/turbomed # Turbomed-Dokumentenpfad
 obschreiben=0;
 
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
+# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+ausf() {
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	if test "$3"; then 
+    eval "$1"; 
+  else 
+    resu=$(eval "$1"); 
+  fi;
+  ret=$?;
+  [ "$verb" ]&&{
+    printf "ret: $blau$ret$reset"
+    [ "$3" ]||printf ", resu: $blau$resu$reset";
+    printf "\n";
+  }
+}
+
+ausfd() {
+  ausf "$1" "$2" direkt;
+}
+
 # Befehlszeilenparameter auswerten
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
@@ -61,22 +82,6 @@ speichern() {
 	fi;
 }
 
-# $2 = Farbe
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
-ausf() {
-	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
-	resu=$(eval "$1");
-	ret=$?;
-  [ "$verb" ]&&printf "ret: $blau$ret$reset, resu: $blau$resu$reset\n";
-}
-
-# direkt: ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ..."
-ausfd() {
-	[ "$verb" -o "$2" ]&&{ anz=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anz";};
-	eval "$1";
-	ret=$?;
-  [ "$verb" ]&&printf "ret: $blau$ret$reset\n";
-}
 
 firebird() {
 	printf "${dblau}firebird$reset()\n";
@@ -612,6 +617,7 @@ proginst() {
 	doinst curl;
 	doinst cifs-utils;
   doinst convmv; # fuer Turbomed
+  doinst ntp; # fuer stutzeDBBack.sh
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
