@@ -1248,14 +1248,19 @@ dbinhalt() {
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -name "*--*.sql" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+    [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     if ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
+      [ "$verb" ]&&printf "$blau$db$reset fehlt als Datenbank!";
       # die als jüngste benannte Datei ...
-      Q=$(ls "$VZ/$db"*|tail -n1);
+      Q=$(ls "$VZ/"$db*.sql|tail -n1);
       # ... die auch eine Datenbank enthält
-      if grep -q '^USE DATABASE' "$Q"; then
-      echo Datenbank $db fehlt, stelle sie von \"$Q\" wieder her!;
-      mysql -u"$mroot" -p"$mrpwd" -hlocalhost <"$Q";
+      ausf "grep '^CREATE DATABASE' \"$Q\"";
+      if test "$resu"; then
+        [ "$verb" ]&&printf "Stelle sie von \"$Q\" wieder her!\n";
+        ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\"";
+      else
+       [ "$verb" ]&&printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
       fi;
     fi;
   done;
