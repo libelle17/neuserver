@@ -73,7 +73,7 @@ variablen() {
 speichern() {
 	printf "${dblau}obschreiben$reset()obschreiben: $obschreiben, loscred: $loscred\n";
 	if test $obschreiben -ne 0; then
-	  printf "muser=$muser\n"  >"$loscred";
+	  printf "muser=$musr\n"  >"$loscred";
 	  printf "mpwd=$mpwd\n"  >>"$loscred";
 	  printf "mroot=$mroot\n" >>"$loscred";
 	  printf "mrpwd=$mrpwd\n" >>"$loscred";
@@ -518,13 +518,32 @@ pruefmroot() {
 	done;
 	while true; do
 		[ "$mrpwd" ]&&break;
-		printf "Mariadb: neues Passwort für '$mroot': ";read mrpwd;
-		printf "Mariadb: erneut das neue Passwort für '$mroot': ";read mrpwd2;
+		printf "Mariadb:$1 Passwort für '$mroot': ";read mrpwd;
+		printf "Mariadb: erneut$2 Passwort für '$mroot': ";read mrpwd2;
 		[ "$mrpwd/" = "$mrpwd2/" ]|| unset mrpwd;
 		obschreiben=1;
 		# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
 		# auskommentiert werden und der Service neu gestartet werden
 	done;
+}
+
+fragmusr() {
+  while true; do
+    [ "$musr" ]&&break;
+    #			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
+    printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" musr||read musr;
+    obschreiben=1;
+  done;
+}
+
+fragmpwd() {
+  while true; do
+    [ "$mpwd" ]&&break;
+    printf "Mariadb: neues Passwort für '$musr': ";read mpwd;
+    printf "Mariadb: erneut das Passwort für '$musr': ";read mpwd2;
+    [ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
+    obschreiben=1;
+  done;
 }
 
 mariadb() {
@@ -573,31 +592,20 @@ mariadb() {
 			systemctl start mysql;
 		fi;
 		while mysql -e'\q' 2>/dev/null; do
-			pruefmroot;
+			pruefmroot " neues" " das neue";
 			ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
 		done;
-    if ! mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
-      while true; do
-        [ "$muser" ]&&break;
-        #			echo $0 $SHELL $(ps -p $$ | awk '$1 != "PID" {print $(NF)}') $(ps -p $$) $(ls -l $(which sh));
-        printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" muser||read muser;
-        obschreiben=1;
-      done;
-      while true; do
-        [ "$mpwd" ]&&break;
-        printf "Mariadb: neues Passwort für '$muser': ";read mpwd;
-        printf "Mariadb: erneut das Passwort für '$muser': ";read mpwd2;
-        [ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
-        obschreiben=1;
-      done;
-      if mysql -u"$muser" -p"$mpwd" -e'\q' 2>/dev/null; then
-        echo Benutzer "$muser"  war schon eingerichtet;
+    if ! mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null; then
+      fragmusr;
+      fragmpwd;
+      if mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null; then
+        echo Benutzer "$musr"  war schon eingerichtet;
       else
           pruefmroot;
-          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
-          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$muser'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
       fi;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
@@ -1233,6 +1241,26 @@ turbomed() {
 	fi;
 }
 
+dbinhalt() {
+  VZ=/DATA/sql;
+	printf "${dblau}dbinhalt$reset()\n";
+  pruefmroot;
+  echo obschreiben: $obschreiben, loscred: $loscred;
+  # alle Rümpfe, jeden einmal
+  for db in $(find $VZ -name "*--*.sql" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+    # wenn Datenbank nicht existiert, dann
+    if ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
+      # die als jüngste benannte Datei ...
+      Q=$(ls "$VZ/$db"*|tail -n1);
+      # ... die auch eine Datenbank enthält
+      if grep -q '^USE DATABASE' "$Q"; then
+      echo Datenbank $db fehlt, stelle sie von \"$Q\" wieder her!;
+      mysql -u"$mroot" -p"$mrpwd" -hlocalhost <"$Q";
+      fi;
+    fi;
+  done;
+}
+
 # Start
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
@@ -1242,6 +1270,7 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
+if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
@@ -1250,14 +1279,14 @@ variablen;
  proginst;
  sambaconf;
  musterserver;
-if false; then
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  teamviewer10;
-fi;
  cron;
  turbomed;
-if false; then
+fi;
+dbinhalt;
  speichern;
+if false; then
  firebird;
 fi;
 printf "${dblau}Ende von $0$reset\n";
