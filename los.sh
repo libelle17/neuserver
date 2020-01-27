@@ -17,6 +17,7 @@ gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
 spf=/DATA/down; # Server-Pfad
 tdpf=/DATA/turbomed # Turbomed-Dokumentenpfad
+musr=praxis;
 obschreiben=0;
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
@@ -507,7 +508,10 @@ instmaria() {
 				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
 			fi;;
 	esac;
-	sed -i.bak 's/^\(bind-address.*\)/# \1/' /etc/mysql/mariadb.conf.d/50-server.cnf
+  for datei in /etc/mysql/mariadb.conf.d/50-server.cnf /etc/my.cnf; do
+    [ -f "$datei" ]&& sed -i.bak 's/^\(bind-address.*\)/# \1/;/^sql_mode=/a innodb_strict_mode=OFF' "$datei";
+  done;
+  systemctl restart mysql;
 }
 
 pruefmroot() {
@@ -1251,16 +1255,18 @@ dbinhalt() {
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     if ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
-      [ "$verb" ]&&printf "$blau$db$reset fehlt als Datenbank!";
+      printf "$blau$db$reset fehlt als Datenbank!";
       # die als jüngste benannte Datei ...
-      Q=$(ls "$VZ/"$db*.sql|tail -n1);
+      Q=$(ls "$VZ/"$db--*.sql|tail -n1);
       # ... die auch eine Datenbank enthält
       ausf "grep '^CREATE DATABASE' \"$Q\"";
       if test "$resu"; then
-        [ "$verb" ]&&printf "Stelle sie von \"$Q\" wieder her!\n";
-        ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\"";
+       printf " Stelle sie von \"$Q\" wieder her!\n";
+       sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
+       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
+       ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\"";
       else
-       [ "$verb" ]&&printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
+       printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
       fi;
     fi;
   done;
@@ -1275,7 +1281,6 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 variablen;
-if false; then
  setzhost;
  setzbenutzer;
  setzpfad;
@@ -1283,6 +1288,7 @@ if false; then
  mountlaufwerke;
  proginst;
  sambaconf;
+if false; then
  musterserver;
  firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  teamviewer10;
