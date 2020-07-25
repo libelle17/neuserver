@@ -60,7 +60,7 @@ nnoremap <C-j> :cclose<CR>
 nnoremap <C-T> :GtagsCursor<CR>
 map <C-n> :cn<CR>
 map <C-p> :cp<CR>
-map <C-k> :Gtags-cscope<CR><CR> 
+" map <C-k> Gtags-cscope<CR><CR> 
 command -nargs=* Make make stumm | cwindow 3
 command -nargs=* Meike make <args> | cwindow 3
 inoremap <C-w> <ESC>:wa<CR>

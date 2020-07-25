@@ -12,6 +12,7 @@ tf=gtags.files;
 find . -maxdepth 1 -type f -regex ".*\.c\|.*\.cpp\|.*\.h\|.*\.sh\|.*\.inc\|./Makefile\|./configure\|viall\|shliste" >"$tf";
 ctags -V -L "$tf" >/dev/null; 
 test -f $ZD||echo 1 >$ZD; awk "BEGIN {print `cat $ZD`+1}" >$ZD
+# jedes $FREQUENZ.te Mal vor vim gtags aufrufen
 expr $(cat $ZD) % $FREQUENZ >/dev/null 2>&1||{ 
   printf "Calling/rufe auf: gtags - please wait / bitte warten ...\n";
   einricht gtags global; 
@@ -24,6 +25,6 @@ einricht vim vim
 #// so waere es projektspezfisch
 #// `which vim || which vi` <DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h -p -c "syntax on" -c "set number" -c "set autoindent" -c "set autoindent" -c "set tabstop=2" -c "set ignorecase" -c "set showmatch" -c "set magic" -c "set ruler" 
 #// .. und so etwas allgemeiner
-echo $(which vim||which vi) $DTN +'tabfirst' -pNu .exrc
-$(which vim||which vi) $DTN +'tabfirst' -pNu .exrc
+echo $(which vim||which vi) $DTN +'tabfirst|tab sview ../autofax/autofax.cpp|tabnext|tab sview ../autofax/autofax.h|tabfirst' -pNu .exrc
+$(which vim||which vi) $DTN +'tabfirst|tab sview ../autofax/autofax.cpp|tabnext|tab sview ../autofax/autofax.h|tabfirst' -pNu .exrc
 #// DTN="<DPROG>.cpp <DPROG>.h vgb.cpp DB.cpp DB.h kons.cpp kons.h man_en man_de Makefile install.sh viall .exrc uninstallinv"
