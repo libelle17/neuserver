@@ -496,6 +496,7 @@ doinst() {
 	done;
 }
 
+# aufgerufen in richtmariadb ein
 instmaria() {
 	printf "${blau}instmaria$reset()\n"
 	case $OSNR in
@@ -550,8 +551,8 @@ fragmpwd() {
   done;
 }
 
-mariadb() {
-	printf "${blau}mariadb$reset()\n"
+richtmariadbein() {
+	printf "${blau}richtmariadbein$reset()\n"
 	# Mariadb
 	case $OSNR in
 		1|2|3)
@@ -601,20 +602,39 @@ mariadb() {
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
 			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
 		done;
-    if ! mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null; then
+    test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
+    mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
+    erg=$?;
+    if test "$erg" -ne "0"; then
+    # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
+     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+     erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+    fi;
+    test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
+    mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
+    if test "$erg" -ne "0"; then
       fragmusr;
       fragmpwd;
-      if mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null; then
+      test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
+      mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
+      erg=$?;
+      if test "$erg" -ne "0"; then
+      # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
+       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+       erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+      fi;
+      if test "$erg" -ne "0"; then
         echo Benutzer "$musr"  war schon eingerichtet;
       else
           pruefmroot;
+          test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
           ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
           ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
       fi;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
     fi;
-	fi;
+	fi;   # if [ $minstalliert -eq 1 ]; then
 	[ "$verb" ]&& echo minstalliert: $minstalliert;
 }
 
@@ -669,7 +689,7 @@ proginst() {
 	esac;
 	systemctl enable $sshd;
 	systemctl restart $sshd;
-	mariadb;
+	richtmariadbein;
 	doinst git;
 }
 
@@ -1254,6 +1274,7 @@ dbinhalt() {
   for db in $(find $VZ -name "*--*.sql" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
+    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
     if ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
       printf "$blau$db$reset fehlt als Datenbank!";
       # die als jüngste benannte Datei ...
@@ -1263,6 +1284,7 @@ dbinhalt() {
       if test "$resu"; then
        printf " Stelle sie von \"$Q\" wieder her!\n";
        sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
+       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
        mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
        ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\"";
       else
