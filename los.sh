@@ -1271,18 +1271,18 @@ dbinhalt() {
   pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
-  for db in $(find $VZ -name "*--*.sql" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+  for db in $(find $VZ -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-    if ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
-      printf "$blau$db$reset fehlt als Datenbank!";
+    if test "$1" == immer || ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
+      printf "$blau$db$reset"; if test "$1" == immer; then printf " wird neu gespeichert!"; else printf " fehlt als Datenbank!"; fi;
       # die als jüngste benannte Datei ...
       Q=$(ls "$VZ/"$db--*.sql|tail -n1);
       # ... die auch eine Datenbank enthält
       ausf "grep '^CREATE DATABASE' \"$Q\"";
       if test "$resu"; then
-       printf " Stelle sie von \"$Q\" wieder her!\n";
+       printf " Stelle sie von \"$Q\" her!\n";
        sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
        test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
        mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
@@ -1317,7 +1317,7 @@ if false; then
  cron;
  turbomed;
 fi;
-dbinhalt;
+if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  speichern;
 if false; then
  firebird;
