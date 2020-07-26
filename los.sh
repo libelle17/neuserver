@@ -23,7 +23,7 @@ obschreiben=0;
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	[ $verb = 1 -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
 	if test "$3"; then 
     eval "$1"; 
   else 
@@ -47,6 +47,7 @@ commandline() {
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
 	obmysql=0; # nur mysql soll eingerichtet werden
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
+  obtm=0; # ob turbomed installiert werden soll
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -58,9 +59,10 @@ commandline() {
 				case $para in
 					mysql) obmysql=1;;
 					mysqlneu) mysqlneu=1;;
+          turbomed) obtm=1;;
 				esac;;
 		esac;
-		[ "$verb" ]&&printf "Parameter: $blau$para$reset => gesprächig\n";
+		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
 		shift;
 	done;
 	if [ "$verb" ]; then
@@ -1227,29 +1229,43 @@ cron() {
 }
 
 tu_turbomed() {
+	printf "${dblau}tu_turbomed$reset($1)\n";
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
 	ausf "cp $license $POET_LICENSE_PATH" "${blau}";
 	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
 	for D in $archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$insg $D; done;
   cd ${TMsetup%/*};
-  ausfd "sh TM_setup $1" "${blau}";
+  [ $verb = 0 ]||echo Setupverzeichnis: ${TMsetup%/*}
+  sh TM_setup $1
+  ret=$?
+  [ ! $ret = 0 -a "$2" ]||sh TM_setup $2
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
-	for runde in $(seq 1 20);do systemctl show poetd|grep running&&break;pkill -9 ptserver;systemctl stop poetd;systemctl start poetd;done;
+	for runde in $(seq 1 20);do 
+    systemctl show poetd|grep running&&break;
+    echo Runde: $runde; 
+    pkill -9 ptserver;
+    echo nach pkill; 
+    systemctl stop poetd;
+    echo Nach stop poetd; 
+    systemctl start poetd; 
+    echo Nach start poetd; 
+  done;
   for S in PraxisDB StammDB DruckDB Dictionary; do
     ausfd "rsync -avu $srv0:/opt/turbomed/$S /opt/turbomed/";
   done;
   ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
   # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
-}
+} # tu_turbomed
 
 turbomed() {
 	printf "${dblau}turbomed$reset()\n";
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
 	tmsuch="CGM_TURBOMED*LINUX.zip";
-	datei=$(find $q0 -name "$tmsuch" -printf "%f\1%p\n"|sort|tail -n1|cut -d $(printf '\001') -f2-);
+	datei=$(find $q0 -name "$tmsuch" -printf "%f\1%p\n" 2>/dev/null|sort|tail -n1|cut -d $(printf '\001') -f2-);
+  [ $verb = 1 ]&&echo "Datei: $datei"
 	if test -z "$datei"; then echo keine Datei \"$tmsuch\" in \"$q0\" gefunden; return; fi;
 	# 19.1.1.3969
 	version=$(echo $datei|cut -d_ -f4|cut -d. -f1-2);
@@ -1260,9 +1276,10 @@ turbomed() {
   echo datei: $datei
   echo outDir: $outDir
 	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
-  outDir2=$outDir/linux;
-#  outDir2=$(find $outDir -mindepth 1 -maxdepth 1 -type d);
-  [ -d "$outDir2" ]||mv $outDir/* $outDir2;
+#  outDir2=$outDir/linux;
+  outDir2=$(find $outDir -type d -name linux);
+  echo outDir2: $outDir2
+#  [ -d "$outDir2" ]||mv $outDir/* $outDir2;
 	instVers=$(find "$outDir2" -name "*OpenSSL*"|sort -r|cut -d- -f4|head -n1);
   TMsetup=$(find $outDir2 -name TM_setup -print -quit)
   echo TMsetup: $TMsetup
@@ -1285,9 +1302,9 @@ turbomed() {
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
-		tu_turbomed "-iw" # -tw
+		tu_turbomed "-iw" "-uw" # -tw
 	fi;
-}
+} # turbomed
 
 dbinhalt() {
   VZ=/DATA/sql;
@@ -1335,13 +1352,11 @@ variablen;
  [ $obteil = 0 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
-if false; then
  [ $obteil = 0 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 ]&&teamviewer10;
  [ $obteil = 0 ]&&cron;
- [ $obteil = 0 ]&&turbomed;
-fi;
+ [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&{ [ $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
