@@ -1295,7 +1295,7 @@ dbinhalt() {
   pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
-  for db in $(find $VZ -mtime -14 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+  for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
