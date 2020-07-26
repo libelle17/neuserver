@@ -35,29 +35,40 @@ ausf() {
     [ "$3" ]||printf ", resu: $blau$resu$reset";
     printf "\n";
   }
-}
+} # ausf
 
 ausfd() {
   ausf "$1" "$2" direkt;
-}
+} # ausfd
 
 # Befehlszeilenparameter auswerten
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
+	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
+	obmysql=0; # nur mysql soll eingerichtet werden
+	mysqlneu=0; # mysql mit Neuübertragung der Daten
 	while [ $# -gt 0 ]; do
 		para="$1";
 		case $para in
 			-neu|-new) obneu=1;obschreiben=1;;
 			-v|--verbose) verb=1;;
+			*) obteil=1;
+				case $para in
+					-mysql) obmysql=1;;
+					-mysqlneu) mysqlneu=1;;
+				esac;;
 		esac;
-		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
+		[ "$verb" ]&&printf "Parameter: $blau$para$reset => gesprächig\n";
 		shift;
 	done;
 	if [ "$verb" ]; then
-		printf "obneu: $blau\"$obneu\"$reset\n";
-		printf "obschreiben: $blau\"$obschreiben\"$reset\n";
+		printf "obneu: $blau$obneu$reset\n";
+		printf "obschreiben: $blau$obschreiben$reset\n";
+		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
+		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
-}
+} # commandline
 
 variablen() {
  printf "${dblau}variablen$reset()\n";
@@ -69,7 +80,7 @@ variablen() {
  HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
  loscred="$HOME/.loscred"; # ~  # $HOME
  test -f "$loscred"&&. "$loscred";
-}
+} # variablen
 
 speichern() {
 	printf "${dblau}obschreiben$reset()obschreiben: $obschreiben, loscred: $loscred\n";
@@ -81,7 +92,7 @@ speichern() {
 	  printf "arbgr=$arbgr\n" >>"$loscred";
 	  printf "srv0=$srv0\n"   >>"$loscred";
 	fi;
-}
+} # speichern
 
 
 firebird() {
@@ -110,36 +121,36 @@ firebird() {
 		ausf "systemctl start firebird";
 		ausf "$instp libreoffice-base libreoffice-base-drivers-firebird"; # zypper in 
 	}
-}
+} # firebird
 
 setzhost() {
-printf "${dblau}setzhost$reset()\n";
-# wenn Hostname z.B. linux-8zyu o.ä., dann korrigieren;
-case $(hostname) in
-*-*) {
-		hostnamectl;
-		printf "${blau}gewünschter Servername, dann Enter:$reset"; read srvhier;
-		hostnamectl set-hostname "$srvhier";
-		export HOST="$srvhier";
-		hostnamectl; 
-};
-esac;
-}
+  printf "${dblau}setzhost$reset()\n";
+  # wenn Hostname z.B. linux-8zyu o.ä., dann korrigieren;
+  case $(hostname) in
+  *-*) {
+      hostnamectl;
+      printf "${blau}gewünschter Servername, dann Enter:$reset"; read srvhier;
+      hostnamectl set-hostname "$srvhier";
+      export HOST="$srvhier";
+      hostnamectl; 
+  };
+  esac;
+} # setzhost
 
 setzbenutzer() {
-printf "${dblau}setzbenutzer$reset()\n";
-grep -q "^$gruppe:" /etc/group||groupadd $gruppe
-$SPR samba 2>/dev/null||$IPR samba
-systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
-systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
-systemctl start nmb 2>/dev/null||systemctl start nmbd 2>/dev/null;
-systemctl enable nmb 2>/dev/null||systemctl enable nmbd 2>/dev/null;
-while read -r zeile <&3; do
-	user=${zeile%% \"*};
-	comm=\"${zeile#* \"};
-	pruefuser $user "$comm";
-done 3<"$meinpfad/benutzer";
-}
+  printf "${dblau}setzbenutzer$reset()\n";
+  grep -q "^$gruppe:" /etc/group||groupadd $gruppe
+  $SPR samba 2>/dev/null||$IPR samba
+  systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
+  systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
+  systemctl start nmb 2>/dev/null||systemctl start nmbd 2>/dev/null;
+  systemctl enable nmb 2>/dev/null||systemctl enable nmbd 2>/dev/null;
+  while read -r zeile <&3; do
+    user=${zeile%% \"*};
+    comm=\"${zeile#* \"};
+    pruefuser $user "$comm";
+  done 3<"$meinpfad/benutzer";
+} # setzbenutzer
 
 setzpfad() {
 	printf "${dblau}setzpfad$reset()\n";
@@ -156,7 +167,7 @@ setzpfad() {
 		fi;
 		. "$EEN";
 	fi;
-}
+} # setzpfad
 
 mountlaufwerke() {
 printf "${dblau}mountlaufwerke$reset()\n";
@@ -333,7 +344,7 @@ EOF
 }
 
 obprogda() {
-	printf "${dblau}obprogda$reset(${blau}$1$reset)\n";
+ printf "${dblau}obprogda$reset(${blau}$1$reset)\n";
  prog="";
  for verz in /usr/local/bin /usr/bin /usr/local/sbin /usr/sbin /sbin /bin /usr/libexec /run; do
 	 prog="$verz/$1";
@@ -345,8 +356,8 @@ obprogda() {
 }
 
 setzinstprog() {
-	printf "${dblau}setzinstprog$reset()\n"
-case $OSNR in
+ printf "${dblau}setzinstprog$reset(), OSNR: $OSNR\n"
+ case $OSNR in
 	1|2|3)
 		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
 					ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'$F'/{H;d};${p;x}' $S;:;
@@ -416,8 +427,8 @@ case $OSNR in
 		udpr="pacman -R -d -d ";
 		upd="pacman -Syu";
 		compil="gcc linux-headers-`uname -r`";;
-esac;
-}
+ esac;
+} # setzinstprog
 
 ersetzeprog() {
 	printf "${blau}ersetzeprog($reset$1): -> "
@@ -478,23 +489,32 @@ ersetzeprog() {
  [ -z "$eprog" ]&&eprog="$1";
  [ -z "$sprog" ]&&sprog="$eprog";
  printf " $sprog\n";
-}
+} # ersetzeprog
 
 doinst() {
 	printf "${blau}doinst($reset$1)\n"
 	ersetzeprog "$1";
+  echo Fertig mit ersetzeprog
 	[ "$2" ]&&obprogda "$2"&&return 0;
+  echo Fertig mit obprogda
 #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	for prog in "$1"; do
-		$psuch "$prog" >/dev/null 2>&1&&return 0;
+    echo Stelle 1
+    echo $psuch $prog
+		$psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
+    echo Stelle 2
 		printf "installiere $blau$prog$reset\n";
 		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
+      echo Stelle 3
 			obnmr=0;
 			zypper mr -k --all;
 		fi;
+      echo Stelle 4
 		$instp "$prog";
+      echo Stelle 5
 	done;
-}
+	printf "Fertig mit ${blau}doinst($reset$1)\n"
+} # doinst
 
 # aufgerufen in richtmariadb ein
 instmaria() {
@@ -612,6 +632,7 @@ richtmariadbein() {
     fi;
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
+    erg=$?;
     if test "$erg" -ne "0"; then
       fragmusr;
       fragmpwd;
@@ -621,7 +642,7 @@ richtmariadbein() {
       if test "$erg" -ne "0"; then
       # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
        test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-       erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+       erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
       fi;
       if test "$erg" -ne "0"; then
         echo Benutzer "$musr"  war schon eingerichtet;
@@ -636,11 +657,12 @@ richtmariadbein() {
     fi;
 	fi;   # if [ $minstalliert -eq 1 ]; then
 	[ "$verb" ]&& echo minstalliert: $minstalliert;
-}
+} # richtmariadbein
 
 proginst() {
 	printf "${dblau}proginst$reset()\n"
 	setzinstprog;
+  [ "$psuch" ]||{ echo psuch nicht zugewiesen, OSNR: $OSNR, breche ab; exit; }
 	# fehlende Programme installieren
 	doinst htop;
 	doinst vsftpd;
@@ -689,12 +711,11 @@ proginst() {
 	esac;
 	systemctl enable $sshd;
 	systemctl restart $sshd;
-	richtmariadbein;
 	doinst git;
-}
+} # proginst
 
-nichtroot() {
-	printf "${dblau}nichtroot$reset()\n"
+bildschirm() {
+	printf "${dblau}bildschirm$reset()\n"
 	if test "$(id -u)" -ne 0; then
 		github;
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
@@ -705,27 +726,28 @@ nichtroot() {
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
 		fi;
+    if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+      DNam=kcminputrc;
+      D=~/.config/$DNam;
+      [ -f $D ]||D=/etc/xdg/$DNam;
+      RD="RepeatDelay=";
+      rd=210;
+      RR="RepeatRate=";
+      rr=27;
+      if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
+        echo editiere $D;
+        sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
+        #  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
+        if test "$DISPLAY"; then 
+          echo DISPLAY: $DISPLAY
+          echo xset r rate $rd $rr;
+          xset r rate $rd $rr;
+          echo "Fertig mit xset"
+        fi;
+      fi;
+    fi;
 	fi;
-	if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
-		DNam=kcminputrc;
-		D=~/.config/$DNam;
-		[ -f $D ]||D=/etc/xdg/$DNam;
-		RD="RepeatDelay=";
-		rd=210;
-		RR="RepeatRate=";
-		rr=27;
-		if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
-			echo editiere $D;
-			sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
-			#  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
-			if test "$DISPLAY"; then 
-				echo DISPLAY: $DISPLAY
-				echo xset r rate $rd $rr;
-				xset r rate $rd $rr;
-			fi;
-		fi;
-	fi;
-}
+} # bildschirm
 
 sambaconf() {
 	printf "${dblau}sambaconf$reset()\n"
@@ -1271,7 +1293,7 @@ dbinhalt() {
   pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
-  for db in $(find $VZ -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+  for db in $(find $VZ -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
@@ -1297,30 +1319,32 @@ dbinhalt() {
 # Start
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
-nichtroot;
+commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c "$meingespfad $@";exit;};
 echo Starte mit los.sh...
-commandline "$@"; # alle Befehlszeilenparameter übergeben
+[ $obteil = 0 ]&&bildschirm;
 variablen;
- setzhost;
- setzbenutzer;
- setzpfad;
- fritzbox;
- mountlaufwerke;
- proginst;
- sambaconf;
+ [ $obteil = 0 ]&&setzhost;
+ [ $obteil = 0 ]&&setzbenutzer;
+ [ $obteil = 0 ]&&setzpfad;
+ [ $obteil = 0 ]&&fritzbox;
+ [ $obteil = 0 ]&&mountlaufwerke;
+ [ $obteil = 0 ]&&proginst;
+ [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
+ [ $obteil = 0 ]&&sambaconf;
 if false; then
- musterserver;
- firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
- teamviewer10;
- cron;
- turbomed;
+ [ $obteil = 0 ]&&musterserver;
+ [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
+ [ $obteil = 0 ]&&teamviewer10;
+ [ $obteil = 0 ]&&cron;
+ [ $obteil = 0 ]&&turbomed;
 fi;
-if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
- speichern;
+# if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
+ [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&{ [ $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
+ [ $obteil = 0 ]&&speichern;
 if false; then
- firebird;
+ [ $obteil = 0 ]&&firebird;
 fi;
 printf "${dblau}Ende von $0$reset\n";
 
