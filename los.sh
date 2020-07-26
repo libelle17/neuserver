@@ -1321,7 +1321,7 @@ dbinhalt() {
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
-test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben: ";su -c "$meingespfad $@";exit;};
+test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl su -c $blau$meingespfad $@$reset: ";su -c "$meingespfad $@";exit;};
 echo Starte mit los.sh...
 [ $obteil = 0 ]&&bildschirm;
 variablen;
