@@ -47,15 +47,17 @@ commandline() {
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
 	obmysql=0; # nur mysql soll eingerichtet werden
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
+  gespar="$@"
+  verb=0;
 	while [ $# -gt 0 ]; do
-		para="$1";
+    para=$(echo "$1"|sed 's;^[-/];;');
 		case $para in
-			-neu|-new) obneu=1;obschreiben=1;;
-			-v|--verbose) verb=1;;
+			neu|new) obneu=1;obschreiben=1;;
+			v|-verbose) verb=1;;
 			*) obteil=1;
 				case $para in
-					-mysql) obmysql=1;;
-					-mysqlneu) mysqlneu=1;;
+					mysql) obmysql=1;;
+					mysqlneu) mysqlneu=1;;
 				esac;;
 		esac;
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset => gesprächig\n";
@@ -1293,7 +1295,7 @@ dbinhalt() {
   pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
-  for db in $(find $VZ -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
+  for db in $(find $VZ -mtime -14 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
     # wenn Datenbank nicht existiert, dann
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
@@ -1314,14 +1316,14 @@ dbinhalt() {
       fi;
     fi;
   done;
-}
+} # dbinhalt
 
 # Start
 # hier geht's los
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
-test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl su -c $blau$meingespfad $@$reset: ";su -c "$meingespfad $@";exit;};
+test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
 [ $obteil = 0 ]&&bildschirm;
 variablen;
