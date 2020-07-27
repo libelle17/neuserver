@@ -1239,7 +1239,8 @@ tu_turbomed() {
   [ $verb = 0 ]||echo Setupverzeichnis: ${TMsetup%/*}
   sh TM_setup $1
   ret=$?
-  [ ! $ret = 0 -a "$2" ]||sh TM_setup $2
+  echo $ret;
+  [ ! $ret = 0 -a "$2" ]||{ echo Hier falsch; exit; sh TM_setup $2;}
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
@@ -1253,6 +1254,7 @@ tu_turbomed() {
     systemctl start poetd; 
     echo Nach start poetd; 
   done;
+  [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem die Turbomed-Datenbanken kopiert werden sollen: ";read srv0;};
   for S in PraxisDB StammDB DruckDB Dictionary; do
     ausfd "rsync -avu $srv0:/opt/turbomed/$S /opt/turbomed/";
   done;
@@ -1302,7 +1304,6 @@ turbomed() {
   	echo laufVers: "$laufVers"
 	  echo instVers: "$instVers";
 #   12.0.2.208
-    [ "$version" = "$instVers" ]||{ printf "Turbomed mit $instVers ggü. $version zu alt.\n";tu_turbomed "-uw";};
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
