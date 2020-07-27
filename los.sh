@@ -1277,7 +1277,6 @@ turbomed() {
 	printf "Turbomed-Version: $blau$version$reset\n";
 #	outDir="${datei%/*}/TM${version}L";
 	outDir="${datei%/*}/TMWin"; # Name wird benötigt für setup
-  echo version: $version
   echo datei: $datei
   echo outDir: $outDir
 	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
