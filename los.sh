@@ -1268,7 +1268,10 @@ turbomed() {
   [ $verb = 1 ]&&echo "Datei: $datei"
 	if test -z "$datei"; then echo keine Datei \"$tmsuch\" in \"$q0\" gefunden; return; fi;
 	# 19.1.1.3969
-	version=$(echo $datei|cut -d_ -f4|cut -d. -f1-2);
+  stamm=$(basename "$datei");
+  echo Stamm: $stamm;
+#	version=$(echo $datei|cut -d_ -f4|cut -d. -f1-2);
+	version=$(echo $stamm|cut -d_ -f4|cut -d_ -f4);
 	printf "Turbomed-Version: $blau$version$reset\n";
 #	outDir="${datei%/*}/TM${version}L";
 	outDir="${datei%/*}/TMWin"; # Name wird benötigt für setup
@@ -1299,6 +1302,7 @@ turbomed() {
   	echo laufVers: "$laufVers"
 	  echo instVers: "$instVers";
 #   12.0.2.208
+    [ "$version" = "$instVers" ]||{ printf "Turbomed mit $instVers ggü. $version zu alt.\n";tu_turbomed "-uw";};
     [ "$laufVers" = "$instVers" ]||{ printf "Turbomed mit $laufVers ggü. $instVers zu alt.\n";tu_turbomed "-uw";};
 	else
 		printf "Installiere Turbomed neu\n";
