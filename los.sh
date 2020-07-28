@@ -671,8 +671,9 @@ proginst() {
 	doinst cifs-utils;
   doinst convmv; # fuer Turbomed
   doinst ntp; # fuer stutzeDBBack.sh
-  doinst libvmime1; # fuer stutzeDBBack.sh
-  doinst libvmime-devel; # fuer stutzeDBBack.sh
+#  doinst libvmime1; # fuer stutzeDBBack.sh
+#  doinst libvmime-devel; # fuer stutzeDBBack.sh
+  doinst cmake;
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
