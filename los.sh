@@ -503,19 +503,14 @@ doinst() {
   echo Fertig mit obprogda
 #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	for prog in "$1"; do
-    echo Stelle 1
     echo $psuch $prog
 		$psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
-    echo Stelle 2
 		printf "installiere $blau$prog$reset\n";
 		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
-      echo Stelle 3
 			obnmr=0;
 			zypper mr -k --all;
 		fi;
-      echo Stelle 4
 		$instp "$prog";
-      echo Stelle 5
 	done;
 	printf "Fertig mit ${blau}doinst($reset$1)\n"
 } # doinst
@@ -676,6 +671,8 @@ proginst() {
 	doinst cifs-utils;
   doinst convmv; # fuer Turbomed
   doinst ntp; # fuer stutzeDBBack.sh
+  doinst libvmime1; # fuer stutzeDBBack.sh
+  doinst libvmime-devel; # fuer stutzeDBBack.sh
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
