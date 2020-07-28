@@ -675,6 +675,7 @@ proginst() {
 #  doinst libvmime-devel; # fuer stutzeDBBack.sh
   doinst cmake;
   doinst libgsasl;
+  doinst gtk3-devel
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
