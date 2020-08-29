@@ -675,7 +675,17 @@ proginst() {
 #  doinst libvmime-devel; # fuer stutzeDBBack.sh
   doinst cmake;
   doinst libgsasl;
-  doinst gtk3-devel
+  doinst gtk3-devel;
+  doinst dash;
+  doinst git;
+  doinst lsb-release;
+  doinst docker;
+  case $OSNR in
+   4) # suse
+    zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
+  esac;
+  doinst tesseract-ocr 
+  doinst tesseract-ocr-traineddata-german
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
 	W=PermitRootLogin;
