@@ -967,7 +967,7 @@ fritzbox() {
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
 	 credfile="/root/.fbcredentials"; # ~  # $HOME
-	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
+	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 0" >>$ftb;
    if [ ! -f "$credfile" ]; then
 		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 		 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
