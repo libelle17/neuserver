@@ -680,6 +680,7 @@ proginst() {
   doinst git;
   doinst lsb-release;
   doinst docker;
+  doinst gparted;
   case $OSNR in
    4) # suse
     zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
