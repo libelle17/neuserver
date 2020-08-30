@@ -60,6 +60,7 @@ commandline() {
 					mysql) obmysql=1;;
 					mysqlneu) mysqlneu=1;;
           turbomed) obtm=1;;
+          firebird) obfb=1;;
 				esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -660,7 +661,6 @@ richtmariadbein() {
 
 proginst() {
 	printf "${dblau}proginst$reset()\n"
-	setzinstprog;
   [ "$psuch" ]||{ echo psuch nicht zugewiesen, OSNR: $OSNR, breche ab; exit; }
 	# fehlende Programme installieren
 	doinst htop;
@@ -1364,6 +1364,7 @@ variablen;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 ]&&fritzbox;
  [ $obteil = 0 ]&&mountlaufwerke;
+	setzinstprog;
  [ $obteil = 0 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
@@ -1375,9 +1376,7 @@ variablen;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&{ [ $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
-if false; then
- [ $obteil = 0 ]&&firebird;
-fi;
+ [ $obteil = 0 -o $obfb = 1 ]&&firebird;
 printf "${dblau}Ende von $0$reset\n";
 
 if false; then
