@@ -801,7 +801,7 @@ EOF
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
 	fi;
-}
+} # sambaconf
 
 firewall() {
 	printf "${dblau}firewall$reset() $1\n";
@@ -948,7 +948,7 @@ tufirewall() {
 		 fi;
 	 fi
 	fi
-}
+} # tufirewall
 
 fritzbox() {
 	printf "${dblau}fritzbox$reset()\n";
@@ -978,7 +978,7 @@ fritzbox() {
 #	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 #	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 	fi;
-}
+} # fritzbox
 
 machidpub() {
 	 idpub="$HOME/.ssh/id_rsa.pub";
@@ -986,7 +986,7 @@ machidpub() {
 	  printf "Es fehlt noch: $blau$idpub$reset\n";
 	  ssh-keygen -t rsa; # return, return, return
 	 done;
-}
+} # machidpub
 
 musterserver() {
  printf "${dblau}musterserver$reset()\n";
