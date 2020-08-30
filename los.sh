@@ -275,9 +275,8 @@ while read -r zeile; do
 	fi;
 	# printf "zeile: $blau$zeile$reset\n"
 	# echo "mtp: \"$mtp\"";
-	[ "$mtp" ]||mtp="/"$(echo $lbl|sed 's/[[:space:]]//g');
-	byt=$(echo $zeile|cut -d\" -f4);
-	[ "$mtp" -a ! -d "$mtp" ]&&mkdir "$mtp";
+	[ "$mtp" ]||mtp="/mnt/"$(echo $lbl|sed 's/[[:space:]]//g');
+	[ "$mtp" -a ! -d "$mtp" ]&&mkdir -p "$mtp";
 	if test -z "$lbl"; then
 		ident="UUID="$uid;
 	else 
@@ -295,6 +294,7 @@ while read -r zeile; do
 		printf "$eintr\n" >>$ftb;
 		printf "\"$blau$eintr$reset\" in $blau$ftb$reset eingetragen.\n";
 	fi;
+	# byt=$(echo $zeile|cut -d\" -f4);
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
 $fstabteil;
