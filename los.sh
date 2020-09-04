@@ -110,8 +110,7 @@ firebird() {
 	[ "$verb" ]&& echo Vorv: $Vorv;
 	[ "$verb" ]&& echo Aktv: $Aktv;
 	[ ! $Aktv ]&&{
-		ausf "systemctl stop firebird 2>/dev/null";
-		ausf "sleep 10";
+		ausf "systemctl stop firebird 2>/dev/null && sleep 10";
 		ausf "$upr firebird"; # zypper rm
 	  ausf "[ -r /usr/lib/libstdc++.so.5 ]||eval $instp ./libstdc++33-32bit-3.3.3-41.1.3.x86_64.rpm"; # zypper in 
 		ausf "pkill fbguard";
@@ -618,10 +617,14 @@ richtmariadbein() {
 		fi;
 		while mysql -e'\q' 2>/dev/null; do
 			pruefmroot " neues" " das neue";
-			ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-			ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-		done;
+      # 4.9.20: fuer den mysql-Import von quelle ist auch der Benutzer mysql noetig
+      for benu in $mroot mysql; do
+        ausf "mysql -u\"$benu\" -hlocalhost -e\"GRANT ALL ON *.* TO '$benu'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+        ausf "mysql -u\"$benu\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$benu'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+        ausf "mysql -u\"$benu\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
+        [ $benu = mysql ]&&break;
+      done;
+    done;
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
     erg=$?;
