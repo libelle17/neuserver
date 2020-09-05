@@ -1373,7 +1373,7 @@ dbinhalt() {
          [ $ret = 0 ]&&{
            [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
-  # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
+   # oder:       sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
          } 
         else
          printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
