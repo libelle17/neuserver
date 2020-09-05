@@ -1,8 +1,10 @@
 #!/bin/sh
-blau="\e[1;34m";
+# blau="\e[1;34m";
+blau="\033[1;34m";
 dblau="\e[0;34;1;47m";
 rot="\e[1;31m";
-reset="\e[0m";
+# reset="\e[0m";
+reset="\033[0m";
 prog="";
 obnmr=1;
 ftb=/etc/fstab;
@@ -1331,35 +1333,51 @@ dbinhalt() {
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
-    [ "$verb" ]&&printf "Untersuche $blau$db$reset...\n";
-    # wenn Datenbank nicht existiert, dann
+    [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-    if test "$1" == immer || ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
-      printf "$blau$db$reset"; if test "$1" == immer; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
+    dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
+    # wenn "immer" oder Datenbank nicht existiert, dann
+    if test "$1"/ = immer/ -o $dbda = 0; then
+#      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
       # die als jüngste benannte Datei ...
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
-      echo Q: $Q
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g') # Zeit rausziehen
-      echo Zt: $Zt
       Sz=$(stat "$Q" --printf="%s\\n")
-      echo Sz: $Sz
       pd=$meinpfad/sqlprot.txt
-      # ... die auch eine Datenbank enthält
-      ausf "grep '^CREATE DATABASE' \"$Q\"";
-      if test "$resu"; then
-       printf " Stelle sie von \"$blau$Q$reset\" her (Größe: $S)!\n";
-       sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
-       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
-       ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
-       [ $ret = 0 ]&&{
-         [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
-         ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
-# oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
-       } 
-      else
-       printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
+      test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+      mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
+      awk '/'$db'=/{\
+        gef=1;\
+        split($0,teil,"=");\
+        zei=teil[2]>'$Zt'?">":teil[2]<'$Zt'?"<":"=";\
+        printf "'$blau'"teil[2]"'$reset'"zei"'$blau$Zt$reset' =>";\
+        if (zei==">"||zei=="="){\
+          print "ueberspringe '$blau$db$reset'";\
+          fertig=1;\
+          exit\
+        }\
+       }\
+       END{\
+        if(fertig)exit 1;\
+        if(!gef)printf "'$blau$db$reset' nicht gefunden, ";\
+        printf "verarbeite '$blau$db$reset':"\
+       }' $pd
+      if [ $? = 0 -o $dbda = 0 ]; then
+        # ... die auch eine Datenbank enthält
+#        ausf "grep '^CREATE DATABASE' \"$Q\""; if test "$resu"; then
+        if test "$(grep '^CREATE DATABASE' "$Q")"; then
+         LC_NUMERIC=de_DE printf " Stelle sie von \"$blau$Q$reset\" her (Größe: $blau%'.f$reset)!\n" $Sz
+         sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
+         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
+         [ $ret = 0 ]&&{
+           [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
+           ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
+  # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
+         } 
+        else
+         printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
+        fi;
       fi;
     fi;
   done;
