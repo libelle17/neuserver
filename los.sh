@@ -1340,8 +1340,7 @@ dbinhalt() {
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
-      # die als jüngste benannte Datei ...
-#      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
+#      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g') # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n")
