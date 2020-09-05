@@ -1337,7 +1337,8 @@ dbinhalt() {
     if test "$1" == immer || ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
       printf "$blau$db$reset"; if test "$1" == immer; then printf " wird neu gespeichert!"; else printf " fehlt als Datenbank!"; fi;
       # die als jüngste benannte Datei ...
-      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
+#      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
+      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
       # ... die auch eine Datenbank enthält
       ausf "grep '^CREATE DATABASE' \"$Q\"";
       if test "$resu"; then
