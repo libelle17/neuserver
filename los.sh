@@ -1348,6 +1348,7 @@ dbinhalt() {
       pd=$meinpfad/sqlprot.txt
       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
+      # überprüfen, ob ind $pd schon die gleiche oder eine jüngere Datei eingetragen wurde
       awk '/'$db'=/{\
         gef=1;\
         split($0,teil,"=");\
