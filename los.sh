@@ -47,7 +47,7 @@ ausfd() {
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
-  obfb=0; # Fritzbox
+  obfb=0; # Firebird
 	obmysql=0; # nur mysql soll eingerichtet werden
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obtm=0; # ob turbomed installiert werden soll
