@@ -32,7 +32,7 @@ ausf() {
   ret=$?;
   [ "$verb" ]&&{
     printf "ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: $blau$resu$reset";
+    [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
     printf "\n";
   }
 } # ausf
@@ -1335,18 +1335,29 @@ dbinhalt() {
     # wenn Datenbank nicht existiert, dann
     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
     if test "$1" == immer || ! $(mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" 2>/dev/null); then
-      printf "$blau$db$reset"; if test "$1" == immer; then printf " wird neu gespeichert!"; else printf " fehlt als Datenbank!"; fi;
+      printf "$blau$db$reset"; if test "$1" == immer; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
       # die als jüngste benannte Datei ...
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
+      echo Q: $Q
+      Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g') # Zeit rausziehen
+      echo Zt: $Zt
+      Sz=$(stat "$Q" --printf="%s\\n")
+      echo Sz: $Sz
+      pd=$meinpfad/sqlprot.txt
       # ... die auch eine Datenbank enthält
       ausf "grep '^CREATE DATABASE' \"$Q\"";
       if test "$resu"; then
-       printf " Stelle sie von \"$Q\" her!\n";
+       printf " Stelle sie von \"$blau$Q$reset\" her (Größe: $S)!\n";
        sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
        test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
        mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
-       ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\"";
+       ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
+       [ $ret = 0 ]&&{
+         [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
+         ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
+# oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
+       } 
       else
        printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
       fi;
