@@ -2,7 +2,7 @@
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="rsync $Q/$1 $Z/$2 $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
+ tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
