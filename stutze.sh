@@ -8,7 +8,7 @@ vorgaben() {
   mkdir -p "$Zvz";
   # falls es fehlt, aufhören
   test -d "$Zvz" ||exit
-  muster="*????-??-??*.sql*";
+  muende="????-??-??*.sql*";
   # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
   gr1=730;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
@@ -33,13 +33,13 @@ commandline() {
 		case $para in
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
-        printf "Programm $blau$0$reset: verschiebt einen Teil der Dateien nach Muster $blau$muster$reset aus $blau$Vz$reset nach $blau$Zvz$reset,\n";
+        printf "Programm $blau$0$reset: verschiebt einen Teil der Dateien nach Muster $blau*$muende$reset aus $blau$Vz$reset nach $blau$Zvz$reset,\n";
         printf "  zusammengeschrieben von: Gerald Schade 15.6.2019\n";
         printf "  Benutzung:\n";
 				printf "  $blau$0 [-v] [-h|--hilfe|-?]$reset\n";
 			exit;;
 			--help|-help)
-        printf "Program $blau$0$reset: moves part of the files of pattern $blau$muster$reset from $blau$Vz$reset to $blau$Zvz$reset,\n";
+        printf "Program $blau$0$reset: moves part of the files of pattern $blau*$muende$reset from $blau$Vz$reset to $blau$Zvz$reset,\n";
         printf "  written together by: Gerald Schade 15.6.2019\n";
         printf "  Usage:\n";
 				printf "  $blau$0 [-v] [-h|--hilfe|-help]$reset\n";
@@ -90,7 +90,7 @@ vorgaben;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 zeit;
 # alle Dateien mit dem Muster aus dem Quellverzeichnis raussuchen und den Namen verwenden
-for dt in $(find $Vz -name "$muster" -printf '%f\n'); do
+for dt in $(find $Vz -name "*$muende" -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
   ermittledatum;
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
@@ -122,7 +122,9 @@ for dt in $(find $Vz -name "$muster" -printf '%f\n'); do
         # ansonsten ...
 #        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$name--????-??-??*.sql*" -print -quit;"
         # schauen, ob es tatsächlich im gleichen Monat schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
-        aelter=$(find "$Vz" -newermt "$jahr-$monat-01" -not -newermt "$datum" -name "$name--????-??-??*.sql*" -print -quit);
+        befehl="find \"$Vz\" -newermt \"$jahr-$monat-01\" -not -newermt \"$datum\" -name \"$name--$muende\" -print -quit";
+        [ "$verb" ]&&echo befehl: $befehl
+        aelter=$(eval $befehl)
         # wenn also die Variable befüllt ...
         if test "$aelter"; then
           # [ "$verb" ]&&echo $dt $name $datum $jahr $monat $tag $datediff;
