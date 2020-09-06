@@ -35,6 +35,7 @@
 # "make verschieb" => wie transfer, mit ../<DPROG>rein als Zielverzeichnis
 # "make vsneu" => wie verschieb, löscht vorher das als Zielverzeichnis (geht nur, wenn das github-Repository vorher gelöscht ist)
 # "make mitzieh" => uebertraegt gemeinsame Dateien auf ein ein anderes Programmverzeichnis
+# "make forcemz" => uebertraegt gemeinsame Dateien auf ein ein anderes Programmverzeichnis, auch wenn sie dort juenger sind
 # "make ruf" => ruft das Programm auf
 # "make rufv" => ruft das Programm mit -v auf
 # "make uninstall" => deinstalliert alles, frägt noch manchmal rück
@@ -579,14 +580,15 @@ dovers: README.md
 	@git commit -m "Version $$(cat versdt)"
 	@git push
 
-mFERTIG=$(error mitzieh finished/ Fertig mit mitzieh!)
-mZiel::=$(filter-out mitzieh,$(MAKECMDGOALS))
-.PHONY: mitzieh tumitzieh
-mitzieh: tumitzieh
+mZiel::=$(filter-out mitzieh forcemz,$(MAKECMDGOALS))
+mFERTIG=$(error $(MAKECMDGOALS) finished/ Fertig mit $(MAKECMDGOALS)!)
+.PHONY: mitzieh forcemz tumitzieh
+mitzieh forcemz: tumitzieh
 	$(mFERTIG)
 tumitzieh:
 	@TZL=$(mZiel);\
 	blau="\033[1;34m";reset="\033[0m";\
+  Art="$(MAKECMDGOALS)";Art="$${Art%% *}";[ $$Art = mitzieh ]&&Attr="u"||Attr="";\
 	while true;do \
 		case "$$TZL" in "$(DPROG)"|""|.*);;*)TZL="../$$TZL";;esac;\
 		[ -n "$$TZL" -a "$$TZL" != . -a "$$TZL" != "$(DPROG)" -a -d "$$TZL" ]&&break;\
@@ -596,11 +598,11 @@ tumitzieh:
 		Fg="$$Fg\b: ";printf "$$Fg";[ $$obbash -eq 1 ]&&read -e -i "$$TZL" TZL||read TZL;:;\
 	done;\
 	printf "adapt/ mitziehen von %b$$TZL%b\n" $(blau) $(reset);\
-	printf "cp -au $$blau.exrc Makefile install.sh viall configure $$reset\"$$TZL\";\n";\
-	cp -au .exrc Makefile install.sh viall configure "$$TZL";\
-	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\$$A\" -a -f \"\$$A\" ]&&cp -au \"\$$A\" \"$$TZL\";done;\n";\
+	printf "cp -a$$Attr $$blau.exrc Makefile install.sh viall configure $$reset\"$$TZL\";\n";\
+	cp -a$$Attr .exrc Makefile install.sh viall configure "$$TZL";\
+	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\$$A\" -a -f \"\$$A\" ]&&cp -a$$Attr \"\$$A\" \"$$TZL\";done;\n";\
 	cd "$$TZL" $(DN);test -d ".git"&&git commit -m"vor mitzieh" $(KR);cd - $(DN);\
-	for A in kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h;do [ -f "$$TZL/$$A" -a -f "$$A" ]&&cp -au "$$A" "$$TZL";done;\
+	for A in kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h;do [ -f "$$TZL/$$A" -a -f "$$A" ]&&cp -a$$Attr "$$A" "$$TZL";done;\
 	cd "$$TZL" $(DN); sh configure; cd - $(DN);
 
 
