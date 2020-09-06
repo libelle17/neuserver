@@ -250,6 +250,7 @@ GZS::=$(patsubst %,%.gz,$(MANS))
 .PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig compiler git
 ifeq (,$(stest))
   $(info keine *.c- oder *.cpp-Dateien => kompiliere nichts)
+all: anzeig shentw
 all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC) $(INSTEXEC) compiler:
 	@printf ""
 else
@@ -277,7 +278,7 @@ neu: anzeig clean weiter
 endif
 
 .PHONY: weiter
-weiter: compiler $(EXEC) $(GZS) 
+weiter: shentw compiler $(EXEC) $(GZS) 
 
 define setz_gitv
 	 @D=$(1)/.git/config; GITV=$$([ -f $$D ]&&sed -n '/ *url =.*com/{s/.*com\/\([^/]*\).*/\1/p}' $$D);\
@@ -472,6 +473,102 @@ shlist:
 			grep -qm1 "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
 		done;:
 
+.PHONY: shziel
+shziel:
+	rot="\e[1;31m";\
+  blau="\033[1;34m";\
+  reset="\033[0m";\
+	if test -f ziele; then \
+	 for D in $$(cat ziele);do \
+    case $$D in \
+      [*\]) \
+        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
+      *) \
+        printf "$$blau$$D $$Z/$$D$$reset\n";\
+        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
+        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
+        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        echo Zeitstempel AGit: $$AGit;\
+        echo Zeitstempel AHr : $$AHr;\
+        [ 0$$AHr -lt 0$$AGit ]&&AGit=$$AHr;\
+        echo Zeitstempel APC : $$APC;\
+        [ 0$$APC -eq 0 ]&&{ \
+          [ 0$$AGit -eq 0 ]&&{ \
+           echo " $$D fehlt hier und auf Git";\
+          :;}||{ \
+           printf " $$D fehlt hier:$$rot cp -a $$D $$Z/$$reset\n";\
+           cp -a $$D $$Z/;\
+          };\
+        :;}||{ \
+          [ 0$$AGit -eq 0 ]&&{ \
+            echo " $$D fehlt auf Git";\
+          :;}||{ \
+            ls -l $$Z/$$D;\
+            ls -l $$D;\
+            diff $$Z/$$D .;\
+            [ $$? -eq 0 ]||printf "$${rot}Dateien verschieden$${reset}\n";\
+            [ 0$$AGit -lt 0$$APC ]&&echo " $$D auf Git aelter";\
+            [ 0$$AGit -gt 0$$APC ]&&{ printf " $$D hier aelter:$$rot cp -a $$D $$Z/$$reset\n"; cp -a $$D $$Z;};\
+            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
+          } \
+        } \
+        ;;\
+    esac;\
+   done;\
+ fi;
+
+.PHONY: shentw
+shentw:
+	rot="\e[1;31m";\
+  blau="\033[1;34m";\
+  reset="\033[0m";\
+	if test -f ziele; then \
+	 for D in $$(cat ziele);do \
+    case $$D in \
+      [*\]) \
+        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
+      *) \
+        printf "$$blau$$D $$Z/$$D$$reset\n";\
+        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
+        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
+        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        echo Zeitstempel AGit: $$AGit;\
+        echo Zeitstempel AHr : $$AHr;\
+        [ 0$$AHr -lt 0$$AGit ]&&AGit=$$AHr;\
+        echo Zeitstempel APC : $$APC;\
+        [ 0$$APC -eq 0 ]&&{ \
+          [ 0$$AGit -eq 0 ]&&{ \
+           echo " "$$D fehlt hier und auf Git;\
+          :;}||{ \
+           echo " "$$D fehlt hier;\
+          };\
+        :;}||{ \
+          [ 0$$AGit -eq 0 ]&&{ \
+           printf " $$D fehlt auf Git:$$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D; $$reset\n";\
+           cp -a $$Z/$$D .;\
+           git add $$D;\
+           git commit -m '+$$D' $$D;\
+          :;}||{ \
+            ls -l $$Z/$$D;\
+            ls -l $$D;\
+            diff $$Z/$$D .;\
+            [ $$? -eq 0 ]||printf "$${rot}Dateien verschieden$${reset}\n";\
+            [ 0$$AGit -lt 0$$APC ]&&{\
+              printf " $$D auf Git aelter:$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D;$$reset\n";\
+              cp -a $$Z/$$D .;\
+              git add $$D;\
+              git commit -m '+$$D' $$D;\
+            };\
+            [ 0$$AGit -gt 0$$APC ]&&echo " $$D hier aelter";\
+            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
+          } \
+        } \
+        ;;\
+    esac;\
+   done;\
+ fi;:;
+
+
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE
 man_de.html: AWI::=AUSWIRKUNGEN
@@ -483,7 +580,7 @@ man_en.html: AWI::=IMPLICATIONS
 man_en.gz: OPN::=OPTIONS
 
 .PHONY: install
-install: $(INSTEXEC) $(INSTenMAN) $(INST_MAN) shlist
+install: $(INSTEXEC) $(INSTenMAN) $(INST_MAN) shlist shziel
 
 README.md: $(HTMLS)
 	-@rm -f README.md
