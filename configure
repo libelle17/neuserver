@@ -167,6 +167,7 @@ getIPR() {
 			UDPR="${SUDC}$(which apt-get) -f install; ${SUDC}$(which dpkg) -r --force-depends ";
 		};
 	}
+<<<<<<< HEAD
   for A in $QD;do [ -f "$A" ]&& grep -q "^#include[ ]*<mysql.h>" "$A" &&break;done;[ $? -eq 0 -o ! "$QD" ]&&libmdb=;
 	for A in $QD;do [ -f "$A" ]&& grep -q "^#include[ ]*<boost" "$A" &&break;done;[ $? -eq 0 -o ! "$QD" ]&&{ LBOOST=;LBIO=;LBLO=; }
 	for A in $QD;do [ -f "$A" ]&& grep -q "^#include[ ]*<tiffio.h>" "$A" &&break;done;[ $? -eq 0 -o ! "$QD" ]&&LT=;
