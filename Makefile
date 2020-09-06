@@ -475,7 +475,7 @@ shlist:
 
 .PHONY: shziel
 shziel:
-	rot="\e[1;31m";\
+	-@rot="\e[1;31m";\
   blau="\033[1;34m";\
   reset="\033[0m";\
 	if test -f ziele; then \
@@ -519,7 +519,7 @@ shziel:
 
 .PHONY: shentw
 shentw:
-	rot="\e[1;31m";\
+	-@rot="\e[1;31m";\
   blau="\033[1;34m";\
   reset="\033[0m";\
 	if test -f ziele; then \
