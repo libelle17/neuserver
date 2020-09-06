@@ -1340,14 +1340,22 @@ dbinhalt() {
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
+<<<<<<< HEAD
+      # die als jüngste benannte Datei ...
+#      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);
+=======
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
+>>>>>>> dc52cc0c3697f5d8406123fa60eef9b86eaebabb
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g') # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n")
       pd=$meinpfad/sqlprot.txt
       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
+<<<<<<< HEAD
+=======
       # überprüfen, ob ind $pd schon die gleiche oder eine jüngere Datei eingetragen wurde
+>>>>>>> dc52cc0c3697f5d8406123fa60eef9b86eaebabb
       awk '/'$db'=/{\
         gef=1;\
         split($0,teil,"=");\
@@ -1374,7 +1382,11 @@ dbinhalt() {
          [ $ret = 0 ]&&{
            [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
+<<<<<<< HEAD
+   # oder:       sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
+=======
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
+>>>>>>> dc52cc0c3697f5d8406123fa60eef9b86eaebabb
          } 
         else
          printf " Datei \"$Q\" enthaelt aber keine Datenbank!\n";
