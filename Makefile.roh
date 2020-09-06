@@ -1,4 +1,4 @@
-# kompiliert alle *.cpp-Dateien im aktuellen Verzeichnis
+# kompiliert alle *.c- und *.cpp-Dateien im aktuellen Verzeichnis
 # statt erstmaliger Verwendung bitte "./install.sh" aufrufen, dort wird das hier eingeschlossene "vars" erstellt und  ggf. 'make' installiert
 # nach "touch entwickeln" wird eine Datei 'versdt' erstellt, deren Inhalt, eine Versionsnummer, bei jedem Kompiliervorgang um 0.0001 erhoeht wird
 # und die in die man_de und man_en-Datei eingebaut wird sowie ueber
@@ -43,8 +43,9 @@
 # "make shlist" => installiert die in "shliste" stehenden shell-Scripte (=bei make install dabei)
 
 ICH::=$(firstword $(MAKEFILE_LIST))
-SRCS::=$(wildcard *.cpp)
-OBJ::=$(SRCS:.cpp=.o)
+SRCS::=$(wildcard *.cpp) $(wildcard *.c)
+zOBJ::=$(SRCS:.cpp=.o)
+OBJ::=$(zOBJ:.c=.o)
 DN::= >/dev/null# DevNull
 KR::= $(DN) 2>&1# keine Rueckmeldung
 KF::= 2$(DN)# keine Fehlermeldung
@@ -58,7 +59,6 @@ endif
 #EXPFAD=/usr/local/sbin
 EXPFAD::=$(shell echo $(PATH) | tr -s ':' '\n' | grep /usr/ | head -n 1)
 EXPFAD::=$(shell echo $(PATH) | tr -s ':' '\n' | grep /usr/ | awk '{ print length, $$0 }' | sort -n -s | cut -d" " -f2- | head -n1)
-
 #// ifneq ($(shell g++-6 --version $(KR); echo $$?),0)
 #//  CCName::=g++
 #//  CFLAGS::=$(CFLAGS) -std=gnu++11 # 7.8.17 nicht nötig für opensuse42, hinderlich für fedora; 5.9.17: geht nicht mehr (wg. auto)
@@ -76,14 +76,15 @@ MINGCCNR::=6
 MAXGCCNR::=$(shell erg=0;for i in $$(seq 50 -1 1);do which g++-$$i $(KR)&&{ erg=$$i;break;};done;echo "$$erg")# {50..1} geht bei dash nicht
 CCName::=Nix
 ifeq ($(MAXGCCNR),0)
-	MAXGCCNR::=$(shell erg=$$(! which g++&&echo 0||g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
+	MAXGCCNR::=$(shell erg=$$(! which g++ $(KR)&&echo 0||g++ -v 2>&1|sed '$$!d;s/[^ ]* \([^.]*\).*/\1/');echo $$erg)
 	ifeq ($(MAXGCCNR)a,a)
 		MAXGCCNR::=0
 	endif
 	CCName::=g++
 endif
+# $(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)),$(info $(v) = $($(v))))
 	
-#1=verfügbare Version höher als die minimal notwendige, 0=nicht
+#1=verfuegbare Version hoeher als die minimal notwendige, 0=nicht
 # 1=minimal notwendige Version verfügbar, 0=nicht
 GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 # 1=Debian usw., 2=Opensuse, 3=Fedora usw., 4=Magieia, 5=Manjaro usw.
@@ -130,6 +131,7 @@ ifeq ($(shell expr $(OSNR) \<\= 4),1)
 endif
 CFLAGS::=-c -Wall
 LDFLAGS::=
+PCFILES::=$(shell find $(shell pkg-config --variable pc_path pkg-config|tr ':' ' ') -name "*.pc" 2>/dev/null)
 ifneq ($(libmdb),)
 	CFLAGS::=$(CFLAGS) `mysql_config --cflags`
 	LDFLAGS::=`mysql_config --libs`
@@ -148,6 +150,34 @@ ifneq ($(LCURL),)
 endif
 ifneq ($(LCURS),)
 	LDFLAGS::=$(LDFLAGS) -lncursesw -ltinfo
+endif
+ifneq ($(LTERM),)
+	LDFLAGS::=$(LDFLAGS) -L/usr/lib64/termcap/ -ltermcap
+endif
+ifneq ($(LSPAN),)
+	LDFLAGS::=$(LDFLAGS) -lspandsp
+endif
+ifneq ($(LGLIB),)
+	CFLAGS::=$(CFLAGS) -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include
+	LDFLAGS::=$(LDFLAGS) -lglib-2.0
+endif
+ifneq ($(LSOUP),)
+	SOUPVERS::=$(shell grep -l 'Cflags.*libsoup' $(PCFILES)|tail -n1)
+	CFLAGS::=$(CFLAGS) $(shell pkg-config --cflags $(SOUPVERS))
+	LDFLAGS::=$(LDFLAGS) $(shell pkg-config --libs $(SOUPVERS))
+endif
+ifneq ($(LSND),)
+	LDFLAGS::=$(LDFLAGS) -lsndfile
+endif
+ifneq ($(QPDF),)
+	LDFLAGS::=$(LDFLAGS) -lqpdf
+endif
+ifneq ($(LGSSDP),)
+#	LDFLAGS::=$(LDFLAGS) -lgssdp-1.0
+	LDFLAGS::=$(LDFLAGS) $(shell pkg-config --libs $(shell grep -l 'Cflags.*gssdp' $(PCFILES)|tail -n1))
+endif
+ifneq ($(LCAPI),)
+	LDFLAGS::=$(LDFLAGS) -lcapi20
 endif
 ifdef mitpg
 	CFLAGS::=$(CFLAGS) -I/usr/include/pgsql -Dmitpostgres
@@ -190,7 +220,7 @@ slc::=$(SUDC)/sbin/ldconfig
 
 DEPDIR ::= .d
 $(shell mkdir -p $(DEPDIR) $(KR))
-DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td -DGLIB_COMPILATION
 
 # POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d 2>/dev/null
 
@@ -217,7 +247,7 @@ GZS::=$(patsubst %,%.gz,$(MANS))
 
 .PHONY: all glei opt opt2 opt3 optfast opts optg altc neu new anzeig compiler git
 ifeq (,$(SRCS))
-$(info keine *.cpp-Dateien => kompiliere nichts)
+$(info keine *.c- oder *.cpp-Dateien => kompiliere nichts)
 all glei opt opt2 opt3 optfast opts optg altc neu new anzeig $(EXEC) $(INSTEXEC) compiler:
 	@printf ""
 else
@@ -293,7 +323,7 @@ pull:
 ifeq (,$(SRCS))
 else
 anzeig:
-	@if test "$$(./configure nuros)" != "$(OSNR)"; then ./configure;:;echo "$$@";make "$$@";\
+	@cno=$$(./configure nuros);if test "$$cno" != "$(OSNR)"; then echo "Achtung: \"$$cno\" != \"$(OSNR)\" => muss ./configure aufrufen.";./configure;:;echo "$$@";make "$$@";\
 		echo "Die folgende Fehlermeldung gilt nicht/ The following error message is invalid:";false;fi;
 # 'echo -e' geht nicht z.B. in ubuntu
 	@[ "$(DPROG)" ]||{ printf "Datei/File %b'vars'%b fehlerhaft/faulty, bitte vorher/please call %b'./install.sh'%b aufrufen/before!\n" \
@@ -301,20 +331,21 @@ anzeig:
 	@printf " %bGNU Make%b, Target file/Zieldatei: %b%s%b, before/vorher:                        \n" $(gruen) $(reset) $(rot) "$(EXEC)" $(reset) $(BA)
 	@printf " '%b%s%b'\n" $(blau) "$$(ls -l --time-style=+' %d.%m.%Y %H:%M:%S' --color=always $(EXEC) $(KF))" $(reset) $(BA)
 	@printf " Source files/Quelldateien: %b%s%b\n" $(blau) "$(SRCS)" $(reset) $(BA)
-	@printf " Compiler: %b%s%b, installed as/installiert als: %b%s%b; Compiler Parameter: %b%s%b\n"\
-	        $(blau) "$(CCName)" $(reset) $(blau) "$(CCInst)" $(reset) $(blau) "$(CFLAGS)" $(reset)
+	@printf " Compiler: %b%s%b, installed as/installiert als: %b%s%b\n CFLAGS: %b%s%b\n LDFLAGS: %b%s%b\n"\
+	        $(blau) "$(CCName)" $(reset) $(blau) "$(CCInst)" $(reset) $(blau) "$(CFLAGS)" $(reset) $(blau) "$(LDFLAGS)" $(reset)
 	@printf " Target path for/Zielpfad fuer '%bmake install%b': %b%s%b\n" $(blau) $(reset) $(blau) "'$(EXPFAD)'" $(reset) $(BA)
 	-@rm -f fehler.txt $(KF)
 endif
 
 .PHONY: debug debugnew debugneu
-debug debugnew debugneu: DEBUG=-g 
+debug debugnew debugneu: DEBUG=-g3 -O0 
 debug: all
 debugneu debugnew: neu
 
 ifeq (,$(SRCS))
 else
 $(EXEC): $(OBJ)
+  -@printf "OBJ: $(OBJ)"
 	-@printf " linking/verlinke %s to/zu %b%s%b ..." "$(OBJ)" $(blau) "$@" $(reset) $(BA)
 	-@df --output=ipcent / |tail -n1|grep - && $(SUDC)pkill postdrop;:
 	-@man $(KR);[ $$? -gt 1 ]&&{ sh configure inst _ man verbose;}||:;
@@ -328,8 +359,7 @@ $(EXEC): $(OBJ)
 	-@printf " '%b%s%b'\n" $(blau) "$$(ls -l --time-style=+' %d.%m.%Y %H:%M:%S' --color=always $(EXEC))" $(reset)
 endif
 
-%.o : %.cpp
-%.o : %.cpp $(DEPDIR)/%.d
+%.o: %.c* $(DEPDIR)/%.d
 	@[ $@ = $(DPROG).o ]&&{ $(call machvers);if test -f entwickeln; then awk "BEGIN {print `cat versdt`+0.00001}" >versdt;\
 	else printf " %bFile '%bentwickeln%b' missing, keeping the version number stable/ Datei '%bentwickeln%b' fehlt, lasse die Version gleich%b\n" \
 	$(schwarz) $(grau) $(schwarz) $(grau) $(schwarz) $(reset) $(BA); fi;}; :;
@@ -338,7 +368,7 @@ endif
 	-@if ! test -f instvz; then printf \"$$(pwd)\" >instvz; fi; # wird in kons.cpp verwendet
 	-$(CC) $(DEBUG)$(DEPFLAGS) $(CFLAGS) -c $< $(BFA);
 	-@sed -i 's/versdt //g;s/gitvdt //g' $(DEPDIR)/*.Td
-	-@if test -s fehler.txt; then vi +0/error fehler.txt; else rm -f fehler.txt; fi;
+	-@if test -s fehler.txt; then vi +0/"error:\|Fehler:\|Warnung:\|warning:" fehler.txt; else rm -f fehler.txt; fi;
 #	-@$(shell $(POSTCOMPILE))
 	@if test -s fehler.txt; then false; fi;
 
@@ -396,6 +426,14 @@ endif
 	-@[ "$(LACL)" ]&&{ [ -f /usr/include/sys/acl.h ]|| sh configure inst _ "$(LACL)" verbose;}||:
 	-@[ "$(LCURL)" ]&&{ [ -f /usr/include/curl/curl.h -o -f /usr/include/x86_64-linux-gnu/curl/curl.h ]|| sh configure inst _ "$(LCURL)" verbose;}||:
 	-@[ "$(LCURS)" ]&&{ [ -f /usr/include/ncursesw/ncurses.h -o -f /usr/include/x86_64-linux-gnu/ncursesw/ncurses.h ]||{ for kand in $(LCURS);do sh configure inst _ "$$kand-$(dev)" verbose;done;};}||:
+	-@[ "$(LTERM)" ]&&{ [ -f /usr/lib64/termcap/libtermcap.so ]|| sh configure inst _ "$(LTERM)" verbose;}||:
+	-@[ "$(LSPAN)" ]&&{ [ -f /usr/include/spandsp.h ]|| sh configure inst _ "$(LSPAN)" verbose;}||:
+	-@[ "$(LGLIB)" ]&&{ [ -f /usr/include/glib-2.0/glib.h ]|| sh configure inst _ "$(LGLIB)" verbose;}||:
+	-@[ "$(LSOUP)" ]&&{ [ -f /usr/include/libsoup-2.4/libsoup/soup.h ]|| sh configure inst _ "$(LSOUP)" verbose;}||:
+	-@[ "$(LSND)" ]&&{ [ -f /usr/include/sndfile.h ]|| sh configure inst _ "$(LSND)" verbose;}||:
+	-@[ "$(QPDF)" ]&&{ [ -f /usr/include/qpdf/QPDF.hh ]|| sh configure inst _ "$(QPDF)" verbose;}||:
+	-@[ "$(LGSSDP)" ]&&{ grep -qlm1 'Cflags.*gssdp' $(PCFILES)||sh configure inst _ "$(LGSSDP)" verbose;}||:
+	-@[ "$(LCAPI)" ]&&{ grep -qlm1 'capi20' $(PCFILES)||sh configure inst _ "$(LCAPI)" verbose;}||:
 	-@[ "$(LBOOST)" ]&&{ $(SPR) $(LBOOST) $(KR)|| sh configure inst _ "$(LBOOST)" verbose;}||:
 	-@[ "$(LBIO)" ]&&{ $(SPR) "$(LBIO)" $(KR)||sh configure inst _ "$(LBIO)" verbose;}||:
 	-@[ "$(LBLO)" ]&&{ $(SPR) "$(LBLO)" $(KR)||sh configure inst _ "$(LBLO)" verbose;}||:
@@ -427,10 +465,10 @@ endif
 shlist:
 	-@L=shliste;Z=/root/bin;\
 		[ -f "$$L" -a -d "$$Z" ]&&\
-		for D in $$(cat $$L);do \
+		for D in $$(sed '/^#/d' "$$L");do \
 		  printf "$(SUDC)cp -au \""$$D"\" \""$$Z/"\"\n";\
 			$(SUDC)cp -au "$$D" "$$Z/";\
-			grep -q "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
+			grep -qm1 "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
 		done;:
 
 man_de.html: LGL::=deutsch
@@ -601,7 +639,7 @@ tumitzieh:
 	printf "for A in $${blau}kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h$$reset;do [ -f \"$$TZL/\$$A\" -a -f \"\$$A\" ]&&cp -au \"\$$A\" \"$$TZL\";done;\n";\
 	cd "$$TZL" $(DN);test -d ".git"&&git commit -m"vor mitzieh" $(KR);cd - $(DN);\
 	for A in kons.cpp kons.h DB.cpp DB.h efdr.cpp efdr.h tr64.cpp tr64.h;do [ -f "$$TZL/$$A" -a -f "$$A" ]&&cp -au "$$A" "$$TZL";done;\
-	cd "$$TZL" $(DN); sh configure; cd - $(DN);
+	cd "$$TZL" $(DN); ohneboost=1 sh configure; cd - $(DN);
 
 
 .PHONY: verschieb vsneu
@@ -649,7 +687,7 @@ dotrans:
 	else\
 	 ICH=transfer;\
 	 . ./configure;\
-	 for D in $$(find . -maxdepth 1 -name "*.cpp" -or -name "*.h"); do\
+	 for D in $$(find . -maxdepth 1 -name "*.c" -or -name "*.cpp" -or -name "*.h"); do\
 	  sed -e '/^[[:space:]]*\/\*\/\/.*\*\/[[:space:]]*$$/d;'\
 		-e 's_/\*//[^*]*\*/__g;/\/\*\/\//,/\*\//{/^[[:space:]]*\/\*\/\//d;/\*\/[[:space:]]*$$/d;'\
 		-e '/\/\*\/\//!{/\*\//!d};s_/\*//.*__;s_.*\*/__};/^[[:space:]]*\/\/\/\/.*/d;s_////.*__;s/\r$$//' $$D >$$TZL/$$D;\
