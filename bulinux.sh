@@ -34,7 +34,7 @@ else
   Z="";
   ANDERER=$LINEINS; # linux1
 fi
-PROT=/var/log/bulinux0prot.txt
+PROT=/var/log/${0}prot.txt
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
