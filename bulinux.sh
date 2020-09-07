@@ -8,9 +8,11 @@ function kopier {
  echo $tue
  eval $tue
 }
+
 function kopieros {
   kopier $1 "" "--exclude='.*.swp'"
 }
+
 function kopieretc {
   kopier etc/$1 "etc/"
 }
