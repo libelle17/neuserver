@@ -10,8 +10,8 @@ RBI=/root/bin
 PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin:$RBI
 MAILTO=root
 VL=/var/log
-NLG=$VL/cron.log
-ELG=$VL/cronf.log
+NLG=/var/log/cron.log
+ELG=/var/log/cronf.log
 #
 # check scripts in cron.hourly, cron.daily, cron.weekly, and cron.monthly
 #
@@ -202,8 +202,8 @@ ELG=$VL/cronf.log
 -* * * * * /usr/bin/ionice -c3  $RBI/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * /usr/bin/ionice -c3 $RBI/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
--10,40 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 verhdop.sh butm.sh
--20 14,22 * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 verhdop.sh bulinux.sh
+-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 verhdop.sh butm.sh
+-20 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 verhdop.sh bulinux.sh
 # -05 0 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
