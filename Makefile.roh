@@ -302,16 +302,16 @@ git: README.md
 	@printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
 		$(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
 		"$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA) 
-	-@cp -au Makefile Makefile.roh
+	-cp -au Makefile Makefile.roh
 	@[ -d .git ]||{ \
 		curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
 	}
 	$(call setz_gitv,".")
-	-@git config --global push.default simple
-	-@git add -u
-	-@git commit -m "Version $$(cat versdt)"
-	-@grep remote\ \"origin\"] .git/config $(KR)||git remote add origin https://github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git
-	-@git push -u origin master
+	-git config --global push.default simple
+	-git add -u
+	-git commit -m "Version $$(cat versdt)"
+	-grep remote\ \"origin\"] .git/config $(KR)||git remote add origin https://github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git
+	-git push -u origin master
 
 .PHONY: giterlaub
 giterlaub:
