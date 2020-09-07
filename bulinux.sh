@@ -2,7 +2,7 @@
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
+ tue="rsync \"$Q:/$1\" \"$Z:/$2\" $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
@@ -23,11 +23,11 @@ if [ $HOSTK/ = $LINEINS/ ]; then
     exit;
   fi;
   Q=""
-  Z=${2%%:*}:; # z.B. linux0:
+  Z=${2%%:*}; # z.B. linux0:
   ANDERER=$Z; # z.B. linux0
   ping -c1 $Z >/dev/null || exit;
 else
-  Q=$LINEINS:; # linux1:
+  Q=$LINEINS; # linux1:
   Z="";
   ANDERER=$Q; # linux1
   ping -c1 $Q >/dev/null || exit;
@@ -46,7 +46,7 @@ kopieros "root/.vim"
 kopieros "root/.smbcredentials"
 kopieros "root/crontabakt"
 kopieros "root/.getmail"
-V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
+V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q:$V" "$Z:$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 EXCL=--exclude={
@@ -91,4 +91,4 @@ fi;
 
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
-# rsync $Q/etc/samba $Q/etc/hosts $Q/etc/vsftpd*.conf $Q/etc/my.cnf $Q/etc/fstab $Z/etc/ -avuz # keine Anführungszeichen um den Stern!
+# rsync $Q:/etc/samba $Q:/etc/hosts $Q:/etc/vsftpd*.conf $Q:/etc/my.cnf $Q:/etc/fstab $Z/etc/ -avuz # keine Anführungszeichen um den Stern!
