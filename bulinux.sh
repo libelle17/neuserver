@@ -21,25 +21,25 @@ reset="\033[0m";
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
 [ "$HOST" ]||HOST=$(hostname);
 HOSTK=${HOST%%.*};
-if [ $HOSTK/ = $LINEINS/ -a $# != 4 ]; then
+if [ $HOSTK/ = $LINEINS/ -a $# -lt 2 ]; then
   printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n";
   exit;
 fi;
 if [ $HOSTK/ = $LINEINS/ ]; then
   Q=""
   Z=${4%%:*}:; # z.B. linux0:
-  ANDERER=${4%%:*}; # z.B. linux0
+  ANDERER=${2%%:*}; # z.B. linux0
 else
   Q=$LINEINS:; # linux1:
   Z="";
   ANDERER=$LINEINS; # linux1
 fi
-PROT=/var/log/${0}prot.txt
+PROT=/var/log/${$(basename $0)%%.*}prot.txt
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
-kopier "opt/turbomed" "opt/"
+kopier "opt/turbomed" "opt/" "$OBDEL"
 kopieros "root/.vim"
 kopieros "root/.smbcredentials"
 kopieros "root/crontabakt"
@@ -48,15 +48,16 @@ V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exc
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 EXCL=--exclude={
-mount /DATA;
-ssh $ANDERER mount /DATA;
-if mountpoint -q /DATA && ssh $ANDERER mountpoint -q /DATA 2>/dev/null; then
+Dt=DATA; 
+mountpoint -q /$Dt || mount /$Dt;
+ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
+if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  for A in Patientendokumente turbomed shome eigene\\\ Dateien sql Mail TMBack rett down DBBack ifap vontosh Oberanger att; do
-  kopier "DATA/$A" "DATA/" "$OBDEL"
+  kopier "$Dt/$A" "$Dt/" "$OBDEL"
   EXCL=${EXCL}"$A/,"
  done;
  EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}"
- kopier "DATA" "" "$EXCL" "-W $OBDEL"
+ kopier "$Dt" "" "$EXCL" "-W $OBDEL"
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19
 # kopieretc "hosts" # hier muesste noch eine Zeile geaendert werden!
@@ -67,13 +68,14 @@ kopier "gerade" "/" "$OBDEL"
 kopier "ungera" "/" "$OBDEL"
 systemctl stop mysql
 pkill -9 mysqld
-kopier "var/lib/mysql/" "var/lib/mysql" "$OBDEL"
+VLM="var/lib/mysql";
+kopier "$VLM/" "$VLM" "$OBDEL"
 systemctl start mysql
 # kopieretc "openvpn" # auskommentiert 29.7.19
 echo `date +%Y:%m:%d\ %T` "vor ende.sh" >> $PROT
 scp $PROT $ANDERER:/var/log/
-if mountpoint -q /DATA && ssh $ANDERER mountpoint -q /DATA 2>/dev/null; then
- scp $PROT $ANDERER:/DATA/
+if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
+ scp $PROT $ANDERER:/$Dt/
 fi;
 if [ $HOSTK/ != $LINEINS/ ]; then
   NES=~/neuserver;
