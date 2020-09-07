@@ -1,4 +1,5 @@
 #!/bin/zsh
+# kopiert die aktuellen Turbomed-Dateien, fuer haufigen Gebrauch
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
