@@ -1,5 +1,6 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer regelmaessigen Gebrauch
+
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
