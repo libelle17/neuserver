@@ -25,12 +25,12 @@ if [ $HOSTK/ = $LINEINS/ ]; then
   Q=""
   Z=${2%%:*}:; # z.B. linux0:
   ANDERER=$Z; # z.B. linux0
-  ping -c1 $Z /dev/null || exit;
+  ping -c1 $Z >/dev/null || exit;
 else
   Q=$LINEINS:; # linux1:
   Z="";
   ANDERER=$Q; # linux1
-  ping -c1 $Q /dev/null || exit;
+  ping -c1 $Q >/dev/null || exit;
 fi;
 blau="\033[1;34m";
 rot="\e[1;31m";
