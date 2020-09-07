@@ -15,25 +15,27 @@ function kopieretc {
 
 # hier geht's los
 LINEINS=linux1;
+[ "$HOST" ]||HOST=$(hostname);
+HOSTK=${HOST%%.*};
+if [ $HOSTK/ = $LINEINS/ ]; then
+  if [ $# -lt 2 ]; then
+    printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n";
+    exit;
+  fi;
+  Q=""
+  Z=${2%%:*}:; # z.B. linux0:
+  ANDERER=$Z; # z.B. linux0
+  ping -c1 $Z /dev/null || exit;
+else
+  Q=$LINEINS:; # linux1:
+  Z="";
+  ANDERER=$Q; # linux1
+  ping -c1 $Q /dev/null || exit;
+fi;
 blau="\033[1;34m";
 rot="\e[1;31m";
 reset="\033[0m";
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
-[ "$HOST" ]||HOST=$(hostname);
-HOSTK=${HOST%%.*};
-if [ $HOSTK/ = $LINEINS/ -a $# -lt 2 ]; then
-  printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n";
-  exit;
-fi;
-if [ $HOSTK/ = $LINEINS/ ]; then
-  Q=""
-  Z=${2%%:*}:; # z.B. linux0:
-  ANDERER=${2%%:*}; # z.B. linux0
-else
-  Q=$LINEINS:; # linux1:
-  Z="";
-  ANDERER=$LINEINS; # linux1
-fi
 PROT=/var/log/${$(basename $0)%%.*}prot.txt
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
