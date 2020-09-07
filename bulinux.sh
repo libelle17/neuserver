@@ -22,16 +22,17 @@ if [ $HOSTK/ = $LINEINS/ ]; then
     printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n";
     exit;
   fi;
-  Q=""
+  Q="";
   Z=${2%%:*}; # z.B. linux0:
   ANDERER=$Z; # z.B. linux0
-  ping -c1 $Z >/dev/null || exit;
+  Z=$Z:;
 else
   Q=$LINEINS; # linux1:
   Z="";
   ANDERER=$Q; # linux1
-  ping -c1 $Q >/dev/null || exit;
+  Q=$Q:;
 fi;
+ping -c1 $ANDERER >/dev/null || exit;
 blau="\033[1;34m";
 rot="\e[1;31m";
 reset="\033[0m";
@@ -46,7 +47,7 @@ kopieros "root/.vim"
 kopieros "root/.smbcredentials"
 kopieros "root/crontabakt"
 kopieros "root/.getmail"
-V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q:$V" "$Z:$V"
+V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 EXCL=--exclude={
