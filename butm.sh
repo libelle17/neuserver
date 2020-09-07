@@ -2,7 +2,7 @@
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
+ tue="rsync \"$Q:/$1\" \"$Z:/$2\" $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
@@ -23,11 +23,11 @@ if [ $HOSTK/ = $LINEINS/ ]; then
     exit;
   fi;
   Q=""
-  Z=${2%%:*}:; # z.B. linux0:
+  Z=${2%%:*}; # z.B. linux0:
   ANDERER=$Z; # z.B. linux0
   ping -c1 $Z >/dev/null || exit;
 else
-  Q=$LINEINS:; # linux1:
+  Q=$LINEINS; # linux1:
   Z="";
   ANDERER=$Q; # linux1
   ping -c1 $Q >/dev/null || exit;
@@ -38,7 +38,7 @@ reset="\033[0m";
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
 PROT=/var/log/${$(basename $0)%%.*}prot.txt
 echo Prot: $PROT
-echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
+echo `date +%Y:%m:%d\ %T` "vor chown" >$PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
 for Vz in PraxisDB StammDB DruckDB Dictionary; do
