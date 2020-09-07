@@ -490,7 +490,7 @@ shziel:
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
         echo Zeitstempel AGit: $$AGit;\
         echo Zeitstempel AHr : $$AHr;\
-        [ 0$$AHr -lt 0$$AGit ]&&AGit=$$AHr;\
+        [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
         echo Zeitstempel APC : $$APC;\
         [ 0$$APC -eq 0 ]&&{ \
           [ 0$$AGit -eq 0 ]&&{ \
@@ -534,7 +534,7 @@ shentw:
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
         echo Zeitstempel AGit: $$AGit;\
         echo Zeitstempel AHr : $$AHr;\
-        [ 0$$AHr -lt 0$$AGit ]&&AGit=$$AHr;\
+        [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
         echo Zeitstempel APC : $$APC;\
         [ 0$$APC -eq 0 ]&&{ \
           [ 0$$AGit -eq 0 ]&&{ \
