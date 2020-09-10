@@ -60,3 +60,5 @@ zusalat.sh
 [/root]
 .smbcredentials
 crontabdump
+[/etc/apache2]
+httpd.conf.local
