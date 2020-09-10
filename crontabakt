@@ -239,5 +239,5 @@ ELG=/var/log/cronf.log
 -33 8 * * * ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
 -0 9 * * 1 ionice -c3 /usr/bin/auffaell
 */1 * * * * ionice -c2 -n7 nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
-*/2 * * * * ionice -c2 -n7 nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
+*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
