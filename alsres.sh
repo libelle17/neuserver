@@ -1,8 +1,10 @@
 #!/bin/zsh
-systemctl stop mysql
+RNAM=linux0
+SNAM=linux1
+# systemctl stop mysql
 systemctl disable poetd
 if false; then
-  if [[ $HOST == "linux1" ]]; then
+  if [[ $HOST == "$SNAM" ]]; then
 
 
       if test -d /var/lib/mysql_3; then
@@ -12,13 +14,13 @@ if false; then
        mv /var/lib/mysql_3 /var/lib/mysql
       fi
   else
-    if [[ $HOST == "linux3" ]]; then
+    if [[ $HOST == "$RNAM" ]]; then
     fi
   fi
 fi
-echo linux3.site > /etc/HOSTNAME
-echo linux3.site > /etc/hostname
-sed -i.bak 's/^192.168.178.46[[:space:]]\+linux1.site linux1/192.168.178.46  linux3.site linux3/g;s/^127.0.0.1[[:space:]]\+linux1.site linux1/127.0.0.1  linux3.site linux3/g' /etc/hosts 
-hostname linux3.site
-export hostname=linux3
+echo $RNAM.site > /etc/HOSTNAME
+echo $RNAM.site > /etc/hostname
+sed -i.bak 's/^192.168.178.46[[:space:]]\+$SNAM.site $SNAM/192.168.178.46  $RNAM.site $RNAM/g;s/^127.0.0.1[[:space:]]\+$SNAM.site $SNAM/127.0.0.1  $RNAM.site $RNAM/g' /etc/hosts 
+hostname $RNAM.site
+export hostname=$RNAM
 reboot
