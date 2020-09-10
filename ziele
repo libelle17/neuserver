@@ -1,6 +1,8 @@
 [/root/bin]
 7zdb.sh
 BDTkompr.sh
+alsres.sh
+alsserver.sh
 awkcron.sh
 awkfdatei.sh
 awkmount.sh
@@ -37,7 +39,18 @@ rverb.sh
 stutze.sh
 stutzeDBBack.sh
 stutzeTMBack.sh
+suche.sh  
+suche5.sh  
+suchec.sh  
+suchehier.sh  
+suchek.sh  
+suchep.sh  
+suchepv.sh  
+suchev.sh  
+suchev5.sh  
+suchexdev.sh
 tr64.sh
+treesize.sh
 ungera_PraxisDB.sh
 verhdop.sh
 wegmailen.sh
