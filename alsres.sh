@@ -1,7 +1,9 @@
 #!/bin/zsh
 NNAM=linux0
 ANAM=linux1
-# systemctl stop mysql
+systemctl stop mysql
+systemctl disable mysql
+systemctl stop poetd
 systemctl disable poetd
 if false; then
   if [[ $HOST == "$ANAM" ]]; then
