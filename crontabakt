@@ -95,7 +95,7 @@ ELG=/var/log/cronf.log
 # >>$VL/dorsync-Aufruf-gerade.log 2>&1
 #-57 0 * * * dorsync.sh --delete /opt/turbomed/PraxisDB/ /mnt/diabfb/ADATA-USBFlashDrive-01/PraxisDB # >>$VL/dorsync-Aufruf-flash.log 2>&1
 -57 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 $RBI/verhdop.sh $RBI/copyusb.sh  >>$NLG 2>>$ELG
--20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
+# -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && $RBI/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
