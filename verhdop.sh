@@ -1,5 +1,4 @@
 #!/bin/zsh
-# hier der neuere Kommentar und noch neuer
 rot="\033[31m"
 blau="\033[34m"
 schwarz="\033[0m"

@@ -473,50 +473,6 @@ shlist:
 			grep -qm1 "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
 		done;:
 
-.PHONY: shziel
-shziel:
-	-@rot="\e[1;31m";\
-  blau="\033[1;34m";\
-  reset="\033[0m";\
-	if test -f ziele; then \
-	 for D in $$(cat ziele);do \
-    case $$D in \
-      [*\]) \
-        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
-      *) \
-        printf "$$blau$$D $$Z/$$D$$reset\n";\
-        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
-        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
-        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
-        echo Zeitstempel AGit: $$AGit;\
-        echo Zeitstempel AHr : $$AHr;\
-        [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
-        echo Zeitstempel APC : $$APC;\
-        [ 0$$APC -eq 0 ]&&{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-           echo " $$D fehlt hier und auf Git";\
-          :;}||{ \
-           printf " $$D fehlt hier:$$rot cp -a $$D $$Z/$$reset\n";\
-           cp -a $$D $$Z/;\
-          };\
-        :;}||{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-            echo " $$D fehlt auf Git";\
-          :;}||{ \
-            ls -l $$Z/$$D;\
-            ls -l $$D;\
-            diff $$Z/$$D .;\
-            [ $$? -eq 0 ]||printf "$${rot}Dateien verschieden$${reset}\n";\
-            [ 0$$AGit -lt 0$$APC ]&&echo " $$D auf Git aelter";\
-            [ 0$$AGit -gt 0$$APC ]&&{ printf " $$D hier aelter:$$rot cp -a $$D $$Z/$$reset\n"; cp -a $$D $$Z;};\
-            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
-          } \
-         } \
-        ;;\
-    esac;\
-   done;\
- fi;
-
 .PHONY: shentw
 shentw:
 	-@rot="\e[1;31m";\
@@ -545,11 +501,45 @@ shentw:
           [ 0$$AHr -lt 0$$APC ]&&{ \
            : ' ... und die Dateien gleich sind, den Vergleichsstempel AHr durch diesen ersetzen';\
            [ 0$$GDIFF -eq 0 ]&&{ \
-            printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
-            cp -a $$Z/$$D .;\
-            :;}||{ \
-            printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
-            :;};\
+             printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
+             cp -a $$Z/$$D .;\
+           :;}||{ \
+             printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
+           :;};\
+          };\
+        fi;\
+        ;;\
+    esac;\
+   done;\
+  fi;:;
+
+.PHONY: shziel
+shziel:
+	-@rot="\e[1;31m";\
+  blau="\033[1;34m";\
+  reset="\033[0m";\
+	if test -f ziele; then \
+	 for D in $$(cat ziele);do \
+    case $$D in \
+      [*\]) \
+        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
+      *) \
+        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
+        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
+        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
+        echo Zeitstempel Git: $$AGit;\
+        echo Zeitstempel $$(pwd) : $$AHr;\
+        echo Zeitstempel $$Z/$$D : $$APC;:';\
+        cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
+        : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
+        if [ 0$$DIFF -ne 0 ]; then \
+          : 'wenn der Zeitstempel auf Git da ist und niedriger ist ...';\
+          [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr  ]&&AHr=$$AGit;\
+          : 'wenn dann APC aelter ist, das hiesige kopieren';\
+          [ 0$$AHr -gt 0$$APC ]&&{ \
+            printf " $${rot}cp -a $$D $$Z/; $$reset\n";\
+            cp -a $$D $$Z/;\
           };\
         fi;\
         ;;\
