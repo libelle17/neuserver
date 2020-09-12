@@ -48,6 +48,8 @@ commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
   obfb=0; # Firebird
+  obmt=0; # nur Laufwerke sollen gemountet werden
+  obprog=0; # nur Programme sollen installiert werden
 	obmysql=0; # nur mysql soll eingerichtet werden
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obtm=0; # ob turbomed installiert werden soll
@@ -60,6 +62,8 @@ commandline() {
 			v|-verbose) verb=1;;
 			*) obteil=1;
 				case $para in
+          mt) obmt=1;;
+          prog) obprog=1;;
 					mysql) obmysql=1;;
 					mysqlneu) mysqlneu=1;;
           turbomed) obtm=1;;
@@ -73,6 +77,8 @@ commandline() {
 		printf "obneu: $blau$obneu$reset\n";
 		printf "obschreiben: $blau$obschreiben$reset\n";
 		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
+		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
 		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
@@ -1397,9 +1403,9 @@ variablen;
  [ $obteil = 0 ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 ]&&fritzbox;
- [ $obteil = 0 ]&&mountlaufwerke;
+ [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
 	setzinstprog;
- [ $obteil = 0 ]&&proginst;
+ [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
  [ $obteil = 0 ]&&musterserver;
