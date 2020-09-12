@@ -1,4 +1,5 @@
 #!/bin/sh
+# hier Änderung
 # blau="\e[1;34m";
 blau="\033[1;34m";
 dblau="\e[0;34;1;47m";

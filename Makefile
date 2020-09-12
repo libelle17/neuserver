@@ -511,7 +511,7 @@ shziel:
             [ 0$$AGit -gt 0$$APC ]&&{ printf " $$D hier aelter:$$rot cp -a $$D $$Z/$$reset\n"; cp -a $$D $$Z;};\
             [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
           } \
-        } \
+         } \
         ;;\
     esac;\
    done;\
@@ -532,42 +532,61 @@ shentw:
         [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
         [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
-        echo Zeitstempel AGit: $$AGit;\
-        echo Zeitstempel AHr : $$AHr;\
+        echo Zeitstempel Git: $$AGit;\
+        echo Zeitstempel $$(pwd) : $$AHr;\
         [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
         echo Zeitstempel APC : $$APC;\
+        obadd=;\
         [ 0$$APC -eq 0 ]&&{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-           echo " "$$D fehlt hier und auf Git;\
-          :;}||{ \
-           echo " "$$D fehlt hier;\
-          };\
+          printf " $$D fehlt auf $$Z";\
+          [ 0$$AGit -eq 0 ]&&printf " und auf Git";\
+          printf "\n";\
         :;}||{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-           printf " $$D fehlt auf Git:$$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D; $$reset\n";\
-           cp -a $$Z/$$D .;\
-           git add $$D;\
-           git commit -m '+$$D' $$D;\
-          :;}||{ \
+          cph=; \
+          [ 0$$AHr -ne 0 ]&&{ \
             ls -l $$Z/$$D;\
             ls -l $$D;\
             diff $$Z/$$D .;\
-            [ $$? -eq 0 ]||printf "$${rot}Dateien verschieden$${reset}\n";\
-            [ 0$$AGit -lt 0$$APC ]&&{\
-              printf " $$D auf Git aelter:$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D;$$reset\n";\
-              cp -a $$Z/$$D .;\
-              git add $$D;\
-              git commit -m '+$$D' $$D;\
+            [ $$? -ne 0 ]&&{ \
+              printf "$${rot}Dateien auf $$Z und $$(pwd) verschieden$${reset}\n";\
+              [ 0$$AHr -lt 0$$APC ]&&{ \
+               printf "$${rot}$$D aelter als $$Z/$$D => ";\
+               cph=1;\
+              };\
             };\
-            [ 0$$AGit -gt 0$$APC ]&&echo " $$D hier aelter";\
-            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
-          } \
-        } \
+          :;}||{ \
+             printf "$${rot} $$D fehlt auf $$(pwd) => $$reset\n"; \
+             cph=1;\
+          };\
+          [ "$$cph" ]&&{ \
+             printf " $${rot}cp -a $$Z/$$D .; $$reset\n"; \
+             cp -a $$Z/$$D .;\
+             obadd=1;\
+          };\
+          [ 0$$AGit -eq 0 ]&&{ \
+           printf " $$D fehlt auf Git:";\
+           obadd=1;\
+          :;}||{ \
+            [ 0$$AGit -lt 0$$APC ]&&{ printf "$$D auf Git aelter";obadd=1;};\
+            [ 0$$AGit -gt 0$$APC ]&&echo " $$D auf $$Z aelter";\
+            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf $$Z und $$(pwd) gleich alt: lasse sie aus";\
+          };\
+        };\
+        [ "$$obadd" ]&&{ \
+           printf "$${rot}git add $$D; $$reset\n";\
+           git add $$D;\
+           DTN="$$DTN $$D";\
+           obcm=1;\
+        };\
         ;;\
     esac;\
    done;\
+   [ "$$obcm" ]&&{ \
+     COM="make $$(date +'%F %T')";\
+     printf " $${rot}git commit -m \"$$COM\" $$DTN; $$reset\n";\
+     git commit -m "$$COM" $$DTN;\
+   };\
  fi;:;
-
 
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE
