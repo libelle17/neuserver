@@ -2,7 +2,7 @@
 PNAME=Seagate\ Expansion\ Drive
 logf=/var/log/$PNAME.log
 #Z=/mnt/seag
-Z=/mnt/seag
+Z=/mnt/SeagateExpansionDrive
 Q=""
 blau="\e[1;34m";
 dblau="\e[0;34;1;47m";
