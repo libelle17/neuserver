@@ -511,7 +511,7 @@ shziel:
             [ 0$$AGit -gt 0$$APC ]&&{ printf " $$D hier aelter:$$rot cp -a $$D $$Z/$$reset\n"; cp -a $$D $$Z;};\
             [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
           } \
-        } \
+         } \
         ;;\
     esac;\
    done;\
@@ -528,46 +528,34 @@ shentw:
       [*\]) \
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
       *) \
-        printf "$$blau$$D $$Z/$$D$$reset\n";\
         [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
         [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
-        echo Zeitstempel AGit: $$AGit;\
-        echo Zeitstempel AHr : $$AHr;\
-        [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
-        echo Zeitstempel APC : $$APC;\
-        [ 0$$APC -eq 0 ]&&{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-           echo " "$$D fehlt hier und auf Git;\
-          :;}||{ \
-           echo " "$$D fehlt hier;\
+        : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
+        echo Zeitstempel Git: $$AGit;\
+        echo Zeitstempel $$(pwd) : $$AHr;\
+        echo Zeitstempel $$Z/$$D : $$APC;:';\
+        git diff -s --exit-code -- $$D;GDIFF=$$?;\
+        cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
+        : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
+        if [ 0$$DIFF -ne 0 ]; then \
+          : 'wenn der Zeitstempel auf Git da ist und niedriger ist ...';\
+          [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr -a 0$$GDIFF -eq 0 ]&&AHr=$$AGit;\
+          : 'wenn dann APC neuer ist, dieses hier her kopieren';\
+          [ 0$$AHr -lt 0$$APC ]&&{ \
+           : ' ... und die Dateien gleich sind, den Vergleichsstempel AHr durch diesen ersetzen';\
+           [ 0$$GDIFF -eq 0 ]&&{ \
+            printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
+            cp -a $$Z/$$D .;\
+            :;}||{ \
+            printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
+            :;};\
           };\
-        :;}||{ \
-          [ 0$$AGit -eq 0 ]&&{ \
-           printf " $$D fehlt auf Git:$$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D; $$reset\n";\
-           cp -a $$Z/$$D .;\
-           git add $$D;\
-           git commit -m '+$$D' $$D;\
-          :;}||{ \
-            ls -l $$Z/$$D;\
-            ls -l $$D;\
-            diff $$Z/$$D .;\
-            [ $$? -eq 0 ]||printf "$${rot}Dateien verschieden$${reset}\n";\
-            [ 0$$AGit -lt 0$$APC ]&&{\
-              printf " $$D auf Git aelter:$rot cp -a $$Z/$$D .; git add $$D; git commit -m '+$$D' $$D;$$reset\n";\
-              cp -a $$Z/$$D .;\
-              git add $$D;\
-              git commit -m '+$$D' $$D;\
-            };\
-            [ 0$$AGit -gt 0$$APC ]&&echo " $$D hier aelter";\
-            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf beiden gleich alt: lasse sie aus";\
-          } \
-        } \
+        fi;\
         ;;\
     esac;\
    done;\
- fi;:;
-
+  fi;:;
 
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE

@@ -528,65 +528,34 @@ shentw:
       [*\]) \
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
       *) \
-        printf "$$blau$$D $$Z/$$D$$reset\n";\
         [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
         [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
         echo Zeitstempel $$(pwd) : $$AHr;\
-        [ 0$$AHr -lt 0$$AGit -o 0$$AGit -eq 0 ]&&AGit=$$AHr;\
-        echo Zeitstempel APC : $$APC;\
-        obadd=;\
-        [ 0$$APC -eq 0 ]&&{ \
-          printf " $$D fehlt auf $$Z";\
-          [ 0$$AGit -eq 0 ]&&printf " und auf Git";\
-          printf "\n";\
-        :;}||{ \
-          cph=; \
-          [ 0$$AHr -ne 0 ]&&{ \
-            ls -l $$Z/$$D;\
-            ls -l $$D;\
-            diff $$Z/$$D .;\
-            [ $$? -ne 0 ]&&{ \
-              printf "$${rot}Dateien auf $$Z und $$(pwd) verschieden$${reset}\n";\
-              [ 0$$AHr -lt 0$$APC ]&&{ \
-               printf "$${rot}$$D aelter als $$Z/$$D => ";\
-               cph=1;\
-              };\
-            };\
-          :;}||{ \
-             printf "$${rot} $$D fehlt auf $$(pwd) => $$reset\n"; \
-             cph=1;\
+        echo Zeitstempel $$Z/$$D : $$APC;:';\
+        git diff -s --exit-code -- $$D;GDIFF=$$?;\
+        cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
+        : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
+        if [ 0$$DIFF -ne 0 ]; then \
+          : 'wenn der Zeitstempel auf Git da ist und niedriger ist ...';\
+          [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr -a 0$$GDIFF -eq 0 ]&&AHr=$$AGit;\
+          : 'wenn dann APC neuer ist, dieses hier her kopieren';\
+          [ 0$$AHr -lt 0$$APC ]&&{ \
+           : ' ... und die Dateien gleich sind, den Vergleichsstempel AHr durch diesen ersetzen';\
+           [ 0$$GDIFF -eq 0 ]&&{ \
+            printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
+            cp -a $$Z/$$D .;\
+            :;}||{ \
+            printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
+            :;};\
           };\
-          [ "$$cph" ]&&{ \
-             printf " $${rot}cp -a $$Z/$$D .; $$reset\n"; \
-             cp -a $$Z/$$D .;\
-             obadd=1;\
-          };\
-          [ 0$$AGit -eq 0 ]&&{ \
-           printf " $$D fehlt auf Git:";\
-           obadd=1;\
-          :;}||{ \
-            [ 0$$AGit -lt 0$$APC ]&&{ printf "$$D auf Git aelter";obadd=1;};\
-            [ 0$$AGit -gt 0$$APC ]&&echo " $$D auf $$Z aelter";\
-            [ 0$$AGit -eq 0$$APC ]&&echo " $$D auf $$Z und $$(pwd) gleich alt: lasse sie aus";\
-          };\
-        };\
-        [ "$$obadd" ]&&{ \
-           printf "$${rot}git add $$D; $$reset\n";\
-           git add $$D;\
-           DTN="$$DTN $$D";\
-           obcm=1;\
-        };\
+        fi;\
         ;;\
     esac;\
    done;\
-   [ "$$obcm" ]&&{ \
-     COM="make $$(date +'%F %T')";\
-     printf " $${rot}git commit -m \"$$COM\" $$DTN; $$reset\n";\
-     git commit -m "$$COM" $$DTN;\
-   };\
- fi;:;
+  fi;:;
 
 man_de.html: LGL::=deutsch
 man_de.gz man_de.html: FKT::=FUNKTIONSWEISE
