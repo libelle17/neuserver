@@ -484,14 +484,14 @@ shentw:
       [*\]) \
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
       *) \
-        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
+        [ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
         [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
         echo Zeitstempel $$(pwd) : $$AHr;\
         echo Zeitstempel $$Z/$$D : $$APC;:';\
-        git diff -s --exit-code -- $$D;GDIFF=$$?;\
+        which git >/dev/null 2>&1&&{ git diff -s --exit-code -- $$D;GDIFF=$$?;:;}||GDIFF=0;:;\
         cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
         : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
         if [ 0$$DIFF -ne 0 ]; then \
@@ -524,7 +524,7 @@ shziel:
       [*\]) \
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
       *) \
-        [ -f $$D ]&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
+        [ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
         [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
         [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
