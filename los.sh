@@ -294,7 +294,12 @@ while read -r zeile; do
 	fi;
 	# printf "zeile: $blau$zeile$reset\n"
 	# echo "mtp: \"$mtp\"";
-	[ "$mtp" ]||mtp="/mnt/"$(echo $lbl|sed 's/[[:space:]]//g');
+  case $lbl in 
+   DAT*|wrz*)
+	   [ "$mtp" ]||mtp="/"$(echo $lbl|sed 's/[[:space:]]//g');;
+   *)
+   	 [ "$mtp" ]||mtp="/mnt/"$(echo $lbl|sed 's/[[:space:]]//g');;
+  esac;
 	[ "$mtp" -a ! -d "$mtp" ]&&mkdir -p "$mtp";
 	if test -z "$lbl"; then
 		ident="UUID="$uid;
@@ -321,7 +326,7 @@ EOF
 done; # nochmal
   mount -a;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
-}
+} # mountlaufwerke
 
 pruefuser() {
 	printf "${dblau}pruefuser$reset($1)\n";
@@ -710,7 +715,21 @@ proginst() {
   doinst p7zip-full;
   doinst apache2;
   doinst apache2-mod_php7;
-  [ -f /etc/sysconfig/apache2 ]&&sed -i.bak 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' /etc/sysconfig/apache2
+  doinst php7-mysql;
+  D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
+       sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
+       grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
+       cmp $D $DN &&{
+         rm $DN;
+       :;}||{
+         mv $D ${D}.bak;
+         mv $DN $D;
+       }
+  }
+  chown wwwrun:www -R /srv/www/htdocs;
+  a2enmod php7;
+  systemctl enable apache2;
+  systemctl restart apache2;
   case $OSNR in
    4) # suse
     zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
@@ -747,7 +766,7 @@ proginst() {
 # RESET="\[$(tput sgr0)\]"
 # PS1="${GRUEN}\u@\h: \w${RESET}>"
 
-
+  D=/var/log/journal;[ -d $D ]||mkdir -p $D;
 	case $OSNR in
 	1|2|3) # mint, ubuntu, debian
 		sshd=ssh;;
@@ -1107,12 +1126,13 @@ musterserver() {
      [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
      ausf "rsync -avu $muwrz/..$vsh/ $vsh";
    }
-   vsh=/srv/www/htdocs/plz;
-   [ -f "$vsh/=.Neuer_Patient" ]||{
+   vsh=/srv/www/htdocs;
+   [ -f "$vsh/plz/=.Neuer_Patient" ]||{
      echo $vsh fehlt, hole es von $muwrz;
-     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
-     exit
+     find $vsh -type f 2>/dev/null|grep . >/dev/null&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+     ausf "rsync -avu $muwrz/..$vsh/ $vsh/.. --exclude \"*Papierkorb*\"";
+     chown wwwrun:www -R /srv/www/htdocs;
+     systemctl restart apache2;
    }
 #	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
