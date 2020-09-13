@@ -103,6 +103,7 @@ variablen() {
  HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
  loscred="$HOME/.loscred"; # ~  # $HOME
  test -f "$loscred"&&. "$loscred";
+ srv0=; # zur Sicherheit
 } # variablen
 
 speichern() {
@@ -705,6 +706,7 @@ proginst() {
   doinst liblept5; # fuer ocrmypdf
   doinst dash;
   doinst lsb-release;
+  doinst apache2 apache2-mod_php7;
   case $OSNR in
    4) # suse
     zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
@@ -756,9 +758,9 @@ proginst() {
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" ]||git clone http://github.com/libelle17/$D;
     cd $HOME/$D;
-    sh configure;
-    make;
-    make install;
+    [ -f vars ]||sh configure;
+    [ -s $D ]||make;
+    [ -s /usr/bin/$D ]||make install;
   done;
   cd $VORVZ;
 } # proginst
@@ -1078,9 +1080,11 @@ musterserver() {
 	 ausf "rsync -avu $muwrz/.vim $HOME/";
 	 ausf "rsync -avu $muwrz/bin/.vimrc $HOME/bin/";
 	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
+   gesD=;
    for D in anrliste autofax dicom fbfax impgl labimp termine; do
-     ausf "rsync -avu $muwrz/.config/$D.conf $HOME/.config/";
+     gesD="$gesD $D.conf";
    done;
+   ausf "rsync -lptgoDvu $muwrz/.config/ $HOME/.config/ --include \"$gesD\" --exclude \"*\"";
    vsh=/var/spool/hylafax;
    [ -f $vsh/sendq/seqf -o -f $vsh/recvq/seqf ]||{
      echo $vsh fehlt, hole es von $muwrz;
@@ -1088,16 +1092,23 @@ musterserver() {
      ausf "rsync -avu $muwrz/..$vsh/ $vsh";
    }
    vsh=/var/spool/capisuite;
-   find "$vsh/autofaxarch/" -type f|grep . >/dev/null 2>&1||{
+   find "$vsh/autofaxarch/" -type f 2>/dev/null|grep . >/dev/null||{
      echo $vsh fehlt, hole es von $muwrz;
      [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
      ausf "rsync -avu $muwrz/..$vsh/ $vsh";
    }
    vsh=/var/spool/fbfax;
-   find "$vsh/arch/" -type f|grep . >/dev/null 2>&1||{
+   find "$vsh/arch/" -type f 2>/dev/null|grep . >/dev/null||{
      echo $vsh fehlt, hole es von $muwrz;
      [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
      ausf "rsync -avu $muwrz/..$vsh/ $vsh";
+   }
+   vsh=/srv/www/htdocs/plz;
+   [ -f "$vsh/=.Neuer_Patient" ]||{
+     echo $vsh fehlt, hole es von $muwrz;
+     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
+     exit
    }
 #	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
