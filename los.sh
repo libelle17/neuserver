@@ -1031,10 +1031,11 @@ musterserver() {
       [jyJY]*) ;;
       *)
        mount --all 2>/dev/null;
-       bef="find / -maxdepth 5 -type d -name 'root' -printf '%f\n'";
-#       bef="find / -xdev -maxdepth 5 -type d -name '*root*' -printf '%f\n'";
-       printf "Suche Verzeichnisse mit ${blau}$bef$reset (kann länger dauern)...\n";
+       bef="find / -maxdepth 5 -type d -name 'root' -printf '%p\\n'";
+#       bef="find / -xdev -maxdepth 5 -type d -name '*root*' -printf '%p\\n'";
+       printf "Suche Verzeichnisse mit ${blau}$(echo \"$bef\"|sed 's/%/%%/g;s/\\/\\\\/g')$reset (kann länger dauern)...\n";
        eval "$bef" >"$wzp";
+       exit
        ;;
      esac;
      let i=0; # define counting variable
