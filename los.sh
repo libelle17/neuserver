@@ -694,6 +694,9 @@ proginst() {
   doinst lsb-release;
   doinst docker;
   doinst gparted;
+  doinst liblep5; # fuer ocrmypdf
+  doinst dash;
+  doinst lsb-release;
   case $OSNR in
    4) # suse
     zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
@@ -980,7 +983,7 @@ fritzbox() {
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
 	 credfile="/root/.fbcredentials"; # ~  # $HOME
-	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 0" >>$ftb;
+	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,credentials=$credfile 0 0" >>$ftb; # ,vers=1.0
    if [ ! -f "$credfile" ]; then
 		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 		 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
@@ -1148,7 +1151,7 @@ teamviewer10() {
 				while ! [ -f "$qd" ]; do
 					qqd=libfreetype6-32bit-2.6.3-5.3.1.x86_64.rpm;
 					# geht auch für Fedora
-					hol3 "$qqd" "https://download.opensuse.org/update/leap/42.3/oss/x86_64";
+					hol3 "$qqd" "https://download.opensuse.org/update/leap/$(lsb-release -r|cut -f2)/oss/x86_64";
 					cd "$Dw";
 					rpm2cpio "$qqd"|cpio -idmv
 					cd -;
@@ -1165,7 +1168,7 @@ teamviewer10() {
 		lxcb=libxcb1-32bit-1.11.1-9.1.x86_64;
 		if ! rpm -q "$lxcb" >/dev/null; then
 		 echo $? bei rpm -q "$lxcb";
-		 hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/42.3:/Update/standard/x86_64";
+     hol3 "$lxcb.rpm" "http://download.opensuse.org/repositories/openSUSE:/Leap:/$(lsb-release -r|cut -f2):/Update/standard/x86_64";
 		 rpm -i --force "$Dw/$lxcb.rpm";
 		 zypper addlock "$lxcb";
 		fi;
