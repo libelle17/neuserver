@@ -15,6 +15,7 @@ AUFRUFDIR=$(pwd)
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
+wzp="$meinpfad/wurzelplatten";
 Dw=/root/Downloads;
 gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
@@ -1017,6 +1018,44 @@ musterserver() {
 	 ausf "rsync -avu $srv0:$HOME/bin/.vimrc $HOME/bin/";
 	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $srv0:/root/bin /root/";
 #	 ausf "rsync -avu  $srv0:/root/bin /root/";
+ else
+   printf "Soll von einem Verzeichnis mit /root kopiert werden (jyJYnN)? ";read obpl;
+   case $obpl in 
+    [jyJY]*) 
+     altwrz=;
+     [ -s "$wzp" ]&&{ 
+       ls -l $wzp; 
+     printf "Datei $blau$wzp$reset gefunden. Soll diese als Quelle der Verzeichnisse mit /root verwendet werden (jyJYnN)? ";read altwrz;
+     };
+     case $altwrz in 
+      [jyJY]*) ;;
+      *)
+       mount --all 2>/dev/null;
+       bef="find / -maxdepth 5 -type d -name 'root' -printf '%f\n'";
+#       bef="find / -xdev -maxdepth 5 -type d -name '*root*' -printf '%f\n'";
+       printf "Suche Verzeichnisse mit ${blau}$bef$reset (kann länger dauern)...\n";
+       eval "$bef" >"$wzp";
+       ;;
+     esac;
+     let i=0; # define counting variable
+     W=(); # define working array
+     while read z; do
+      let i=$i+1;
+      W+=($i "$z");
+     done <"$wzp";
+     if [ $i -gt 0 ]; then
+       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 24 80 17 "${W[@]}" 3>&2 2>&1 1>&3) # show dialog and store output
+       if [ "$FILE" ]; then
+         let ind=$FILE*2-1;
+         printf "Als Vorlageverzeichnis wird verwendet: $blau${W[$ind]}$reset\n";
+         printf "Ist das richtig? (jyJYnN) "; read best;
+         case $best in [jyJY]*) muwrz=${W[$ind]};; *) muwrz=;; esac;
+       fi;
+     else
+       echo "Keine Verzeichnisse gefunden";
+     fi;
+     ;;
+   esac;
  fi;
 }
 
@@ -1404,7 +1443,9 @@ echo Starte mit los.sh...
 [ $obteil = 0 ]&&bildschirm;
 variablen;
  [ $obteil = 0 ]&&setzhost;
+ [ $obteil = 0 ]&&musterserver;
  [ $obteil = 0 ]&&setzbenutzer;
+ exit;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
