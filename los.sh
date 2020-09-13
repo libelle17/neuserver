@@ -49,12 +49,13 @@ ausfd() {
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
-  obfb=0; # Firebird
+  obhost=0; # host setzen
   obmt=0; # nur Laufwerke sollen gemountet werden
   obprog=0; # nur Programme sollen installiert werden
+  obtm=0; # ob turbomed installiert werden soll
 	obmysql=0; # nur mysql soll eingerichtet werden
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
-  obtm=0; # ob turbomed installiert werden soll
+  obfb=0; # Firebird
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -64,11 +65,12 @@ commandline() {
 			v|-verbose) verb=1;;
 			*) obteil=1;
 				case $para in
+          host) obhost=1;;
           mt) obmt=1;;
           prog) obprog=1;;
+          turbomed) obtm=1;;
 					mysql) obmysql=1;;
 					mysqlneu) mysqlneu=1;;
-          turbomed) obtm=1;;
           firebird) obfb=1;;
 				esac;;
 		esac;
@@ -79,6 +81,7 @@ commandline() {
 		printf "obneu: $blau$obneu$reset\n";
 		printf "obschreiben: $blau$obschreiben$reset\n";
 		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+		[ "$obhost" = 1 ]&& printf "obhost: ${blau}1$reset\n"
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
@@ -88,6 +91,7 @@ commandline() {
 
 variablen() {
  printf "${dblau}variablen$reset()\n";
+ [ -s "$meinpfad/vars" ]||sh configure;
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
   . "$meinpfad/shvars"
@@ -142,9 +146,9 @@ setzhost() {
   printf "${dblau}setzhost$reset()\n";
   # wenn Hostname z.B. linux-8zyu o.ä., dann korrigieren;
   case $(hostname) in
-  *-*) {
+  *-*|linux|linux.*|localhost*) {
       hostnamectl;
-      printf "${blau}gewünschter Servername, dann Enter:$reset"; read srvhier;
+      printf "${blau}gewünschter Servername, dann Enter:$reset "; read srvhier;
       hostnamectl set-hostname "$srvhier";
       export HOST="$srvhier";
       hostnamectl; 
@@ -695,12 +699,12 @@ proginst() {
   doinst lsb-release;
   doinst docker;
   doinst gparted;
-  doinst liblep5; # fuer ocrmypdf
+  doinst liblept5; # fuer ocrmypdf
   doinst dash;
   doinst lsb-release;
   case $OSNR in
    4) # suse
-    zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
+    zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
   esac;
   doinst tesseract-ocr 
   doinst tesseract-ocr-traineddata-german
@@ -744,14 +748,16 @@ proginst() {
 	systemctl enable $sshd;
 	systemctl restart $sshd;
 	doinst git;
+  VORVZ=$(pwd);
   for D in anrliste autofax dicom fbfax impgl labimp termine; do
+    cd $HOME;
     [ -s "$HOME/$D/kons.cpp" ]||git clone http://github.com/libelle17/$D;
     cd $HOME/$D;
     sh configure;
-    sh make;
-    sh make install;
-    cd -;
+    make;
+    make install;
   done;
+  cd $VORVZ;
 } # proginst
 
 bildschirm() {
@@ -1070,11 +1076,11 @@ musterserver() {
 	 ausf "rsync -avu $muwrz/bin/.vimrc $HOME/bin/";
 	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin /$HOME/";
    for D in anrliste autofax dicom fbfax impgl labimp termine; do
-     ausf "rsync -avu $muwrz/.config/$D /$HOME/.config/";
+     ausf "rsync -avu $muwrz/.config/$D.conf /$HOME/.config/";
    done;
 #	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
-}
+} # musterserver
 
 #holt Datei $1 entweder aus "/DATA/down /DATA/daten/down" ($q0) oder $srv0 oder $2 auf /root/Downloads (=$Dw); $3 = potentieller hol-Name
 hol3() {
@@ -1099,7 +1105,7 @@ hol3() {
       [ "$srv0" -a -f "$Dw/$1" ]&&scp -p "$Dw/$1" "$srv0:$spf/";
     }
 	fi;
-}
+} # hol3
 
 tvversion() {
 	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
@@ -1245,7 +1251,7 @@ teamviewer10() {
 		backup "$tvconf"
 		cp -a "$tvh" "$tvconf";
 	fi;
-}
+} # teamviewer10()
 
 github() {
 	printf "${dblau}github()$reset()\n";
@@ -1258,7 +1264,7 @@ github() {
 #	curl -u "$GITACC:$passwd" ...
 	git remote set-url origin git@github.com:$GITACC/$DPROG.git;
 # git clone ssh://git@github.com/$GITACC/$DPROG.git 
-}
+} # github
 
 backup() {
 	printf "${dblau}backup$reset($1,$2)\n";
@@ -1269,7 +1275,7 @@ backup() {
 		done;
 		[ "$2" ]&&ursp="$2"||ursp="$1";
 		[ -s "$ursp" ]&& mv "$ursp" "${ursp}_0";
-}
+} # backup
 
 cron() {
 	printf "${dblau}cron$reset()\n";
@@ -1309,7 +1315,7 @@ cron() {
     fi;
   done <$ca;
   crontab <$crh;
-}
+} # cron
 
 tu_turbomed() {
 	printf "${dblau}tu_turbomed$reset($1)\n";
@@ -1468,7 +1474,7 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 [ $obteil = 0 ]&&bildschirm;
 variablen;
- [ $obteil = 0 ]&&setzhost;
+ [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 ]&&musterserver;
  [ $obteil = 0 ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
