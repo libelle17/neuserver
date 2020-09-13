@@ -54,6 +54,7 @@ commandline() {
   obprog=0; # nur Programme sollen installiert werden
   obtm=0; # ob turbomed installiert werden soll
 	obmysql=0; # nur mysql soll eingerichtet werden
+  obmust=0; # ob von musterserver kopiert werden soll
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obfb=0; # Firebird
   gespar="$@"
@@ -70,6 +71,7 @@ commandline() {
           prog) obprog=1;;
           turbomed) obtm=1;;
 					mysql) obmysql=1;;
+          must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
           firebird) obfb=1;;
 				esac;;
@@ -85,6 +87,7 @@ commandline() {
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
+		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
 		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
 } # commandline
@@ -1074,10 +1077,28 @@ musterserver() {
  if [ "$muwrz" ]; then
 	 ausf "rsync -avu $muwrz/.vim $HOME/";
 	 ausf "rsync -avu $muwrz/bin/.vimrc $HOME/bin/";
-	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin /$HOME/";
+	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
    for D in anrliste autofax dicom fbfax impgl labimp termine; do
-     ausf "rsync -avu $muwrz/.config/$D.conf /$HOME/.config/";
+     ausf "rsync -avu $muwrz/.config/$D.conf $HOME/.config/";
    done;
+   vsh=/var/spool/hylafax;
+   [ -f $vsh/sendq/seqf -o -f $vsh/recvq/seqf ]||{
+     echo $vsh fehlt, hole es von $muwrz;
+     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
+   }
+   vsh=/var/spool/capisuite;
+   find "$vsh/autofaxarch/" -type f|grep . >/dev/null 2>&1||{
+     echo $vsh fehlt, hole es von $muwrz;
+     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
+   }
+   vsh=/var/spool/fbfax;
+   find "$vsh/arch/" -type f|grep . >/dev/null 2>&1||{
+     echo $vsh fehlt, hole es von $muwrz;
+     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
+   }
 #	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
 } # musterserver
@@ -1475,7 +1496,6 @@ echo Starte mit los.sh...
 [ $obteil = 0 ]&&bildschirm;
 variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
- [ $obteil = 0 ]&&musterserver;
  [ $obteil = 0 ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 ]&&fritzbox;
@@ -1484,7 +1504,7 @@ variablen;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
- [ $obteil = 0 ]&&musterserver;
+ [ $obteil = 0 -o $obmust ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 ]&&teamviewer10;
  [ $obteil = 0 ]&&cron;
