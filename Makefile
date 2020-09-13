@@ -538,6 +538,7 @@ shziel:
           [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr  ]&&AHr=$$AGit;\
           : 'wenn dann APC aelter ist, das hiesige kopieren';\
           [ 0$$AHr -gt 0$$APC ]&&{ \
+            [ -d "$$Z" ]||mkdir -p "$$Z";\
             printf " $${rot}cp -a $$D $$Z/; $$reset\n";\
             cp -a $$D $$Z/;\
           };\
