@@ -706,7 +706,11 @@ proginst() {
   doinst liblept5; # fuer ocrmypdf
   doinst dash;
   doinst lsb-release;
-  doinst apache2 apache2-mod_php7;
+  doinst p7zip;
+  doinst p7zip-full;
+  doinst apache2;
+  doinst apache2-mod_php7;
+  [ -f /etc/sysconfig/apache2 ]&&sed -i.bak 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' /etc/sysconfig/apache2
   case $OSNR in
    4) # suse
     zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
