@@ -1347,7 +1347,11 @@ cron() {
 	fi;
   [ "$srvhier" ]||srvhier=$(uname -n);
   crh=$meinpfad/cronshier; # cron-Datei des Quellservers mit korrigierten Namen
-  sed 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $csrv>$crh;
+  if false; then # 14.9.: die crontab soll serveruebergreifend identisch sein und dazu hostname aufrufen
+   sed 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $csrv>$crh;
+  else
+   cp -a $csrv $crh:
+  fi;
   # hier die Scripte aus crontab eintragen, die auf gegegenwärtigem Server gespeichert sind
   ca=$meinpfad/cronbefehle;
   rm -f $ca;
