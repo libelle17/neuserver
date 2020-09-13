@@ -744,6 +744,14 @@ proginst() {
 	systemctl enable $sshd;
 	systemctl restart $sshd;
 	doinst git;
+  for D in anrliste autofax dicom fbfax impgl labimp termine; do
+    [ -s "$HOME/$D/kons.cpp" ]||git clone http://github.com/libelle17/$D;
+    cd $HOME/$D;
+    sh configure;
+    sh make;
+    sh make install;
+    cd -;
+  done;
 } # proginst
 
 bildschirm() {
@@ -1014,10 +1022,6 @@ musterserver() {
 	 test -f "$KS"||touch "$KS";
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
-	 ausf "rsync -avu $srv0:$HOME/.vim $HOME/";
-	 ausf "rsync -avu $srv0:$HOME/bin/.vimrc $HOME/bin/";
-	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $srv0:/root/bin /root/";
-#	 ausf "rsync -avu  $srv0:/root/bin /root/";
  else
    printf "Soll von einem Verzeichnis mit /root kopiert werden (jyJYnN)? ";read obpl;
    case $obpl in 
@@ -1035,7 +1039,6 @@ musterserver() {
 #       bef="find / -xdev -maxdepth 5 -type d -name '*root*' -printf '%p\\n'";
        printf "Suche Verzeichnisse mit ${blau}$(echo \"$bef\"|sed 's/%/%%/g;s/\\/\\\\/g')$reset (kann länger dauern)...\n";
        eval "$bef" >"$wzp";
-       exit
        ;;
      esac;
      let i=0; # define counting variable
@@ -1055,8 +1058,21 @@ musterserver() {
      else
        echo "Keine Verzeichnisse gefunden";
      fi;
+     W=;
      ;;
    esac;
+ fi;
+ if [ "$srv0" ]; then
+   muwrz="$srv0:$HOME";
+ fi;
+ if [ "$muwrz" ]; then
+	 ausf "rsync -avu $muwrz/.vim $HOME/";
+	 ausf "rsync -avu $muwrz/bin/.vimrc $HOME/bin/";
+	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin /$HOME/";
+   for D in anrliste autofax dicom fbfax impgl labimp termine; do
+     ausf "rsync -avu $muwrz/.config/$D /$HOME/.config/";
+   done;
+#	 ausf "rsync -avu  $srv0:/root/bin /root/";
  fi;
 }
 
@@ -1321,11 +1337,20 @@ tu_turbomed() {
     systemctl start poetd; 
     echo Nach start poetd; 
   done;
-  [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem die Turbomed-Datenbanken kopiert werden sollen: ";read srv0;};
-  for S in PraxisDB StammDB DruckDB Dictionary; do
-    ausfd "rsync -avu $srv0:/opt/turbomed/$S /opt/turbomed/";
-  done;
-  ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
+  if [ "$muwrz" -a -s "$muwrz/../opt/turbomed/PraxisDB/objects.dat" ]; then
+    for S in PraxisDB StammDB DruckDB Dictionary; do
+      ausfd "rsync -avu $muwrz/../opt/turbomed/$S /opt/turbomed/";
+    done;
+    ausfd "rsync -avu $muwrz/../DATA/turbomed /DATA/";
+  else
+    [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem die Turbomed-Datenbanken kopiert werden sollen: ";read srv0;};
+    [ "$srv0" ]&&{ 
+      for S in PraxisDB StammDB DruckDB Dictionary; do
+        ausfd "rsync -avu $srv0:/opt/turbomed/$S /opt/turbomed/";
+      done;
+      ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
+    }
+  fi;
   # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
 } # tu_turbomed
 
@@ -1446,7 +1471,6 @@ variablen;
  [ $obteil = 0 ]&&setzhost;
  [ $obteil = 0 ]&&musterserver;
  [ $obteil = 0 ]&&setzbenutzer;
- exit;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
