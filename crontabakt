@@ -70,18 +70,7 @@ ELG=/var/log/cronf.log
 -0 0 1 1 *    mountpoint -q "/DATA" && $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
 # mariadb-Datenbanken sichern
-#-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines dp  > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 23 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines depot  > /DATA/sql/depot--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines faxeinp  > /DATA/sql/faxeinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--45 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines fotosinp  > /DATA/sql/fotosinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines haerzte  > /DATA/sql/haerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines haerzte_neu  > /DATA/sql/haerzte_neu--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--55 19 1,15 * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines kvaerzte  > /DATA/sql/kvaerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines konten  > /DATA/sql/konten--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines programmstaende  > /DATA/sql/programmstaende--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines office  > /DATA/sql/office--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 2 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines quelle  > /DATA/sql/quelle--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
 #-25 20 */10 * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
@@ -110,8 +99,8 @@ ELG=/var/log/cronf.log
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q "/DATA" && mountpoint -q "/mnt/bzo/microbxdata" && $RBI/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
-# die Turbomed-Datenbank einmal taeglich sichern
--40 3 * * * mountpoint -q "/DATA" && /usr/bin/ionice -c3 /usr/bin/7z a "/DATA/TMBack/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" /opt/turbomed/StammDB /opt/turbomed/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG 
+# die Turbomed-Datenbank einmal taeglich komprimieren
+-40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA &&{ TB=/DATA/TMBack;test -d $TB||mkdir $TB;ot=/opt/turbomed;ionice -c3 /usr/bin/7z a "$TB/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" $ot/StammDB $ot/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG;}
 
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA >>$VL/chown-Aufruf.log 2>&1
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA/firebird >>$VL/chown-Aufruf.log 2>&1
@@ -245,9 +234,14 @@ ELG=/var/log/cronf.log
 -5 0 * * * /usr/bin/ionice -c3 $RBI/stutzeDBBack.sh
 -35 0 * * * /usr/bin/ionice -c3 $RBI/komprsql.sh
 0 9 * * * rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
--*/10 * * * * /usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
--33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
--0 9 * * 1 /usr/bin/ionice -c3 /usr/bin/auffaell
+-*/10 * * * * ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
+-33 8 * * * ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
+-0 9 * * 1 ionice -c3 /usr/bin/auffaell
+-15,45 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/spool/hylafax var/spool/capisuite var/spool/dicomneu var/spool/fbfax opt/turbomed; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /$D/;done;};
+-25,55 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ D=DATA;mountpoint -q /$D&&ssh ${HOST\%\%.*} mountpoint -q /$D&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /$D/;};
+-5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
+*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
+*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
