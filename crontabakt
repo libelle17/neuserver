@@ -6,9 +6,8 @@
 # (/tmp/crontab.KhwReo installed on Mon Jun 24 07:51:06 2013)
 # (Cronie version 4.2)
 SHELL=/bin/bash
-PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin:/root/bin:
+PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin:/root/bin
 MAILTO=root
-RBI=/root/bin
 VL=/var/log
 NLG=/var/log/cron.log
 ELG=/var/log/cronf.log
@@ -189,7 +188,6 @@ ELG=/var/log/cronf.log
 -* * * * * ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
-* * * * * echo "/root/bin" >/root/bin/hierbinich.txt
 * * * * * ionice -c3 /root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
