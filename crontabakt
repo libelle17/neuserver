@@ -188,7 +188,7 @@ ELG=/var/log/cronf.log
 -* * * * * ionice -c3 $RBI/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 $RBI/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 $RBI/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
-* * * * * dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
+* * * * * zupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 $RBI/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 -10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/butm.sh
