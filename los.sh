@@ -632,6 +632,8 @@ richtmariadbein() {
 				[ "$datadir" ]&&break;
 			done;
 		fi;
+    backup /etc/my.cnf;
+		cp -a my.cnf /etc/;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
 		[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
 		if ! [ -d $datadir ]; then
@@ -1482,10 +1484,11 @@ dbinhalt() {
     if test "$1"/ = immer/ -o $dbda = 0; then
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
-      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh)
-      Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g') # Zeit rausziehen
-      Sz=$(stat "$Q" --printf="%s\\n")
-      pd=$meinpfad/sqlprot.txt
+      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh);
+      Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g'); # Zeit rausziehen
+      Sz=$(stat "$Q" --printf="%s\\n");
+      pd=$meinpfad/sqlprot.txt;
+      [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
       # überprüfen, ob ind $pd schon die gleiche oder eine jüngere Datei eingetragen wurde
@@ -1513,7 +1516,6 @@ dbinhalt() {
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
          ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
          [ $ret = 0 ]&&{
-           [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
          } 
