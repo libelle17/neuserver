@@ -644,12 +644,11 @@ richtmariadbein() {
 		while mysql -e'\q' 2>/dev/null; do
 			pruefmroot " neues" " das neue";
       # 4.9.20: fuer den mysql-Import von quelle ist auch der Benutzer mysql noetig
-      for benu in $mroot mysql; do
-        ausf "mysql -u\"$benu\" -hlocalhost -e\"GRANT ALL ON *.* TO '$benu'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-        ausf "mysql -u\"$benu\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$benu'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-        ausf "mysql -u\"$benu\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-        [ $benu = mysql ]&&break;
-      done;
+      ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
     done;
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
@@ -1545,7 +1544,7 @@ variablen;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
- [ $obteil = 0 -o $obmust =1 ]&&musterserver;
+ [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 ]&&teamviewer10;
  [ $obteil = 0 ]&&cron;
