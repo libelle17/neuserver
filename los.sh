@@ -1543,7 +1543,7 @@ variablen;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 ]&&sambaconf;
- [ $obteil = 0 -o $obmust ]&&musterserver;
+ [ $obteil = 0 -o $obmust =1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 ]&&teamviewer10;
  [ $obteil = 0 ]&&cron;
