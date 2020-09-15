@@ -176,6 +176,7 @@ ELG=/var/log/cronf.log
 -3,11,19,27,35,39,47,55 7-22 * * * ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -1,33 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -52 6 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
+-5 0 * * * for V in behand fertig vorb;do find /srv/www/htdocs/$V -maxdepth 1 -type f -not -newermt $(date +'\%Y\%m\%d') -not -name "*=*" -delete;done
 
 # ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
 -*/2 7-22 * * * /root/bin/getmail_gmx7.sh >>$NLG 2>>$ELG 
