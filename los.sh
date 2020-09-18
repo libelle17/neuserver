@@ -206,23 +206,30 @@ blkvar=$resu;
 # z.B. "2|1|3|A"
 # bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}'); # "<- dieses Zeichen steht nur hier fuer die vi-Faerbung
 # echo bishDAT: $bishDAT;
-ausf "echo \"\$blkvar\"|awk '/=\\\"DAT/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/DAT/{printf substr(\$6,17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
-bishDAT=$resu;
 # bishwin=$(echo "$blkvar"|awk '/=\"win/{printf substr($4,11,length($4)-11)"|";}/=\"\/win/{printf substr($4,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}');
-ausf "echo \"\$blkvar\"|awk '/=\\\"win/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/win/{printf substr(\$4,17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
-bishwin=$resu;
+for N in DAT win; do
+  if [ $N = DAT ]; then par=6; else par=4; fi;
+  ausf "echo \"\$blkvar\"|awk '/=\\\""$N"/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/"$N"/{printf substr(\$"$par",17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
+  if [ $N = DAT ]; then bishDAT=$resu; else bishwin=$resu; fi;
+done;
+echo bishDAT: $bishDAT;
+echo bishwin: $bishwin;
 istinfstab=0;
 Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
 # Laufwerke mit bestimmten Typen und nicht-leerer UUID absteigend nach Größe
 # ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -b -i -x SIZE -s -n -P -f|grep -v ':\|swap\|efi\|fat\|iso\|FSTYPE=\"\"\|FSTYPE=\".*_member\"\|UUID=\"\"\|MOUNTPOINT=\"/\"'|tac";
-nochmal=1;
-while test "$nochmal"; do
-  unset nochmal;
-ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE -bidnspPx SIZE|tac"
+ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE -bidnspPx SIZE|tac";
 fstabteil=$resu;
+nochmal=1;
+while test "$nochmal"; do # wenn eine Partition neu erstellt werden musste
+  unset nochmal;
+ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE -bidnspPx SIZE|tac";
+fstabteil=$resu;
+echo fstabteil: "$fstabteil";
 [ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
 [ "$fstabteil" ]||return;
+ges=" ";
 while read -r zeile; do
 #	echo "Hier: " $zeile;
 	dev=$(echo $zeile|cut -d\" -f2);
@@ -244,9 +251,20 @@ while read -r zeile; do
     esac;
   fi;
   echo zeile: $zeile;
-	if test -z "$lbl"; then
-		echo "fehlender Name bei uid: "$uid", mtp: "$mtp
-		case "$fty" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
+  umbenenn=;
+  if [ "$lbl" ]; then
+    case $ges in 
+      *" "$lbl" "*) 
+        fertig=;
+        for i in $(seq 1 1 500); do
+          case $ges in *" "${lbl}_$i" "*);;*)fertig=1;ges="$ges${lbl}_$i ";;esac;
+          [ "$fertig" ]&&break;
+        done;
+        printf "doppelter Name bei uid: $blau$uid$reset, mtp: $blau$mtp$reset, lbl: $blau$lbl$reset => $rot${lbl}_$i$reset\n";
+        lbl=${lbl}_$i;
+        umbenenn=1;;
+    esac;
+  else
 			case "$fty" in 
 				ext*|btrfs|reiserfs)
 					while :;do	
@@ -266,24 +284,30 @@ while read -r zeile; do
 					done;
 					lbl="win"$wnamnr;;
 			esac;
+      printf "fehlender Name bei uid: $blau$uid$reset, mtp: $blau$mtp$reset, => lbl: $rot$lbl$reset\n";
+      umbenenn=1;
+  fi;
+  [ "$lbl" ]&&ges="$ges$lbl ";
+	if [ "$umbenenn" ]; then
+		case "$fty" in ext*|btrfs|reiserfs|ntfs*|exfat*|vfat)
 			case $fty in 
 				ext*)
-					echo e2label $dev "$lbl";
+					printf "${rot}e2label $dev $lbl$reset\n";
           e2label $dev "$lbl" 2>/dev/null||e2label $(echo $dev|sed 's/-/\//') "$lbl";;
 				btrfs)
-					echo btrfs filesystem label $dev "$lbl";
+					printf "${rot}btrfs filesystem label $dev $lbl$reset\n";
 					btrfs filesystem label $dev "$lbl";;
 				reiserfs)
-					echo reiserfstune -l "$lbl" $dev;
+					printf "${rot}reiserfstune -l $lbl $dev$reset\n";
 					reiserfstune -l "$lbl" $dev;;
 				ntfs*)
-					echo ntfslabel $dev "$lbl";
+					printf "${rot} ntfslabel $dev $lbl$reset\n";
 					ntfslabel $dev "$lbl";;
 				exfat*)
-					echo exfatlabel $dev "$lbl";
+					printf "${rot} exfatlabel $dev $lbl$reset\n";
 					exfatlabel $dev "$lbl";;
 				vfat)
-					echo mache vfat Label;
+					printf "${rot} mache vfat Label$reset\n";
 					eingehaengt=0;
 					mountpoint -q $dev&&{ eingehaengt=1; umount $dev;};
 					env MTOOLS_SKIP_CHECK=1 mlabel -i $dev ::x;
@@ -295,7 +319,7 @@ while read -r zeile; do
 	# printf "zeile: $blau$zeile$reset\n"
 	# echo "mtp: \"$mtp\"";
   case $lbl in 
-   DAT*|wrz*)
+   DAT*|wrz*|win*)
 	   [ "$mtp" ]||mtp="/"$(echo $lbl|sed 's/[[:space:]]//g');;
    *)
    	 [ "$mtp" ]||mtp="/mnt/"$(echo $lbl|sed 's/[[:space:]]//g');;

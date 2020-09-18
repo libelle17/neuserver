@@ -1,11 +1,21 @@
 BEGIN {
  A[0]="[efi]";	P[0]="/boot/efi";
  A[1]="[diabfb]";	P[1]="/mnt/diabfb";
- A[2]="[DAT3]";	P[2]="/mnt/DAT3";
- A[3]="[DATA]";	P[3]="/mnt/DATA";
- A[4]="[DAT2]";	P[4]="/mnt/DAT2";
- A[5]="[OPENSUSE-LE]";	P[5]="/mnt/OPENSUSE-LE";
- A[6]="[DAT4]";	P[6]="/mnt/DAT4";
- A[7]="[win1]";	P[7]="/mnt/win1";
- A[8]="[DAT1]";	P[8]="/mnt/DAT1";
+ A[2]="[DAT3]";	P[2]="/DAT3";
+ A[3]="[daten]";	P[3]="/DATA";
+ A[4]="[DAT1]";	P[4]="/DAT1";
+ A[5]="[DAT1_1]";	P[5]="/DAT1_1";
+ A[6]="[DAT1_2]";	P[6]="/DAT1_2";
+ A[7]="[DAT2]";	P[7]="/DAT2";
+ A[8]="[DAT1_3]";	P[8]="/DAT1_3";
+ A[9]="[DAT1_4]";	P[9]="/DAT1_4";
+ A[10]="[DAT1_5]";	P[10]="/DAT1_5";
+ A[11]="[DAT1_7]";	P[11]="/DAT1_7";
+ A[12]="[DAT3_1]";	P[12]="/DAT3_1";
+ A[13]="[DAT1_8]";	P[13]="/DAT1_8";
+ A[14]="[OPENSUSE-LE]";	P[14]="/mnt/OPENSUSE-LE";
+ A[15]="[DAT4]";	P[15]="/DAT4";
+ A[16]="[win1]";	P[16]="/win1";
+ A[17]="[win1_1]";	P[17]="/win1_1";
+ A[18]="[win1_2]";	P[18]="/win1_2";
 };
