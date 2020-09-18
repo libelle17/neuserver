@@ -212,8 +212,8 @@ for N in DAT win; do
   ausf "echo \"\$blkvar\"|awk '/=\\\""$N"/{printf substr(\$4,11,length(\$4)-11)\"|\";}/=\\\"\\/"$N"/{printf substr(\$"$par",17,length(\$6)-17)\"|\";}'|awk '{print substr(\$0,0,length(\$0)-1);}'";
   if [ $N = DAT ]; then bishDAT=$resu; else bishwin=$resu; fi;
 done;
-echo bishDAT: $bishDAT;
-echo bishwin: $bishwin;
+# echo bishDAT: $bishDAT;
+# echo bishwin: $bishwin;
 istinfstab=0;
 Dnamnr="A"; # 0=DATA, 1=DAT1, 2=DAT2 usw # linux name nr
 wnamnr=1;
@@ -224,9 +224,9 @@ fstabteil=$resu;
 nochmal=1;
 while test "$nochmal"; do # wenn eine Partition neu erstellt werden musste
   unset nochmal;
-ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE -bidnspPx SIZE|tac";
+ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,PARTTYPE -bidnspPx SIZE|tac";
 fstabteil=$resu;
-echo fstabteil: "$fstabteil";
+# echo fstabteil: "$fstabteil";
 [ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
 [ "$fstabteil" ]||return;
 ges=" ";
@@ -238,14 +238,16 @@ while read -r zeile; do
 	uid=$(echo $zeile|cut -d\" -f10);
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	typ=$(echo $zeile|cut -d\" -f14);
+	pty=$(echo $zeile|cut -d\" -f16);
   case "$fty" in swap|iso|fat|".*_member") continue;; esac;
   case "$typ" in rom) continue;; esac;
   case "$mtp" in /|/boot/efi) continue;; esac;
   case "$lbl" in EFI) continue;; esac;
   if test -z "$fty"; then
+		[ "$pty" = 0xf ]&&continue;
     case "$typ" in disk|part)
       echo "Hier nochmal: " $zeile
-      mke2fs -t ext4 "$dev"; 
+      ausf "mke2fs -t ext4 $dev"; 
       nochmal=1;
       continue;
     esac;
@@ -334,8 +336,9 @@ while read -r zeile; do
 	obinfstab "$idohnelz" "$uid" "$dev";
 	printf "Mountpoint: $blau$mtp$reset istinfstab: $blau$istinfstab$reset\n";
 	if test $istinfstab -eq 0; then
-		eintr="\t $mtp\t $fty\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2"
-		if test "$fty" = "ntfs"; then
+		eintr="\t $mtp\t $fty\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
+		[ "$fty" = vfat ]&&eintr="\t $mtp\t $fty\t user,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
+		if test "$fty" = ntfs; then
 			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
 		fi;
 		eintr=$idohnelz$eintr;
@@ -1051,12 +1054,23 @@ fritzbox() {
 	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
 	 mkdir -p /mnt/$fbnameklein;
 	 credfile="/root/.fbcredentials"; # ~  # $HOME
-	 grep -q "^//$ipv4\|^//$ipv6" $ftb||echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,credentials=$credfile 0 0" >>$ftb; # ,vers=1.0
-   if [ ! -f "$credfile" ]; then
-		 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
-		 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
-		 printf "username=$fbuser\npassword=$fbpwd" >$credfile;
-	 fi;
+	 grep -q "^//$ipv4\|^//$ipv6" $ftb||{
+		 if [ ! -f "$credfile" ]; then
+			 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
+			 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
+			 printf "username=$fbuser\npassword=$fbpwd" >$credfile;
+		 fi;
+		 umount /mnt/$fbnameklein;
+		 mount //$ipv/$fbname /mnt/$fbnameklein -t cifs -o nofail,vers=1.0,credentials=$credfile >/dev/null 2>&1 &&{
+			 umount /mnt/$fbnameklein;
+			 echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
+		 :;}||{
+			 mount //$ipv/$fbname /mnt/$fbnameklein -t cifs -o nofail,credentials=$credfile >/dev/null 2>&1 &&{
+				 umount /mnt/$fbnameklein;
+				 echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,credentials=$credfile 0 0" >>$ftb; 
+			 }
+		 }
+	 }
 #	 echo "$desc";
    printf "Fritzbox gefunden, Name: $blau$fbname$reset, ipv4: $blau$ipv4$reset, ipv6: $blau$ipv6$reset\n";
 #	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
