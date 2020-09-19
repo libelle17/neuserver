@@ -50,6 +50,7 @@ commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
   obhost=0; # host setzen
+  obprompt=0; # prompt setzen
   obmt=0; # nur Laufwerke sollen gemountet werden
   obprog=0; # nur Programme sollen installiert werden
   obtm=0; # ob turbomed installiert werden soll
@@ -67,6 +68,7 @@ commandline() {
 			*) obteil=1;
 				case $para in
           host) obhost=1;;
+          prompt) obprompt=1;;
           mt) obmt=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
@@ -84,6 +86,7 @@ commandline() {
 		printf "obschreiben: $blau$obschreiben$reset\n";
 		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
 		[ "$obhost" = 1 ]&& printf "obhost: ${blau}1$reset\n"
+		[ "$obprompt" = 1 ]&& printf "obprompt: ${blau}1$reset\n"
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
@@ -191,6 +194,32 @@ setzpfad() {
 		. "$EEN";
 	fi;
 } # setzpfad
+
+setzprompt() {
+	printf "${dblau}setzprompt$reset()\n";
+  gesnr=" $(seq 0 1 50|tr '\n' ' ')";
+  for fnr in $gesnr; do
+    FB="\[$(printf '\e[48;5;253;38;5;0'$fnr'm')\]";
+    FBH="\[$(printf '\e[48;5;255;38;5;0'$fnr'm')\]"
+    PSh="${FB}Farbe $fnr: \u@\h(."$(hostname -I|cut -d' ' -f1|cut -d. -f4)"):${FBH}\w${RESET}>"
+    [ $obbash -eq 1 ]&&printf "${PSh@P}";
+    printf "$reset\n";
+  done;
+  nr=;
+  while true; do
+    case $gesnr in *" "$nr" "*)break;;esac;
+    printf "Bitte die gewünschte Nummer eingeben: ";read nr;
+    obschreiben=1;
+  done;
+  echo nr: $nr;
+  BBL=bash.bashrc.local;
+  echo "FNr=$nr;" >$BBL;
+  echo "FB=\"\\[\$(printf '\\e[48;5;253;38;5;0'\$FNr'm')\\]\"" >>$BBL;
+  echo "FBH=\"\\[\$(printf '\\e[48;5;255;38;5;0'\$FNr'm')\\]\"" >>$BBL;
+  echo "RESET=\"\\[\$(printf '\\e[00m')\\]\"" >>$BBL;
+  echo "PS1=\"\${FB}\\u@\\h(.\"\$(hostname -I|cut -d' ' -f1|cut -d. -f4)\"):\${FBH}\\w\${RESET}>\"" >>$BBL;
+  echo "export NCURSES_NO_UTF8_ACS=1" >>$BBL;
+} # setzprompt
 
 mountlaufwerke() {
 printf "${dblau}mountlaufwerke$reset()\n";
@@ -1576,6 +1605,7 @@ variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
+ [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
 	setzinstprog;
