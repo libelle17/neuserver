@@ -273,7 +273,7 @@ while read -r zeile; do
   case "$mtp" in /|/boot/efi) continue;; esac;
   case "$lbl" in EFI) continue;; esac;
   if test -z "$fty"; then
-		[ "$pty" = 0xf ]&&continue;
+		[ "$pty" = 0xf ]&&continue; # Partitionstabelle
     case "$typ" in disk|part)
       echo "Hier nochmal: " $zeile
       ausf "mke2fs -t ext4 $dev"; 
