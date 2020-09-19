@@ -64,3 +64,4 @@ crontabdump
 httpd.conf.local
 [/etc]
 my.cnf
+bash.bashrc.local
