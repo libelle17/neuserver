@@ -773,6 +773,9 @@ proginst() {
   doinst apache2;
   doinst apache2-mod_php7;
   doinst php7-mysql;
+  doinst gnutls-devel; # fuer vmime
+  doinst libgsasl-devel; # fuer vmime
+  doinst doxygen; # fuer alle moegelichen cmake
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
        grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
@@ -834,13 +837,25 @@ proginst() {
 	systemctl restart $sshd;
 	doinst git;
   VORVZ=$(pwd);
-  for D in anrliste autofax dicom fbfax impgl labimp termine; do
+  [ -s /usr/local/include/vmime/vmime.hpp ]||{
+    D=vmime;
+    cd $HOME;
+    git clone http://github.com/libelle17/$D;
+    cd $HOME/$D;
+    mkdir -p build;
+    cd build;
+    cmake ..;
+    make;
+    make install;
+  }
+  for D in anrliste autofax dicom fbfax impgl labimp termine vmparse2; do
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" ]||git clone http://github.com/libelle17/$D;
     cd $HOME/$D;
     [ -f vars ]||sh configure;
     [ -s $D ]||make;
     [ -s /usr/bin/$D ]||make install;
+    git remote set-url origin  git+ssh://git@github.com/libelle17/$D.git
   done;
   cd $VORVZ;
 } # proginst
