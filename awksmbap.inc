@@ -18,4 +18,7 @@ BEGIN {
  A[16]="[win1]";	P[16]="/win1";
  A[17]="[win1_1]";	P[17]="/win1_1";
  A[18]="[win1_2]";	P[18]="/win1_2";
+ A[19]="[wrz]";	P[19]="/wrz";
+ A[20]="[fedhome]";	P[20]="/mnt/fedhome";
+ A[21]="[fedroot]";	P[21]="/mnt/fedroot";
 };
