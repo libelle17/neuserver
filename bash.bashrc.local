@@ -1,6 +1,0 @@
-FNr=21;
-FB="\[$(printf '\e[48;5;253;38;5;0'$FNr'm')\]"
-FBH="\[$(printf '\e[48;5;255;38;5;0'$FNr'm')\]"
-RESET="\[$(printf '\e[00m')\]"
-PS1="${FB}\u@\h(."$(hostname -I|cut -d' ' -f1|cut -d. -f4)"):${FBH}\w${RESET}>"
-export NCURSES_NO_UTF8_ACS=1

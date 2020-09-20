@@ -212,7 +212,7 @@ setzprompt() {
     obschreiben=1;
   done;
   echo nr: $nr;
-  BBL=bash.bashrc.local;
+  BBL=/etc/bash.bashrc.local;
   echo "FNr=$nr;" >$BBL;
   echo "FB=\"\\[\$(printf '\\e[48;5;253;38;5;0'\$FNr'm')\\]\"" >>$BBL;
   echo "FBH=\"\\[\$(printf '\\e[48;5;255;38;5;0'\$FNr'm')\\]\"" >>$BBL;
