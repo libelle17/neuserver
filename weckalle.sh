@@ -89,7 +89,7 @@ fragab() {
 	 [ $ret -eq 0 ]&&break;
   done;
 	[ "$verb" ]&&printf "Ende fragab()\n";
-}
+} # fragab
 
 # die tatsächliche TR-064-Abfrage durchführen
 # Parameter: 1: befehl, 2: umw (ob Befehl umgewandelt werden soll), 3: html-Adresse, 4: Datei, in die Ausgabe umgeleitet wurde
@@ -138,6 +138,7 @@ commandline() {
 			--forbidden*) IFverbo=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,12))}');; # verbotene Interfaces neu festlegen
 			-zeig|-show|--zeig|--show) zeig=1;; # zeigt nur die Liste der PCs an
 			-zeigu|-showu|--zeigu|--showu) zeig=1;ungefiltert=1;; # zeigt nur die Liste der PCs an
+      -scan) scan=1;; # scannt nur die Geraete
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
       -vi) obvi=1;;
 			-v|--verbose) verb=1;;
@@ -382,5 +383,6 @@ EOF
 vorgaben;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 authorize;
-[ -z "$obnurmac" ]&&geraeteliste;
+[ -z "$obnurmac" -o "$scan" ]&&geraeteliste;
+[ "$scan" ]&&exit;
 wecken;
