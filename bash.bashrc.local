@@ -1,4 +1,4 @@
-FNr=9;
+FNr=21;
 FB="\[$(printf '\e[48;5;253;38;5;0'$FNr'm')\]"
 FBH="\[$(printf '\e[48;5;255;38;5;0'$FNr'm')\]"
 RESET="\[$(printf '\e[00m')\]"

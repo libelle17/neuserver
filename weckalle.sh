@@ -40,7 +40,7 @@ vorgaben() {
 # Funktion für eine oder (falls deren Rückgabe als http-Adresse für eine zweite verwendet werden muss) zwei TR-064-Abfragen
 # Parameter: 1 (optional): sed-filter für die zweite Abfrage
 fragab() {
-	[ "$verb" ]&&printf "fragab()\n";
+	[ "$verb" ]&&printf "fragab($1)\n";
 	if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
   case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
   case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
@@ -60,15 +60,24 @@ fragab() {
 		for adr in $FritzboxAdressen;do
 			FB=http://$adr:49000;
 			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
-			befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
-						-H \"Content-Type: text/xml; charset=utf-8\" \\n\
-						-H \"SoapAction: $serviceType#$Action\" \\n\
-						\"$FB$controlURL\" \\n\
-						-d '$XML'";
-      tufrag "$befehl" 1 "$FB$controlURL";
-			[ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
-			# printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
-			[ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
+      while true; do
+        befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
+              -H \"Content-Type: text/xml; charset=utf-8\" \\n\
+              -H \"SoapAction: $serviceType#$Action\" \\n\
+              \"$FB$controlURL\" \\n\
+              -d '$XML'";
+        tufrag "$befehl" 1 "$FB$controlURL";
+        [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
+        # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
+        [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
+        case "$erg" in 
+           *Unauthorized*) 
+             echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
+             obneu=1;
+             authorize;;
+           *) break;;
+        esac;
+      done;
 			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
 			case $erg in *.lua*)
 				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
