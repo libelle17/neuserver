@@ -765,7 +765,7 @@ proginst() {
   doinst lsb-release;
   doinst docker;
   doinst gparted;
-  doinst liblept5; # fuer ocrmypdf
+  doinst liblept5; # fuer ocrmypdf; pillow?
   doinst dash;
   doinst lsb-release;
   doinst p7zip;
