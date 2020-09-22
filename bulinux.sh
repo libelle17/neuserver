@@ -4,6 +4,11 @@
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
+# Platz ausrechnen:
+# df /DATA|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'
+# du /DATA/sql -maxd 0
+# ssh linux1 du /DATA/sql -maxd 0
+# ssh linux1 du /DATA/sql/Papierkorb -maxd 0
  tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
