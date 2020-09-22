@@ -9,6 +9,21 @@ function kopier {
 # du /DATA/sql -maxd 0
 # ssh linux1 du /DATA/sql -maxd 0
 # ssh linux1 du /DATA/sql/Papierkorb -maxd 0
+echo QoD: $QoD
+echo 1: $1
+echo Z: $Z
+echo 2: $2
+Verfueg=$(df /$Z/$2|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p');
+Schonda=$(du $Z/$2 -maxd 0|cut -d$'\t' -f1)
+zukop=$(ssh $QoD du $Z/$2 -maxd 0|cut -f1)
+Papz=$(test -d $Z/$2/Papierkorb && du $Z/$2/Papierkorb -maxd 0||echo 0)
+Papq=$(ssh $QoD test -d $Z/$2/Papierkorb && ssh $QoD du $Z/$2/Papierkorb -maxd 0||echo 0)
+echo Verfueg: $Verfueg
+echo Schonda: $Schonda
+echo zukop: $zukop
+echo Papz: $Papz
+echo Papq: $Papq
+exit
  tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
@@ -32,11 +47,13 @@ if [ $HOSTK/ = $LINEINS/ ]; then
     exit;
   fi;
   Q="";
+  QoD=localhost;
   Z=${2%%:*}; # z.B. linux0:
   ANDERER=$Z; # z.B. linux0
   Z=$Z:;
 else
   Q=$LINEINS; # linux1:
+  QoD=$Q;
   Z="";
   ANDERER=$Q; # linux1
   Q=$Q:;
@@ -51,6 +68,9 @@ echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
+EXCL=--exclude={
+Dt=DATA; 
+kopier "$Dt" "" "$EXCL" "-W $OBDEL"
 kopier "opt/turbomed" "opt/" "$OBDEL"
 kopieros "root/.vim"
 kopieros "root/.smbcredentials"
@@ -59,8 +79,6 @@ kopieros "root/.getmail"
 V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
-EXCL=--exclude={
-Dt=DATA; 
 mountpoint -q /$Dt || mount /$Dt;
 ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
