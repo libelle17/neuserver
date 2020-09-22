@@ -76,7 +76,7 @@ kopier "ungera" "/" "$OBDEL"
 systemctl stop mysql
 pkill -9 mysqld
 VLM="var/lib/mysql";
-kopier "$VLM/" "$VLM" "$OBDEL"
+kopier "$VLM/" "${VLM}_1" "$OBDEL"
 systemctl start mysql
 # kopieretc "openvpn" # auskommentiert 29.7.19
 echo `date +%Y:%m:%d\ %T` "vor ende.sh" >> $PROT
