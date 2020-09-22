@@ -1,40 +1,50 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer regelmaessigen Gebrauch
 
+function kopiermt { # mit test
+  # $1 = Verzeichnis auf Quelle
+  # $2 = Verzeichnis auf Ziel
+  # $3 = excludes
+  # $4 = Optionen 
+  EX="$3,Papierkorb,mnt";
+  echo ""
+  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
+  echo kopiermt "$1" "$2" "$3" "$4";
+# Platz ausrechnen:
+  ZV=$(echo $2|sed 's:/$::'); [ "$ZV" ]||ZV=$1;
+  [ -d $Z/$ZV ]||mkdir -p $Z/$ZV;
+  verfueg=$(df /$Z/$ZV|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
+  schonda=$(du $Z/$ZV -maxd 0|cut -d$'\t' -f1|awk '{print $1*1024}')
+  zukop=$(ssh $QoD du /$1 -maxd 0|cut -f1|awk '{print $1*1024}')
+  summe=$(expr $verfueg - $zukop + $schonda);
+  for E in $(echo $EX|sed 's/,/ /g');do
+    papz=$(test -d $Z/$ZV/$E && du $Z/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+    papq=$(ssh $QoD test -d $1/$E && ssh $QoD du $1/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+    summe=$(expr $summe - $papz + $papq);
+  done;
+  if test $summe > 0; then
+    tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude={""$EX""}";
+    echo $tue
+    eval $tue
+  else
+    echo Kopieren nicht begonnen, Speicherreserve: $summe
+  fi;
+}
+
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
-# Platz ausrechnen:
-# df /DATA|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'
-# du /DATA/sql -maxd 0
-# ssh linux1 du /DATA/sql -maxd 0
-# ssh linux1 du /DATA/sql/Papierkorb -maxd 0
-echo QoD: $QoD
-echo 1: $1
-echo Z: $Z
-echo 2: $2
-Verfueg=$(df /$Z/$2|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p');
-Schonda=$(du $Z/$2 -maxd 0|cut -d$'\t' -f1)
-zukop=$(ssh $QoD du $Z/$2 -maxd 0|cut -f1)
-Papz=$(test -d $Z/$2/Papierkorb && du $Z/$2/Papierkorb -maxd 0||echo 0)
-Papq=$(ssh $QoD test -d $Z/$2/Papierkorb && ssh $QoD du $Z/$2/Papierkorb -maxd 0||echo 0)
-echo Verfueg: $Verfueg
-echo Schonda: $Schonda
-echo zukop: $zukop
-echo Papz: $Papz
-echo Papq: $Papq
-exit
  tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
 
 function kopieros {
-  kopier $1 "" "--exclude='.*.swp'"
+  kopiermt "root/$1" "root" "" "--exclude='.*.swp'"
 }
 
 function kopieretc {
-  kopier etc/$1 "etc/"
+  kopiermt etc/$1 "etc/"
 }
 
 # hier geht's los
@@ -63,19 +73,18 @@ blau="\033[1;34m";
 rot="\e[1;31m";
 reset="\033[0m";
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
-PROT=/var/log/${$(basename $0)%%.*}prot.txt
+PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
-EXCL=--exclude={
+# EXCL=--exclude={
 Dt=DATA; 
-kopier "$Dt" "" "$EXCL" "-W $OBDEL"
-kopier "opt/turbomed" "opt/" "$OBDEL"
-kopieros "root/.vim"
-kopieros "root/.smbcredentials"
-kopieros "root/crontabakt"
-kopieros "root/.getmail"
+kopiermt "opt/turbomed" "opt/" "" "$OBDEL"
+kopieros ".vim"
+kopieros ".smbcredentials"
+kopieros "crontabakt"
+kopieros ".getmail"
 V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
@@ -83,23 +92,23 @@ mountpoint -q /$Dt || mount /$Dt;
 ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  for A in Patientendokumente turbomed shome eigene\\\ Dateien sql Mail TMBack rett down DBBack ifap vontosh Oberanger att; do
-  kopier "$Dt/$A" "$Dt/" "$OBDEL"
-  EXCL=${EXCL}"$A/,"
+  kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
+  EXCL=${EXCL}"$A/,";
  done;
- EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}"
- kopier "$Dt" "" "$EXCL" "-W $OBDEL"
+ EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}";
+ kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19
 # kopieretc "hosts" # hier muesste noch eine Zeile geaendert werden!
 # kopieretc "vsftpd.conf" # auskommentiert 29.7.19
 # kopieretc "my.cnf" # auskommentiert 29.7.19
 # kopieretc "fstab.cnf" # auskommentiert 29.7.19
-kopier "gerade" "/" "$OBDEL"
-kopier "ungera" "/" "$OBDEL"
+kopiermt "gerade" "/" "" "$OBDEL"
+kopiermt "ungera" "/" "" "$OBDEL"
 systemctl stop mysql
 pkill -9 mysqld
 VLM="var/lib/mysql";
-kopier "$VLM/" "${VLM}_1" "$OBDEL"
+kopiermt "$VLM/" "${VLM}_1" "$OBDEL"
 systemctl start mysql
 # kopieretc "openvpn" # auskommentiert 29.7.19
 echo `date +%Y:%m:%d\ %T` "vor ende.sh" >> $PROT
