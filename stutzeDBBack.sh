@@ -10,7 +10,7 @@ vorgaben() {
   test -d "$Zvz" ||exit
   muende="_????????.7z";
   # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
-  gr1=730;
+  gr1=365;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
   # Grenze, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
