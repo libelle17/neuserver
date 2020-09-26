@@ -867,7 +867,7 @@ proginst() {
 
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
-	if test "$(id -u)" -ne 0; then
+	if test "$(id -u)" -ne 0 -o true; then
 		github;
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
 			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
@@ -1621,8 +1621,6 @@ dbinhalt() {
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
-echo 0: $0
-echo meingespfad: $meingespfad
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
