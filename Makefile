@@ -310,7 +310,7 @@ git: README.md
 	-git config --global push.default simple
 	-git add -u
 	-git commit -m "Version $$(cat versdt)"
-	-grep remote\ \"origin\"] .git/config $(KR)||git remote add origin https://github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git
+  -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
 	-git push -u origin master
 
 .PHONY: giterlaub
