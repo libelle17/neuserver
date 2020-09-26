@@ -13,6 +13,7 @@ GITACC=libelle17;
 AUFRUFDIR=$(pwd)
 # meinpfad="$(cd "$(dirname "$0")"&&pwd)"
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
+[ "$meingespfad" ]||meingespfad="$(readlink -m "$0")"; # Name dieses Programms samt Pfad
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
 wzp="$meinpfad/wurzelplatten";
@@ -1620,6 +1621,8 @@ dbinhalt() {
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
+echo 0: $0
+echo meingespfad: $meingespfad
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
