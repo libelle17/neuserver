@@ -868,7 +868,7 @@ proginst() {
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
 	if test "$(id -u)" -ne 0 -o true; then
-		github;
+#		github;
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
 			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
 			gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
