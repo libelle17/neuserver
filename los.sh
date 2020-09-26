@@ -781,6 +781,7 @@ proginst() {
   doinst libgsasl-devel; # fuer vmime
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
+  doinst terminator;
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
        grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
