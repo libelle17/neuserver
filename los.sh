@@ -49,6 +49,7 @@ ausfd() {
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
+  obbs=0; # bildschirm aufrufen
   obhost=0; # host setzen
   obprompt=0; # prompt setzen
   obmt=0; # nur Laufwerke sollen gemountet werden
@@ -67,6 +68,7 @@ commandline() {
 			v|-verbose) verb=1;;
 			*) obteil=1;
 				case $para in
+          bs) obbs=1;;
           host) obhost=1;;
           prompt) obprompt=1;;
           mt) obmt=1;;
@@ -85,6 +87,7 @@ commandline() {
 		printf "obneu: $blau$obneu$reset\n";
 		printf "obschreiben: $blau$obschreiben$reset\n";
 		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+		[ "$obbs" = 1 ]&& printf "obbs: ${blau}1$reset\n"
 		[ "$obhost" = 1 ]&& printf "obhost: ${blau}1$reset\n"
 		[ "$obprompt" = 1 ]&& printf "obprompt: ${blau}1$reset\n"
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
@@ -873,7 +876,8 @@ bildschirm() {
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
 		fi;
-    if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+	fi;
+  case "$WINDOWMANAGER" in /usr/bin/startkde|/usr/bin/startplasma-x11)
       DNam=kcminputrc;
       D=~/.config/$DNam;
       [ -f $D ]||D=/etc/xdg/$DNam;
@@ -891,9 +895,8 @@ bildschirm() {
           xset r rate $rd $rr;
           echo "Fertig mit xset"
         fi;
-      fi;
-    fi;
-	fi;
+      fi;;
+  esac;
 } # bildschirm
 
 sambaconf() {
@@ -1477,7 +1480,9 @@ tu_turbomed() {
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
+  echo Vor Start poetd
 	for runde in $(seq 1 20);do 
+    echo in Start poetd
     systemctl show poetd|grep running&&break;
     echo Runde: $runde; 
     pkill -9 ptserver;
@@ -1487,6 +1492,7 @@ tu_turbomed() {
     systemctl start poetd; 
     echo Nach start poetd; 
   done;
+  echo nach Start poetd
   if [ "$muwrz" -a -s "$muwrz/../opt/turbomed/PraxisDB/objects.dat" ]; then
     for S in PraxisDB StammDB DruckDB Dictionary; do
       ausfd "rsync -avu $muwrz/../opt/turbomed/$S /opt/turbomed/";
@@ -1616,7 +1622,7 @@ commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
-[ $obteil = 0 ]&&bildschirm;
+[ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 ]&&setzbenutzer;
