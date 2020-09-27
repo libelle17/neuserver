@@ -2,8 +2,8 @@
 # hier Änderung
 # blau="\e[1;34m";
 blau="\033[1;34m";
-dblau="\e[0;34;1;47m";
-rot="\e[1;31m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
 # reset="\e[0m";
 reset="\033[0m";
 prog="";
@@ -203,10 +203,14 @@ setzprompt() {
 	printf "${dblau}setzprompt$reset()\n";
   gesnr=" $(seq 0 1 50|tr '\n' ' ')";
   for fnr in $gesnr; do
-    FB="\[$(printf '\e[48;5;253;38;5;0'$fnr'm')\]";
-    FBH="\[$(printf '\e[48;5;255;38;5;0'$fnr'm')\]"
+    FB="\[$(printf '\033[48;5;253;38;5;0'$fnr'm')\]";
+    FBH="\[$(printf '\033[48;5;255;38;5;0'$fnr'm')\]"
     PSh="${FB}Farbe $fnr: \u@\h(."$(hostname -I|cut -d' ' -f1|cut -d. -f4)"):${FBH}\w${RESET}>"
-    [ $obbash -eq 1 ]&&printf "${PSh@P}";
+    [ $obbash -eq 1 ]&&{
+      printf "${PSh@P}";
+    }||{
+      printf "$(echo $PSh|sed 's/\\u/'$(whoami)'/g;s:\\w:'$(pwd|sed "s:/root:~:")':;s:\\h:'$(hostname|sed "s:\..*::")':g;s:\\\[::g;s:\\\]::g;')";
+    }
     printf "$reset\n";
   done;
   nr=;
