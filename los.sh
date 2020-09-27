@@ -785,7 +785,6 @@ proginst() {
   doinst libgsasl-devel; # fuer vmime
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
-  doinst terminator;
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
        grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
@@ -872,16 +871,22 @@ proginst() {
 
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
-	if test "$(id -u)" -ne 0 -o true; then
-#		github;
-		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
-			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
-			gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
-		fi;
-		if [ "$DESKTOP_SESSION" = cinnamon ]; then
-			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
-			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
-		fi;
+	for SITZ in gnome.desktop cinnamon.settings-daemon; do
+			gsettings set org.$SITZ.peripherals.keyboard repeat-interval 40 2>/dev/null;
+			gsettings set org.$SITZ.peripherals.keyboard delay 200 2>/dev/null;
+	done;
+	if false; then
+    if test "$(id -u)" -ne 0 -o true; then
+  #		github;
+      if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
+        gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
+        gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
+      fi;
+      if [ "$DESKTOP_SESSION" = cinnamon ]; then
+        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
+        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
+      fi;
+    fi;
 	fi;
   case "$WINDOWMANAGER" in /usr/bin/startkde|/usr/bin/startplasma-x11)
       DNam=kcminputrc;
@@ -893,6 +898,9 @@ bildschirm() {
       rr=27;
       if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
         echo editiere $D;
+        ue="\[Keyboard\]";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
+        ue="$RD";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
+        ue="$RR";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
         sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
         #  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
         if test "$DISPLAY"; then 
