@@ -1165,8 +1165,8 @@ musterserver() {
      esac;
      if [ -s "$wzp" ]; then
        awk '{print NR" "$0}' $wzp >menuwrz;
-       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3) # show dialog and store output
-       muwrz="$(awk '/^'$FILE' /{print $2}' menuwrz); # oder: muwrz=$(sed -n '/^'$FILE' /{s/^.* //;p}' menuwrz);
+       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3);#show dialog and store output
+       muwrz="$(awk '/^'$FILE' /{print $2}' menuwrz)"; # oder: muwrz=$(sed -n '/^'$FILE' /{s/^.* //;p}' menuwrz);
        printf "Als Vorlageverzeichnis wird verwendet: $blau$muwrz$reset\n";
        printf "Ist das richtig? (jyJYnN) "; read best;
        case $best in [jyJY]*);; *) muwrz=;; esac;
