@@ -1164,20 +1164,13 @@ musterserver() {
        eval "$bef" >"$wzp";
        ;;
      esac;
-     let i=0; # define counting variable
-     W=(); # define working array
-     while read z; do
-      let i=$i+1;
-      W+=($i "$z");
-     done <"$wzp";
-     if [ $i -gt 0 ]; then
-       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 24 80 17 "${W[@]}" 3>&2 2>&1 1>&3) # show dialog and store output
-       if [ "$FILE" ]; then
-         let ind=$FILE*2-1;
-         printf "Als Vorlageverzeichnis wird verwendet: $blau${W[$ind]}$reset\n";
-         printf "Ist das richtig? (jyJYnN) "; read best;
-         case $best in [jyJY]*) muwrz=${W[$ind]};; *) muwrz=;; esac;
-       fi;
+     if [ -s "$wzp" ]; then
+       awk '{print NR" "$0}' $wzp >menuwrz;
+       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3);#show dialog and store output
+       muwrz="$(awk '/^'$FILE' /{print $2}' menuwrz)"; # oder: muwrz=$(sed -n '/^'$FILE' /{s/^.* //;p}' menuwrz);
+       printf "Als Vorlageverzeichnis wird verwendet: $blau$muwrz$reset\n";
+       printf "Ist das richtig? (jyJYnN) "; read best;
+       case $best in [jyJY]*);; *) muwrz=;; esac;
      else
        echo "Keine Verzeichnisse gefunden";
      fi;
@@ -1299,7 +1292,7 @@ teamviewer10() {
 				4) # opensuse
 #					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
 					 printf "${blau}zypper --gpg-auto-import-keys in -l $Dw/$trpm$reset\n";
-					 zypper --gpg-auto-import-keys in -l $Dw/$trpm;
+					 zypper --gpg-auto-import-keys in -G -l $Dw/$trpm;
 					;;
 				5) # fedora,
 					 printf "${blau}dnf --nogpgcheck install $Dw/$trpm$reset\n";
@@ -1467,7 +1460,7 @@ cron() {
 } # cron
 
 tu_turbomed() {
-	printf "${dblau}tu_turbomed$reset($1)\n";
+	printf "${dblau}tu_turbomed$reset($1 $2)\n";
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
 	ausf "cp $license $POET_LICENSE_PATH" "${blau}";
@@ -1478,23 +1471,17 @@ tu_turbomed() {
   sh TM_setup $1
   ret=$?
   echo $ret;
-  [ ! $ret = 0 -a "$2" ]||{ echo Hier falsch; exit; sh TM_setup $2;}
+  [ $ret != 0 -a "$2" ]&&sh TM_setup $2;
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
-  echo Vor Start poetd
 	for runde in $(seq 1 20);do 
-    echo in Start poetd
     systemctl show poetd|grep running&&break;
-    echo Runde: $runde; 
+    echo Starten von poetd, Runde: $runde; 
     pkill -9 ptserver;
-    echo nach pkill; 
     systemctl stop poetd;
-    echo Nach stop poetd; 
     systemctl start poetd; 
-    echo Nach start poetd; 
   done;
-  echo nach Start poetd
   if [ "$muwrz" -a -s "$muwrz/../opt/turbomed/PraxisDB/objects.dat" ]; then
     for S in PraxisDB StammDB DruckDB Dictionary; do
       ausfd "rsync -avu $muwrz/../opt/turbomed/$S /opt/turbomed/";
