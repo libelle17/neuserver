@@ -1466,7 +1466,7 @@ cron() {
 } # cron
 
 tu_turbomed() {
-	printf "${dblau}tu_turbomed$reset($1)\n";
+	printf "${dblau}tu_turbomed$reset($1 $2)\n";
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
 	ausf "cp $license $POET_LICENSE_PATH" "${blau}";
@@ -1477,23 +1477,17 @@ tu_turbomed() {
   sh TM_setup $1
   ret=$?
   echo $ret;
-  [ ! $ret = 0 -a "$2" ]||{ echo Hier falsch; exit; sh TM_setup $2;}
+  [ $ret != 0 -a "$2" ]&&sh TM_setup $2;
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
-  echo Vor Start poetd
 	for runde in $(seq 1 20);do 
-    echo in Start poetd
     systemctl show poetd|grep running&&break;
-    echo Runde: $runde; 
+    echo Starten von poetd, Runde: $runde; 
     pkill -9 ptserver;
-    echo nach pkill; 
     systemctl stop poetd;
-    echo Nach stop poetd; 
     systemctl start poetd; 
-    echo Nach start poetd; 
   done;
-  echo nach Start poetd
   if [ "$muwrz" -a -s "$muwrz/../opt/turbomed/PraxisDB/objects.dat" ]; then
     for S in PraxisDB StammDB DruckDB Dictionary; do
       ausfd "rsync -avu $muwrz/../opt/turbomed/$S /opt/turbomed/";
