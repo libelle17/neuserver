@@ -2,8 +2,8 @@
 # hier Änderung
 # blau="\e[1;34m";
 blau="\033[1;34m";
-dblau="\e[0;34;1;47m";
-rot="\e[1;31m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
 # reset="\e[0m";
 reset="\033[0m";
 prog="";
@@ -13,6 +13,7 @@ GITACC=libelle17;
 AUFRUFDIR=$(pwd)
 # meinpfad="$(cd "$(dirname "$0")"&&pwd)"
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
+[ "$meingespfad" ]||meingespfad="$(readlink -m "$0")"; # Name dieses Programms samt Pfad
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
 wzp="$meinpfad/wurzelplatten";
@@ -49,6 +50,7 @@ ausfd() {
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
+  obbs=0; # bildschirm aufrufen
   obhost=0; # host setzen
   obprompt=0; # prompt setzen
   obmt=0; # nur Laufwerke sollen gemountet werden
@@ -67,6 +69,7 @@ commandline() {
 			v|-verbose) verb=1;;
 			*) obteil=1;
 				case $para in
+          bs) obbs=1;;
           host) obhost=1;;
           prompt) obprompt=1;;
           mt) obmt=1;;
@@ -85,6 +88,7 @@ commandline() {
 		printf "obneu: $blau$obneu$reset\n";
 		printf "obschreiben: $blau$obschreiben$reset\n";
 		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+		[ "$obbs" = 1 ]&& printf "obbs: ${blau}1$reset\n"
 		[ "$obhost" = 1 ]&& printf "obhost: ${blau}1$reset\n"
 		[ "$obprompt" = 1 ]&& printf "obprompt: ${blau}1$reset\n"
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
@@ -199,10 +203,14 @@ setzprompt() {
 	printf "${dblau}setzprompt$reset()\n";
   gesnr=" $(seq 0 1 50|tr '\n' ' ')";
   for fnr in $gesnr; do
-    FB="\[$(printf '\e[48;5;253;38;5;0'$fnr'm')\]";
-    FBH="\[$(printf '\e[48;5;255;38;5;0'$fnr'm')\]"
+    FB="\[$(printf '\033[48;5;253;38;5;0'$fnr'm')\]";
+    FBH="\[$(printf '\033[48;5;255;38;5;0'$fnr'm')\]"
     PSh="${FB}Farbe $fnr: \u@\h(."$(hostname -I|cut -d' ' -f1|cut -d. -f4)"):${FBH}\w${RESET}>"
-    [ $obbash -eq 1 ]&&printf "${PSh@P}";
+    [ $obbash -eq 1 ]&&{
+      printf "${PSh@P}";
+    }||{
+      printf "$(echo $PSh|sed 's/\\u/'$(whoami)'/g;s:\\w:'$(pwd|sed "s:/root:~:")':;s:\\h:'$(hostname|sed "s:\..*::")':g;s:\\\[::g;s:\\\]::g;')";
+    }
     printf "$reset\n";
   done;
   nr=;
@@ -863,8 +871,8 @@ proginst() {
 
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
-	if test "$(id -u)" -ne 0; then
-		github;
+	if test "$(id -u)" -ne 0 -o true; then
+#		github;
 		if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
 			gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
 			gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
@@ -873,7 +881,8 @@ bildschirm() {
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
 			gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
 		fi;
-    if [ "$WINDOWMANAGER" = /usr/bin/startkde ]; then
+	fi;
+  case "$WINDOWMANAGER" in /usr/bin/startkde|/usr/bin/startplasma-x11)
       DNam=kcminputrc;
       D=~/.config/$DNam;
       [ -f $D ]||D=/etc/xdg/$DNam;
@@ -891,9 +900,8 @@ bildschirm() {
           xset r rate $rd $rr;
           echo "Fertig mit xset"
         fi;
-      fi;
-    fi;
-	fi;
+      fi;;
+  esac;
 } # bildschirm
 
 sambaconf() {
@@ -1159,20 +1167,13 @@ musterserver() {
        eval "$bef" >"$wzp";
        ;;
      esac;
-     let i=0; # define counting variable
-     W=(); # define working array
-     while read z; do
-      let i=$i+1;
-      W+=($i "$z");
-     done <"$wzp";
-     if [ $i -gt 0 ]; then
-       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 24 80 17 "${W[@]}" 3>&2 2>&1 1>&3) # show dialog and store output
-       if [ "$FILE" ]; then
-         let ind=$FILE*2-1;
-         printf "Als Vorlageverzeichnis wird verwendet: $blau${W[$ind]}$reset\n";
-         printf "Ist das richtig? (jyJYnN) "; read best;
-         case $best in [jyJY]*) muwrz=${W[$ind]};; *) muwrz=;; esac;
-       fi;
+     if [ -s "$wzp" ]; then
+       awk '{print NR" "$0}' $wzp >menuwrz;
+       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3);#show dialog and store output
+       muwrz="$(awk '/^'$FILE' /{print $2}' menuwrz)"; # oder: muwrz=$(sed -n '/^'$FILE' /{s/^.* //;p}' menuwrz);
+       printf "Als Vorlageverzeichnis wird verwendet: $blau$muwrz$reset\n";
+       printf "Ist das richtig? (jyJYnN) "; read best;
+       case $best in [jyJY]*);; *) muwrz=;; esac;
      else
        echo "Keine Verzeichnisse gefunden";
      fi;
@@ -1294,7 +1295,7 @@ teamviewer10() {
 				4) # opensuse
 #					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
 					 printf "${blau}zypper --gpg-auto-import-keys in -l $Dw/$trpm$reset\n";
-					 zypper --gpg-auto-import-keys in -l $Dw/$trpm;
+					 zypper --gpg-auto-import-keys in -G -l $Dw/$trpm;
 					;;
 				5) # fedora,
 					 printf "${blau}dnf --nogpgcheck install $Dw/$trpm$reset\n";
@@ -1462,7 +1463,7 @@ cron() {
 } # cron
 
 tu_turbomed() {
-	printf "${dblau}tu_turbomed$reset($1)\n";
+	printf "${dblau}tu_turbomed$reset($1 $2)\n";
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
 	ausf "cp $license $POET_LICENSE_PATH" "${blau}";
@@ -1473,19 +1474,16 @@ tu_turbomed() {
   sh TM_setup $1
   ret=$?
   echo $ret;
-  [ ! $ret = 0 -a "$2" ]||{ echo Hier falsch; exit; sh TM_setup $2;}
+  [ $ret != 0 -a "$2" ]&&sh TM_setup $2;
   cd -;
   convmv /opt/turbomed/* -r -f iso8859-15 -t utf-8 --notest;
 	systemctl daemon-reload;
 	for runde in $(seq 1 20);do 
     systemctl show poetd|grep running&&break;
-    echo Runde: $runde; 
+    echo Starten von poetd, Runde: $runde; 
     pkill -9 ptserver;
-    echo nach pkill; 
     systemctl stop poetd;
-    echo Nach stop poetd; 
     systemctl start poetd; 
-    echo Nach start poetd; 
   done;
   if [ "$muwrz" -a -s "$muwrz/../opt/turbomed/PraxisDB/objects.dat" ]; then
     for S in PraxisDB StammDB DruckDB Dictionary; do
@@ -1616,7 +1614,7 @@ commandline "$@"; # alle Befehlszeilenparameter übergeben
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
-[ $obteil = 0 ]&&bildschirm;
+[ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 ]&&setzbenutzer;
