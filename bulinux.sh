@@ -86,6 +86,7 @@ kopieros ".smbcredentials"
 kopieros "crontabakt"
 kopieros ".getmail"
 kopieros ".7zpassw"
+kopieros ".mysqlpwd"
 V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19

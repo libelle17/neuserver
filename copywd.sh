@@ -39,7 +39,7 @@ datakopier "down/cpp"
 tukopier "/var/spool/fax" "$Z/varspoolfax" 
 tukopier "/root/bin" "$Z/root/bin" "*.swp" "Papierkorb"
 mkdir $Z/root
-mountpoint -q "$Z" && ionice -c 3 rsync $Q/root/.vimrc $Q/root/.smbcredentials $Q/root/crontabakt $Q/root/.getmail $Q/root/bin $Z/root/ -avu --exclude ".*.swp"
+mountpoint -q "$Z" && ionice -c 3 rsync $Q/root/.vimrc $Q/root/.smbcredentials $Q/root/crontabakt $Q/root/.getmail $Q/root/.mysqlpwd $Q/root/.7zpassw $Q/root/bin $Z/root/ -avu --exclude ".*.swp"
 mkdir $Z/etc
 mountpoint -q "$Z" && ionice -c 3 rsync $Q/etc/samba $Q/etc/hosts $Q/etc/vsftpd*.conf $Q/etc/my.cnf $Q/etc/fstab $Z/etc/ -avu # keine Anführungszeichen um den Stern!
 mountpoint -q "$Z" && ionice -c 3 rsync -avu $Q/obsl* $Q/gerade $Q/ungera $Z/ # 

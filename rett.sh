@@ -12,7 +12,7 @@ if $(mountpoint -q /DATA); then
   rsync -avu /usr/lib64/capisuite /DATA/rett/usr/lib64
   rsync -avu /etc/openvpn /DATA/rett/etc 
   rsync -avu --delete --exclude "Papierkorb" /opt/turbomed/ /DATA/rett/turbomed/
-  rsync -avu /root/.vimrc /root/.smbcredentials /root/.getmail /root/bin /root/crontabakt /DATA/rett/root/
+  rsync -avu /root/.vimrc /root/.smbcredentials /root/.getmail /root/.mysqlpwd /root/.7zpassw /root/bin /root/crontabakt /DATA/rett/root/
   rsync -avu -x /mnt/ /DATA/rett/mnt
   rsync -avu /obsl* /DATA/rett/
   #rsync -avu /gerade /DATA/rett/
