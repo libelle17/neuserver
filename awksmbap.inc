@@ -1,23 +1,8 @@
 BEGIN {
  A[0]="[efi]";	P[0]="/boot/efi";
  A[1]="[diabfb]";	P[1]="/mnt/diabfb";
- A[2]="[daten]";	P[2]="/DATA";
- A[3]="[wrz]";	P[3]="/wrz";
- A[4]="[fedhome]";	P[4]="/mnt/fedhome";
- A[5]="[DAT1]";	P[5]="/DAT1";
- A[6]="[DAT1_1]";	P[6]="/DAT1_1";
- A[7]="[DAT1_2]";	P[7]="/DAT1_2";
- A[8]="[DAT2]";	P[8]="/DAT2";
- A[9]="[DAT1_3]";	P[9]="/DAT1_3";
- A[10]="[DAT1_4]";	P[10]="/DAT1_4";
- A[11]="[DAT1_5]";	P[11]="/DAT1_5";
- A[12]="[DAT1_6]";	P[12]="/DAT1_6";
- A[13]="[DAT1_7]";	P[13]="/DAT1_7";
- A[14]="[fedroot]";	P[14]="/mnt/fedroot";
- A[15]="[DAT1_8]";	P[15]="/DAT1_8";
- A[16]="[OPENSUSE-LE]";	P[16]="/mnt/OPENSUSE-LE";
- A[17]="[DAT4]";	P[17]="/DAT4";
- A[18]="[win1]";	P[18]="/win1";
- A[19]="[win1_1]";	P[19]="/win1_1";
- A[20]="[win1_2]";	P[20]="/win1_2";
+ A[2]="[DAT3]";	P[2]="/DAT3";
+ A[3]="[daten]";	P[3]="/DATA";
+ A[4]="[wrz]";	P[4]="/wrz";
+ A[5]="[usb]";	P[5]="/mnt/usb";
 };

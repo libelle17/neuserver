@@ -33,6 +33,7 @@ getmail_alle.sh
 getmail_gmx7.sh
 kompr.sh
 komprsql.sh
+logrotate.conf
 los.sh
 permissselten.sh
 rett.sh
