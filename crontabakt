@@ -70,10 +70,10 @@ ELG=/var/log/cronf.log
 -0 0 1 1 * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
 # mariadb-Datenbanken sichern
-#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
+#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
-#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
 # Daten jeden Freitag nach szn1 sichern
 #-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
@@ -148,7 +148,7 @@ ELG=/var/log/cronf.log
 # -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
--0 1 * * * mysql -upraxis -psonne quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
+-0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
 # -*/5 * * * * /root/bin/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
