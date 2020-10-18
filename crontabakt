@@ -200,7 +200,7 @@ ELG=/var/log/cronf.log
 #-* * * * * rm $VL/warn
 #-*/60 * * * * crontab /etc/crontab
 -*/11 * * * * $RBI/verhdop.sh chmod 770 $RBI/*.sh >/dev/null 2>>$ELG
--* * * * * $RBI/verhdop.sh $RBI/bertest.sh >>$NLG 2>>$ELG
+-* * * * * $RBI/verhdop.sh $RBI/bertest.sh >/dev/null 2>>$ELG
 -0 2 * * * ionice -c3 $RBI/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
 -1 07,14 * * * chmod 644 $RBI/logrotate.conf; logrotate $RBI/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
