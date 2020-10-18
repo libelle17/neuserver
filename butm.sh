@@ -1,7 +1,7 @@
 #!/bin/zsh
 # kopiert die aktuellen Turbomed-Dateien, fuer haufigen Gebrauch
 
-function kopiermt { # mit test
+kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
   # $3 = excludes
@@ -31,7 +31,7 @@ function kopiermt { # mit test
   fi;
 }
 
-function kopier {
+kopier() {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
  tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
@@ -39,11 +39,11 @@ function kopier {
  eval $tue
 }
 
-function kopieros {
+kopieros() {
   kopiermt $1 "" "" "--exclude='.*.swp'"
 }
 
-function kopieretc {
+kopieretc() {
   kopiermt etc/$1 "etc/"
 }
 
