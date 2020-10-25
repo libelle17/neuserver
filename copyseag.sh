@@ -11,19 +11,19 @@ reset="\e[0m";
 
 tukopier() {
   printf "${blau}tukopier()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c 3 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9"
+  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c 3 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 tukopierol() {
   printf "${blau}tukopierol()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c 3 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9"
+  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c 3 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 datakopier() {
   printf "${blau}datakopier()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "$2"
+  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe" "$2" "$3" "$4" "$5" "$6"
 }
 
 # mountpoint -q "$Z" && umount $Z

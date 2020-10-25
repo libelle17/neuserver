@@ -5,17 +5,17 @@ Z=/mnt/$PNAME
 Q=""
 
 tukopier() {
-  mountpoint -q "$Z" && ionice -c 3 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9"
+  mountpoint -q "$Z" && ionice -c 3 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 tukopierol() {
-  mountpoint -q "$Z" && ionice -c 3 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9"
+  mountpoint -q "$Z" && ionice -c 3 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 datakopier() {
-  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert"
+  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe"  "$2" "$3" "$4" "$5" "$6"
 }
 
 # mountpoint -q "$Z" && umount $Z
