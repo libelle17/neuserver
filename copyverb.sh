@@ -1,30 +1,8 @@
 #!/bin/zsh
 PNAME=verbatim
-logf=/var/log/$PNAME.log
 Z=/mnt/$PNAME
-Q=""
-
-tukopier() {
-  mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
-  echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
-}
-
-tukopierol() {
-  mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
-  echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
-}
-
-datakopier() {
-  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe"  "$2" "$3" "$4" "$5" "$6"
-}
-
-# mountpoint -q "$Z" && umount $Z
-# mountpoint -q "$Z" || mount `fdisk -l 2>/dev/null | grep '  2048' | grep NTFS | cut -f1 -d' '` $Z -t ntfs-3g -O users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail
-# mountpoint -q "$Z" || mount $Z
-mountpoint -q "$Z" || mount "$Z"
-echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
+. incopy.sh;
 datakopier "eigene Dateien/DM"
-exit
 datakopier "shome/gerald/Schade/sz"
 datakopier "down/cpp"
 tukopier "/DATA/Mail" "$Z/DATA/Mail" "Papierkorb" "ausgelagert" "/Exp/"
