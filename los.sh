@@ -1528,7 +1528,7 @@ turbomed() {
 	outDir="${datei%/*}/TMWin"; # Name wird benötigt für setup
   echo datei: $datei
   echo outDir: $outDir
-	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
+	[ -d  "$outDir" ]||ionice -c3 nice -n19 7z x $datei -o"$outDir";
 #  outDir2=$outDir/linux;
   outDir2=$(find $outDir -type d -name linux);
   echo outDir2: $outDir2

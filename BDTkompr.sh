@@ -23,13 +23,13 @@ for datei in  "${Dateien[@]}";  do
    echo "  ""Alter: " $tage " Tage"
    echo "  ""$zdatei" existiert nicht.
    if [ $tage -ge $mint ]; then     # wenn Datei alt genug
-     /usr/bin/7z a  "$zdatei" "$datei" -p$passw  -mx=9 -mtc=on -mmt=on      # komprimieren
+     ionice -c3 nice -n19 /usr/bin/7z a  "$zdatei" "$datei" -p$passw  -mx=9 -mtc=on -mmt=on      # komprimieren
      touch	 -c -r "$datei" "$zdatei"      # Änderungsdatum setzen
    fi
   fi
   if [ -f "$zdatei" ]; then      # wenn Datei (dann) existiert
    echo "  "$zdatei existiert.
-   /usr/bin/7z t "$zdatei" -p$passw > /dev/null
+   ionice -c3 nice -n19 /usr/bin/7z t "$zdatei" -p$passw > /dev/null
    rv=$?
    if [ $rv = 0 ]; then
      echo "  ""$zdatei" in Ordnung

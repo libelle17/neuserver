@@ -2,7 +2,7 @@
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="rsync $Q/$1 $Z/$2 $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
+ tue="ionice -c3 nice -n19 rsync $Q/$1 $Z/$2 $4 -avu --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
@@ -34,7 +34,7 @@ kopieros "root/.vim"
 kopieros "root/.smbcredentials"
 kopieros "root/crontabakt"
 kopieros "root/.getmail"
-V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
+V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 EXCL=--exclude={
