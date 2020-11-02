@@ -207,7 +207,7 @@ ELG=/var/log/cronf.log
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
 -15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
 # -45 1 * * * ionice -c3 /root/bin/copywd.sh >>$NLG 2>>$ELG
--15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
+# -15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
 -0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
 -40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
 -15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
