@@ -67,3 +67,6 @@ crontabdump
 httpd.conf.local
 [/etc]
 my.cnf
+[/srv/www/htdocs/behand]
+=.Neuer_Patient
+

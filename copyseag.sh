@@ -44,6 +44,7 @@ datakopier "eigene Dateien"  "DM" "TMExport" "Angiologie" "Programmierung"
 datakopier "sql"
 datakopier "ungera"
 datakopier "gerade"
+exit
 datakopier "Mail"
 datakopier ""
 # tukopier "/DATA/Papierkorb" "$Z/DATA/Papierkorb"
