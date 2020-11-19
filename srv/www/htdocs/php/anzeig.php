@@ -283,6 +283,12 @@ function verarbeite($pat_id,$telnr)
   if (!isset($_SESSION['pat_id'])) $init=1; else if ($_SESSION['pat_id']!=$pat_id) $init=1; else $init=0/*0*/;
   if ($init) {
     unset($_SESSION['telnr']);
+    unset($_SESSION['dmpp']);
+    unset($_SESSION['dmpp']);
+    unset($_SESSION['dmpa']);
+    unset($_SESSION['dmpk']);
+    unset($_SESSION['kdmp']);
+    unset($_SESSION['dmpf']);
  include '../php/i2S.php';
   }
   if (isset($_SESSION['aktual'])) $init=1;
@@ -293,9 +299,14 @@ function verarbeite($pat_id,$telnr)
 //    $_SESSION['history']=0;
 //    echo "<span> hier telnr: ".$telnr."</span><br>"; // 1.11.20
     if (!isset($_SESSION['telnr'])) $_SESSION['telnr']=$telnr;
+    if (!isset($_SESSION['dmpp'])) $_SESSION['dmpp']=0;
+    if (!isset($_SESSION['dmpa'])) $_SESSION['dmpa']=0;
+    if (!isset($_SESSION['dmpk'])) $_SESSION['dmpk']=0;
+    if (!isset($_SESSION['kdmp'])) $_SESSION['kdmp']=0;
+    if (!isset($_SESSION['dmpf'])) $_SESSION['dmpf']=0;
     $_SESSION['aktual']=0;
   }
-//  echo "session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
+  //  echo "session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if ($_SESSION['telnr'] && !isset($_POST['telnr'])) {
     $sql="SELECT SUBDATE(NOW(),92)>tgeprueft zp FROM namen WHERE pat_id=".$pat_id;
     //$ergeb=$conn->query($sqlzutun);
@@ -311,6 +322,20 @@ function verarbeite($pat_id,$telnr)
     }
   }
 //  echo "2 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
+  if (!isset($_POST['dmpp'])) {
+    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM namen n WHERE pat_id=".$pat_id;
+    //$ergeb=$conn->query($sqlzutun);
+    $ergeb=self::abfrage($conn,$sql);
+    // echo "<pre>";var_dump($conn);echo "</pre>";
+    // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
+    if ($ergeb->num_rows >0) {
+      $row = $ergeb->fetch_assoc();
+      $_SESSION['dmpp']=$row['beg'];
+      $_SESSION['dmpa']=$row['alt'];
+      $_SESSION['dmpk']=$row['dk'];
+      $_SESSION['kdmp']=$row['kdmp'];
+    }
+  }
 
   $_SESSION['pat_id']=$pat_id;
   $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
@@ -455,6 +480,8 @@ function verarbeite($pat_id,$telnr)
 //        echo "<span>sql: ".$sql."</span><br>"; // 1.11.20
         $ergeb=self::abfrage($conn,$sql);
 //        $_SESSION['aufrufe']=$_SESSION['aufrufe']+1;
+      } else if(isset($_POST['dmpp'])) {
+        $_SESSION['dmpf']=!$_SESSION['dmpf'];
       } else if(isset($_POST['history'])) {
         $_SESSION['history']=!$_SESSION['history'];
         /*
@@ -795,7 +822,16 @@ function gibaus()
       }
       echo "<button class='".$stil."' name='telnr'>".$text."</button>";
     }
- include '../php/i1S.php';
+    if (!$_SESSION['kdmp']) {
+      if ($_SESSION['dmpa']&&$_SESSION['dmpk']<>'hier'&&!$_SESSION['dmpf']) {
+        $stil=cave;
+      } else {
+        $stil=unauff;
+      }
+      $text="DMP: ".$_SESSION['dmpk']." ".$_SESSION['dmpp'];
+      echo "<button class='".$stil."' name='dmpp'>".$text."</button>";
+    }
+    include '../php/i1S.php';
       echo "</form>";
 } // gibaus
 
