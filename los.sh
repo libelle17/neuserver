@@ -1511,6 +1511,8 @@ tu_turbomed() {
       ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
     }
   fi;
+  chmod -R 770 /opt/turbomed
+  chmod 550 /opt/turbomed
   # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
 } # tu_turbomed
 
