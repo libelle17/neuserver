@@ -142,11 +142,14 @@ firebird() {
 		ausf "pkill fbguard";
 		ausf "pkill fbserver";
 		ausf "eval $insg ./FirebirdSS-2.1.7.18553-0.i686.rpm";
-		ausf "cp ./misc/firebird.init.d.suse /etc/init.d/firebird";
-		ausf "chown root.root /etc/init.d/firebird";
-		ausf "chmod 775 /etc/init.d/firebird";
+  }
+  initfb=/etc/init.d/firebird;
+  [ ! -f "$initfb" ]&&{
+		ausf "cp ./misc/firebird.init.d.suse $initfb";
+		ausf "chown root.root $initfb";
+		ausf "chmod 775 $initfb";
 		ausf "rm -f /usr/sbin/rcfirebird";
-		ausf "ln -s /etc/init.d/firebird /usr/sbin/rcfirebird";
+		ausf "ln -s $initfb /usr/sbin/rcfirebird";
 		ausf "systemctl daemon-reload";
 		ausf "systemctl start firebird";
 		ausf "$instp libreoffice-base libreoffice-base-drivers-firebird"; # zypper in 
@@ -1508,6 +1511,8 @@ tu_turbomed() {
       ausfd "rsync -avu $srv0:/DATA/turbomed /DATA/";
     }
   fi;
+  chmod -R 770 /opt/turbomed
+  chmod 550 /opt/turbomed
   # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
 } # tu_turbomed
 
@@ -1528,7 +1533,7 @@ turbomed() {
 	outDir="${datei%/*}/TMWin"; # Name wird benötigt für setup
   echo datei: $datei
   echo outDir: $outDir
-	[ -d  "$outDir" ]||7z x $datei -o"$outDir";
+	[ -d  "$outDir" ]||ionice -c3 nice -n19 7z x $datei -o"$outDir";
 #  outDir2=$outDir/linux;
   outDir2=$(find $outDir -type d -name linux);
   echo outDir2: $outDir2
