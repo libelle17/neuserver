@@ -501,10 +501,10 @@ shentw:
           [ 0$$AHr -lt 0$$APC ]&&{ \
            : ' ... und die Dateien gleich sind, den Vergleichsstempel AHr durch diesen ersetzen';\
            [ 0$$GDIFF -eq 0 ]&&{ \
-             printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
-             cp -a $$Z/$$D .;\
+             printf " $${rot}$(SUDC)cp -a $$Z/$$D .; $$reset\n";\
+             $(SUDC)cp -a $$Z/$$D .;\
            :;}||{ \
-             printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
+             printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf '$(SUDC)cp -a $$Z/$$D .'!$$reset\n";\
            :;};\
           };\
         fi;\
@@ -538,9 +538,9 @@ shziel:
           [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr  ]&&AHr=$$AGit;\
           : 'wenn dann APC aelter ist, das hiesige kopieren';\
           [ 0$$AHr -gt 0$$APC ]&&{ \
-            [ -d "$$Z" ]||mkdir -p "$$Z";\
-            printf " $${rot}cp -a $$D $$Z/; $$reset\n";\
-            cp -a $$D $$Z/;\
+            [ -d "$$Z" ]||$(SUDC)mkdir -p "$$Z";\
+            printf " $${rot}$(SUDC)cp -a $$D $$Z/; $$reset\n";\
+            $(SUDC)cp -a $$D $$Z/;\
           };\
         fi;\
         ;;\
@@ -754,7 +754,7 @@ dotrans:
 	[ ! -d "$$TZL" ]&&{ \
 	 printf "Shall the directory %b$$TZL%b be created?/Soll das Verzeichnis %b$$TZL%b erstellt werden (y/j/n)? " $(blau) $(reset) $(blau) $(reset);\
 	 read Antwort;\
-	 [ $$Antwort = "y" -o $$Antwort = "j" ]&& mkdir -p "$$TZL";\
+	 [ $$Antwort = "y" -o $$Antwort = "j" ]&& $(SUDC)mkdir -p "$$TZL";\
 	};\
 	[ -z "$$TZL" ]&&{ Start=0;:;}||[ ! -d "$$TZL" ]&& Start=0;\
 	if [ $$Start = 0 ]; then\
