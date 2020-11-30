@@ -65,6 +65,91 @@
       table { font-size:2.8mm; border-collapse:collapse; }
     -->
     </STYLE>
+    <!-- Dialog-Box fuer Rueckfragen, von https://wiki.selfhtml.org/wiki/JavaScript/Tutorials/Eigene_modale_Dialogfenster -->
+    <STYLE TYPE='text/css'>
+/* Darstellungen für die Dialog-Box */
+dialog {
+	background: green;
+	border: 1px solid grey;
+	border-radius: 0 .5em .5em;
+	box-shadow: 0 0 15px 5px #888;
+	display: none;
+	height: auto;
+	padding: .5em 1em;
+	position: relative;
+	width: 100%;
+	z-index: 1002;
+}
+dialog[open="open"] {
+	display: block;
+}
+@media (min-width: 30em) {
+	dialog {
+		position: absolute;
+		top: 50%;
+		margin-top: -10em;
+		left: 50%;
+		margin-left: -10em;
+		width: 20em;
+	}
+}
+/* Ebene zwischen Hintergrund und Dialog-Box, Pseudoelement noch nicht implementiert */
+dialog::backdrop,
+#backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(255, 255, 255, 0.8);
+}
+dialog .button-row {
+	text-align: center;
+}
+dialog .close {
+	position: absolute;
+	right: 3px;
+	top: 1px;
+	height: 2em;
+	cursor: pointer;
+	background-color: red;
+	color: white;
+	font-weight: bold;
+	font-size: 1.5em;
+	border-radius: 0 .5em .5em;
+}
+dialog [name="ok"] {
+	background: #0b0;
+	border-radius: 0 .5em .5em;
+	color: white;
+	font-weight: bold;
+	font-size: 1.5em;
+}
+dialog [name="cancel"] {
+	background: #f00;
+	border-radius: 0 .5em .5em;
+	color: white;
+	font-weight: bold;
+	font-size: 1.5em;
+}
+dialog > ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+dialog textarea {
+	height: 4em;
+	width: 100%;
+}
+/* Darstellungen für die Demo-Seite */
+#result {
+	border: 2px solid #888;
+	border-radius: 0.5em;
+	display: inline-block;
+	padding: 0.2em 1em;
+}
+    </STYLE>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </HEAD>
 <BODY LANG='de-DE' DIR='LTR'>
 <a name='AnkerTop' href='#AnkerTop' accesskey='t'></a>
