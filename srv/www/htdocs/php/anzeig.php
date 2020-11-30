@@ -831,13 +831,14 @@ function gibaus()
         $stil=unauff;
       }
       $text="DMP: ".$_SESSION['dmpk']." ".$_SESSION['dmpp'];
-      echo "<button class='".$stil."' name='dmpp' type='button'>".$text."</button>";
+      echo "<button class='".$stil."' name='dmpp' id='dmpp' type='button'>".$text."</button>";
 //      echo "<button class='".$stil."' name='dmpp' onclick='dmpFrage()'>".$text."</button>";
 //      echo "<section><button class='".$stil."' name='dmpp' data-js='confirm'>".$text."</button></section>";
     }
     include '../php/i1S.php';
     echo "</form>";
-    echo "<dialog id='my-dialog' role='dialog' aria-labelledby='my-dialog-heading'><button class='close'>Schließen</button><h2 id='my-dialog-heading'>Eingabe</h2><p class='button-row'><button name='ok' id='dmpok'>OK</button><button name='cancel'>Abbrechen</button></p></dialog>";
+//    echo "<dialog id='my-dialog' role='dialog' aria-labelledby='my-dialog-heading'><button class='close'>Schließen</button><h2 id='my-dialog-heading'>Eingabe</h2><p class='button-row'><button name='ok' id='dmpok'>OK</button><button name='cancel'>Abbrechen</button></p></dialog>";
+    echo "<dialog id='my-dialog' role='dialog' aria-labelledby='my-dialog-heading'><h2 id='my-dialog-heading'>Eingabe</h2><p class='button-row'><button name='ok' id='dmpok'>OK</button><button name='cancel'>Abbrechen</button></p></dialog>";
 } // gibaus
 
 
@@ -1355,6 +1356,13 @@ document.addEventListener("DOMContentLoaded", function () {
 					}
 				}
 			});
+          var el=document.getElementById("dmpp");
+          var cl=el.classList;
+          el.firstChild.data="DMP: "+result+" "+d.getDate()+"."+d.getMonth()+"."+d.getFullYear()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+          if (cl.contains('cave')) {
+            cl.remove('cave');
+            cl.add('unauff');
+          }
           }
             if (output) {
               output.textContent = result;

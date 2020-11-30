@@ -11,6 +11,7 @@
 	$sql = "INSERT INTO dmperg(pat_id,dmp,zp,pc) VALUES('$pid','$resu','$zp','$pc')";
 	if (mysqli_query($conn, $sql)) {
 		echo json_encode(array("statusCode"=>200));
+     $_SESSION['dmpf']=0;
 	} 
 	else {
 		echo json_encode(array("statusCode"=>201));
