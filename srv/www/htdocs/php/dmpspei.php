@@ -8,7 +8,8 @@
 	$resu=$_POST['dmp'];
   $zp=$_POST['zp'];
   $pc=$_SERVER['REMOTE_ADDR'];
-	$sql = "INSERT INTO dmperg(pat_id,dmp,zp,pc) VALUES('$pid','$resu','$zp','$pc')";
+  switch($resu){case"ungeklaert":$de=0;break;case"nein":$de=1;break;case"HA":$de=2;break;case"hier":$de=3;break;case"ausgeschrieben":$de=4;break;}
+	$sql = "INSERT INTO dmperg(pat_id,dmp,zp,pc) VALUES('$pid','$de','$zp','$pc')";
 	if (mysqli_query($conn, $sql)) {
 		echo json_encode(array("statusCode"=>200));
      $_SESSION['dmpf']=0;

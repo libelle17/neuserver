@@ -47,9 +47,9 @@ function getdb($conn,$pat_id)
     if (isset($_SESSION['aut'])) unset($_SESSION['aut']);
     $_SESSION['aufgaben']="";
 //    $_SESSION['anbeh']=0;
-    $sqlzutun="SELECT beschreib,kommentar kom, (erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel,Person per,".
-      "if(Person='a','__',if(Person='v',Vorbereiter,BehANDler)) aut ".
-      "FROM zutun WHERE pat_id =".$pat_id." AND DATE(aktzeit)=DATE(now()) order by pos;";
+    $sqlzutun="SELECT beschreib,kommentar kom,(erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel,Person per,".
+      "IF(Person='a','__',IF(Person='v',Vorbereiter,BehANDler)) aut ".
+      "FROM zutun WHERE pat_id =".$pat_id." AND DATE(aktzeit)=DATE(now()) ORDER BY pos;";
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sqlzutun);
     // echo "<pre>";var_dump($conn);echo "</pre>";
@@ -68,7 +68,7 @@ function getdb($conn,$pat_id)
 
     $_SESSION['anwesend']=0;
     unset($_SESSION['anwseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('A','a') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('A','a') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlaktiv);
     if ($ergeb->num_rows >0) {
@@ -84,7 +84,7 @@ function getdb($conn,$pat_id)
 
 //    $_SESSION['obvorb']=0;
     unset($_SESSION['vorseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('V','v') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('V','v') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlaktiv);
     if ($ergeb->num_rows >0) {
@@ -100,7 +100,7 @@ function getdb($conn,$pat_id)
 
 //    $_SESSION['obbeha']=0;
     unset($_SESSION['behseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('B','b') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('B','b') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlakiv);
     if ($ergeb->num_rows >0) {
@@ -121,8 +121,8 @@ function zeiggeschichte($conn,$pat_id)
 {
   /*  ?> <script>alert("rufe zeiggeschichte() auf!");</script> <?php */
 $sqlzutun="SELECT beschreib inh, kommentar kom, (erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel, Person per,".
-"if(Person='a','__', if(Person='v',Vorbereiter,Behandler)) aut, aktzeit az, pos ".
-"FROM zutun WHERE pat_id =".$pat_id." order by aktzeit, pos;"; //AND DATE(AktZeit)<DATE(now()) 
+"IF(Person='a','__', IF(Person='v',Vorbereiter,Behandler)) aut, aktzeit az, pos ".
+"FROM zutun WHERE pat_id =".$pat_id." ORDER BY aktzeit, pos;"; //AND DATE(AktZeit)<DATE(now()) 
 //$ergeb=$conn->query($sqlzutun);
 $ergeb=self::abfrage($conn,$sqlzutun);
 if ($ergeb->num_rows >0) {
@@ -322,7 +322,11 @@ function verarbeite($pat_id,$telnr)
   }
 //  echo "2 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if (!isset($_POST['dmpp'])) {
-    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM namen n WHERE pat_id=".$pat_id;
+    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM (select pat_id,if(zp>dmpbeg,dmp,dmpklass) dmpklass,if(zp>dmpbeg,zp,dmpbeg) dmpbeg from (
+select pat_id,dmpbeg,dmpklass,(select max(zp) from dmperg where pat_id=n.pat_id) zp
+,(select dmp from dmperg where pat_id=n.pat_id and zp=(select max(zp) from dmperg where pat_id=n.pat_id)) dmp
+ from namen n
+ ) n) n WHERE pat_id=".$pat_id;
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sql);
     // echo "<pre>";var_dump($conn);echo "</pre>";
@@ -1307,8 +1311,8 @@ document.addEventListener("DOMContentLoaded", function () {
 				// data
 				{
           auswahl: {
-            "default": "ungeklaert",
-            options: ["ungeklaert","hier","HA","nein","ausgeschrieben"],
+            "default": "hier",
+            options: ["ungeklaert","nein","HA","hier","ausgeschrieben"],
             text: "DMP?",
             type: "radio"
     }
@@ -1358,7 +1362,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
           var el=document.getElementById("dmpp");
           var cl=el.classList;
-          el.firstChild.data="DMP: "+result+" "+d.getDate()+"."+d.getMonth()+"."+d.getFullYear()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+          el.firstChild.data="DMP: "+result+" "+d.getDate()+"."+(d.getMonth()+1)+"."+d.getFullYear()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
           if (cl.contains('cave')) {
             cl.remove('cave');
             cl.add('unauff');
