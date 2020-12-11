@@ -41,7 +41,9 @@
 # "make uninstall" => deinstalliert alles, frägt noch manchmal rück
 # "make allesweg" => deinstalliert alles, beantwortet Rückfragen automatisch mit 'y'
 # "make neuproj" => kopiert Dateien für neues Projekt in Verzeichnis fuer neues Projekt
-# "make shlist" => installiert die in "shliste" stehenden shell-Scripte (=bei make install dabei)
+# "make shlist" => installiert die in "shliste" stehenden shell-Scripte (unbedingt, anders als shziel)
+# "make shentw" => sichert die in "ziele" stehenden Dateien aus [/ziel/verzeichnis] ssen hierher, falls hier aelter 
+# "make shziel" => installiert die in "ziele" stehenden Dateien in [/ziel/verzeichnis] ssen, falls dort aelter
 
 ICH::=$(firstword $(MAKEFILE_LIST))
 SRCS::=$(wildcard *.cpp) $(wildcard *.c)
@@ -310,7 +312,7 @@ git: README.md
 	-git config --global push.default simple
 	-git add -u
 	-git commit -m "Version $$(cat versdt)"
-	-grep remote\ \"origin\"] .git/config $(KR)||git remote add origin https://github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git
+  -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
 	-git push -u origin master
 
 .PHONY: giterlaub
@@ -482,16 +484,18 @@ shentw:
 	 for D in $$(cat ziele);do \
     case $$D in \
       [*\]) \
-        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
+      Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;s:/$$::;');\
+        ;;\
       *) \
-        [ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
-        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
-        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        AGit=0;[ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D);\
+        AHr=0;[ -f $$D ]&&{ AHr=$$(stat $$D -c%Y);:;}||{ printf "$$blau$$D$$reset fehlt\n";};\
+        APC=0;[ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||{ printf "$$blau$$Z/$$D$$reset fehlt\n";};\
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
         echo Zeitstempel $$(pwd) : $$AHr;\
         echo Zeitstempel $$Z/$$D : $$APC;:';\
-        which git >/dev/null 2>&1&&{ git diff -s --exit-code -- $$D;GDIFF=$$?;:;}||GDIFF=0;:;\
+        which git >/dev/null 2>&1&&[ $$AHr -ne 0 ]&&{ git diff -s --exit-code -- $$D;GDIFF=$$?;:;}||GDIFF=0;:;\
+        : 'echo GDIFF: $$GDIFF';\
         cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
         : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
         if [ 0$$DIFF -ne 0 ]; then \
@@ -501,10 +505,13 @@ shentw:
           [ 0$$AHr -lt 0$$APC ]&&{ \
            : ' ... und die Dateien gleich sind, den Vergleichsstempel AHr durch diesen ersetzen';\
            [ 0$$GDIFF -eq 0 ]&&{ \
-             printf " $${rot}cp -a $$Z/$$D .; $$reset\n";\
-             cp -a $$Z/$$D .;\
+             : 'ggf. Unterverzeichnis hier erstellen';\
+             echo "$$D"|grep -q '/'&&$(SUDC)mkdir -p $$(dirname $$D);\
+             printf " $${rot}$(SUDC)cp -a $$Z/$$D $$D; $$reset\n";\
+             $(SUDC)cp -a $$Z/$$D $$D;\
+             git add $$D;\
            :;}||{ \
-             printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf 'cp -a $$Z/$$D .'!$$reset\n";\
+             printf "$${rot}$$(pwd)/$$D: Unterschied zu $$Z/$$D und zu Git, verzichte auf '$(SUDC)cp -a $$Z/$$D .'!$$reset\n";\
            :;};\
           };\
         fi;\
@@ -522,11 +529,12 @@ shziel:
 	 for D in $$(cat ziele);do \
     case $$D in \
       [*\]) \
-        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;');;\
+        Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;s:/$$::;');\
+        ;;\
       *) \
-        [ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D)||AGit=0;\
-        [ -f $$D ]&&AHr=$$(stat $$D -c%Y)||AHr=0;\
-        [ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||APC=0;\
+        AGit=0;[ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D);\
+        AHr=0;[ -f $$D ]&&{ AHr=$$(stat $$D -c%Y);:;}||{ printf "$$blau$$D$$reset fehlt\n";};\
+        APC=0;[ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||{ printf "$$blau$$Z/$$D$$reset fehlt\n";};\
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
         echo Zeitstempel $$(pwd) : $$AHr;\
@@ -538,9 +546,10 @@ shziel:
           [ 0$$AGit -ne 0 -a 0$$AGit -lt 0$$AHr  ]&&AHr=$$AGit;\
           : 'wenn dann APC aelter ist, das hiesige kopieren';\
           [ 0$$AHr -gt 0$$APC ]&&{ \
-            [ -d "$$Z" ]||mkdir -p "$$Z";\
-            printf " $${rot}cp -a $$D $$Z/; $$reset\n";\
-            cp -a $$D $$Z/;\
+            PF=$$(dirname $$D);\
+            [ -d "$$Z/$$PF" ]||$(SUDC)mkdir -p "$$Z/$$PF";\
+            printf " $${rot}$(SUDC)cp -a $$D $$Z/$$PF/; $$reset\n";\
+            $(SUDC)cp -a $$D $$Z/$$PF/;\
           };\
         fi;\
         ;;\
@@ -559,7 +568,7 @@ man_en.html: AWI::=IMPLICATIONS
 man_en.gz: OPN::=OPTIONS
 
 .PHONY: install
-install: $(INSTEXEC) $(INSTenMAN) $(INST_MAN) shlist shziel
+install: $(INSTEXEC) $(INSTenMAN) $(INST_MAN) shziel
 
 README.md: $(HTMLS)
 	-@rm -f README.md
@@ -754,7 +763,7 @@ dotrans:
 	[ ! -d "$$TZL" ]&&{ \
 	 printf "Shall the directory %b$$TZL%b be created?/Soll das Verzeichnis %b$$TZL%b erstellt werden (y/j/n)? " $(blau) $(reset) $(blau) $(reset);\
 	 read Antwort;\
-	 [ $$Antwort = "y" -o $$Antwort = "j" ]&& mkdir -p "$$TZL";\
+	 [ $$Antwort = "y" -o $$Antwort = "j" ]&& $(SUDC)mkdir -p "$$TZL";\
 	};\
 	[ -z "$$TZL" ]&&{ Start=0;:;}||[ ! -d "$$TZL" ]&& Start=0;\
 	if [ $$Start = 0 ]; then\

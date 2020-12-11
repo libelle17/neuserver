@@ -6,7 +6,7 @@ kopier () {
  echo Parameter in kopier: "$@"
 # tuez="rsync -avu $@"
 # tue=$(echo $tuez|sed 's/ -avu / -avu /g');
- tue="rsync -avu $@"
+ tue="ionice -c3 nice -n19 rsync -avu $@"
 # echo -e $dblau$tuez$reset;
 # eval $tuez; erg=$?;
 ##error in rsync protocol data stream (code 12)

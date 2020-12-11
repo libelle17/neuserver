@@ -23,7 +23,7 @@ function kopiermt { # mit test
     summe=$(expr $summe - $papz + $papq);
   done;
   if test $summe > 0; then
-    tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude={""$EX""}";
+    tue="ionice -c3 nice -n19 rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude={""$EX""}";
     echo $tue
     eval $tue
   else
@@ -34,7 +34,7 @@ function kopiermt { # mit test
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
+ tue="ionice -c3 nice -n19 rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
  echo $tue
  eval $tue
 }
@@ -86,7 +86,8 @@ kopieros ".smbcredentials"
 kopieros "crontabakt"
 kopieros ".getmail"
 kopieros ".7zpassw"
-V=/root/bin/;rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
+kopieros ".mysqlpwd"
+V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 mountpoint -q /$Dt || mount /$Dt;

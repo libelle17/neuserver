@@ -1,0 +1,57 @@
+<?php
+if (isset($_POST['vorname']) && isset($_POST['nachname']) && isset($_POST['geboren']) && isset($_POST['pid']) && is_numeric($_POST['pid'])) {
+  function soz($string)
+  {
+  $search = array("Ä", "Ö", "Ü", "ä", "ö", "ü", "ß", "´");
+  $replace = array("Ae", "Oe", "Ue", "ae", "oe", "ue", "ss", "");
+  return str_replace($search, $replace, $string);
+  }
+
+  $dname=soz($_POST['nachname'])."_".soz($_POST['vorname']).",Pid_".$_POST['pid'].",neu.html"; 
+  $datei=fopen($dname,"w");
+  fwrite($datei,"<?php session_start(); ?>");
+  fwrite($datei,"<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.0 Transitional//EN'>");
+  fwrite($datei,"<HTML><HEAD><META HTTP-EQUIV='CONTENT-TYPE' CONTENT='text/html; charset=windows-1252'>");
+  fwrite($datei,"</HEAD>");
+  fwrite($datei,"<BODY LANG='de-DE' DIR='LTR'>");
+  fwrite($datei,"<a href='http://linux1/vorb'>V</a> ");
+  fwrite($datei,"<a href='http://linux1/behand'>B</a> ");
+  fwrite($datei,"<a href='http://linux1/fertig'>F</a> ");
+  fwrite($datei,"<a href='http://linux1/plz' accesskey='z'>&#8598;</a><br>");
+
+  fwrite($datei, "<b>".$_POST['nachname']."</b>");
+  fwrite($datei, ", <b>".$_POST['vorname']."</b>");
+  fwrite($datei, ", *<b>".$_POST['geboren']."</b>");
+  fwrite($datei, ", Pat-ID: <b>".$_POST['pid']."</b><br>");
+  fwrite($datei, "<?php ");
+  fwrite($datei, "\$pat_id=".$_POST['pid'].";");
+  fwrite($datei, "include '../php/anzeig.php';");
+  fwrite($datei, "?>");
+  fwrite($datei, "</BODY></HTML>");
+  fclose($datei);
+  echo "<meta http-equiv='refresh' content='0; URL=http://linux1/plz/".$dname."'>";
+} else {
+  $basen=ltrim(basename("..".$_SERVER['PHP_SELF']));
+  $copyq="../plz/".$basen;
+  echo "<form action='".$copyq."' method='post'>";
+  echo "<a href='http://linux1/vorb'>V</a> ";
+  echo "<a href='http://linux1/behand'>B</a> ";
+  echo "<a href='http://linux1/fertig'>F</a> ";
+  echo "<a href='http://linux1/plz' accesskey='z'>&#8598;</a> ";
+  $nachname="";
+  if (isset($_POST['nachname'])) $nachname=$_POST['nachname'];
+  echo "<p>Neue/r Patient/in:  <br>Nachname: <input type='text' autofocus style='position:absolute;left:6rem;' name='nachname' value='".$nachname."'/>";
+  $vorname="";
+  if (isset($_POST['vorname'])) $vorname=$_POST['vorname'];
+  echo "<br>Vorname: <input type='text' style='position:absolute;left:6rem;' name='vorname' value='".$vorname."''/>";
+  $geboren="";
+  if (isset($_POST['geboren'])) $geboren=$_POST['geboren'];
+  echo " <br>geboren: <input type='text'  style='position:absolute;left:6rem;' name='geboren' value='".$geboren."'/>";
+  $pid="";
+  if (isset($_POST['pid'])) $pid=$_POST['pid'];
+  echo " <br>Pat-ID: <input type='text'  style='position:absolute;left:6rem;' name='pid' value='".$pid."'/>";
+  echo "<br><input type='submit' value='anlegen'/>";
+  echo "</p>";
+  echo "</form>";
+}
+?>

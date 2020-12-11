@@ -41,12 +41,12 @@ while :; do
 		echo Beginne  `date +'%d.%m.%Y %X'`|tee $PROTD
 		 for S in "down/cpp" "down" "Patientendokumente" "turbomed" "eigene\ Dateien" "shome/gerald" "Mail/EML" "sql"; do
 			echo Jetzt kommt "$S"
-			echo sudo rsync -avuz --info=all6 "$MP/DATA/$S/" "$ZIEL/$S" --exclude Papierkorb
-			sudo rsync -avuz --info=all6 "$MP/DATA/$S/" "$ZIEL/$S" --exclude Papierkorb
+			echo sudo ionice -c3 nice -n19 rsync -avu --info=all6 "$MP/DATA/$S/" "$ZIEL/$S" --exclude Papierkorb
+			sudo ionice -c3 nice -n19 rsync -avu --info=all6 "$MP/DATA/$S/" "$ZIEL/$S" --exclude Papierkorb
 			echo Fertig mit "$MP/DATA/$S/" `date +'%d.%m.%Y %X'`|tee -a $PROTD
 		 done;
-		echo sudo rsync -avuz --info=all6 $MP/bin/ /root/bin --exclude Papierkorb
-		sudo rsync -avuz --info=all6 $MP/bin/ /root/bin --exclude Papierkorb
+		echo sudo ionice -c3 nice -n19 rsync -avu --info=all6 $MP/bin/ /root/bin --exclude Papierkorb
+		sudo ionice -c3 nice -n19 rsync -avu --info=all6 $MP/bin/ /root/bin --exclude Papierkorb
 		echo Fertig mit $MP/bin/ `date +'%d.%m.%Y %X'`|tee -a $PROTD;:
 	}||{
 		echo "$ZIEL" nicht gemountet;
