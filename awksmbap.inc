@@ -1,21 +1,8 @@
 BEGIN {
- A[0]="[home]";	P[0]="/home";
- A[1]="[daten]";	P[1]="/DATA";
- A[2]="[Boot]";	P[2]="/Boot";
- A[3]="[winssd]";	P[3]="/winssd";
- A[4]="[Leapa]";	P[4]="/Leapa";
- A[5]="[bsd]";	P[5]="/bsd";
- A[6]="[arch]";	P[6]="/arch";
- A[7]="[c20]";	P[7]="/c20";
- A[8]="[mageia]";	P[8]="/mageia";
- A[9]="[debian]";	P[9]="/debian";
- A[10]="[ubuntu]";	P[10]="/ubuntu";
- A[11]="[fedora]";	P[11]="/fedora";
- A[12]="[tumble]";	P[12]="/tumble";
- A[13]="[mint]";	P[13]="/mint";
- A[14]="[leapssd]";	P[14]="/leapssd";
- A[15]="[leap]";	P[15]="/leap";
- A[16]="[WINDOWS]";	P[16]="/mnt/WINDOWS";
- A[17]="[DAT1]";	P[17]="/DAT1";
- A[18]="[gsheim]";	P[18]="/mnt/gsheim";
+ A[0]="[efi]";	P[0]="/boot/efi";
+ A[1]="[diabfb]";	P[1]="/mnt/diabfb";
+ A[2]="[DAT3]";	P[2]="/DAT3";
+ A[3]="[daten]";	P[3]="/DATA";
+ A[4]="[wrz]";	P[4]="/wrz";
+ A[5]="[usb]";	P[5]="/mnt/usb";
 };

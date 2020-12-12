@@ -6,12 +6,12 @@
 # (/tmp/crontab.KhwReo installed on Mon Jun 24 07:51:06 2013)
 # (Cronie version 4.2)
 SHELL=/bin/bash
+RBI=/root/bin
 PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin:/root/bin
 MAILTO=root
 VL=/var/log
 NLG=/var/log/cron.log
 ELG=/var/log/cronf.log
-# die Variablen im Befehlsaufrufpfad wirken aber (zumindest manchmal) nicht
 #
 # check scripts in cron.hourly, cron.daily, cron.weekly, and cron.monthly
 #
@@ -19,7 +19,7 @@ ELG=/var/log/cronf.log
 # am 7.10.15 5 alle vmp-Aufrufe passager inaktiviert
 # bitte editieren mit `crontab -e`
 -*/15 * * * *  test -x /usr/lib/cron/run-crons && /usr/lib/cron/run-crons >>$VL/run-crons-Aufruf.log 2>&1 
-# -0 0 * * * /root/bin/dorsync.sh --delete /etc/ /wurzelalt/etc >>$VL/dorsync-Aufruf.log 2>&1
+# -0 0 * * * $RBI/dorsync.sh --delete /etc/ /wurzelalt/etc >>$VL/dorsync-Aufruf.log 2>&1
 
 # unsichere oder langsame Module nicht beim Systemstart laden, um diesen nicht zu gefaehrden oder aufzuhalten
 # @reboot P=/mnt/diabfb; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
@@ -33,6 +33,7 @@ ELG=/var/log/cronf.log
 # @reboot P=/DATA; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
 #@reboot mount /DAT1 >>$NLG 2>>$ELG
 #@reboot mount /DAT2 >>$NLG 2>>$ELG
+# @reboot [ ${HOST\%\%.*}/ = linux0ur/ ]&&{ P=/DAT3; mountpoint -q $P||mount $P >>$NLG 2>>$ELG;}
 # @reboot mount /wres2
 # @reboot mount /w12.1
 # @reboot mount /w12.2
@@ -62,98 +63,99 @@ ELG=/var/log/cronf.log
 # diese Datei sichern
 -7 * * * * R=/root;NS=$R/neuserver;CT=crontabakt;ionice -c3 crontab -l >$R/$CT&&test -d $R&&{ diff $R/$CT $NS/ >/dev/null 2>&1||{ cd $NS;git pull;ERG=$?;cp -a $R/$CT $NS/$CT;[ $ERG -eq 0 ]&&make git;cd -;};};:;
 # Funktionsfaehigkeit des Linux-Servers, Mount-Status von dessen Festplatten und Funktion von samba demonstrieren
--* * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatus.sh   > "/DATA/Festplattenstatus minuetlich.txt" 2>&1
--0 * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%H` Uhr.txt" 2>&1
--0 0 * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%A`.txt" 2>&1
--0 0 * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%d`.txt" 2>&1
--0 0 1 * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%B`.txt" 2>&1
--0 0 1 1 * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
+-* * * * * mountpoint -q /DATA && ionice -c3 $RBI/fpstatus.sh   > "/DATA/Festplattenstatus minuetlich.txt" 2>&1
+-0 * * * * mountpoint -q /DATA && ionice -c3 $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%H` Uhr.txt" 2>&1
+-0 0 * * * mountpoint -q /DATA && ionice -c3 $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%A`.txt" 2>&1
+-0 0 * * * mountpoint -q /DATA && ionice -c3 $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%d`.txt" 2>&1
+-0 0 1 * * mountpoint -q /DATA && ionice -c3 $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%B`.txt" 2>&1
+-0 0 1 1 * mountpoint -q /DATA && ionice -c3 $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
 # mariadb-Datenbanken sichern
-#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
+#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
-#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
+# Daten einmal taeglich von DATA nach DAT3 sichern
+-56 23 * * * Q=/DATA;for Z in /DAT3 /DAT1;do mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};};done;
 # Daten jeden Freitag nach szn1 sichern
 #-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
 # Daten einmal taeglich nach anmeldl sichern
 #-27 19 * * * pgrep -c -f "dorsync.* /mnt/anmeldl/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /mnt/anmeldl/daten 
-#-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q /DATA && mountpoint -q "/DAT2" && /root/bin/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1 
+#-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q /DATA && mountpoint -q "/DAT2" && $RBI/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1 
 # Kontrolldatei für Laufen des Turbomed-Servers erstellen
 -*/2 * * * * mountpoint -q /DATA && ps h opid,time,cmd -C ptserver > /DATA/poet_aktiv.txt 2>>$VL/poet_aktiv-Auruf.log
 # Kontrolldatei zur Auslastung des Datenlaufwerks erstellen
 -*/12 * * * * mountpoint -q /DATA && df -l > /DATA/Auslastung_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
 # Patienten- und Stammdatenbanken auf /gerade, /ungera, /DATA/gerade und /DATA/ungera sichern
--14 2,8-22/2 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/gerade_PraxisDB.sh >>$NLG 2>>$ELG
--14 3,9-19/2 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/ungera_PraxisDB.sh >>$NLG 2>>$ELG
-#-30 2,8-22/2 * * * /root/bin/verhdop.sh /root/bin/DATAgerade_PraxisDB.sh >>$NLG 2>>$ELG
-# -30 1-23/2 * * * /root/bin/verhdop.sh /root/bin/DATAungera_PraxisDB.sh >>$NLG 2>>$ELG
+-14 2,8-22/2 * * * ionice -c3 $RBI/verhdop.sh $RBI/gerade_PraxisDB.sh >>$NLG 2>>$ELG
+-14 3,9-19/2 * * * ionice -c3 $RBI/verhdop.sh $RBI/ungera_PraxisDB.sh >>$NLG 2>>$ELG
+#-30 2,8-22/2 * * * $RBI/verhdop.sh $RBI/DATAgerade_PraxisDB.sh >>$NLG 2>>$ELG
+# -30 1-23/2 * * * $RBI/verhdop.sh $RBI/DATAungera_PraxisDB.sh >>$NLG 2>>$ELG
 # >>$VL/dorsync-Aufruf-gerade.log 2>&1
 #-57 0 * * * dorsync.sh --delete /opt/turbomed/PraxisDB/ /mnt/diabfb/ADATA-USBFlashDrive-01/PraxisDB # >>$VL/dorsync-Aufruf-flash.log 2>&1
--57 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
+-57 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 $RBI/verhdop.sh $RBI/copyusb.sh  >>$NLG 2>>$ELG
 # -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0ur/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux0ur:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
-# -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
+# -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && $RBI/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
 # die Turbomed-Datenbank einmal taeglich komprimieren
--40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA &&{ TB=/DATA/TMBack;test -d $TB||mkdir $TB;ot=/opt/turbomed;ionice -c3 /usr/bin/7z a "$TB/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" $ot/StammDB $ot/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG;}
+-40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&mountpoint -q /DATA &&{ TB=/DATA/TMBack;test -d $TB||mkdir $TB;ot=/opt/turbomed;ionice -c3 /usr/bin/7z a "$TB/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" $ot/StammDB $ot/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG;}
 
 # -0 * * * * mountpoint -q /DATA && chown firebird:praxis /DATA >>$VL/chown-Aufruf.log 2>&1
 # -0 * * * * mountpoint -q /DATA && chown firebird:praxis /DATA/firebird >>$VL/chown-Aufruf.log 2>&1
 
 # /opt/turbomed
 # muss noch ueberprueft werden
-# -30 */2 * * * mountpoint -q "/mnt/mitte/turbomed" && /root/bin/gsbutm.sh "/mnt/mitte/turbomed" "/opt/turbomed" "/mnt/mitte/turbomed" >>$NLG 2>>$ELG
+# -30 */2 * * * mountpoint -q "/mnt/mitte/turbomed" && $RBI/gsbutm.sh "/mnt/mitte/turbomed" "/opt/turbomed" "/mnt/mitte/turbomed" >>$NLG 2>>$ELG
 # muss noch ueberprueft werden
-# -0 1-23/2 * * * mountpoint -q "/mnt/szo1/turbomed" && /root/bin/gsbutm.sh "/mnt/szo1/turbomed" "/opt/turbomed" "/mnt/szo1/turbomed" >>$NLG 2>>$ELG
-# -0 23-23/2 * * * mountpoint -q "/mnt/szs1/daten" && /root/bin/gsbutm.sh "/mnt/szs1/turbomed" "/opt/turbomed" "/mnt/szs1/turbomed" >>$NLG 2>>$ELG
-# -40 15 * * * mountpoint -q "/mnt/szn3/turbomed" && /root/bin/gsbutm.sh "/mnt/szn3/turbomed" "/opt/turbomed" "/mnt/szn3/turbomed" >>$NLG 2>>$ELG
+# -0 1-23/2 * * * mountpoint -q "/mnt/szo1/turbomed" && $RBI/gsbutm.sh "/mnt/szo1/turbomed" "/opt/turbomed" "/mnt/szo1/turbomed" >>$NLG 2>>$ELG
+# -0 23-23/2 * * * mountpoint -q "/mnt/szs1/daten" && $RBI/gsbutm.sh "/mnt/szs1/turbomed" "/opt/turbomed" "/mnt/szs1/turbomed" >>$NLG 2>>$ELG
+# -40 15 * * * mountpoint -q "/mnt/szn3/turbomed" && $RBI/gsbutm.sh "/mnt/szn3/turbomed" "/opt/turbomed" "/mnt/szn3/turbomed" >>$NLG 2>>$ELG
 
 # /DATA/turbomed/Dokumente
-# -0 3 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && /root/bin/gsbackup.sh "/mnt/mitte/daten" "/DATA/turbomed/Dokumente" "/mnt/mitte/daten/turbomed/Dokumente" >>$NLG 2>>$ELG
-# -30 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/turbomed/Dokumente" "/mnt/szo1/daten/turbomed/Dokumente" >>$NLG 2>>$ELG
+# -0 3 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && $RBI/gsbackup.sh "/mnt/mitte/daten" "/DATA/turbomed/Dokumente" "/mnt/mitte/daten/turbomed/Dokumente" >>$NLG 2>>$ELG
+# -30 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/turbomed/Dokumente" "/mnt/szo1/daten/turbomed/Dokumente" >>$NLG 2>>$ELG
 
 # /DATA/Patientendokumente
-# -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && /root/bin/gsbackup.sh "/mnt/mitte/daten" "/DATA/Patientendokumente" "/mnt/mitte/daten/P" >>$NLG 2>>$ELG
-#  -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/Patientendokumente" "/mnt/szo1/daten/Patientendokumente" >>$NLG 2>>$ELG
-# -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szn3/daten" && /root/bin/gsbackup.sh "/mnt/szn3/daten" "/DATA/Patientendokumente" "/mnt/szn3/daten/Patientendokumente" >>$NLG 2>>$ELG
+# -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && $RBI/gsbackup.sh "/mnt/mitte/daten" "/DATA/Patientendokumente" "/mnt/mitte/daten/P" >>$NLG 2>>$ELG
+#  -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/Patientendokumente" "/mnt/szo1/daten/Patientendokumente" >>$NLG 2>>$ELG
+# -0 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szn3/daten" && $RBI/gsbackup.sh "/mnt/szn3/daten" "/DATA/Patientendokumente" "/mnt/szn3/daten/Patientendokumente" >>$NLG 2>>$ELG
 
 # /DATA/shome
-# -30 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && /root/bin/gsbackup.sh "/mnt/mitte/daten" "/DATA/shome" "/mnt/mitte/daten/shome" >>$NLG 2>>$ELG
-# -30 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/shome" "/mnt/szo1/daten/shome" >>$NLG 2>>$ELG
+# -30 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/mitte/daten" && $RBI/gsbackup.sh "/mnt/mitte/daten" "/DATA/shome" "/mnt/mitte/daten/shome" >>$NLG 2>>$ELG
+# -30 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/shome" "/mnt/szo1/daten/shome" >>$NLG 2>>$ELG
 
 # /DATA/eigene Dateien
 # hat auf Mitte z.Zt. keinen Platz
-# -27 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/eigene Dateien" "/mnt/szo1/daten/eigene Dateien" "TMExport" >>$NLG 2>>$ELG
-# -27 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && ionice -c3 /root/bin/sj /DATA/ /mnt/szo1/daten/ "eigene Dateien/TMExport" "*.BDT" sql "depot*.sql" sql "quelle*.sql" sql "konten*.sql" sql "haerzte*.sql" sql "faxeinp*.sql" sql "fotosinp*.sql" sql "programmstaende*.sql" -sd -d >>$NLG 2>>$ELG
-# -30 2 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szs1/daten" && ionice -c3 /root/bin/sj /DATA "/mnt/szs1/daten/" "eigene Dateien/TMExport" "*.BDT" "sql" "depot*.sql" "sql" "quelle*.sql" "sql" "fotosinp*.sql" "sql" "faxeinp*.sql" "sql" "konten*.sql" "sql" "haerzte*.sql" "sql" "programmstaende*.sql" "Papierkorb" "*.*" "ausgelagert" "*.*" -sd -d >>$NLG 2>>$ELG
+# -27 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/eigene Dateien" "/mnt/szo1/daten/eigene Dateien" "TMExport" >>$NLG 2>>$ELG
+# -27 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && ionice -c3 $RBI/sj /DATA/ /mnt/szo1/daten/ "eigene Dateien/TMExport" "*.BDT" sql "depot*.sql" sql "quelle*.sql" sql "konten*.sql" sql "haerzte*.sql" sql "faxeinp*.sql" sql "fotosinp*.sql" sql "programmstaende*.sql" -sd -d >>$NLG 2>>$ELG
+# -30 2 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szs1/daten" && ionice -c3 $RBI/sj /DATA "/mnt/szs1/daten/" "eigene Dateien/TMExport" "*.BDT" "sql" "depot*.sql" "sql" "quelle*.sql" "sql" "fotosinp*.sql" "sql" "faxeinp*.sql" "sql" "konten*.sql" "sql" "haerzte*.sql" "sql" "programmstaende*.sql" "Papierkorb" "*.*" "ausgelagert" "*.*" -sd -d >>$NLG 2>>$ELG
 
 # /DATA/down
-# -50 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/down" "/mnt/szo1/daten/down" >>$NLG 2>>$ELG
+# -50 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/down" "/mnt/szo1/daten/down" >>$NLG 2>>$ELG
 
 # /DATA/sql
-# -27 4 * * * /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/sql" "/mnt/szo1/daten/sql"
+# -27 4 * * * $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/sql" "/mnt/szo1/daten/sql"
 
 # /DATA/TMBack
 # 13.4.14 aus Platzgruenden pausiert, kommt nur auf szo1
 # -50 4 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && gsbackup.sh "/mnt/szo1/daten" "/DATA/TMBack" "/mnt/szo1/daten/TMBack" >>$VL/gsbackup-Aufruf.log 2>&1
 
 # /DATA/ungera und /DATA/gerade
-# -27 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/ungera" "/mnt/szo1/daten/ungera" >>$NLG 2>>$ELG
-# -50 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/gerade" "/mnt/szo1/daten/gerade"  >>$NLG 2>>$ELG
+# -27 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/ungera" "/mnt/szo1/daten/ungera" >>$NLG 2>>$ELG
+# -50 5 * * * mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/gerade" "/mnt/szo1/daten/gerade"  >>$NLG 2>>$ELG
 
 # fast ganz /DATA 
-# -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
+# -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && $RBI/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
-# -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
--0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
--0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
+# -15 * * * * $RBI/kopierpoet.sh >>$NLG 2>>$ELG
+-0 23 * * * ionice -c3 $RBI/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
-# -*/5 * * * * /root/bin/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
--30 2 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
-#-1 1 * * * /root/bin/berecht.sh
+# -*/5 * * * * $RBI/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
+-30 2 * * * $RBI/permissselten.sh >>$NLG 2>>$ELG
+#-1 1 * * * $RBI/berecht.sh
 #-59 */2 * * * chmod 774 -R /DATA/Patientendokumente
 -0 * * * * chown sturm:praxis /DATA/Patientendokumente >/dev/null 2>>$ELG
 -0 1 * * * mountpoint -q /DATA && chmod 550 /DATA/eigene\ Dateien/Webseite\ Praxis\ 1/Pumpeneinstellung*.xls >/dev/null 2>>$ELG
@@ -162,63 +164,60 @@ ELG=/var/log/cronf.log
 -1 1 * * * mountpoint -q /DATA && chmod 550 -R /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 -1 2 * * * mountpoint -q /DATA && chmod 774 /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 -27 5 * * * /usr/bin/termine >>$NLG 2>>$ELG
--15 23 * * * /root/bin/rett.sh >>$NLG 2>>$ELG
-# -15 22 * * * /root/bin/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
+-15 23 * * * $RBI/rett.sh >>$NLG 2>>$ELG
+# -15 22 * * * $RBI/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
 -55 4 * * * /usr/sbin/ntpdate ptbtime1.ptb.de >>$NLG 2>>$ELG
 # Zeit aufs Bios schreiben
 -0 5 * * * /sbin/hwclock --systohc >>$NLG 2>>$ELG
 # Mails in mysql-Datenbank eintragen und Faxe des diabetologie-Kontos (weitergeleitet durch entspr. Einstellung der Faxfunktion der Fritzbox) auf p: speichern
 
 # folgendes am 7.9.16 inaktiviert, auch 23.2.17
--1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG
+-1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * $RBI/verhdop.sh ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG
 -52 5 * * * /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG
 -3,11,19,27,35,39,47,55 7-22 * * * ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--1,33 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--52 6 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--5 0 * * * for V in behand fertig vorb;do find /srv/www/htdocs/$V -maxdepth 1 -type f -not -newermt $(date +'\%Y\%m\%d') -not -name "*=*" -delete;done
+-1,33 7-22 * * * $RBI/verhdop.sh ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
+-52 6 * * * $RBI/verhdop.sh ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 
 # ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
--*/2 7-22 * * * /root/bin/getmail_gmx7.sh >>$NLG 2>>$ELG 
+-*/2 7-22 * * * $RBI/getmail_gmx7.sh >>$NLG 2>>$ELG 
 # -*/4 7-22 * * * pgrep -c -f "getmail -rgmx7rc" || /usr/bin/getmail -rgmx7rc
 # -*/4 7-22 * * *     getmail_mnet.sh # -*/4 7-22 * * * pgrep -c -f "getmail -rmnetrc" || /usr/bin/getmail -rmnetrc >>$VL/getmail-Aufruf_mnetrc.log 2>&1
--0 3,11-22/2 * * * /root/bin/getmail_alle.sh >>$NLG 2>>$ELG 
+-0 3,11-22/2 * * * $RBI/getmail_alle.sh >>$NLG 2>>$ELG 
 # -0 3,11,13,15 * * * pgrep -c -f "getmail -rbuchrc" || /usr/bin/getmail -rbuchhrc -rfreenetrc -rgmx1rc -rgmx2rc -rgmx3rc -rgmx4rc -rgmx5rc -rgmx6rc -rgmx7rc -rgooglerc -rgoogle2rc -rlrzrc -rmnetrc -rvrwebrc -rweb_rc -rwebrc
 # Faxe von der Fritzbox abholen (wenn Abspeichern in /mnt/diabfb/FRITZ/faxbox funktioniert) und in MySQL eintragen (ab 2020 in autofax)
-# -*/2 * * * * /root/bin/faxord >>$NLG 2>>$ELG
--* * * * * ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
-* * * * * ionice -c3 /root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * ionice -c3 /root/bin/zusalat.sh
+# -*/2 * * * * $RBI/faxord >>$NLG 2>>$ELG
+-* * * * * ionice -c3 $RBI/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
+-* * * * * ionice -c3 $RBI/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
+-* * * * * ionice -c3 $RBI/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
+-* * * * * ionice -c3  $RBI/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
+-* * * * * ionice -c3 $RBI/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
-#-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
--50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
--50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
--50 21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh
-# -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
-# -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
+-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux0/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/butm.sh
+-50 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux0/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh
+# -05 0 * * * ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3.sh >>$NLG 2>>$ELG
+# -20 13 * * * ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
 #-* * * * * rm $VL/warn
 #-*/60 * * * * crontab /etc/crontab
--*/11 * * * * /root/bin/verhdop.sh chmod 770 /root/bin/*.sh >/dev/null 2>>$ELG
--* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >/dev/null 2>>$ELG
--0 2 * * * ionice -c3 /root/bin/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
--1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
+-*/11 * * * * $RBI/verhdop.sh chmod 770 $RBI/*.sh >/dev/null 2>>$ELG
+-* * * * * $RBI/verhdop.sh $RBI/bertest.sh >>$NLG 2>>$ELG
+-0 2 * * * ionice -c3 $RBI/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
+-1 07,14 * * * chmod 644 $RBI/logrotate.conf; logrotate $RBI/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
--15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
-# -45 1 * * * ionice -c3 /root/bin/copywd.sh >>$NLG 2>>$ELG
-# -15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
--0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
--40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
--15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
--*/10 * * * * /root/bin/phpparse >/dev/null 2>>$ELG
+-15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 $RBI/copytoshz.sh >>$NLG 2>>$ELG
+# -45 1 * * * ionice -c3 $RBI/copywd.sh >>$NLG 2>>$ELG
+-15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 $RBI/copyverb.sh >>$NLG 2>>$ELG
+-0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 $RBI/copyseag.sh
+-40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 $RBI/copyseag.sh
+-15 3 * * * ionice -c3 $RBI/7zdb.sh >>$NLG 2>>$ELG
+-*/10 * * * * $RBI/phpparse >/dev/null 2>>$ELG
 @reboot /sbin/modprobe capi >>$NLG 2>>$ELG
 @reboot /sbin/modprobe fcpci >>$NLG 2>>$ELG
--3 0 * * * ionice -c3 /root/bin/kompr.sh >>$NLG 2>>$ELG
-*/9 * * * * ionice -c3 /root/bin/wiederherstell.sh >>$NLG 2>>$ELG
+-3 0 * * * ionice -c3 $RBI/kompr.sh >>$NLG 2>>$ELG
+*/9 * * * * ionice -c3 $RBI/wiederherstell.sh >>$NLG 2>>$ELG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$NLG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$ELG
-*/5 * * * * /root/bin/xlstocsv.sh
+*/5 * * * * $RBI/xlstocsv.sh
 # * * * * * for a in $(find $VL -not -name autofax.log -size +150M 2>/dev/null); do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
 * * * * * find $VL -not -name autofax.log -size +150M 2>/dev/null|while read -r d;do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
 # */5 * * * * rogerj
@@ -231,22 +230,14 @@ ELG=/var/log/cronf.log
 10 06 * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,192.168.178.45,192.168.178.95>/dev/null
 # * * * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
 */1 * * * * Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"
--5 22 * * * ionice -c3 /root/bin/stutzeTMBack.sh
--5 23 * * * ionice -c3 /root/bin/stutze.sh
--5 0 * * * ionice -c3 /root/bin/stutzeDBBack.sh
--35 0 * * * ionice -c3 /root/bin/komprsql.sh
+-5 22 * * * ionice -c3 $RBI/stutzeTMBack.sh
+-5 23 * * * ionice -c3 $RBI/stutze.sh
+-5 0 * * * ionice -c3 $RBI/stutzeDBBack.sh
+-35 0 * * * ionice -c3 $RBI/komprsql.sh
 0 9 * * * rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
 -33 8 * * * ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
 -0 9 * * 1 ionice -c3 /usr/bin/auffaell
--15,45 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/spool/hylafax var/spool/capisuite var/spool/dicomneu var/spool/fbfax opt/turbomed; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /$D/;done;};
-# Daten einmal taeglich von DATA nach DAT3 sichern
--56 23 * * * Q=/DATA;for Z in /DAT3 /DAT1;do mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};};done;
--25 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ D=DATA;mountpoint -q /$D&&ssh linux1 mountpoint -q /$D&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync"  --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" linux1:/$D/ /$D/;};
--55 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ D=DATA;mountpoint -q /$D&&ssh linux1 mountpoint -q /$D&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync"  --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" --exclude "/ausgelagert***" --exclude "/wrz***" --exclude "/vontosh***" --exclude "/Oberanger***" linux1:/$D/ /$D/;};
--5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
-10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in /mnt/szoo1 /mnt/szon1;do mount "$V" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$V"/ "$Z"&&find $V -type f -mtime +7 -delete; chmod 770 -R "$Z";};done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
-*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
-*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
+-0,30 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ping -c1 linux0ur >/dev/null 2>&1&&{ for D in DATA var/spool/hylafax var/spool/capisuite var/spool/dicomneu var/spool/fbfax; do ionice -c3 nice -n19 rsync -avu --delete /$D/ linux0ur:/$D/;done;};
+-5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ping -c1 linux0ur >/dev/null 2>&1&&{ for D in DATA var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete /$D/ linux0ur:/${D}_1/;done;};
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
-0 3 * * * mv -i /DATA/Patientendokumente/zufaxen/2145/* /DATA/Patientendokumente/zufaxen/
