@@ -307,25 +307,26 @@ function verarbeite($pat_id,$telnr)
   }
   //  echo "session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if ($_SESSION['telnr'] && !isset($_POST['telnr'])) {
-    $sql="SELECT SUBDATE(NOW(),92)>tgeprueft zp FROM namen WHERE pat_id=".$pat_id;
+//    $sql="SELECT SUBDATE(NOW(),92)>MAX(tgep) zp FROM telgep WHERE pat_id=".$pat_id;
+    $sql="SELECT SUBDATE(NOW(),92)>(SELECT COALESCE(MAX(tgep),0) FROM telgep WHERE pat_id=".$pat_id.") ob;";
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sql);
     // echo "<pre>";var_dump($conn);echo "</pre>";
     // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
-    if ($ergeb->num_rows >0) {
+//    if ($ergeb->num_rows >0) {
       $row = $ergeb->fetch_assoc();
-      if (!$row['zp']) {
+//      if (!$row['zp']) {
 //        echo "aendere!<br>"; // 1.11.20
-        $_SESSION['telnr']=0;
-      }
-    }
+        $_SESSION['telnr']=$row['ob'];
+//      }
+//    }
   }
 //  echo "2 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if (!isset($_POST['dmpp'])) {
-    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM (select pat_id,if(zp>dmpbeg,dmp,dmpklass) dmpklass,if(zp>dmpbeg,zp,dmpbeg) dmpbeg from (
-select pat_id,dmpbeg,dmpklass,(select max(zp) from dmperg where pat_id=n.pat_id) zp
-,(select dmp from dmperg where pat_id=n.pat_id and zp=(select max(zp) from dmperg where pat_id=n.pat_id)) dmp
- from namen n
+    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM (select pat_id,if(zp>dmpbeg,dmp,dmpklass) dmpklass,if(zp>dmpbeg,zp,dmpbeg) dmpbeg FROM (
+SELECT pat_id,dmpbeg,dmpklass,(SELECT max(zp) FROM dmperg WHERE pat_id=n.pat_id) zp
+,(SELECT dmp FROM dmperg WHERE pat_id=n.pat_id AND zp=(SELECT max(zp) FROM dmperg WHERE pat_id=n.pat_id)) dmp
+ FROM namen n
  ) n) n WHERE pat_id=".$pat_id;
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sql);
@@ -479,10 +480,10 @@ select pat_id,dmpbeg,dmpklass,(select max(zp) from dmperg where pat_id=n.pat_id)
         }
       } else if(isset($_POST['telnr'])) {
 //        echo "stelle um<br>"; // 1.11.20
-        $_SESSION['telnr']=!$_SESSION['telnr'];
+        $_SESSION['telnr']=0; // !$_SESSION['telnr'];
         $telnr=$_SESSION['telnr'];
-        $_SESSION['tgeprueft']=date("YmdHis");
-        $sql="UPDATE namen SET tgeprueft='".$_SESSION['tgeprueft']."' WHERE pat_id=".$_SESSION['pat_id'];
+        $_SESSION['tgep']=date("YmdHis");
+        $sql="INSERT INTO telgep(pat_id,tgep,pc)VALUES(".$_SESSION['pat_id'].",".$_SESSION['tgep'].",'".$_SERVER['REMOTE_ADDR']."')";
 //        echo "<span>sql: ".$sql."</span><br>"; // 1.11.20
         $ergeb=self::abfrage($conn,$sql);
 //        $_SESSION['aufrufe']=$_SESSION['aufrufe']+1;
@@ -827,6 +828,9 @@ function gibaus()
         $text=$_SESSION['tel']." überprüft";
       }
       echo "<button class='".$stil."' name='telnr'>".$text."</button>";
+    }
+    if ($_SESSION['falarzt']) {
+      echo "<button class='cave' name='farzt'>Falscher Arzt</button>";
     }
     if (!$_SESSION['kdmp']) {
       if ($_SESSION['dmpa']&&$_SESSION['dmpk']<>'hier'&&!$_SESSION['dmpf']) {
