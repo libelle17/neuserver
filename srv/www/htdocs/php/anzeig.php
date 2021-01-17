@@ -830,7 +830,7 @@ function gibaus()
       echo "<button class='".$stil."' name='telnr'>".$text."</button>";
     }
     if ($_SESSION['falarzt']) {
-      echo "<button class='cave' name='farzt'>Falscher Arzt</button>";
+      echo "<button class='cave' name='farzt'>".$_SESSION['wiefalar']."</button>";
     }
     if (!$_SESSION['kdmp']) {
       if ($_SESSION['dmpa']&&$_SESSION['dmpk']<>'hier'&&!$_SESSION['dmpf']) {
