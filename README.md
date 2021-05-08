@@ -1,6 +1,6 @@
 <h3>Manual: 1) <a href="#english_E">english</a>, 2) <a href="#deutsch_D">deutsch (unten anschließend)</a></h3>
 
-<h1 align="center">NEUSERVER (Version 0.47247) - english<a name="english_D"></a></h1>
+<h1 align="center">NEUSERVER (Version 0.47247) - english<a name="english_D"></a>man</h1>
 
 <a href="#NAME_D">NAME</a><br>
 <a href="#SYNOPSIS_D">SYNOPSIS</a><br>
@@ -21,6 +21,10 @@
 
 <hr>
 
+
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD ======= <br>
+&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+d4b57c40e20409207e498574f65bcf0fdecc3f12</p>
 
 <h2>NAME
 <a name="NAME_D"></a>
@@ -648,7 +652,7 @@ caused by the program.</p>
 </body>
 </html>
 
-<h1 align="center">NEUSERVER (Version 0.47247) - deutsch<a name="deutsch_D"></a></h1>
+<h1 align="center">NEUSERVER (Version 0.47247) - deutsch<a name="deutsch_D"></a>man</h1>
 
 <a href="#NAME_D">NAME</a><br>
 <a href="#SYNOPSIS_D">SYNOPSIS</a><br>
@@ -669,6 +673,10 @@ caused by the program.</p>
 
 <hr>
 
+
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD ======= <br>
+&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+d4b57c40e20409207e498574f65bcf0fdecc3f12</p>
 
 <h2>NAME
 <a name="NAME_D"></a>
