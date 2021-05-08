@@ -57,6 +57,7 @@ commandline() {
   obprog=0; # nur Programme sollen installiert werden
   obtm=0; # ob turbomed installiert werden soll
 	obmysql=0; # nur mysql soll eingerichtet werden
+  obsmb=0; # nur smbconf soll aufgerufen werden
   obmust=0; # ob von musterserver kopiert werden soll
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obfb=0; # Firebird
@@ -76,6 +77,7 @@ commandline() {
           prog) obprog=1;;
           turbomed) obtm=1;;
 					mysql) obmysql=1;;
+          smb) obsmb=1;;
           must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
           firebird) obfb=1;;
@@ -94,6 +96,7 @@ commandline() {
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
+		[ "$obsmb" = 1 ]&& printf "obsmb: ${blau}1$reset\n"
 		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
 		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
@@ -784,14 +787,20 @@ proginst() {
   doinst apache2;
   doinst apache2-mod_php7;
   doinst php7-mysql;
+  doinst postgresql;
+  doinst postgresql-contrib;
+  doinst postgresql-server;
+  doinst phpPgAdmin;
   doinst gnutls-devel; # fuer vmime
   doinst libgsasl-devel; # fuer vmime
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
-       grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
-       cmp $D $DN &&{
+       for dt in php7 version; do
+         grep "^APACHE_MODULES=\".* $dt" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 '$dt':' $DN;
+       done;
+       cmp -s $D $DN &&{
          rm $DN;
        :;}||{
          mv $D ${D}.bak;
@@ -1639,7 +1648,7 @@ variablen;
 	setzinstprog;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
- [ $obteil = 0 ]&&sambaconf;
+ [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 ]&&teamviewer10;

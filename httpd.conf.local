@@ -33,6 +33,14 @@ Require all denied
 Require ip 192.168.178. 127.0.0.
 </Directory>
 
+<Directory "/srv/www/htdocs/impf/">
+Options Indexes FollowSymLinks MultiViews ExecCGI Includes 
+IndexOptions FancyIndexing Charset=UTF-8 FoldersFirst NameWidth=* DescriptionWidth=* TrackModified SuppressRules IconsAreLinks IconWidth=11 IconHeight=11 
+Require all denied
+Require ip 192.168.178. 127.0.0.
+</Directory>
+
 AddType application/x-httpd-php php php4 php3 php7 html htm Vorzubereitende zu_Behandelnde Fertige alle Neuer_Patient
 AddDefaultCharset utf-8
+
 

@@ -18,7 +18,7 @@ case "$1" in [/-]h|[/-]?|[/-]hilfe|[-/]help)
 esac;
 if mountpoint -q "$mt"; then # wenn mt eingehängt
   pwd=6LXpGWJo; # Lese-Passwort
-  find "$F" -type f -iname "*.pdf"|while read -r d;do # entschlüsseln
+  find "$F" -maxdepth 1 -type f -iname "*.pdf"|while read -r d;do # entschlüsseln
     if [ -f "$d" ]; then # falls nicht zwischenzeitlich von anderer Instanz bearbeitet,
       if ! qpdf --check "$d" >/dev/null 2>/dev/null; then # die Datei nicht ohne Passwort zu öffnen ist,
        if qpdf --decrypt --password=$pwd "$d" "$d.ent" >/dev/null 2>&1; then # mit dem richtigen Passwort zu entschlüsseln ist,

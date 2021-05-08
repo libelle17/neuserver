@@ -47,9 +47,9 @@ function getdb($conn,$pat_id)
     if (isset($_SESSION['aut'])) unset($_SESSION['aut']);
     $_SESSION['aufgaben']="";
 //    $_SESSION['anbeh']=0;
-    $sqlzutun="SELECT beschreib,kommentar kom, (erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel,Person per,".
-      "if(Person='a','__',if(Person='v',Vorbereiter,BehANDler)) aut ".
-      "FROM zutun WHERE pat_id =".$pat_id." AND DATE(aktzeit)=DATE(now()) order by pos;";
+    $sqlzutun="SELECT beschreib,kommentar kom,(erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel,Person per,".
+      "IF(Person='a','__',IF(Person='v',Vorbereiter,BehANDler)) aut ".
+      "FROM zutun WHERE pat_id =".$pat_id." AND DATE(aktzeit)=DATE(now()) ORDER BY pos;";
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sqlzutun);
     // echo "<pre>";var_dump($conn);echo "</pre>";
@@ -68,7 +68,7 @@ function getdb($conn,$pat_id)
 
     $_SESSION['anwesend']=0;
     unset($_SESSION['anwseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('A','a') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('A','a') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlaktiv);
     if ($ergeb->num_rows >0) {
@@ -84,7 +84,7 @@ function getdb($conn,$pat_id)
 
 //    $_SESSION['obvorb']=0;
     unset($_SESSION['vorseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('V','v') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('V','v') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlaktiv);
     if ($ergeb->num_rows >0) {
@@ -100,7 +100,7 @@ function getdb($conn,$pat_id)
 
 //    $_SESSION['obbeha']=0;
     unset($_SESSION['behseit']);
-    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person in ('B','b') AND DATE(AktZeit)=DATE(now()) order by aktzeit desc;";
+    $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('B','b') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
     $ergeb=self::abfrage($conn,$sqlakiv);
     if ($ergeb->num_rows >0) {
@@ -121,8 +121,8 @@ function zeiggeschichte($conn,$pat_id)
 {
   /*  ?> <script>alert("rufe zeiggeschichte() auf!");</script> <?php */
 $sqlzutun="SELECT beschreib inh, kommentar kom, (erlZeit!=DATE(0)) erl,(gelZeit!=DATE(0)) gel, Person per,".
-"if(Person='a','__', if(Person='v',Vorbereiter,Behandler)) aut, aktzeit az, pos ".
-"FROM zutun WHERE pat_id =".$pat_id." order by aktzeit, pos;"; //AND DATE(AktZeit)<DATE(now()) 
+"IF(Person='a','__', IF(Person='v',Vorbereiter,Behandler)) aut, aktzeit az, pos ".
+"FROM zutun WHERE pat_id =".$pat_id." ORDER BY aktzeit, pos;"; //AND DATE(AktZeit)<DATE(now()) 
 //$ergeb=$conn->query($sqlzutun);
 $ergeb=self::abfrage($conn,$sqlzutun);
 if ($ergeb->num_rows >0) {
@@ -176,7 +176,7 @@ function tragein($conn, $pat_id, $eintrag)
       }
       $_SESSION['aut'][]=$aut;
       $sql="INSERT INTO zutun(pat_id,pos,beschreib,AktZeit,AktPC,Person,Vorbereiter,Behandler) ".
-        "values (".$pat_id.",".count($_SESSION['arr']).",'".$eintrag."',now(),'".$_SERVER['REMOTE_ADDR']
+        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$eintrag."',now(),'".$_SERVER['REMOTE_ADDR']
         ."','".$_SESSION['person']."','".$_SESSION['ma']."','".$_SESSION['bh']."');";
       //    echo $sql."<br>";
       //  $ergeb=$conn->query($sql);
@@ -283,7 +283,7 @@ function verarbeite($pat_id,$telnr)
   if (!isset($_SESSION['pat_id'])) $init=1; else if ($_SESSION['pat_id']!=$pat_id) $init=1; else $init=0/*0*/;
   if ($init) {
     unset($_SESSION['telnr']);
-    unset($_SESSION['dmpp']);
+//    unset($_SESSION['falarzt']);
     unset($_SESSION['dmpp']);
     unset($_SESSION['dmpa']);
     unset($_SESSION['dmpk']);
@@ -299,6 +299,7 @@ function verarbeite($pat_id,$telnr)
 //    $_SESSION['history']=0;
 //    echo "<span> hier telnr: ".$telnr."</span><br>"; // 1.11.20
     if (!isset($_SESSION['telnr'])) $_SESSION['telnr']=$telnr;
+//    if (!isset($_SESSION['falarzt'])) $_SESSION['falarzt']=0;
     if (!isset($_SESSION['dmpp'])) $_SESSION['dmpp']=0;
     if (!isset($_SESSION['dmpa'])) $_SESSION['dmpa']=0;
     if (!isset($_SESSION['dmpk'])) $_SESSION['dmpk']=0;
@@ -308,22 +309,38 @@ function verarbeite($pat_id,$telnr)
   }
   //  echo "session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if ($_SESSION['telnr'] && !isset($_POST['telnr'])) {
-    $sql="SELECT SUBDATE(NOW(),92)>tgeprueft zp FROM namen WHERE pat_id=".$pat_id;
+//    $sql="SELECT SUBDATE(NOW(),92)>MAX(tgep) zp FROM telgep WHERE pat_id=".$pat_id;
+    $sql="SELECT SUBDATE(NOW(),92)>(SELECT COALESCE(MAX(tgep),0) FROM telgep WHERE pat_id=".$pat_id.") ob;";
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sql);
     // echo "<pre>";var_dump($conn);echo "</pre>";
     // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
-    if ($ergeb->num_rows >0) {
+//    if ($ergeb->num_rows >0) {
       $row = $ergeb->fetch_assoc();
-      if (!$row['zp']) {
+//      if (!$row['zp']) {
 //        echo "aendere!<br>"; // 1.11.20
-        $_SESSION['telnr']=0;
-      }
-    }
+        $_SESSION['telnr']=$row['ob'];
+//      }
+//    }
   }
 //  echo "2 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
   if (!isset($_POST['dmpp'])) {
-    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg<qanf() alt, CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk, (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vk AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp FROM namen n WHERE pat_id=".$pat_id;
+    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg <qanf() alt
+      , CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk
+      , (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vknr AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp 
+      FROM (
+        SELECT pat_id,IF(zp>dmpbeg,dmp,dmpklass) dmpklass,IF(zp>dmpbeg,zp,dmpbeg) dmpbeg 
+        FROM (
+         SELECT pat_id,dmpbeg,dmpklass
+           ,(SELECT max(zp) FROM dmperg WHERE pat_id=n.pat_id) zp
+           ,(SELECT dmp FROM dmperg WHERE pat_id=n.pat_id AND zp=(SELECT max(zp) 
+         FROM dmperg WHERE pat_id=n.pat_id)
+        ) dmp 
+      FROM namen n
+     ) n
+    ) n WHERE pat_id=".$pat_id;
+//    echo "<pre>"; var_dump($sql); echo "</pre>";
+//    echo $sql;
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sql);
     // echo "<pre>";var_dump($conn);echo "</pre>";
@@ -336,6 +353,9 @@ function verarbeite($pat_id,$telnr)
       $_SESSION['kdmp']=$row['kdmp'];
     }
   }
+//  if (isset($_POST['dmpp'])) {
+//    <script>alert("Knopf gedrückt");</script>
+//  }
 
   $_SESSION['pat_id']=$pat_id;
   $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
@@ -473,13 +493,15 @@ function verarbeite($pat_id,$telnr)
         }
       } else if(isset($_POST['telnr'])) {
 //        echo "stelle um<br>"; // 1.11.20
-        $_SESSION['telnr']=!$_SESSION['telnr'];
+        $_SESSION['telnr']=0; // !$_SESSION['telnr'];
         $telnr=$_SESSION['telnr'];
-        $_SESSION['tgeprueft']=date("YmdHis");
-        $sql="UPDATE namen SET tgeprueft='".$_SESSION['tgeprueft']."' WHERE pat_id=".$_SESSION['pat_id'];
+        $_SESSION['tgep']=date("YmdHis");
+        $sql="INSERT INTO telgep(pat_id,tgep,pc)VALUES(".$_SESSION['pat_id'].",".$_SESSION['tgep'].",'".$_SERVER['REMOTE_ADDR']."')";
 //        echo "<span>sql: ".$sql."</span><br>"; // 1.11.20
         $ergeb=self::abfrage($conn,$sql);
 //        $_SESSION['aufrufe']=$_SESSION['aufrufe']+1;
+      } else if (isset($_POST['falarzt'])) {
+        $_SESSION['falarzt']=0;
       } else if(isset($_POST['dmpp'])) {
         $_SESSION['dmpf']=!$_SESSION['dmpf'];
       } else if(isset($_POST['history'])) {
@@ -593,7 +615,7 @@ function verarbeite($pat_id,$telnr)
       if ($myaktiv) {
         $_SESSION['anwseit']=new DateTime(date("Y-m-d H:i:s"));
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "values(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".
           $_SESSION['bh']."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
@@ -601,7 +623,7 @@ function verarbeite($pat_id,$telnr)
       // in Datenbank eintragen, wann Vorbereitung gedrueckt wurde
       if ($myvorb) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "values(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".
           $_SESSION['bh']."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //     $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
@@ -609,7 +631,7 @@ function verarbeite($pat_id,$telnr)
       // in Datenbank eintragen, wann Behandlung gedrueckt wurde
       if ($mybeh) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "values(".$pat_id.",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0").
+          "VALUES(".$pat_id.",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0").
           "',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
@@ -822,6 +844,9 @@ function gibaus()
       }
       echo "<button class='".$stil."' name='telnr'>".$text."</button>";
     }
+    if ($_SESSION['falarzt']) {
+      echo "<button class='cave' name='farzt'>".$_SESSION['wiefalar']."</button>";
+    }
     if (!$_SESSION['kdmp']) {
       if ($_SESSION['dmpa']&&$_SESSION['dmpk']<>'hier'&&!$_SESSION['dmpf']) {
         $stil=cave;
@@ -829,10 +854,14 @@ function gibaus()
         $stil=unauff;
       }
       $text="DMP: ".$_SESSION['dmpk']." ".$_SESSION['dmpp'];
-      echo "<button class='".$stil."' name='dmpp'>".$text."</button>";
+      echo "<button class='".$stil."' name='dmpp' id='dmpp' type='button'>".$text."</button>";
+//      echo "<button class='".$stil."' name='dmpp' onclick='dmpFrage()'>".$text."</button>";
+//      echo "<section><button class='".$stil."' name='dmpp' data-js='confirm'>".$text."</button></section>";
     }
     include '../php/i1S.php';
-      echo "</form>";
+    echo "</form>";
+//    echo "<dialog id='my-dialog' role='dialog' aria-labelledby='my-dialog-heading'><button class='close'>Schließen</button><h2 id='my-dialog-heading'>Eingabe</h2><p class='button-row'><button name='ok' id='dmpok'>OK</button><button name='cancel'>Abbrechen</button></p></dialog>";
+    echo "<dialog id='my-dialog' role='dialog' aria-labelledby='my-dialog-heading'><h2 id='my-dialog-heading'>Eingabe</h2><p class='button-row'><button name='ok' id='dmpok'>OK</button><button name='cancel'>Abbrechen</button></p></dialog>";
 } // gibaus
 
 
@@ -1007,6 +1036,7 @@ $zutun = new zutun_cls();
 </datalist>
 
 <script>
+
 function ansEnde(el) {
   window.setTimeout(function () {
       if (typeof el.selectionStart == "number") {
@@ -1018,4 +1048,357 @@ function ansEnde(el) {
       }
       }, 1);
 }
+
+'use strict';
+function zaehlEigs(obj) {
+    var count = 0;
+    for(var prop in obj) {
+        if(obj.hasOwnProperty(prop))
+            ++count;
+    }
+    return count;
+}
+function GetComputerName() {
+    try {
+        var network = new ActiveXObject('WScript.Network');
+        // Show a pop up if it works
+        alert(network.computerName);
+    }
+    catch (e) { }
+}
+document.addEventListener("DOMContentLoaded", function () {
+//	var button = document.querySelector("body button");
+  var button = document.querySelector('[name="dmpp"]');
+  // Polyfill für Browser, die das dialog-Element nicht komplett unterstützen
+	(function () {
+		var backdrop;
+		Array.prototype.slice.call(document.querySelectorAll("dialog"))
+			.forEach(function (dialog) {
+				var callBacks = {
+						cancel: function () {},
+						ok: function () {}
+					},
+					close = dialog.querySelector(".close");
+				if (!dialog.close) {
+					dialog.close = function () {
+						if (dialog.hasAttribute("open")) {
+							dialog.removeAttribute("open");
+						}
+						if (backdrop && backdrop.parentNode) {
+							backdrop.parentNode.removeChild(backdrop);
+						}
+					}
+				}
+				if (!dialog.show) {
+					dialog.show = function () {
+						var closeButton = dialog.querySelector(".close");
+						dialog.setAttribute("open", "open");
+						// after displaying the dialog, focus the closeButton inside it
+						if (closeButton) {
+							closeButton.focus();
+						}
+						if (!backdrop) {
+							backdrop = document.createElement("div");
+							backdrop.id = "backdrop";
+						}
+						document.body.appendChild(backdrop);
+					}
+				}
+				dialog.setCallback = function (key, f) {
+					callBacks[key] = f;
+				};
+				dialog.triggerCallback = function (key) {
+					if (typeof callBacks[key] == "function") {
+						callBacks[key]();
+					}
+				};
+				if (close) {
+					close.addEventListener("click", function () {
+						dialog.close();
+						dialog.triggerCallback("cancel");
+					});
+				}
+				// handle buttons for user input
+			["cancel", "ok"].forEach(function (n) {
+					var button = dialog.querySelector('[name="' + n + '"]');
+					if (button) {
+						button.addEventListener("click", function () {
+							dialog.close();
+							dialog.triggerCallback(n);
+						});
+					}
+				});
+			});
+		// ESC and ENTER closes open dialog and triggers corresponding callback
+		document.addEventListener("keydown", function (event) {
+			var currentElement = event.target || event.soureElement,
+				prevent = (currentElement.tagName && currentElement.tagName.match(
+					/^button|input|select|textarea$/i));
+			Array.prototype.slice.call(document.querySelectorAll("dialog"))
+				.forEach(function (dialog) {
+					if (dialog.hasAttribute("open")) {
+						// ENTER
+						if (event.keyCode == 13 && !prevent) {
+							dialog.close();
+							setTimeout(function () {
+								dialog.triggerCallback("ok");
+							}, 50);
+						}
+						// ESC
+						if (event.keyCode == 27) {
+							dialog.close();
+							setTimeout(function () {
+								dialog.triggerCallback("cancel");
+							}, 50);
+						}
+					}
+				});
+		}, true);
+	}());
+	// komplexere Dialog-Box anzeigen
+	window.myDialog = function (data, OK, cancel) {
+			var dialog = document.querySelector("#my-dialog"),
+				buttonRow = document.querySelector("#my-dialog .button-row"),
+				heading = document.querySelector("#my-dialog-heading"),
+				element, p, prop;
+			if (dialog && buttonRow) {
+				// Standard-Titel
+				if (heading) {
+					heading.textContent = "Eingabe";
+				}
+				// jedes <ul> und <p> entfernen, außer <p class="button-row">
+				Array.prototype.slice.call(dialog.querySelectorAll(
+						"ul, p:not(.button-row)"))
+					.forEach(function (p) {
+						p.parentNode.removeChild(p);
+					});
+				// Elemente erstellen und gegebenenfalls mit Inhalten befüllen
+				for (prop in data) {
+					// alles bekommt ein <p> drumherum
+					p = document.createElement("p");
+					buttonRow.parentNode.insertBefore(p, buttonRow);
+					// simple Textausgabe
+					if (data[prop].type && data[prop].type == "info") {
+						p.textContent = data[prop].text;
+					}
+					// anderer Titel
+					if (data[prop].type && data[prop].type == "title" && heading) {
+						heading.textContent = data[prop].text;
+						// neues <p> wird hierfür nicht benötigt
+						p.parentNode.removeChild(p);
+					}
+					// numerischer Wert
+					if (data[prop].type && data[prop].type == "number") {
+						// <label> als Kindelement für Beschriftung
+						p.appendChild(document.createElement("label"));
+						p.lastChild.appendChild(document.createTextNode(data[prop].text + " "));
+						// <input type="number">
+						element = p.appendChild(document.createElement("input"));
+						if (data[prop].hasOwnProperty("max")) {
+							element.max = data[prop]["max"];
+						}
+						if (data[prop].hasOwnProperty("min")) {
+							element.min = data[prop]["min"];
+						}
+						if (data[prop].hasOwnProperty("step")) {
+							element.step = data[prop]["step"];
+						}
+						element.name = prop;
+						element.type = "number";
+						element.value = element.min = data[prop]["min"] || 0;
+						if (data[prop].default) {
+							element.value = data[prop].default;
+						}
+					}
+					// Mehrfachauswahl
+          if (data[prop].type && data[prop].type == "multiple"
+          ) {
+						p.textContent = data[prop].text;
+						// alle Optionen wandern in ein <ul>
+						element = document.createElement("ul");
+						buttonRow.parentNode.insertBefore(element, buttonRow);
+						data[prop].options.forEach(function (d, index) {
+							var input = document.createElement("input"),
+								label = document.createElement("label"),
+								li = document.createElement("li");
+							// <li> in <ul> einhängen
+							element.appendChild(li);
+							input.id = prop + "-" + index;
+							input.name = prop + "-" + index;
+							input.type = "checkbox";
+							input.value = d;
+							li.appendChild(input);
+							label.htmlFor = prop + "-" + index;
+							label.textContent = " " + d
+							li.appendChild(label);
+							if (data[prop].default && data[prop].default == d) {
+								input.setAttribute("checked", "checked");
+							}
+						});
+					}
+					// Radiobutton
+					if (data[prop].type && data[prop].type == "radio") {
+						p.textContent = data[prop].text;
+            if (zaehlEigs(buttonRow.parentNode)<5) {
+						data[prop].options.forEach(function (d, index) {
+							var input = document.createElement("input"),
+								label = document.createElement("label")
+                ,nl=document.createElement("br")
+                ;
+							input.id = prop + "-" + index;
+							input.name = prop;
+							input.type = "radio";
+							input.value = d;
+              buttonRow.parentNode.insertBefore(input,buttonRow);
+							label.htmlFor = prop + "-" + index;
+							label.textContent = " " + d
+							buttonRow.parentNode.insertBefore(label,buttonRow);
+							if (data[prop].default && data[prop].default == d) {
+								input.setAttribute("checked", "checked");
+							}
+              buttonRow.parentNode.insertBefore(nl,buttonRow);
+						});
+            }
+					}
+					// Einfachauswahl
+					if (data[prop].type && data[prop].type == "select") {
+						// <label> als Kindelement für Beschriftung
+						p.appendChild(document.createElement("label"));
+						p.lastChild.appendChild(document.createTextNode(data[prop].text + " "));
+						// alle Optionen wandern in ein <ul>
+						element = p.appendChild(document.createElement("select"));
+						element.name = prop;
+						data[prop].options.forEach(function (d) {
+							var o = document.createElement("option");
+							o.textContent = d;
+							o.value = d;
+							element.appendChild(o);
+							if (data[prop].default && data[prop].default == d) {
+								o.setAttribute("selected", "selected");
+							}
+						});
+					}
+					// Texteingabe
+					if (data[prop].type && data[prop].type == "text") {
+						// <label> als Kindelement für Beschriftung
+						p.appendChild(document.createElement("label"));
+						p.lastChild.appendChild(document.createTextNode(data[prop].text));
+						// alle Optionen wandern in ein <ul>
+						element = p.appendChild(document.createElement("textarea"));
+						element.name = prop;
+						if (data[prop].default) {
+							element.textContent = data[prop].default;
+						}
+					}
+				}
+				dialog.setCallback("cancel", cancel);
+				dialog.setCallback("ok", function () {
+					var result = {},
+						elements;
+					// Ergebnisse ermitteln
+					for (prop in data) {
+						elements = Array.prototype.slice.call(dialog.querySelectorAll(
+							'[name^="' + prop + '"]'));
+            if (data[prop].type && (data[prop].type == "multiple" || data[prop].type == "radio")
+            ) {
+							result[prop] = [];
+							elements.forEach(function (element) {
+								if (element.checked) {
+									result[prop].push(element.value);
+								}
+							});
+						} else {
+							if (data[prop].type != "title" && data[prop].type != "info") {
+								result[prop] = null;
+								if (elements[0]) {
+									result[prop] = elements[0].value;
+								}
+							}
+						}
+					}
+					// Ergebnisse an die Callback-Funktion zurück geben
+					OK(result);
+				});
+        dialog.backgroundColor='green';
+				dialog.show();
+			}
+		}
+		// anzeigen-Button aktivieren
+	if (button) {
+		button.addEventListener("click", function () {
+			myDialog(
+				// data
+				{
+          auswahl: {
+            "default": "hier",
+            options: ["ungeklaert","nein","HA","hier","ausgeschrieben"],
+            text: "DMP?",
+            type: "radio"
+    }
+				},
+				// OK
+				function (data) {
+					var output = document.querySelector("body pre"),
+						prop,
+						result = "Ergebnis:\r\n=========\r\n\r\n";
+					for (prop in data) {
+						result += prop + ":";
+						if (typeof data[prop] == "object") {
+							data[prop].forEach(function (value, index) {
+                if (data[prop].type="radio") {
+                  result = data[prop];
+                } else {
+                  result += (index ? "," : "") + "\r\n\t" + value;
+                }
+							});
+						} else {
+              result += " " + data[prop];
+            }
+            if (data[prop].type!="radio") {
+              result += "\r\n";
+            }
+					}
+          if (data[prop].type=="radio") {
+          var d = new Date();
+          var jetzt =d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2)+("0"+d.getHours()).slice(-2)+("0"+d.getMinutes()).slice(-2)+("0"+d.getSeconds()).slice(-2);
+			$.ajax({
+				type: "POST",
+        url: "../php/dmpspei.php",
+				data: {
+          pid: '<?php echo $_SESSION["pat_id"]; ?>',
+          dmp: result[0],
+          zp: jetzt,
+            },
+				cache: false,
+				success: function(dataResult){
+					var dataResult = JSON.parse(dataResult);
+					if(dataResult.statusCode==200){
+					}
+					else if(dataResult.statusCode==201){
+					   alert("Error occured !");
+					}
+				}
+			});
+          var el=document.getElementById("dmpp");
+          var cl=el.classList;
+          el.firstChild.data="DMP: "+result+" "+d.getDate()+"."+(d.getMonth()+1)+"."+d.getFullYear()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+          if (cl.contains('cave')) {
+            cl.remove('cave');
+            cl.add('unauff');
+          }
+          }
+            if (output) {
+              output.textContent = result;
+					}
+				},
+				// cancel
+				function () {
+					var output = document.querySelector("body pre");
+					if (output) {
+						output.textContent = "(kein Ergebnis)";
+					}
+				});
+		});
+	}
+});
 </script>
