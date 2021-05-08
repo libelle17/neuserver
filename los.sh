@@ -787,14 +787,20 @@ proginst() {
   doinst apache2;
   doinst apache2-mod_php7;
   doinst php7-mysql;
+  doinst postgresql;
+  doinst postgresql-contrib;
+  doinst postgresql-server;
+  doinst phpPgAdmin;
   doinst gnutls-devel; # fuer vmime
   doinst libgsasl-devel; # fuer vmime
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
-       grep "^APACHE_MODULES=\".* php7" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 php7:' $DN;
-       cmp $D $DN &&{
+       for dt in php7 version; do
+         grep "^APACHE_MODULES=\".* $dt" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 '$dt':' $DN;
+       done;
+       cmp -s $D $DN &&{
          rm $DN;
        :;}||{
          mv $D ${D}.bak;
