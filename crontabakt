@@ -193,7 +193,7 @@ ELG=/var/log/cronf.log
 -* * * * * ionice -c3 /root/bin/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 -17,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
--50 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh
+-43 15,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
