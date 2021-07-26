@@ -12,22 +12,27 @@ function kopiermt { # mit test
   echo kopiermt "$1" "$2" "$3" "$4";
 # Platz ausrechnen:
   ZV=$(echo $2|sed 's:/$::'); [ "$ZV" ]||ZV=$1;
-  [ -d $Z/$ZV ]||mkdir -p $Z/$ZV;
-  verfueg=$(df /$Z/$ZV|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
-  schonda=$(du $Z/$ZV -maxd 0|cut -d$'\t' -f1|awk '{print $1*1024}')
-  zukop=$(ssh $QoD du /$1 -maxd 0|cut -f1|awk '{print $1*1024}')
-  summe=$(expr $verfueg - $zukop + $schonda);
+  echo Z: $Z
+  echo ZV: $ZV
+  verfueg=$(eval "test -z $Z&&df /$ZV||ssh ${Z%:} df /$ZV"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
+  echo verfueg: $verfueg
+  schonda=$(eval "test -z $Z&&du /$ZV -maxd 0||ssh ${Z%:} du /$ZV -maxd 0"|cut -d$'\t' -f1|awk '{print $1*1024}')
+  echo schonda: $schonda
+  zukop=$(eval "test -z $Z&&ssh $QoD du /$1 -maxd 0||du /$1 -maxd 0"|cut -f1|awk '{print $1*1024}')
+  echo zukop: $zukop
+  rest=$(expr $verfueg - $zukop + $schonda);
+  echo rest: $rest Bytes
   for E in $(echo $EX|sed 's/,/ /g');do
     papz=$(test -d $Z/$ZV/$E && du $Z/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
     papq=$(ssh $QoD test -d $1/$E && ssh $QoD du $1/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-    summe=$(expr $summe - $papz + $papq);
+    rest=$(expr $rest - $papz + $papq);
   done;
-  if test $summe > 0; then
+  if test $rest > 0; then
     tue="ionice -c3 nice -n19 rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude={""$EX""}";
     echo $tue
     eval $tue
   else
-    echo Kopieren nicht begonnen, Speicherreserve: $summe
+    echo Kopieren nicht begonnen, Speicherreserve: $rest
   fi;
 }
 
@@ -76,11 +81,27 @@ reset="\033[0m";
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
+echo Q: $Q, Z: $Z
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
 # EXCL=--exclude={
 Dt=DATA; 
-kopiermt "opt/turbomed" "opt/" "" "$OBDEL"
+ot=opt/turbomed
+pd=/$ot/PraxisDB/objects.dat
+alterhier=$(date +%s -r $pd)
+# echo alterhier: $alterhier
+alterdort=$(ssh $ANDERER date +%s -r $pd)
+# echo alterdort: $alterdort
+gren=1800
+# wenn aelter als eine halbe Stunde
+if test -n $Z; then
+  expr $alterhier - $alterdort \> $gren >/dev/null
+else
+  expr $alterdort - $alterhier \> $gren >/dev/null
+fi
+if test $? = 0; then 
+ kopiermt "$ot" "opt/" "" "$OBDEL"
+fi
 kopieros ".vim"
 kopieros ".smbcredentials"
 kopieros "crontabakt"

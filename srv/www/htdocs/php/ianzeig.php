@@ -192,8 +192,8 @@ function abfrage($conn,$sql)
   if ($sql) {
     if (!($ret=$conn->query($sql))) {
       printf("<pre>Fehler bei: %s </pre>", $sql);
-      echo "<pre>"; var_dump($mysqli->error); echo "</pre>";
-      //    printf("Fehler bei: %s %s\n", $sql, $mysqli->error);
+      echo "<pre>"; var_dump($conn->error); echo "</pre>";
+      //    printf("Fehler bei: %s %s\n", $sql, $conn->error);
     } else {
 //      printf("<pre>Erfolg bei: %s</pre>",$sql);
     } 
@@ -259,434 +259,120 @@ function verarbeite($pat_id,$telnr)
     //      $result=$conn->query($sql);
     //echo "<pre>"; echo("SQL davor: ");var_dump($sql); echo "</pre>";
     $result=self::abfrage($conn, $sql);
-    $sql="CREATE TABLE if not exists `covid` (".
-      "`id` int(10) unsigned NOT NULL AUTO_INCREMENT,".
-      "`Pat_ID` int(10) unsigned NOT NULL,".
-      "`Eintrag` varchar(256) NOT NULL,".
-      "`Name` varchar(256) NOT NULL,".
-      "`Alter` float(6,2) NOT NULL,".
-      "`Hinweise` varchar(256) NOT NULL,".
-      "`Stand` varchar(60) NOT NULL,".
-      "`Tel1` varchar(60) NOT NULL,".
-      "`Tel2` varchar(60) NOT NULL,".
-      "`DatEintrag` datetime NOT NULL,".
-      "`AktZeit` datetime NOT NULL,".
-      "`DatAustrag` datetime NOT NULL,".
-      "PRIMARY KEY (`id`),".
-      "KEY `PAT_ID` (`Pat_ID`,`AktZeit`)".
-      ") ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci COMMENT='Covid-Impfliste';";
-    //   $result=$conn->query($sql);
-    $result=self::abfrage($conn,$sql);
     $sql="CREATE TABLE IF NOT EXISTS covdat (".
         "id int(10) UNSIGNED NOT NULL AUTO_INCREMENT,".
         "pfad VARCHAR(256) NOT NULL,".
         "DatEintrag datetime not null,".
-        "primary key (id)".
-        ") ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci COMMENT='Covid-Dateiliste';";
+        "`AktZeit` DATETIME NOT NULL DEFAULT 0,".
+        "PRIMARY KEY (id),".
+        "KEY `AktZeit` (`AktZeit`)".
+        ") ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci COMMENT='Covid-Dateiliste';";
+    $result=self::abfrage($conn,$sql);
+    $sql="CREATE TABLE IF NOT EXISTS `covid` (".
+      "`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,".
+      "`Pat_ID` INT(10) UNSIGNED NOT NULL,".
+      "`Eintrag` VARCHAR(256) NOT NULL,".
+      "`Name` VARCHAR(256) NOT NULL,".
+      "`PAlter` FLOAT(6,2) NOT NULL DEFAULT 0,".
+      "`Dt` VARCHAR(2) NOT NULL DEFAULT '',".
+      "`Hinweise` VARCHAR(256) NOT NULL DEFAULT '',".
+      "`Stand` VARCHAR(60) NOT NULL DEFAULT '',".
+      "`Tel1` VARCHAR(60) NOT NULL,".
+      "`Tel2` VARCHAR(60) NOT NULL,".
+      "fertig INT(1) NOT NULL DEFAULT 0,".
+      "`DatAustrag` DATETIME NOT NULL DEFAULT 0,".
+      "cdid int(10) UNSIGNED NOT NULL COMMENT 'Bezug zu `covdat`',".
+      "PRIMARY KEY (`id`),".
+      "KEY `PAT_ID` (`Pat_ID`),".
+      "CONSTRAINT `FK_covid_covdat` FOREIGN KEY (`cdid`) REFERENCES `covdat` (`id`) ON UPDATE CASCADE ON DELETE CASCADE".
+      ") ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci COMMENT='Covid-Impfliste';";
+    //   $result=$conn->query($sql);
     $result=self::abfrage($conn,$sql);
     $verz="/DATA/Patientendokumente/Listen";
     if ($handle = opendir($verz)) {
       while (false !== ($entry = readdir($handle))) {
         if (stristr($entry,'Covid') && stristr($entry,".csv")) {
-          echo "$entry";
-          $ft=filemtime($verz."/".$entry);
-          echo " ".date("d.m.Y H:i:s",$ft)."<br>";
-          $hd = fopen($verz."/".$entry, "r");
-          if ($hd) {
-            while (($line = fgets($hd)) !== false) {
-              echo ">   :".$line."<br>";
-              $tl = preg_split("/;/",$line);
-              print_r($tl);
-              echo $tl[0]."<br>";
-              // process the line read.
+          $sql="SELECT COUNT(0) zl FROM covdat WHERE pfad='".$verz."/".$entry."'";
+          $ergeb=self::abfrage($conn,$sql);
+          $row = $ergeb->fetch_assoc();
+          if ($row['zl']==0) {
+            //          echo "$entry";
+            $ft=filemtime($verz."/".$entry);
+            //          echo " ".date("d.m.Y H:i:s",$ft)."<br>";
+            $hd = fopen($verz."/".$entry, "r");
+            if ($hd) {
+              $jetzt = new DateTime(date());
+              $sql="INSERT INTO covdat(pfad,dateintrag,aktzeit) VALUES('".$verz."/".$entry."','".date("YmdHis",$ft)."','".$jetzt->format('YmdHis')."')";
+              $result=self::abfrage($conn,$sql);
+              $cdid=$conn->insert_id;
+              while (($line = fgets($hd)) !== false) {
+                //              echo ">   :".$line."<br>";
+                $line=str_replace("'","",str_replace("\\","",iconv("Windows-1252","UTF-8",$line)));
+                $tl = preg_split("/;/",$line);
+                if ($tl[0]!="inhalt" && trim($tl[0])!="") {
+                  $pat=preg_split("/[, ]/",$tl[0]);
+                  $pid=0;
+                  $inh=$tl[0];
+                  $palt=0;
+                  $dt="";
+                  if (is_numeric($pat[0])) {
+                    $pid=$pat[0];
+                    $sql="SELECT PatAltBr(".$pid.") pa, dmtyp(".$pid.") dt";
+                    $ergeb=self::abfrage($conn,$sql);
+                    $reihe = $ergeb->fetch_assoc();
+                    $palt=$reihe['pa'];
+                    $dt=$reihe['dt'];
+                  }
+                  $sql="INSERT INTO covid(Pat_id,Eintrag,Name,Tel1,Tel2,cdid,PAlter,Dt) VALUES ('".$pid."','".$tl[0]."','".$tl[1]."','".$tl[3]."','".$tl[4]."','".$cdid."',".$palt.",'".$dt."')";
+                  $result=self::abfrage($conn,$sql);
+//                  print_r($tl);
+                }
+                //              echo $tl[0]."<br>";
+                // process the line read.
+              }
+              fclose($hd);
+            } else {
+              // error opening the file.
             }
-            fclose($hd);
-          } else {
-            // error opening the file.
           }
         }
       }
       closedir($handle);
+      $sql="SELECT eintrag, pat_id, gesname(pat_id) Name, PAlter, Dt, Tel1, Tel2, SUBSTRING_INDEX(pfad, '/', -1) DName, dateintrag".
+        " FROM covdat cd LEFT JOIN covid ci on ci.cdid=cd.id ORDER BY pat_id,eintrag,dateintrag;";
+      $ergeb=self::abfrage($conn,$sql);
+      if ($ergeb->num_rows >0) {
+        echo "<table style='width: 100%'>";
+        echo " <tr>";
+        echo "  <th style='width:37%' title='Eintrag'>Eintrag</th>";
+        echo "  <th title='Pat_ID'>Pat_ID</th>";
+        echo "  <th title='Name'>Name</th>";
+        echo "  <th title='PAlter'>PAlter</th>";
+        echo "  <th title='DTyp'>DTyp</th>";
+        echo "  <th style='width:20%' title='Tel1'>Tel1</th>";
+        echo "  <th title='Tel2'>Tel2</th>";
+        echo "  <th title='Dname'>Dname</th>";
+        echo "  <th title='DatEintrag'>DatEintrag</th>";
+        echo " </tr>";
+        while($row = $ergeb->fetch_assoc()) {
+          echo " <tr>";
+          echo "  <td>".$row['eintrag']."</td>";
+          echo "  <td>".$row['pat_id']."</td>";
+          echo "  <td>".$row['Name']."</td>";
+          echo "  <td>".$row['PAlter']."</td>";
+          echo "  <td>".$row['Dt']."</td>";
+          echo "  <td>".$row['Tel1']."</td>";
+          echo "  <td>".$row['Tel2']."</td>";
+          echo "  <td>".$row['Dname']."</td>";
+          echo "  <td>".$row['dateintrag']."</td>";
+          echo " </tr>";
+        }
+        echo "</table>";
+      }
     } else {
       echo "$verz immer noch nicht gefunden";
-    }
-/*
-    if ($handle=(is_dir($verz))) {
-      while (($file = readdir($handle)) !== false) {
-        echo "<li>Dateiname: $file";
-        echo "<ul><li>Dateityp: filetype( $file )";
-        echo "</li></ul>\n";
-        break;
-      }
-    }
- */
-  }
-  $zvorb="../vorb/".self::$basen;
-  $zvorbakt="../vorb/  ".self::$basen;
-  $zbehand="../behand/".self::$basen;
-  $zbehandakt="../behand/  ".self::$basen;
-  $zfertig="../fertig/".self::$basen;
-//  echo "session pat_id ".$_SESSION['pat_id']." pat_id: ".$pat_id."<br>"; // 1.11.20
-  if (!isset($_SESSION['pat_id'])) $init=1; else if ($_SESSION['pat_id']!=$pat_id) $init=1; else $init=0/*0*/;
-  if ($init) {
-    unset($_SESSION['telnr']);
-//    unset($_SESSION['falarzt']);
-    unset($_SESSION['dmpp']);
-    unset($_SESSION['dmpa']);
-    unset($_SESSION['dmpk']);
-    unset($_SESSION['kdmp']);
-    unset($_SESSION['dmpf']);
- include '../php/i2S.php';
-  }
-  if (isset($_SESSION['aktual'])) $init=1;
-  if ($init) {
-    $_SESSION['pat_id']=$pat_id;
-    self::getdb($conn,$pat_id);
-//    echo "session pat_id ".$_SESSION['pat_id']." pat_id: ".$pat_id."<br>"; // 1.11.20
-//    $_SESSION['history']=0;
-//    echo "<span> hier telnr: ".$telnr."</span><br>"; // 1.11.20
-    if (!isset($_SESSION['telnr'])) $_SESSION['telnr']=$telnr;
-//    if (!isset($_SESSION['falarzt'])) $_SESSION['falarzt']=0;
-    if (!isset($_SESSION['dmpp'])) $_SESSION['dmpp']=0;
-    if (!isset($_SESSION['dmpa'])) $_SESSION['dmpa']=0;
-    if (!isset($_SESSION['dmpk'])) $_SESSION['dmpk']=0;
-    if (!isset($_SESSION['kdmp'])) $_SESSION['kdmp']=0;
-    if (!isset($_SESSION['dmpf'])) $_SESSION['dmpf']=0;
-    $_SESSION['aktual']=0;
-  }
-  //  echo "session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
-  if ($_SESSION['telnr'] && !isset($_POST['telnr'])) {
-//    $sql="SELECT SUBDATE(NOW(),92)>MAX(tgep) zp FROM telgep WHERE pat_id=".$pat_id;
-    $sql="SELECT SUBDATE(NOW(),92)>(SELECT COALESCE(MAX(tgep),0) FROM telgep WHERE pat_id=".$pat_id.") ob;";
-    //$ergeb=$conn->query($sqlzutun);
-    $ergeb=self::abfrage($conn,$sql);
-    // echo "<pre>";var_dump($conn);echo "</pre>";
-    // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
-//    if ($ergeb->num_rows >0) {
-      $row = $ergeb->fetch_assoc();
-//      if (!$row['zp']) {
-//        echo "aendere!<br>"; // 1.11.20
-        $_SESSION['telnr']=$row['ob'];
-//      }
-//    }
-  }
-//  echo "2 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
-  if (!isset($_POST['dmpp'])) {
-    $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg <qanf() alt
-      , CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk
-      , (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vknr AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp 
-      FROM (
-        SELECT pat_id,IF(zp>dmpbeg,dmp,dmpklass) dmpklass,IF(zp>dmpbeg,zp,dmpbeg) dmpbeg 
-        FROM (
-         SELECT pat_id,dmpbeg,dmpklass
-           ,(SELECT max(zp) FROM dmperg WHERE pat_id=n.pat_id) zp
-           ,(SELECT dmp FROM dmperg WHERE pat_id=n.pat_id AND zp=(SELECT max(zp) 
-         FROM dmperg WHERE pat_id=n.pat_id)
-        ) dmp 
-      FROM namen n
-     ) n
-    ) n WHERE pat_id=".$pat_id;
-//    echo "<pre>"; var_dump($sql); echo "</pre>";
-//    echo $sql;
-    //$ergeb=$conn->query($sqlzutun);
-    $ergeb=self::abfrage($conn,$sql);
-    // echo "<pre>";var_dump($conn);echo "</pre>";
-    // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
-    if ($ergeb->num_rows >0) {
-      $row = $ergeb->fetch_assoc();
-      $_SESSION['dmpp']=$row['beg'];
-      $_SESSION['dmpa']=$row['alt'];
-      $_SESSION['dmpk']=$row['dk'];
-      $_SESSION['kdmp']=$row['kdmp'];
-    }
-  }
-//  if (isset($_POST['dmpp'])) {
-//    <script>alert("Knopf gedrückt");</script>
-//  }
-
-  $_SESSION['pat_id']=$pat_id;
-  $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
-
-
-  if(isset($_POST['ma']))  $_SESSION['ma']=$_POST['ma']; else if (!isset($_SESSION['ma'])) $_SESSION['ma']="";
-  if(isset($_POST['bh']))  $_SESSION['bh']=$_POST['bh']; else if (!isset($_SESSION['bh'])) $_SESSION['bh']="";
-  if (!file_exists(self::$copyq)) {
-    copy("..".$_SERVER['PHP_SELF'],self::$copyq);
-  }
-  // pruefen, ob ein Kommentarfeld eroeffnet war, dann auf Return gedrueckt wurde ($_POST['erknopf0']) ...
-  $komaktiv=-1;
-  if (isset($_SESSION['arr']))
-    for($i=0;$i<count($_SESSION['arr']);$i++) {
-      if ($_SESSION['obk'][$i]) {$komaktiv=$i;break;}
-    }
-  // echo "kommaktiv: ".$komaktiv."<br>";
-  // echo "<pre>"; var_dump($_POST); echo "</pre>";
-/*        ?> <script>alert("in verarbeite()");</script> <?php
-  ?> <script>var hist=<?php echo json_encode($_SESSION['history'], JSON_HEX_TAG); ?>;alert("stelle history auf "+hist);</script> <?php
- */
-  if ($komaktiv>-1 && isset($_POST['erlknopf0']) && isset($_POST['kommentar'])) {
-    $sql="UPDATE zutun SET kommentar='".$_POST['kommentar'].
-      "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($komaktiv+1).";";
-    echo $sql."<br>";
-    $_SESSION['kom'][$komaktiv]=$_POST['kommentar'];
-    $_SESSION['obk'][$komaktiv]=0;
-    // $ergeb=$conn->query($sql);
-    $ergeb=self::abfrage($conn,$sql);
-    //    echo "Kommentar einzutragen: ".$_POST['kommentar']." auf Position: ".$komaktiv."<br>";
-  } else {
-    if (isset($_SESSION['arr'])) {
-      $obkomkn=0;
-      for($i=0;$i<count($_SESSION['obk']);$i++) {
-        $kk="komknopf".$i;
-        if (isset($_POST[$kk])) {$obkomkn=1;break;}
-      }
-      // falls was anderes gedrueckt wurde als Kommentar, dann Kommentarfeld nicht mehr anzeigen
-      if (!$obkomkn) {
-        for($i=0;$i<count($_SESSION['obk']);$i++) {
-          $_SESSION['obk'][$i]=0;
-        }
-      }
-    }
-    // den eingegebenen Text zur Zutunliste hinzufuegen
-        include '../php/i0S.php';
-    if(isset($_POST['eintragen'])) {
-      if(isset($_POST['aufgaben'])) if ($_POST['aufgaben']) {
-        self::tragein($conn, $pat_id, $_POST['aufgaben']);
-      }
-      $_SESSION['anbeh']=0;
-    } else {
-      $myaktiv=0;
-      $myvorb=0;
-      $mybeh=0;
-      if(isset($_POST['anwesend'])) {
-        $_SESSION['anwesend']=!$_SESSION['anwesend'];
-        if (file_exists($zvorbakt)) unlink($zvorbakt);
-        if (file_exists($zbehand)) unlink($zbehand);
-        if (file_exists($zbehandakt)) unlink($zbehandakt);
-        if (file_exists($zfertig)) unlink($zfertig);
-        if ($_SESSION['anwesend']==1) {
-          if (!file_exists($zvorb)) copy(self::$copyq,$zvorb);
-        } else {
-          if (file_exists($zvorb)) unlink($zvorb);
-        }
-        if ($_SESSION['obvorb']) {
-          $_SESSION['obvorb']=0;
-          $myvorb=1;
-        }
-        if ($_SESSION['obbeha']) {
-          $_SESSION['obbeha']=0;
-          $mybeh=1;
-        }
-        $myaktiv=1;
-      } else if(isset($_POST['obvorb'])) {
-        if ($_SESSION['ma']=='') {
-          echo "<script>alert('Wer sind Sie (bitte Kuerzel eingeben)?');</script>";
-          $_SESSION['obbeha']=0;
-        } else {
-          $_SESSION['obvorb']=!$_SESSION['obvorb'];
-//          $_SESSION['anbeh']=0;
-          $_SESSION['obbeha']=0;
-          if (!$_SESSION['anwesend']) {
-            $_SESSION['anwesend']=1;
-            $myaktiv=1;
-          }
-          if (file_exists($zvorb)) rename($zvorb,$zvorbakt);
-          if ($_SESSION['obvorb']==1) {
-            if (file_exists($zbehand)) unlink($zbehand);
-            if (file_exists($zfertig)) unlink($zfertig);
-            if (!file_exists($zvorbakt)) copy(self::$copyq,$zvorbakt);
-          } else {
-            if (file_exists($zvorb)) rename($zvorb,$zvorbakt);
-            if (file_exists($zvorbakt)) rename($zvorbakt,$zbehand);
-            else copy(self::$copyq,$zbehand);
-            echo "<meta http-equiv='refresh' content='0; URL=http://linux1/vorb/'>";
-          }
-          $myvorb=1;
-        }
-      } else if(isset($_POST['obbeha'])) {
-        if ($_SESSION['bh']=='') {
-          echo "<script>alert('Wer sind Sie (bitte Kuerzel eingeben)?');</script>";
-          $_SESSION['obvorb']=0;
-        } else {
-          $_SESSION['obbeha']=!$_SESSION['obbeha'];
-//          $_SESSION['anbeh']=0;
-          if ($_SESSION['obvorb']) {
-            $_SESSION['obvorb']=0;
-            $myvorb=1;
-          }
-          if (!$_SESSION['anwesend']) {
-            $_SESSION['anwesend']=1;
-            $myaktiv=1;
-          }
-          if (file_exists($zbehand)) rename($zbehand,$zbehandakt);
-          if ($_SESSION['obbeha']==1) {
-            if (file_exists($zvorb)) unlink($zvorb);
-            if (file_exists($zfertig)) unlink($zfertig);
-            if (!file_exists($zbehandakt)) copy(self::$copyq,$zbehandakt);
-          } else {
-            if (file_exists($zvorb)) unlink($zvorb);
-            if (file_exists($zvorbakt)) unlink($zvorbakt);
-            if (file_exists($zbehandakt)) rename($zbehandakt,$zfertig);
-            else copy(self::$copyq,$zfertig);
-            echo "<meta http-equiv='refresh' content='0; URL=http://linux1/behand/'>";
-          }
-          $mybeh=1;
-        }
-      } else if(isset($_POST['anbeh'])) {
-        $_SESSION['anbeh']=!$_SESSION['anbeh'];
-        if ($_SESSION['obbeha']==1) {
-          $_SESSION['obbeha']=0;
-          $mybeh=1;
-        }
-      } else if(isset($_POST['telnr'])) {
-//        echo "stelle um<br>"; // 1.11.20
-        $_SESSION['telnr']=0; // !$_SESSION['telnr'];
-        $telnr=$_SESSION['telnr'];
-        $_SESSION['tgep']=date("YmdHis");
-        $sql="INSERT INTO telgep(pat_id,tgep,pc)VALUES(".$_SESSION['pat_id'].",".$_SESSION['tgep'].",'".$_SERVER['REMOTE_ADDR']."')";
-//        echo "<span>sql: ".$sql."</span><br>"; // 1.11.20
-        $ergeb=self::abfrage($conn,$sql);
-//        $_SESSION['aufrufe']=$_SESSION['aufrufe']+1;
-      } else if (isset($_POST['falarzt'])) {
-        $_SESSION['falarzt']=0;
-      } else if(isset($_POST['dmpp'])) {
-        $_SESSION['dmpf']=!$_SESSION['dmpf'];
-      } else if(isset($_POST['history'])) {
-        $_SESSION['history']=!$_SESSION['history'];
-        /*
-        ?> <script>
-          var ghist=<?php echo json_encode($_SESSION['ghist'], JSON_HEX_TAG); ?>;
-          var hist=<?php echo json_encode($_SESSION['history'], JSON_HEX_TAG); ?>;
-        alert("vor history: "+hist+" ghist: "+ghist);
-        </script> <?php
-        if ($_SESSION['history']==0) $_SESSION['history']=1; else $_SESSION['history']=0;
-        if ($_SESSION['ghist']==0) $_SESSION['ghist']=1; else $_SESSION['ghist']=0;
-        ?> <script>
-          var ghist=<?php echo json_encode($_SESSION['ghist'], JSON_HEX_TAG); ?>;
-          var hist=<?php echo json_encode($_SESSION['history'], JSON_HEX_TAG); ?>;
-        alert("nach history: "+hist+" ghist: "+ghist);
-        </script> <?php
-         */
-      } else if(isset($_POST['alleloeschen'])) {
-        $_SESSION['loeschen']=!$_SESSION['loeschen'];
-        if ($_SESSION['loeschen']) {
-          $sql="UPDATE zutun SET gelZeit=DATE(0),gelpc='' ".
-            "WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now());";
-          for ($i=0;$i<count($_SESSION['arr']);$i++) {
-            $_SESSION['gel'][$i]=0;
-          }
-          $_SESSION['ausblend']=0;
-        } else {
-          $sql="UPDATE zutun SET gelZeit=now(),gelpc='".$_SERVER['REMOTE_ADDR'].
-            "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now());";
-          for ($i=0;$i<count($_SESSION['arr']);$i++) {
-            $_SESSION['gel'][$i]=1;
-          }
-        }
-    //    $ergeb=$conn->query($sql);
-        $ergeb=self::abfrage($conn,$sql);
-      } else if(isset($_POST['ausblend'])) {
-        $_SESSION['ausblend']=!$_SESSION['ausblend'];
-      //  if ($_SESSION['ausblend']) unset($_SESSION['aufgaben']);
-      } else {
-        if (isset($_SESSION['arr'])) {
-          for ($i=0;$i<count($_SESSION['arr']);$i++) {
-            $erlknopf="erlknopf".$i;
-            if (isset($_POST[$erlknopf])) {
-              $_SESSION['erl'][$i]=!$_SESSION['erl'][$i];
-              $sql="UPDATE zutun SET erlZeit=if(erlZeit=DATE(0),now(),DATE(0)),erlPC='".$_SERVER['REMOTE_ADDR'].
-                "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($i+1).";";
-              //    echo $sql."<br>";
-              //          $ergeb=$conn->query($sql);
-              $ergeb=self::abfrage($conn,$sql);
-              $allefertig=1;
-              for($j=0;$j<count($_SESSION['erl']);$j++) {
-                if (!$_SESSION['erl'][$j] && !$_SESSION['gel'][$j]) {
-                  $allefertig=0;
-                  break;
-                }
-              }
-              if ($allefertig) {
-                if (file_exists($zfertig)) unlink($zfertig);
-                $_SESSION['anwesend']=0;
-                echo "<meta http-equiv='refresh' content='0; URL=http://linux1/fertig/'>";
-                exit;
-              } else {
-                if (!$_SESSION['obvorb']) if (!$_SESSION['obbeha'])
-                  if (!file_exists($zfertig)) copy(self::$copyq,$zfertig);
-              }
-              break;
-            }
-            $gelknopf="gelknopf".$i;
-            if (isset($_POST[$gelknopf])) {
-              $_SESSION['gel'][$i]=!$_SESSION['gel'][$i];
-              $sql="UPDATE zutun SET gelZeit=if(gelZeit=DATE(0),now(),DATE(0)),gelPC='".$_SERVER['REMOTE_ADDR'].
-                "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($i+1).";";
-              //    echo $sql."<br>";
-              //          $ergeb=$conn->query($sql);
-              $ergeb=self::abfrage($conn,$sql);
-              break;
-            }
-            $komknopf="komknopf".$i;
-            if (isset($_POST[$komknopf])) {
-              //        echo "i: ".$i." session obk ".$_SESSION['obk'][$i]."<br>";
-              $_SESSION['obk'][$i]=!$_SESSION['obk'][$i];
-            } else {
-              $_SESSION['obk'][$i]=0;
-            }
-            $aufknopf="aufknopf".$i;
-            if ($i) if (isset($_POST[$aufknopf])) {
-              self::dotausch($conn, $pat_id, $i);
-              break;
-            }
-            $aenknopf="aenknopf".$i;
-            if (isset($_POST[$aenknopf])) {
-              $_SESSION['gel'][$i]=1;
-              $sql="UPDATE zutun SET gelZeit=if(gelZeit=DATE(0),now(),DATE(0)),gelPC='".$_SERVER['REMOTE_ADDR'].
-                "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($i+1).";";
-              //    echo $sql."<br>";
-              //          $ergeb=$conn->query($sql);
-              $ergeb=self::abfrage($conn,$sql);
-              $_SESSION['aufgaben']=$_SESSION['arr'][$i];
-              break;
-            }
-            $abknopf="abknopf".$i;
-            if ($i<count($_SESSION['arr'])-1) if (isset($_POST[$abknopf])) {
-              self::dotausch($conn, $pat_id, $i+1);
-              break;
-            }
-          }
-        }
-      }
-      // in Datenbank eintragen, wann anwesend gedrueckt wurde
-      if ($myaktiv) {
-        $_SESSION['anwseit']=new DateTime(date("Y-m-d H:i:s"));
-        $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
-        //    $ergeb=$conn->query($sql);
-        $ergeb=self::abfrage($conn,$sql);
-      }
-      // in Datenbank eintragen, wann Vorbereitung gedrueckt wurde
-      if ($myvorb) {
-        $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
-        //     $ergeb=$conn->query($sql);
-        $ergeb=self::abfrage($conn,$sql);
-      }
-      // in Datenbank eintragen, wann Behandlung gedrueckt wurde
-      if ($mybeh) {
-        $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0").
-          "',now(),'".$_SERVER['REMOTE_ADDR']."');";
-        //    $ergeb=$conn->query($sql);
-        $ergeb=self::abfrage($conn,$sql);
-      }
-    }
-  }
-  if ($_SESSION['history'])
-    self::zeiggeschichte($conn,$pat_id);
+    } // if ($handle = opendir($verz)) else
+  } // if ($conn->connect_error) else
   $conn->close();
 } // verarbeite()
 
@@ -917,7 +603,7 @@ function __construct()
     global $pat_id; // globale Definition und Zuweisung außerhalb dieses scripts
     global $telnr;
     self::verarbeite($pat_id,$telnr);
-    self::gibaus();
+//    self::gibaus();
   }
 } // class zutun
 
