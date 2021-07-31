@@ -128,17 +128,12 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
    done;
   fi;
  done;
- if [ $ziel = linux7 ]; then
-   for A in Patientendokumente turbomed shome eigene\\\ Dateien rett down ifap; do
-    kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
-    EXCL=${EXCL}"$A/,";
-   done;
- else
-   for A in Patientendokumente turbomed shome eigene\\\ Dateien sql TMBack rett down DBBack ifap vontosh Oberanger att; do
-    kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
-    EXCL=${EXCL}"$A/,";
-   done;
- fi;
+ for A in Patientendokumente turbomed shome eigene\\\ Dateien sql TMBack rett down DBBack ifap vontosh Oberanger att; do
+  auslass=;
+  [ $ziel = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1; esac;
+  [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
+  EXCL=${EXCL}"$A/,";
+ done;
  EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
