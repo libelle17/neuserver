@@ -106,7 +106,7 @@ commandline() {
 
 variablen() {
  printf "${dblau}variablen$reset()\n";
- [ -s "$meinpfad/vars" ]||{ echo $meinpfad/vars fehlt, rufe auf: sh configure; sh configure;}
+ [ -s "$meinpfad/vars" ]||{ sdir=$(cd $(dirname $0); pwd -P); echo sdir: $sdir; echo $meinpfad/vars fehlt, rufe auf: sh configure; sh configure;}
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
   . "$meinpfad/shvars"
