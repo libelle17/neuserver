@@ -195,7 +195,7 @@ ELG=/var/log/cronf.log
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0
--40 13,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7
+-56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
