@@ -61,6 +61,7 @@ commandline() {
   obmust=0; # ob von musterserver kopiert werden soll
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obfb=0; # Firebird
+  obtv=0; # Teamviewer
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -81,6 +82,7 @@ commandline() {
           must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
           firebird) obfb=1;;
+          teamviewer) obtv=1;;
 				esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -104,7 +106,7 @@ commandline() {
 
 variablen() {
  printf "${dblau}variablen$reset()\n";
- [ -s "$meinpfad/vars" ]||sh configure;
+ [ -s "$meinpfad/vars" ]||{ echo $meinpfad/vars fehlt, rufe auf: sh configure; sh configure;}
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
   . "$meinpfad/shvars"
@@ -1651,7 +1653,7 @@ variablen;
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
- [ $obteil = 0 ]&&teamviewer10;
+ [ $obteil = 0 -o $obtv = 1 ]&&teamviewer10;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;

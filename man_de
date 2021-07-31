@@ -3,9 +3,9 @@
 .\" Schreiben Sie an geraldschade@gmx.de, wenn Sie Fehler oder Mängel entdeckt haben
 .pc
 <<<<<<< HEAD
-.TH man 1 "01.02.21" "Version 0.47247" "Manual-Seite für ²DPROG²"
+.TH man 1 "31.07.21" "Version 0.47247" "Manual-Seite für ²DPROG²"
 =======
-.TH man 1 "08.05.21" "Version 0.47247" "Manual-Seite für ²DPROG²"
+.TH man 1 "31.07.21" "Version 0.47247" "Manual-Seite für ²DPROG²"
 >>>>>>> d4b57c40e20409207e498574f65bcf0fdecc3f12
 .SH NAME
 \fB²DPROG² \- FaxServer-Funktionalität\fR: veranlasst automatischen Faxversand von Dateien, Benennung empfangener Faxe und Protokollierung aller Faxe in einer Datenbank 

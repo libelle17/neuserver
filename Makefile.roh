@@ -529,16 +529,18 @@ shziel:
 	 for D in $$(cat ziele);do \
     case $$D in \
       [*\]) \
+        echo verarbeite $$D nach 1;\
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;s:/$$::;');\
         ;;\
-      *) \
+      *los*) \
+        echo verarbeite $$D nach 2; \
         AGit=0;[ -f $$D ]&&which git >/dev/null 2>&1&&AGit=$$(git log -1 --format="%at" -- $$D);\
         AHr=0;[ -f $$D ]&&{ AHr=$$(stat $$D -c%Y);:;}||{ printf "$$blau$$D$$reset fehlt\n";};\
         APC=0;[ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||{ printf "$$blau$$Z/$$D$$reset fehlt\n";};\
-        : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
+        printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
-        echo Zeitstempel $$(pwd) : $$AHr;\
-        echo Zeitstempel $$Z/$$D : $$APC;:';\
+        echo Zeitstempel $$(pwd)"  ": $$AHr;\
+        echo Zeitstempel $$Z/$$D : $$APC;:;\
         cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
         : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
         if [ 0$$DIFF -ne 0 ]; then \

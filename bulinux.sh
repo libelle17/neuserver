@@ -1,7 +1,22 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer regelmaessigen Gebrauch
 
-function kopiermt { # mit test
+# ob eine Datei auf dem Zielsystem alt genug ist zum Kopieren: $1= Dateipfad, $2= Mindestalter [s]
+obalt() {
+  stat "$1" >/dev/null 2>&1 ||{ echo $1 fehlt hier; return 0;}
+  ssh $ANDERER stat "$1" >/dev/null 2>&1 ||{ echo $1 fehlt dort; return 0;}
+  alterhier=$(date +%s -r "$1");
+  echo Alter hier: $alterhier s
+  alterdort=$(ssh $ANDERER date +%s -r "$1");
+  echo Alter dort: $alterdort s
+  ! awk "func abs(v){return v<0?-v:v}; BEGIN{ exit abs($alterdort-$alterhier)>$2 }";
+  ret=$?;
+  if test $ret = 0; then echo Altersdifferenz ">" $2 s; else echo Altersdifferenz "<" $2 s; fi;
+  return $ret;
+}
+
+# kopiere mit Test auf ausreichenden Speicher
+kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
   # $3 = excludes
@@ -12,42 +27,40 @@ function kopiermt { # mit test
   echo kopiermt "$1" "$2" "$3" "$4";
 # Platz ausrechnen:
   ZV=$(echo $2|sed 's:/$::'); [ "$ZV" ]||ZV=$1;
-  [ -d $Z/$ZV ]||mkdir -p $Z/$ZV;
-  verfueg=$(df /$Z/$ZV|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
-  schonda=$(du $Z/$ZV -maxd 0|cut -d$'\t' -f1|awk '{print $1*1024}')
-  zukop=$(ssh $QoD du /$1 -maxd 0|cut -f1|awk '{print $1*1024}')
-  summe=$(expr $verfueg - $zukop + $schonda);
+  echo Z: $Z
+  echo ZV: $ZV
+  verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
+  echo verfuegbar: $verfueg Bytes
+  schonda=$(eval "test -z $Z&&{ [ -d /$ZV ]&&du /$ZV -maxd 0||echo 0 0;:;}||{ ssh ${Z%:} [ -d /$ZV ]&&ssh ${Z%:} du /$ZV -maxd 0||echo 0 0;:;}"|cut -d$'\t' -f1|awk '{print $1*1024}')
+  echo schonda: $schonda Bytes
+  zukop=$(eval "test -z $Z&&ssh $QoD du /$1 -maxd 0||du /$1 -maxd 0"|cut -f1|awk '{print $1*1024}')
+  echo zukopieren: $zukop Bytes
+  rest=$(expr $verfueg - $zukop + $schonda);
+  echo Rest: $rest Bytes
   for E in $(echo $EX|sed 's/,/ /g');do
     papz=$(test -d $Z/$ZV/$E && du $Z/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
     papq=$(ssh $QoD test -d $1/$E && ssh $QoD du $1/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-    summe=$(expr $summe - $papz + $papq);
+    rest=$(expr $rest - $papz + $papq);
   done;
-  if test $summe > 0; then
-    tue="ionice -c3 nice -n19 rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude={""$EX""}";
+  if test $rest > 0; then
+    tue="$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
     echo $tue
     eval $tue
   else
-    echo Kopieren nicht begonnen, Speicherreserve: $summe
+    echo Kopieren nicht begonnen, Speicherreserve: $rest
   fi;
 }
 
-function kopier {
- echo ""
- echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
- tue="ionice -c3 nice -n19 rsync \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"ionice -c3 nice -n19 rsync\" --exclude=Papierkorb --exclude=mnt ""$3"
- echo $tue
- eval $tue
-}
-
-function kopieros {
+kopieros() {
   kopiermt "root/$1" "root" "" "--exclude='.*.swp'"
 }
 
-function kopieretc {
+kopieretc() {
   kopiermt etc/$1 "etc/"
 }
 
 # hier geht's los
+kopbef="ionice -c3 nice -n19 rsync";
 LINEINS=linux1;
 [ "$HOST" ]||HOST=$(hostname);
 HOSTK=${HOST%%.*};
@@ -76,11 +89,18 @@ reset="\033[0m";
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
+ziel=${Z%:}
+[ -z $ziel ]&&ziel=$HOSTK
+echo Q: $Q, Z: $Z ziel: $ziel
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
 # EXCL=--exclude={
 Dt=DATA; 
-kopiermt "opt/turbomed" "opt/" "" "$OBDEL"
+ot=opt/turbomed
+pd=/$ot/PraxisDB/objects.dat
+if obalt $pd 1800; then 
+ kopiermt "$ot" "opt/" "" "$OBDEL"
+fi
 kopieros ".vim"
 kopieros ".smbcredentials"
 kopieros "crontabakt"
@@ -93,10 +113,32 @@ V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" -
 mountpoint -q /$Dt || mount /$Dt;
 ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
- for A in Patientendokumente turbomed shome eigene\\\ Dateien sql Mail TMBack rett down DBBack ifap vontosh Oberanger att; do
-  kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
-  EXCL=${EXCL}"$A/,";
+# for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
+ for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
+  if test $uverz = Praxis || test $ziel != linux7; then
+   qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
+   find /$qverz -iname INBOX -print0|while IFS= read -r -d '' inbox; do
+     echo Ergebnis: "$inbox";
+     # eine Woche
+     if obalt "$inbox" 604800; then 
+       echo $qverz zu alt
+       kopiermt $qverz/ $qverz "" -d;
+       break;
+     fi
+   done;
+  fi;
  done;
+ if [ $ziel = linux7 ]; then
+   for A in Patientendokumente turbomed shome eigene\\\ Dateien rett down ifap; do
+    kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
+    EXCL=${EXCL}"$A/,";
+   done;
+ else
+   for A in Patientendokumente turbomed shome eigene\\\ Dateien sql TMBack rett down DBBack ifap vontosh Oberanger att; do
+    kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
+    EXCL=${EXCL}"$A/,";
+   done;
+ fi;
  EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
