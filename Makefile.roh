@@ -528,6 +528,10 @@ shziel:
 	if test -f ziele; then \
 	 for D in $$(cat ziele);do \
     case $$D in \
+      los.sh) \
+       zwi=zeit.tmp;zw="qverz=";touch -r $D $zwi;sed -i '/^[ ]*'$zw'/s:'$zw'.*$:'$zw$(pwd)':' $D; touch -r $zwi $D; rm $zwi;;\
+    esac; \
+    case $$D in \
       [*\]) \
         Z=$$(printf $$D|sed 's/^[[]//;s/[]]$$//;s:/$$::;');\
         ;;\
@@ -537,7 +541,7 @@ shziel:
         APC=0;[ -f $$Z/$$D ]&&APC=$$(stat $$Z/$$D -c%Y)||{ printf "$$blau$$Z/$$D$$reset fehlt\n";};\
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
-        echo Zeitstempel $$(pwd) : $$AHr;\
+        echo Zeitstempel $$(pwd)"  ": $$AHr;\
         echo Zeitstempel $$Z/$$D : $$APC;:';\
         cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
         : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
