@@ -91,6 +91,8 @@
     $_SESSION['Car alle']=!$_SESSION['Car alle'];
  } else  IF(isset($_POST['Impf'])) {
     $_SESSION['Impf']=!$_SESSION['Impf'];
+ } else  IF(isset($_POST['ImpfCovid'])) {
+    $_SESSION['ImpfCovid']=!$_SESSION['ImpfCovid'];
  } else  IF(isset($_POST['Colo'])) {
     $_SESSION['Colo']=!$_SESSION['Colo'];
  } else  IF(isset($_POST['Pros'])) {

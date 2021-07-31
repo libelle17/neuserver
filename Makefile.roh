@@ -529,7 +529,7 @@ shziel:
 	 for D in $$(cat ziele);do \
     case $$D in \
       los.sh) \
-       zwi=zeit.tmp;zw="qverz=";touch -r $D $zwi;sed -i '/^[ ]*'$zw'/s:'$zw'.*$:'$zw$(pwd)':' $D; touch -r $zwi $D; rm $zwi;;\
+       zwi=zeit.tmp;zw="qverz=";touch -r $$D $$zwi;sed -i '/^[ ]*'$$zw'/s:'$$zw'.*:'$$zw$$(pwd)':' $$D; touch -r $$zwi $$D; rm $$zwi;;\
     esac; \
     case $$D in \
       [*\]) \

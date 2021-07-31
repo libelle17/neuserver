@@ -36,6 +36,7 @@ function dotausch($conn, $pat_id, $i)
   }        
 
   // holt die zu einem Patienten gespeicherten Zutun-Eintraege aus der Datenbank
+  // Achtung: wenn das nicht zu funktionieren scheint, evtl. auf "einblend" gehen!
 function getdb($conn,$pat_id) 
 {
     if (isset($_SESSION['arr'])) unset($_SESSION['arr']);
@@ -53,6 +54,7 @@ function getdb($conn,$pat_id)
     //$ergeb=$conn->query($sqlzutun);
     $ergeb=self::abfrage($conn,$sqlzutun);
     // echo "<pre>";var_dump($conn);echo "</pre>";
+    // echo "<pre>";var_dump($sqlzutun);echo "</pre>";
     // echo "<pre>Ergeb: "; var_dump($ergeb); echo "</pre>";
     if ($ergeb->num_rows >0) {
       while($row = $ergeb->fetch_assoc()) {
@@ -192,8 +194,8 @@ function abfrage($conn,$sql)
   if ($sql) {
     if (!($ret=$conn->query($sql))) {
       printf("<pre>Fehler bei: %s </pre>", $sql);
-      echo "<pre>"; var_dump($mysqli->error); echo "</pre>";
-      //    printf("Fehler bei: %s %s\n", $sql, $mysqli->error);
+      echo "<pre>"; var_dump($conn->error); echo "</pre>";
+      //    printf("Fehler bei: %s %s\n", $sql, $conn->error);
     } else {
 //      printf("<pre>Erfolg bei: %s</pre>",$sql);
     } 
@@ -562,6 +564,7 @@ function verarbeite($pat_id,$telnr)
               if ($allefertig) {
                 if (file_exists($zfertig)) unlink($zfertig);
                 $_SESSION['anwesend']=0;
+//                echo "<meta http-equiv='refresh' content='0; URL=http://".$_SERVER['SERVER_ADDR']."/fertig/'>";
                 echo "<meta http-equiv='refresh' content='0; URL=http://linux1/fertig/'>";
                 exit;
               } else {
