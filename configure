@@ -315,8 +315,6 @@ else :; fi
 
 # hier geht's los ...
 # Verzeichnis des aktuellen scripts
-[ -z $sdir ]&&sdir=$(cd $(dirname $0); pwd -P)
-echo sdir: $sdir
 OSNR=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 getOS;
 PAR1=$1;
