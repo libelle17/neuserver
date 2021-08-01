@@ -107,11 +107,11 @@ commandline() {
 variablen() {
  printf "${dblau}variablen$reset()\n";
  qverz=/root/neuserver
- [ -s "$qverz/vars" ]||{ echo $qverz/vars fehlt, rufe dort auf: sh configure; cd $qverz; sh configure;cd -;}
+ [ -s "$meinpfad/vars" ]||{ echo $meinpfad/vars fehlt, rufe auf: sh configure; sh configure;}
  while :; do
-  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$qverz/vars" >"$qverz/shvars"
-  . "$qverz/shvars"
-  if test "$("$qverz/configure" nuros)" != "$OSNR"; then "$qverz/configure";:;else break;fi;
+  sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
+  . "$meinpfad/shvars"
+  if test "$("$meinpfad/configure" nuros)" != "$OSNR"; then "$meinpfad/configure";:;else break;fi;
  done;
  HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
  loscred="$HOME/.loscred"; # ~  # $HOME
@@ -188,7 +188,7 @@ setzbenutzer() {
     user=${zeile%% \"*};
     comm=\"${zeile#* \"};
     pruefuser $user "$comm";
-  done 3<"$qverz/benutzer";
+  done 3<"$meinpfad/benutzer";
 } # setzbenutzer
 
 setzpfad() {
@@ -934,12 +934,12 @@ sambaconf() {
 	smbconf="smb.conf";
 	zusmbconf="$etcsamba/$smbconf";
 	muster="/usr/share/samba/$smbconf";
-	smbvars="$qverz/awksmb.inc";
+	smbvars="$meinpfad/awksmb.inc";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' "$smbvars");
 	[ "$arbgr" ]||{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
 	[ "$arbgr/" = "$workgr/" ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
-	S2="$qverz/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
+	S2="$meinpfad/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
 	echo "BEGIN {" >$S2;
 	nr=0;
 	while read -r zeile; do
@@ -955,12 +955,12 @@ sambaconf() {
 	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
 EOF
 	printf "};\n" >>$S2;
-	AWKPATH="$qverz";awk -f $qverz/awksmb.sh "$zusmbconf" >"$qverz/$smbconf";
+	AWKPATH="$meinpfad";awk -f awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
 	firewall samba;
 
-	if ! diff -q "$qverz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
+	if ! diff -q "$meinpfad/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
-		cp -a "$qverz/$smbconf" "$zusmbconf";
+		cp -a "$meinpfad/$smbconf" "$zusmbconf";
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
@@ -1405,10 +1405,10 @@ teamviewer10() {
 	esac;
 	cd - >/dev/null;
 	tvconf=/opt/teamviewer/config/global.conf;
-	tvh="$qverz/tvglobal.conf";
+	tvh="$meinpfad/tvglobal.conf";
 	systemctl stop teamviewerd
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
-	AWKPATH="$qverz";cd $qverz;awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";cd -;
+	AWKPATH="$meinpfad";cd $meinpfad;awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";cd -;
 #	sed -i '/^\s*$/d' "$tvh";
 	systemctl start teamviewerd;
 	echo nach systemctl start teamviewerd;
@@ -1444,8 +1444,8 @@ backup() {
 
 cron() {
 	printf "${dblau}cron$reset()\n";
-	chier=$qverz/cronhier;
-	csrv=$qverz/crons$srv0;
+	chier=$meinpfad/cronhier;
+	csrv=$meinpfad/crons$srv0;
 	backup "$chier"
 	crontab -l >"$chier";
 	if [ "$srv0" ]; then
@@ -1455,14 +1455,14 @@ cron() {
 		ssh $(whoami)@$srv0 "crontab -l" >"$csrv";
 	fi;
   [ "$srvhier" ]||srvhier=$(uname -n);
-  crh=$qverz/cronshier; # cron-Datei des Quellservers mit korrigierten Namen
+  crh=$meinpfad/cronshier; # cron-Datei des Quellservers mit korrigierten Namen
   if false; then # 14.9.: die crontab soll serveruebergreifend identisch sein und dazu hostname aufrufen
    sed 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $csrv>$crh;
   else
    cp -a $csrv $crh:
   fi;
   # hier die Scripte aus crontab eintragen, die auf gegegenwärtigem Server gespeichert sind
-  ca=$qverz/cronbefehle;
+  ca=$meinpfad/cronbefehle;
   rm -f $ca;
   touch $ca;
   # nehme $csrv, entferne Kommentarzeilen, entferne Steuerungsangaben, Teile an Leerzeichen auf, entferne Ausdrücke mit Sonderzeichen, Leerzeilen, abschliessende ';', stelle jede Zeile in eine Variable $zeile, falls diese lesebar (nicht: ausfuehrbar) und kein Verzeichnis ist und nicht schon in $ca vorkommt und '#!' am Beginn der ersten Zeile aufweist, dann fuege es an $ca an
@@ -1593,7 +1593,7 @@ dbinhalt() {
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh);
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g'); # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n");
-      pd=$qverz/sqlprot.txt;
+      pd=$meinpfad/sqlprot.txt;
       [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
       mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
