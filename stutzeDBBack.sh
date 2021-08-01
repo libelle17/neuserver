@@ -40,6 +40,7 @@ ermittledatum() {
   datum=$jahr-$monat-$tag;
 }
 
+# ab hier sind alle gleich
 vgbstarr() {
 # eher starre Vorgaben
 	blau="\033[1;34m"; # für Programmausgaben
