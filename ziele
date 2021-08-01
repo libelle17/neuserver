@@ -32,6 +32,7 @@ gerade_PraxisDB.sh
 getmail_alle.sh
 getmail_gmx7.sh
 incopy.sh
+instutz.sh
 kompr.sh
 komprsql.sh
 logrotate.conf
@@ -42,6 +43,7 @@ rverb.sh
 stutze.sh
 stutzeDBBack.sh
 stutzeTMBack.sh
+stutzeTMExport.sh
 suche.sh  
 suche5.sh  
 suchec.sh  
