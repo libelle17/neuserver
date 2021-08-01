@@ -415,6 +415,7 @@ pruefuser() {
 			printf "erstelle Linux-Benutzer $blau$1$reset\n";
 			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
+    groups $1|grep -q praxis||usermod -aG praxis $1
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
 				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
@@ -1643,7 +1644,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
- [ $obteil = 0 ]&&setzbenutzer;
+ [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 ]&&fritzbox;
