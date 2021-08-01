@@ -5,7 +5,7 @@ BEGIN {
  A[3]="[DAT3]"; P[3]="/DAT3"; avail[3]=0;
  A[4]="[wrz]"; P[4]="/wrz"; avail[4]=0;
  A[5]="[usb]"; P[5]="/mnt/usb"; avail[5]=0;
- A[6]="[DATA]"; P[6]="/DATA"; avail[6]=0;
+ A[6]="[daten]"; P[6]="/DATA"; avail[6]=0;
  A[7]="[szoo1]"; P[7]="/mnt/szoo1"; avail[7]=0;
  A[8]="[szon1]"; P[8]="/mnt/szon1"; avail[8]=0;
  A[9]="[anmmw]"; P[9]="/mnt/anmmw"; avail[9]=0;

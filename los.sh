@@ -956,6 +956,7 @@ sambaconf() {
        } else {
          gsub("/mnt/","",n);
          gsub("/","",n);
+         if (n=="DATA") n="daten";
        }
        if (f[n]==0){
          drucke(n,$2,0);
