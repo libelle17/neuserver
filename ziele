@@ -31,6 +31,7 @@ fpstatusmb.sh
 gerade_PraxisDB.sh
 getmail_alle.sh
 getmail_gmx7.sh
+incopy.sh
 kompr.sh
 komprsql.sh
 logrotate.conf

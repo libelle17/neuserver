@@ -21,7 +21,7 @@ tukopierol() {
 
 datakopier() {
   printf "${blau}$0:datakopier()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  QP="/DATA";mountpoint -q "$QP"&&tukopier "$QP/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe" "$2" "$3" "$4" "$5" "$6"
+  QP="/DATA";mountpoint -q "$QP"&&tukopier "$QP/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe" "TMExportloe" "$2" "$3" "$4" "$5" "$6"
 }
 
 # mountpoint -q "$Z" && umount $Z
