@@ -2,11 +2,11 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
-function druckNaZeile(i,Pfad) {
+function druckNaZeile(i,Pfad,j) {
 		printf "   %s = ",Na[i];
 		if (i==0) printf "%s (los.sh %s)\n", Pfad,datum;
 		else if (i==1) print Pfad;
-		else if (Na[i]=="available") print (system("mountpoint -q '"Pfad"'")?"No":"Yes");
+    else if (Na[i]=="available") if (avail[j]) print "Yes"; else print (system("mountpoint -q '"Pfad"'")?"No":"Yes");
 		else print Ia[i];
 }
 # Vorgaben für [global] (N[] und I[]) und fstab-Abschnitte (Na[] und Ia[])
@@ -116,7 +116,7 @@ for (j in A) {
 		printf "# Abschnitt ergänzt (los.sh %s):\n", datum;
 		print A[j];
 		for (i in Na)  {
-			druckNaZeile(i,P[j]);
+			druckNaZeile(i,P[j],j);
 		}
 	}
 }

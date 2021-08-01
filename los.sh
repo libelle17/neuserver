@@ -941,13 +941,13 @@ sambaconf() {
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2="$meinpfad/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
   awk -v z=0 '
-    function drucke(s1,s2) {
-      printf " A[%i]=\"%s\"; P[%i]=\"%s\";\n",z,s1,z,s2;
+    function drucke(s1,s2,avail) {
+      printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
       z=z+1;
     }
     BEGIN {
       printf "BEGIN {\n";
-      drucke("turbomed","/opt/turbomed");
+      drucke("turbomed","/opt/turbomed",1);
     }
     $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
        n=$2;
@@ -958,14 +958,14 @@ sambaconf() {
          gsub("/","",n);
        }
        if (f[n]==0){
-         drucke(n,$2);
+         drucke(n,$2,0);
          f[n]=1;
        }
      }
      END{
       printf "};\n";
      }
-   ' $ftb >>$S2;
+   ' $ftb >$S2;
 	AWKPATH="$meinpfad";awk -f awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
 	firewall samba;
 
