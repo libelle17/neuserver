@@ -1,5 +1,4 @@
 #!/bin/sh
-# hier Änderung
 # blau="\e[1;34m";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -8,7 +7,7 @@ rot="\033[1;31m";
 reset="\033[0m";
 prog="";
 obnmr=1;
-ftb=/etc/fstab;
+ftb="/etc/fstab";
 GITACC=libelle17;
 AUFRUFDIR=$(pwd)
 # meinpfad="$(cd "$(dirname "$0")"&&pwd)"
@@ -17,11 +16,11 @@ meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
 echo $meinpfad
 wzp="$meinpfad/wurzelplatten";
-Dw=/root/Downloads;
+Dw="/root/Downloads";
 gruppe=$(cat $meinpfad/gruppe);
 q0="/DATA/down /DATA/daten/down";
 spf=/DATA/down; # Server-Pfad
-tdpf=/DATA/turbomed # Turbomed-Dokumentenpfad
+tdpf="/DATA/turbomed" # Turbomed-Dokumentenpfad
 musr=praxis;
 obschreiben=0;
 
@@ -415,6 +414,7 @@ pruefuser() {
 			printf "erstelle Linux-Benutzer $blau$1$reset\n";
 			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
+    groups $1|grep -q praxis||usermod -aG praxis $1
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
 				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
@@ -940,21 +940,33 @@ sambaconf() {
 	[ "$arbgr/" = "$workgr/" ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2="$meinpfad/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
-	echo "BEGIN {" >$S2;
-	nr=0;
-	while read -r zeile; do
-		printf "fstab--> Samba-Eintrag: $blau$zeile$reset\n"
-		avar=$(printf $zeile|cut -f1);
-		pfad=$(echo $zeile|sed 's/^\([^[:space:]]*\)[[:space:]]*\(.*\)/\2/');
-		if [ "$pfad" = "/DATA" ];then avar="daten";fi;
-#		echo -e " A["$nr"]=\"["$avar"]\";\tP["$nr"]=\""$zeile"\";" >>$S2;
-		printf " A[$nr]=\"[$avar]\";\tP[$nr]=\"$pfad\";\n" >>$S2;
-		nr=$(expr $nr + 1);
-	# Einhängepunkte der interessanten Dateisysteme verwenden, von diesen die Pfadenden, jedes nur einmal
-	done << EOF
-	$(awk '$3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/{n=$2;sub(".*/","",n);if (f[n]==0){printf "%s\t%s\n",n,$2,f[n]=1}}' $ftb)
-EOF
-	printf "};\n" >>$S2;
+  awk -v z=0 '
+    function drucke(s1,s2,avail) {
+      printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
+      z=z+1;
+    }
+    BEGIN {
+      printf "BEGIN {\n";
+      drucke("turbomed","/opt/turbomed",1);
+    }
+    $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
+       n=$2;
+       if (n~"efi") {
+         sub(".*/","",n);
+       } else {
+         gsub("/mnt/","",n);
+         gsub("/","",n);
+         if (n=="DATA") n="daten";
+       }
+       if (f[n]==0){
+         drucke(n,$2,0);
+         f[n]=1;
+       }
+     }
+     END{
+      printf "};\n";
+     }
+   ' $ftb >$S2;
 	AWKPATH="$meinpfad";awk -f awksmb.sh "$zusmbconf" >"$meinpfad/$smbconf";
 	firewall samba;
 
@@ -1643,7 +1655,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
- [ $obteil = 0 ]&&setzbenutzer;
+ [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 ]&&fritzbox;

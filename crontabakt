@@ -6,12 +6,12 @@
 # (/tmp/crontab.KhwReo installed on Mon Jun 24 07:51:06 2013)
 # (Cronie version 4.2)
 SHELL=/bin/bash
+RBI=/root/bin
 PATH=/usr/bin:/usr/sbin:/sbin:/bin:/usr/lib/news/bin:/root/bin
 MAILTO=root
 VL=/var/log
 NLG=/var/log/cron.log
 ELG=/var/log/cronf.log
-# die Variablen im Befehlsaufrufpfad wirken aber (zumindest manchmal) nicht
 #
 # check scripts in cron.hourly, cron.daily, cron.weekly, and cron.monthly
 #
@@ -33,6 +33,7 @@ ELG=/var/log/cronf.log
 # @reboot P=/DATA; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
 #@reboot mount /DAT1 >>$NLG 2>>$ELG
 #@reboot mount /DAT2 >>$NLG 2>>$ELG
+# @reboot [ ${HOST\%\%.*}/ = linux0ur/ ]&&{ P=/DAT3; mountpoint -q $P||mount $P >>$NLG 2>>$ELG;}
 # @reboot mount /wres2
 # @reboot mount /w12.1
 # @reboot mount /w12.2
@@ -72,10 +73,12 @@ ELG=/var/log/cronf.log
 # mariadb-Datenbanken sichern
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 # mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern:
--26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
+-26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
-#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
+# Daten einmal taeglich von DATA nach DAT3 sichern
+-56 23 * * * Q=/DATA;for Z in /DAT3 /DAT1;do mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};};done;
 # Daten jeden Freitag nach szn1 sichern
 #-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
 # Daten einmal taeglich nach anmeldl sichern
@@ -149,7 +152,6 @@ ELG=/var/log/cronf.log
 # -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
--0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
 # -*/5 * * * * /root/bin/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
@@ -176,7 +178,6 @@ ELG=/var/log/cronf.log
 -3,11,19,27,35,39,47,55 7-22 * * * ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -1,33 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -52 6 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--5 0 * * * for V in behand fertig vorb;do find /srv/www/htdocs/$V -maxdepth 1 -type f -not -newermt $(date +'\%Y\%m\%d') -not -name "*=*" -delete;done
 
 # ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
 -*/2 7-22 * * * /root/bin/getmail_gmx7.sh >>$NLG 2>>$ELG 
@@ -189,7 +190,7 @@ ELG=/var/log/cronf.log
 -* * * * * ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
-* * * * * ionice -c3 /root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
+-* * * * * ionice -c3  /root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
@@ -205,13 +206,13 @@ ELG=/var/log/cronf.log
 #-* * * * * rm $VL/warn
 #-*/60 * * * * crontab /etc/crontab
 -*/11 * * * * /root/bin/verhdop.sh chmod 770 /root/bin/*.sh >/dev/null 2>>$ELG
--* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >/dev/null 2>>$ELG
+-* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >>$NLG 2>>$ELG
 -0 2 * * * ionice -c3 /root/bin/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
 -1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
 -15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
 # -45 1 * * * ionice -c3 /root/bin/copywd.sh >>$NLG 2>>$ELG
-# -15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
+-15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
 -0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
 -40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
 -15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
@@ -253,7 +254,3 @@ ELG=/var/log/cronf.log
 10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in /mnt/szoo1 /mnt/szon1 /mnt/anmmw;do mount "$V" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$V"/ "$Z"&&find $V -type f -mtime +7 -delete; chmod 770 -R "$Z";};done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
-0 3 * * * mv -i /DATA/Patientendokumente/zufaxen/2145/* /DATA/Patientendokumente/zufaxen/
-*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
-# */5 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath
-*/10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1

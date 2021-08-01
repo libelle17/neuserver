@@ -1,21 +1,20 @@
 BEGIN {
- A[0]="[efi]";	P[0]="/boot/efi";
- A[1]="[diabfb]";	P[1]="/mnt/diabfb";
-<<<<<<< HEAD
- A[2]="[DAT3]";	P[2]="/DAT3";
- A[3]="[daten]";	P[3]="/DATA";
- A[4]="[wrz]";	P[4]="/wrz";
- A[5]="[usb]";	P[5]="/mnt/usb";
-=======
- A[2]="[szoo1]";	P[2]="/mnt/szoo1";
- A[3]="[szon1]";	P[3]="/mnt/szon1";
- A[4]="[daten]";	P[4]="/DATA";
- A[5]="[MyPassport]";	P[5]="/mnt/MyPassport";
- A[6]="[SeagateExpansionDrive]";	P[6]="/mnt/SeagateExpansionDrive";
- A[7]="[verbatim]";	P[7]="/mnt/verbatim";
- A[8]="[SYSTEM]";	P[8]="/mnt/SYSTEM";
- A[9]="[DAT1]";	P[9]="/mnt/DAT1";
- A[10]="[SeagateBackupPlusDrive]";	P[10]="/mnt/SeagateBackupPlusDrive";
- A[11]="[DAT2]";	P[11]="/DAT2";
->>>>>>> d4b57c40e20409207e498574f65bcf0fdecc3f12
+ A[0]="[turbomed]"; P[0]="/opt/turbomed"; avail[0]=1;
+ A[1]="[efi]"; P[1]="/boot/efi"; avail[1]=0;
+ A[2]="[diabfb]"; P[2]="/mnt/diabfb"; avail[2]=0;
+ A[3]="[DAT3]"; P[3]="/DAT3"; avail[3]=0;
+ A[4]="[wrz]"; P[4]="/wrz"; avail[4]=0;
+ A[5]="[usb]"; P[5]="/mnt/usb"; avail[5]=0;
+ A[6]="[daten]"; P[6]="/DATA"; avail[6]=0;
+ A[7]="[szoo1]"; P[7]="/mnt/szoo1"; avail[7]=0;
+ A[8]="[szon1]"; P[8]="/mnt/szon1"; avail[8]=0;
+ A[9]="[anmmw]"; P[9]="/mnt/anmmw"; avail[9]=0;
+ A[10]="[szn4turbomed]"; P[10]="/mnt/szn4/turbomed"; avail[10]=0;
+ A[11]="[MyPassport]"; P[11]="/mnt/MyPassport"; avail[11]=0;
+ A[12]="[SeagateExpansionDrive]"; P[12]="/mnt/SeagateExpansionDrive"; avail[12]=0;
+ A[13]="[verbatim]"; P[13]="/mnt/verbatim"; avail[13]=0;
+ A[14]="[SYSTEM]"; P[14]="/mnt/SYSTEM"; avail[14]=0;
+ A[15]="[DAT1]"; P[15]="/mnt/DAT1"; avail[15]=0;
+ A[16]="[SeagateBackupPlusDrive]"; P[16]="/mnt/SeagateBackupPlusDrive"; avail[16]=0;
+ A[17]="[DAT2]"; P[17]="/DAT2"; avail[17]=0;
 };
