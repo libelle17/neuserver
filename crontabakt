@@ -200,6 +200,7 @@ ELG=/var/log/cronf.log
 -5 22 * * * ionice -c3 /root/bin/stutzeTMBack.sh
 -5 23 * * * ionice -c3 /root/bin/stutze.sh
 -5 0 * * * ionice -c3 /root/bin/stutzeDBBack.sh
+-0 1 * * * ionice -3 /root/bin/stutzeTMExport.sh
 -35 0 * * * ionice -c3 /root/bin/komprsql.sh
 0 9 * * * rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
