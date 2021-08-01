@@ -71,6 +71,7 @@ ELG=/var/log/cronf.log
 
 # mariadb-Datenbanken sichern
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+# mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern:
 -26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
 #-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
@@ -97,7 +98,7 @@ ELG=/var/log/cronf.log
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
-# die Turbomed-Datenbank einmal taeglich komprimieren
+# die Turbomed-Datenbank einmal taeglich komprimieren und in /DATA/TMBack sichern:
 -40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA &&{ TB=/DATA/TMBack;test -d $TB||mkdir $TB;ot=/opt/turbomed;ionice -c3 /usr/bin/7z a "$TB/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" $ot/StammDB $ot/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG;}
 
 # -0 * * * * mountpoint -q /DATA && chown firebird:praxis /DATA >>$VL/chown-Aufruf.log 2>&1
@@ -194,8 +195,10 @@ ELG=/var/log/cronf.log
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
+#ein Abbild des Servers linux1 auf linux0 erstellen:
 -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0
--56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7
+#ein Abbild wichtiger Verzeichnisse des Servers linux1 auf linux7 erstellen:
+-56 9,14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
