@@ -48,6 +48,7 @@ function kopieretc {
 }
 
 # hier geht's los
+kopbef="ionice -c3 nice -n19 rsync";
 LINEINS=linux1;
 [ "$HOST" ]||HOST=$(hostname);
 HOSTK=${HOST%%.*};

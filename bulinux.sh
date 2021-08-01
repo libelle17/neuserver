@@ -17,7 +17,7 @@ obalt() {
 
 # kopiere mit Test auf ausreichenden Speicher
 kopiermt() { # mit test
-  # $1 = Verzeichnis auf Quelle
+  # $1 = Verzeichnis auf Quelle, mit "\ " statt Leerzeichen
   # $2 = Verzeichnis auf Ziel
   # $3 = excludes
   # $4 = Optionen 
@@ -43,7 +43,7 @@ kopiermt() { # mit test
     rest=$(expr $rest - $papz + $papq);
   done;
   if test $rest > 0; then
-    tue="$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
+    tue="$kopbef $Q/$1 \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
     echo $tue
     eval $tue
   else
@@ -107,7 +107,7 @@ kopieros "crontabakt"
 kopieros ".getmail"
 kopieros ".7zpassw"
 kopieros ".mysqlpwd"
-V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
+V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" $Q$V "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 mountpoint -q /$Dt || mount /$Dt;
@@ -134,7 +134,7 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
   [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
   EXCL=${EXCL}"$A/,";
  done;
- EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe}";
+ EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe,TMExportloe}";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19

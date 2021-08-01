@@ -1,13 +1,12 @@
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
+# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis
   Vz=/DATA/sql;
   # Zielverzeichnis
   Zvz=/DATA/sqlloe;
-  # Zielverzeichnis ggf. erstellen
-  mkdir -p "$Zvz";
-  # falls es fehlt, aufhören
-  test -d "$Zvz" ||exit
+  # Musterende der interessanten Dateien
   muende="????-??-??*.sql*";
   # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
   gr1=730;
@@ -19,11 +18,35 @@ vorgaben() {
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
   Ausspar="-dp-office-";
+}
+
+# das Sicherungsdatum aus dem Dateinamen ermitteln (erfordert bestimmte Namenskonvention beim Sichern)
+ermittledatum() {
+  # nanf = Namensanfang, z.B. Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
+  nanf=${dt%--*};
+  gname=$nanf--$muende;
+  # datum = zunächst String hinter dem ersten --
+  datum=${dt#*--};
+  # jahr = in datum alles bis zum ersten -
+  jahr=${datum%%-*};
+  # datum = dann alles bis zum letzten - in datum
+  datum=${datum%-*};
+#  ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
+  # monat = zunächst alles ab dem ersten - in datum 
+  monat=${datum#*-};
+  # tag = alles ab dem ersten - in monat
+  tag=${monat#*-};
+  # monat = dann alles bis zum letzten in monat
+  monat=${monat%-*};
+}
+
+vgbstarr() {
 # eher starre Vorgaben
 	blau="\033[1;34m"; # für Programmausgaben
 	rot="\033[1;31m";
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
+  mgroe=0;
 }
 
 # Befehlszeilenparameter auswerten
@@ -65,36 +88,25 @@ zeit() {
 ddiff() {
   dsec=$(date -d "$1" +%s);
   datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
+#  echo Name: $nanf, Datum: $datum, datediff: $datediff
 }
 
-# das Sicherungsdatum aus dem Dateinamen ermitteln (erfordert bestimmte Namenskonvention beim Sichern)
-ermittledatum() {
-  # name = Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
-  name=${dt%--*};
-  # datum = zunächst String hinter dem ersten --
-  datum=${dt#*--};
-  # jahr = in datum alles bis zum ersten -
-  jahr=${datum%%-*};
-  # datum = dann alles bis zum letzten - in datum
-  datum=${datum%-*};
-#  ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
-  # monat = zunächst alles ab dem ersten - in datum 
-  monat=${datum#*-};
-  # tag = alles ab dem ersten - in monat
-  tag=${monat#*-};
-  # monat = dann alles bis zum letzten in monat
-  monat=${monat%-*};
-}
-
+vgbstarr;
 vorgaben;
+# Zielverzeichnis ggf. erstellen
+mkdir -p "$Zvz";
+# falls es fehlt, aufhören
+test -d "$Zvz" ||exit
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 zeit;
 # alle Dateien mit dem Muster aus dem Quellverzeichnis raussuchen und den Namen verwenden
-for dt in $(find $Vz -name "*$muende" -printf '%f\n'); do
+[ "$verb" ]&& echo "find \"$Vz\" -name "*$muende" -size +$mgroe -printf '%f\n'"
+for dt in $(find "$Vz" -name "*$muende" -size +$mgroe -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
   ermittledatum;
+  [ "$verb" ]&&printf "$blau$dt$reset => $rot$datum$reset => $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
-  case $Ausspar in *-$name-*) continue;; esac;
+  [ "$Ausspar" ]&&case $Ausspar in *$nanf*) continue;; esac;
   # datediff mit dem Alter von $datum [d] belegen
   ddiff $datum;
   # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
@@ -120,17 +132,17 @@ for dt in $(find $Vz -name "*$muende" -printf '%f\n'); do
        *)
         [ "$verb" ]&&echo "$runde loesche vielleicht: $dt, da $tag nicht in $vbeh";
         # ansonsten ...
-#        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$name--????-??-??*.sql*" -print -quit;"
+#        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$nanf--????-??-??*.sql*" -print -quit;"
         # schauen, ob es tatsächlich im gleichen Monat schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
-        befehl="find \"$Vz\" -newermt \"$jahr-$monat-01\" -not -newermt \"$datum\" -name \"$name--$muende\" -print -quit";
+        befehl="find \"$Vz\" -newermt \"$jahr-$monat-01\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
         [ "$verb" ]&&echo befehl: $befehl
         aelter=$(eval $befehl)
         # wenn also die Variable befüllt ...
         if test "$aelter"; then
-          # [ "$verb" ]&&echo $dt $name $datum $jahr $monat $tag $datediff;
+          # [ "$verb" ]&&echo $dt $nanf $datum $jahr $monat $tag $datediff;
           [ "$verb" ]&&echo "   Runde $runde, älter: $aelter, loesche/verschiebe: $dt";
           # dann die Datei in das Zu-Löschen-Verzeichnis schieben
-          mv -i $Vz/$dt $Zvz/
+          mv -i "$Vz/$dt" "$Zvz/"
           # und nicht weiter prüfen
           break;
         else
@@ -144,3 +156,4 @@ for dt in $(find $Vz -name "*$muende" -printf '%f\n'); do
     fi;
   done;
 done;
+
