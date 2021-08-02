@@ -415,6 +415,7 @@ pruefuser() {
 			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
     groups $1|grep -q praxis||usermod -aG praxis $1
+    groups $1|grep -q www||usermod -aG www $1
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
 				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
@@ -948,6 +949,7 @@ sambaconf() {
     BEGIN {
       printf "BEGIN {\n";
       drucke("turbomed","/opt/turbomed",1);
+      drucke("php","/srv/www/htdocs",1);
     }
     $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
        n=$2;
