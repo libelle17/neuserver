@@ -4,16 +4,16 @@ MUPR="$0"; # Mutterprogramm
 Dt=DATA; 
 ot=opt/turbomed
 kopiermt "$ot" "opt/" "" "$OBDEL" PraxisDB/objects.dat 1800
-kopieros ".vim"
-kopieros ".smbcredentials"
-kopieros "crontabakt"
-kopieros ".getmail"
-kopieros ".7zpassw"
-kopieros ".mysqlpwd"
-kopieros ".mysqlrpwd"
-kopiermt "etc/sysconfig/postfix" "etc/sysconfig" "" ""
+kopieros ".vim" "" "" "" "" "" 1
+kopieros ".smbcredentials" "" "" "" "" "" 1
+kopieros "crontabakt" "" "" "" "" "" 1
+kopieros ".getmail" "" "" "" "" "" 1
+kopieros ".7zpassw" "" "" "" "" "" 1
+kopieros ".mysqlpwd" "" "" "" "" "" 1
+kopieros ".mysqlrpwd" "" "" "" "" "" 1
+kopiermt "etc/sysconfig/postfix" "etc/sysconfig" "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
-  kopiermt "etc/postfix/$D" "etc/postfix" "" ""
+  kopiermt "etc/postfix/$D" "etc/postfix" "" "" "" "" 1
 done;
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19

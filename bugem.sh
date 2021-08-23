@@ -34,13 +34,14 @@ kopiermt() { # mit test
   # $4 = Optionen 
 	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
+  # $7 = ob ohne Platzprüfung
   QV=${1%/};
 # Zielverzeichnis: wegen der rsync-Grammatik das letzte Verzeichnis von $1 noch an $2 anhängen, falls kein / am Schluss; erstes / streichen
   ZV=${2%/};case $1 in */);;*)ZV=$ZV/${1##*/};;esac;ZV=${ZV#/};
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
   echo ""
   echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT
-  printf "${blau}kopiermt $1 $2 $3 $4 $5 $6, QV: $QV, ZV: $ZV$reset\n";
+  printf "${blau}kopiermt $1 $2 $3 $4 $5 $6 $7, QV: $QV, ZV: $ZV$reset\n";
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
@@ -78,26 +79,30 @@ kopiermt() { # mit test
     diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
 #    printf "${blau}$diffbef$reset\n"
     if ! eval $diffbef; then
-      echo "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n$SDHIER und\n$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie abgebrochen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Achtung, Sicherheitswarnung von linux1 zu /$QV vor Kopie auf ${Z%/}!" diabetologie@dachau-mail.de
+      echo "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$Z$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${Q:-$LINEINS:} zu /$QV vor Kopie auf ${Z%:}!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
     fi
   }
-# Platz ausrechnen:
-  verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
-  printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
-# je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-  schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;: }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;: }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }"|cut -d$'\t' -f1|awk '{print $1*1024}')
-  printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-  zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||ssh $QoD du /$1 -maxd 0;: }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||du /$1 -maxd 0;: }"|cut -f1|awk '{print $1*1024}')
-  printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
-  rest=$(expr $verfueg - $zukop + $schonda);
-  printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
-  for E in $(echo $EX|sed 's/,/ /g');do
-    papz=$(test -d $Z/$ZV/$E && du $Z/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-    papq=$(ssh $QoD test -d $1/$E && ssh $QoD du $1/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-    rest=$(expr $rest - $papz + $papq);
-  done;
+  if [ "$7" ]; then
+    rest=1;
+  else
+  # Platz ausrechnen:
+    verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
+    printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
+  # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
+    schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;: }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;: }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }"|cut -d$'\t' -f1|awk '{print $1*1024}')
+    printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
+    zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||ssh $QoD du /$1 -maxd 0;: }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||du /$1 -maxd 0;: }"|cut -f1|awk '{print $1*1024}')
+    printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
+    rest=$(expr $verfueg - $zukop + $schonda);
+    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+    for E in $(echo $EX|sed 's/,/ /g');do
+      papz=$(test -d $Z/$ZV/$E && du $Z/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+      papq=$(ssh $QoD test -d $1/$E && ssh $QoD du $1/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+      rest=$(expr $rest - $papz + $papq);
+    done;
+  fi; # if [ "$7" ]
   if test $rest > 0; then
 		case $1 in *var/lib/mysql*)
 			echo stoppe mysql auf $Z
@@ -121,11 +126,11 @@ kopiermt() { # mit test
 }
 
 kopieros() {
-  kopiermt "root/$1" "root" "" "--exclude='.*.swp'"
+  kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1
 }
 
 kopieretc() {
-  kopiermt etc/$1 "etc/"
+  kopiermt etc/$1 "etc/" "" "" "" "" 1
 }
 
 # hier geht's los
