@@ -136,16 +136,14 @@ else
   ANDERER=$Q; # linux1
   Q=$Q:;
 fi;
-echo Q: $Q
-echo Z: $Z
 echo ANDERER: $ANDERER
 ping -c1 $ANDERER >/dev/null || exit;
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 echo Prot: $PROT
 echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
-ziel=${Z%:}
+ziel=${Z%:} # für bulinux.sh benötigt, nicht für butm.sh
 [ -z $ziel ]&&ziel=$HOSTK
-echo Q: $Q, Z: $Z ziel: $ziel
+echo Q: $Q, Z: $Z, ziel: $ziel
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh

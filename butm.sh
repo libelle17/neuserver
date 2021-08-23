@@ -1,4 +1,5 @@
 #!/bin/zsh
+MUPR="$0"; # Mutterprogramm
 . /root/bin/bugem.sh
 for Vz in PraxisDB StammDB DruckDB Dictionary; do
  wz="opt/turbomed"

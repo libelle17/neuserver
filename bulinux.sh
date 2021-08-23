@@ -1,4 +1,5 @@
 #!/bin/zsh
+MUPR="$0"; # Mutterprogramm
 . /root/bin/bugem.sh
 Dt=DATA; 
 ot=opt/turbomed
