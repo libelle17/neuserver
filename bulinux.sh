@@ -11,6 +11,10 @@ kopieros ".getmail"
 kopieros ".7zpassw"
 kopieros ".mysqlpwd"
 kopieros ".mysqlrpwd"
+kopiermt "etc/sysconfig/postfix" "etc/sysconfig" "" ""
+for D in main.cf master.cf sasl_passwd; do
+  kopiermt "etc/postfix/$D" "etc/postfix" "" ""
+done;
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19

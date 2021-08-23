@@ -78,6 +78,7 @@ kopiermt() { # mit test
     diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
 #    printf "${blau}$diffbef$reset\n"
     if ! eval $diffbef; then
+      echo "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n$SDHIER und\n$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie abgebrochen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Achtung, Sicherheitswarnung von linux1 zu /$QV vor Kopie auf ${Z%/}!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
     fi
