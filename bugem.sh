@@ -74,9 +74,9 @@ kopiermt() { # mit test
   verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
   printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
 # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-  schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;: }||{ stat \"/$ZV\" -c %s;: };: }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;: }||{ ssh ${Z%:} stat \"/$ZV\" -c %s;: };: }"|cut -d$'\t' -f1|awk '{print $1*1024}')
+  schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;: }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;: }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }"|cut -d$'\t' -f1|awk '{print $1*1024}')
   printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-  zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s;: }||ssh $QoD du /$1 -maxd 0;: }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s;: }||du /$1 -maxd 0;: }"|cut -f1|awk '{print $1*1024}')
+  zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||ssh $QoD du /$1 -maxd 0;: }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||du /$1 -maxd 0;: }"|cut -f1|awk '{print $1*1024}')
   printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
   rest=$(expr $verfueg - $zukop + $schonda);
   printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -86,7 +86,7 @@ kopiermt() { # mit test
     rest=$(expr $rest - $papz + $papq);
   done;
   if test $rest > 0; then
-    tue="$kopbef $Q/$1 \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
+    tue="$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
     echo $tue
     eval $tue
   else

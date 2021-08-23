@@ -13,7 +13,8 @@ kopieros "crontabakt"
 kopieros ".getmail"
 kopieros ".7zpassw"
 kopieros ".mysqlpwd"
-V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" $Q$V "$Z$V"
+kopieros ".mysqlrpwd"
+V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 mountpoint -q /$Dt || mount /$Dt;
@@ -85,7 +86,7 @@ if obalt "/$VLM/ibdata1" 86400; then
   fi;
 fi;
 echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
-
+echo Fertig
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
 # rsync $Q:/etc/samba $Q:/etc/hosts $Q:/etc/vsftpd*.conf $Q:/etc/my.cnf $Q:/etc/fstab $Z/etc/ -avuz # keine Anführungszeichen um den Stern!
