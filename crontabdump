@@ -70,20 +70,20 @@ ELG=/var/log/cronf.log
 -0 0 1 1 *    mountpoint -q "/DATA" && $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
 # mariadb-Datenbanken sichern
-#-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines dp  > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 23 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines depot  > /DATA/sql/depot--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines faxeinp  > /DATA/sql/faxeinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--45 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines fotosinp  > /DATA/sql/fotosinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines haerzte  > /DATA/sql/haerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines haerzte_neu  > /DATA/sql/haerzte_neu--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--55 19 1,15 * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines kvaerzte  > /DATA/sql/kvaerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines konten  > /DATA/sql/konten--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines programmstaende  > /DATA/sql/programmstaende--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines office  > /DATA/sql/office--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 2 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=UTF8 -c -C -K -B --routines quelle  > /DATA/sql/quelle--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines dp  > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-0 23 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines depot  > /DATA/sql/depot--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-30 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines faxeinp  > /DATA/sql/faxeinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-45 14,20 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines fotosinp  > /DATA/sql/fotosinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-50 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines haerzte  > /DATA/sql/haerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-50 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines haerzte_neu  > /DATA/sql/haerzte_neu--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-55 19 1,15 * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines kvaerzte  > /DATA/sql/kvaerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-15 22 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines konten  > /DATA/sql/konten--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-0 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines programmstaende  > /DATA/sql/programmstaende--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-30 21 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines office  > /DATA/sql/office--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+-15 2 * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines quelle  > /DATA/sql/quelle--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
-#-25 20 */10 * * mountpoint -q "/DATA" && /usr/bin/mysqldump -upraxis -psonne --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-25 20 */10 * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
 # Daten einmal taeglich von DATA nach DAT3 sichern
 -57 23 * * * Q=/DATA;Z=/DAT3;mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ $RBI/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/down***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};}

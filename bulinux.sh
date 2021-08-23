@@ -3,10 +3,7 @@ MUPR="$0"; # Mutterprogramm
 . /root/bin/bugem.sh
 Dt=DATA; 
 ot=opt/turbomed
-pd=/$ot/PraxisDB/objects.dat
-if obalt $pd 1800; then 
- kopiermt "$ot" "opt/" "" "$OBDEL"
-fi
+kopiermt "$ot" "opt/" "" "$OBDEL" PraxisDB/objects.dat 1800
 kopieros ".vim"
 kopieros ".smbcredentials"
 kopieros "crontabakt"
@@ -22,16 +19,13 @@ ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
-  if test $uverz = Praxis || test $ziel != linux7; then
+  if test $uverz = Praxis || test $ziel != linux7; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX -print0|while IFS= read -r -d '' inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
-     if obalt "$inbox" 604800; then 
-       [ "$sdneu" ]||echo $qverz zu alt
-       kopiermt $qverz/ $qverz "" -d;
-       break;
-     fi
+		 kopiermt $qverz/ $qverz "" -d "${inbox##/$qverz/}" 604800;
+		 break;
    done;
   fi;
  done;
@@ -52,41 +46,27 @@ fi;
 kopiermt "gerade" "/" "" "$OBDEL"
 kopiermt "ungera" "/" "" "$OBDEL"
 VLM="var/lib/mysql";
-if obalt "/$VLM/ibdata1" 86400; then 
-  [ "$sdneu" ]||{
-    echo stoppe mysql auf $Z
-    test -z "$Z"&&{ systemctl stop mysql;: }||ssh ${Z%:} systemctl stop mysql;
-    test -z "$Z"&&{ pkill -9 mysqld;: }||ssh ${Z%:} pkill -9 mysqld;
-    echo Fertig mit Stoppen von mysql
-  }
-  kopiermt "$VLM/" "${VLM}_1" "$OBDEL"
-  [ "$sdneu" ]||{
-    echo starte mysql auf $Z
-    test -z "$Z"&&{ systemctl start mysql;: }||ssh ${Z%:} systemctl start mysql;
-    echo Fertig mit Starten von mysql
-  }
-  [ "$sdneu" ]&&exit;
-  # kopieretc "openvpn" # auskommentiert 29.7.19
-  scp $PROT $ANDERER:/var/log/
-  if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
-   scp $PROT $ANDERER:/$Dt/
-  fi;
-  if [ $HOSTK/ != $LINEINS/ ]; then
-    NES=~/neuserver;
-    echo Rufe los.sh auf;
-    LOS=los.sh;
-    if test -d $NES -a -f $NES/$LOS; then
-      echo Rufe mysqlneu auf;
-      cd $NES;
-      sh $LOS mysqlneu -v;
-      cd -;
-      echo Fertig mit mysqlneu;
-    fi;
-    echo Fertig mit los.sh;
-  fi;
+kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" ibdata1 86400;
+# kopieretc "openvpn" # auskommentiert 29.7.19
+scp $PROT $ANDERER:/var/log/
+if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
+ scp $PROT $ANDERER:/$Dt/
+fi;
+if [ $HOSTK/ != $LINEINS/ ]; then
+	NES=~/neuserver;
+	echo Rufe los.sh auf;
+	LOS=los.sh;
+	if test -d $NES -a -f $NES/$LOS; then
+		echo Rufe mysqlneu auf;
+		cd $NES;
+		sh $LOS mysqlneu -v;
+		cd -;
+		echo Fertig mit mysqlneu;
+	fi;
+	echo Fertig mit los.sh;
 fi;
 echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
-echo Fertig
+echo Fertig;
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
 # rsync $Q:/etc/samba $Q:/etc/hosts $Q:/etc/vsftpd*.conf $Q:/etc/my.cnf $Q:/etc/fstab $Z/etc/ -avuz # keine Anführungszeichen um den Stern!
