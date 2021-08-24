@@ -1,30 +1,30 @@
 #!/bin/zsh
-# soll alle relevanten Datenen kopieren, fuer regelmaessigen Gebrauch
+# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
 
-# ob eine Datei auf dem Zielsystem alt genug ist zum Kopieren: $1= Dateipfad, $2= Mindestalter [s]
+# ob eine Datei auf dem Zielsystem alt genug ist zum Kopieren, aufgerufen aus kopiermt: $1= Dateipfad, $2= Mindestalter [s]
 obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
-	# wenn die Funktion 0 zurückliefert, wird in in "if obalt" verzweigt
-  [ "$sdneu" ]&&return 0;
-	faq=;
-  test -z $Z&&{ ssh $ANDERER stat "/$QV/$1" >/dev/null 2>&1||faq=1;: }||{ stat "/$QV/$1" >/dev/null 2>&1||faq=1;: }
+  [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
+	faq=; # <> "" = Datei fehlt auf Quelle
+  test -z $Z&&{ ssh $ANDERER stat "/$QV/$1" >/dev/null 2>&1||faq=1;:; }||{ stat "/$QV/$1" >/dev/null 2>&1||faq=1; }
 	[ "$faq" ]&& printf "${blau}/$QV/$1 ${rot}fehlt auf Quelle$reset\n";
-	faz=;
-  test -z $Z&&{ stat "/$ZV/$1" >/dev/null 2>&1||faq=1;: }||{ ssh $ANDERER stat "/$ZV/$1" >/dev/null 2>&1||faz=1;: }
+	faz=; # <> "" = Datei fehlt auf Ziel
+  test -z $Z&&{ stat "/$ZV/$1" >/dev/null 2>&1||faq=1;:; }||{ ssh $ANDERER stat "/$ZV/$1" >/dev/null 2>&1||faz=1; }
 	[ "$faq" ]&& printf "${blau}/$ZV/$1 ${rot}fehlt auf Ziel$reset\n";
 	[ "$faq" -o "$faz" ]&& return 0;
-  test -z $Z&&{ geaenq=$(ssh $ANDERER date +%s -r "/$QV/$1");: }||{ geaenq=$(date +%s -r "/$QV/$1");: }
+  test -z $Z&&{ geaenq=$(ssh $ANDERER date +%s -r "/$QV/$1");:; }||{ geaenq=$(date +%s -r "/$QV/$1"); }
   printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
-  test -z $Z&&{ geaenz=$(date +%s -r "/$ZV/$1");: }||{ geaenz=$(ssh $ANDERER date +%s -r "/$ZV/$1");: }
+  test -z $Z&&{ geaenz=$(date +%s -r "/$ZV/$1");:; }||{ geaenz=$(ssh $ANDERER date +%s -r "/$ZV/$1"); }
   printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
 #	geaenq=$(expr $geaenq + 2000);
   diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
 	ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
 #  ! awk "func abs(v){return v<0?-v:v}; BEGIN{ exit abs($alterdort-$alterhier)>$2 }";
   printf "Altersdifferenz $blau $diff ";if test $ret = 0; then printf ">="; else printf "<";fi; printf "$2$reset s\n";
+	# wenn die Funktion 0 zurückliefert, wird in in "if obalt" verzweigt
   return $ret;
-}
+} # obalt
 
 # kopiere mit Test auf ausreichenden Speicher
 kopiermt() { # mit test
@@ -45,7 +45,7 @@ kopiermt() { # mit test
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
-  EX="$3,Papierkorb,mnt";
+  EX="$3,Papierkorb/,mnt/";
 #  echo ZV: $ZV
 # falls nur die Schutzdatei überall etabliert werden soll
   [ "$sdneu" ]&&{
@@ -79,7 +79,7 @@ kopiermt() { # mit test
     diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
 #    printf "${blau}$diffbef$reset\n"
     if ! eval $diffbef; then
-      echo "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$Z$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${Q:-$LINEINS:} zu /$QV vor Kopie auf ${Z%:}!" diabetologie@dachau-mail.de
+      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$Z$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${Q:-$LINEINS:} zu /$QV vor Kopie auf ${Z%:}!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
     fi
@@ -91,9 +91,9 @@ kopiermt() { # mit test
     verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;: }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;: }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0;: };: }"|cut -d$'\t' -f1|awk '{print $1*1024}')
+    schonda=$(test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;:; }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0; };:; }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;:; }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0; };:; }|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||ssh $QoD du /$1 -maxd 0;: }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;: }||du /$1 -maxd 0;: }"|cut -f1|awk '{print $1*1024}')
+    zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;:; }||ssh $QoD du /$1 -maxd 0;:; }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;:; }||du /$1 -maxd 0; }"|cut -f1|awk '{print $1*1024}')
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -106,24 +106,25 @@ kopiermt() { # mit test
   if test $rest > 0; then
 		case $1 in *var/lib/mysql*)
 			echo stoppe mysql auf $Z
-			test -z "$Z"&&{ systemctl stop mysql;: }||ssh ${Z%:} systemctl stop mysql;
-			test -z "$Z"&&{ pkill -9 mysqld;: }||ssh ${Z%:} pkill -9 mysqld;
-			echo Fertig mit Stoppen von mysql;;
+			test -z "$Z"&&{ systemctl stop mysql;:; }||ssh ${Z%:} systemctl stop mysql;
+ 			test -z "$Z"&&{ pkill -9 mysqld;:; }||ssh ${Z%:} pkill -9 mysqld;
+			echo "Fertig mit Stoppen von mysql";;
 	  esac;
+    # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     tue="$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
     echo $tue
     eval $tue;
 		case $1 in *var/lib/mysql*)
 			echo starte mysql auf $Z;
-			test -z "$Z"&&{ systemctl start mysql;: }||ssh ${Z%:} systemctl start mysql;
-			echo Fertig mit Starten von mysql;;
+			test -z "$Z"&&{ systemctl start mysql;:; }||ssh ${Z%:} systemctl start mysql;
+			echo "Fertig mit Starten von mysql";;
 	  esac;
 		return 0;
   else
     echo Kopieren nicht begonnen, Speicherreserve: $rest
 		return 1;
   fi;
-}
+} # kopiermt
 
 kopieros() {
   kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1
