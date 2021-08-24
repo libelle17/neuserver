@@ -1,6 +1,7 @@
 #!/bin/zsh
+# soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
 MUPR="$0"; # Mutterprogramm
-. /root/bin/bugem.sh
+. ./bugem.sh
 for Vz in PraxisDB StammDB DruckDB Dictionary; do
  wz="opt/turbomed"
  kopiermt "$wz/$Vz" "$wz" "" "$OBDEL"

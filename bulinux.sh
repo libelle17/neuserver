@@ -1,6 +1,7 @@
 #!/bin/zsh
+# soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR="$0"; # Mutterprogramm
-. /root/bin/bugem.sh
+. ./bugem.sh
 Dt=DATA; 
 ot=opt/turbomed
 kopiermt "$ot" "opt/" "" "$OBDEL" PraxisDB/objects.dat 1800
@@ -25,7 +26,7 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
   if test $uverz = Praxis || test $ziel != linux7; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
-   find /$qverz -iname INBOX -print0|while IFS= read -r -d '' inbox; do
+   find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
 		 kopiermt $qverz/ $qverz "" -d "${inbox##/$qverz/}" 604800;
@@ -39,7 +40,7 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
   [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
   EXCL=${EXCL}"$A/,";
  done;
- EXCL=${EXCL}"TMBackloe,DBBackloe,sqlloe,TMExportloe,Thunderbird/Profiles";
+ EXCL=${EXCL}"TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19
