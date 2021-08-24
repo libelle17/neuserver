@@ -38,6 +38,7 @@ kompr.sh
 komprsql.sh
 logrotate.conf
 los.sh
+lwwarn.sh
 permissselten.sh
 rett.sh
 rverb.sh
