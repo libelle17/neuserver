@@ -242,4 +242,5 @@ ELG=/var/log/cronf.log
 -0 9 * * 1 ionice -c3 /usr/bin/auffaell
 -0,30 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ping -c1 linux0ur >/dev/null 2>&1&&{ for D in DATA var/spool/hylafax var/spool/capisuite var/spool/dicomneu var/spool/fbfax; do ionice -c3 nice -n19 rsync -avu --delete /$D/ linux0ur:/$D/;done;};
 -5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ping -c1 linux0ur >/dev/null 2>&1&&{ for D in DATA var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete /$D/ linux0ur:/${D}_1/;done;};
+0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
