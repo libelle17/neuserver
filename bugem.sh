@@ -4,7 +4,7 @@
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ $verb = 1 -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
 	if test "$3"; then 
     eval "$1"; 
   else 
@@ -122,7 +122,8 @@ kopiermt() { # mit test
     fi;
     diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
 #    printf "${blau}$diffbef$reset\n"
-    if ! ausf "$diffbef"; then
+    ausf "$diffbef";
+    if [ $ret/ != 0/ ]; then
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$Z$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${Q:-$LINEINS:} zu /$QV vor Kopie auf ${Z%:}!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
@@ -135,9 +136,9 @@ kopiermt() { # mit test
     verfueg=$(eval "test -z $Z&&df /${ZV%%/*}||ssh ${Z%:} df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    schonda=$(test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;:; }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0; };:; }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;:; }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0 0; };:; }|awk -F $'\t' '{print $1*1024}')
+    schonda=$(eval "test -z $Z&&{ [ -d \"/$ZV\" ]&&{ du \"/$ZV\" -maxd 0;:; }||{ stat \"/$ZV\" -c %s 2>/dev/null||echo 0; };:; }||{ ssh ${Z%:} [ -d \"/$ZV\" ]&&{ ssh ${Z%:} du \"/$ZV\" -maxd 0;:; }||{ ssh ${Z%:} stat \"/$ZV\" -c %s 2>/dev/null||echo 0; };:; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0 0;:; }||ssh $QoD du /$1 -maxd 0;:; }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0 0;:; }||du /$1 -maxd 0; }"|cut -f1|awk '{print $1*1024}')
+    zukop=$(eval "test -z $Z&&{ ssh $QoD [ -f \"/$1\" ]&&{ ssh $QoD stat \"/$1\" -c %s 2>/dev/null||echo 0;:; }||ssh $QoD du /$1 -maxd 0;:; }||{ [ -f \"/$1\" ]&&{ stat \"/$1\" -c %s 2>/dev/null||echo 0;:; }||du /$1 -maxd 0; }"|cut -f1|awk '{print $1*1024}')
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
