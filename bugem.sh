@@ -1,6 +1,55 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
 
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
+# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+ausf() {
+	[ $verb = 1 -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	if test "$3"; then 
+    eval "$1"; 
+  else 
+    resu=$(eval "$1"); 
+  fi;
+  ret=$?;
+  [ "$verb" ]&&{
+    printf "ret: $blau$ret$reset"
+    [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
+    printf "\n";
+  }
+} # ausf
+
+ausfd() {
+  ausf "$1" "$2" direkt;
+} # ausfd
+
+# Befehlszeilenparameter auswerten
+commandline() {
+  verb=;
+  obdel=;
+  sdneu=;
+	while [ $# -gt 0 ]; do
+   case "$1" in 
+     SD=*) sdneu=1;SDQ=${1##*SD=};SD=${1##*/};;
+     -*|/*)
+      para=$(echo "$1"|sed 's;^[-/];;');
+      case $para in
+        v|-verbose) verb=1;;
+        d) obdel=1;;
+      esac;
+      [ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";;
+     *)
+      Z=${1%%:*};; # z.B. linux0:
+   esac;
+   shift;
+	done;
+	if [ "$verb" ]; then
+		printf "obdel: $blau$obdel$reset\n";
+		printf "sdneu: $blau$sdneu$reset\n";
+		printf "SD: $blau$SD$reset\n";
+	fi;
+} # commandline
+
+
 # ob eine Datei auf dem Zielsystem alt genug ist zum Kopieren, aufgerufen aus kopiermt: $1= Dateipfad, $2= Mindestalter [s]
 obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
@@ -140,25 +189,14 @@ rot="\e[1;31m";
 reset="\033[0m";
 kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
-sdneu=;[ $# -ge 3 ]&&case $3 in SD=*) sdneu=1;SDQ=${3##*SD=};SD=${3##*/};; esac;
-[ "$sdneu" ]&&{
-  [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
-  sed -i.bak "/^SD=/c\\SD=\"$SD\"" "$0"
-  echo SD: $SD;
-  echo SDQ: $SDQ;
-  [ "$SD" ]||exit 0;
-}
 LINEINS=linux1;
 [ "$HOST" ]||HOST=$(hostname);
+commandline "$@"; # alle Befehlszeilenparameter übergeben
 HOSTK=${HOST%%.*}; # $HOST kurz, also z.B. linux1 anstatt linux1.site
 if [ $HOSTK/ = $LINEINS/ ]; then
-  if [ $# -lt 2 ]; then
-    printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-    exit;
-  fi;
   Q="";
   QoD=localhost; # Quelle ohne Doppelpunkt
-  Z=${2%%:*}; # z.B. linux0:
+#  Z=${2%%:*}; # z.B. linux0: # jetzt in commandline
   ANDERER=$Z; # z.B. linux0
   Z=$Z:;
 else
@@ -168,7 +206,19 @@ else
   ANDERER=$Q; # linux1
   Q=$Q:;
 fi;
-echo ANDERER: $ANDERER
+[ "$sdneu" ]&&{
+  [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
+  sed -i.bak "/^SD=/c\\SD=\"$SD\"" "$0"
+  echo SD: $SD;
+  echo SDQ: $SDQ;
+  [ "$SD" ]||exit 0;
+}
+if [ $HOSTK/ = $LINEINS/ -a "$Z/" = : ]; then
+  printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+  exit;
+fi;
+[ "$verb" ]&&echo ANDERER: $ANDERER
+exit
 ping -c1 $ANDERER >/dev/null || exit;
 [ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
