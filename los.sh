@@ -765,6 +765,7 @@ proginst() {
 	printf "${dblau}proginst$reset()\n"
   [ "$psuch" ]||{ echo psuch nicht zugewiesen, OSNR: $OSNR, breche ab; exit; }
 	# fehlende Programme installieren
+  # postfix, ist wohl schon datei
 	doinst htop;
 	doinst vsftpd;
 	doinst openssh;
@@ -884,6 +885,27 @@ proginst() {
   done;
   cd $VORVZ;
 } # proginst
+
+postfix() {
+# in /etc/postfix/master.cf eintragen oder unkommentieren:
+#  tlsmgr unix - - n 1000? 1 tlsmgr
+# in /etc/postfix/main.cf eintragen oder unkommentieren:
+#  inet_protocols = all
+#  relayhost = [smtp.gmail.com]:587
+#  smtp_sasl_auth_enable = yes
+#  smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+#  smtp_use_tls = yes
+#  smtp_tls_security_level = may
+#  smtp_tls_CAfile = /etc/ssl/ca-bundle.pem
+#  smtp_tls_CApath = /etc/postfix/ssl/cacerts
+#  smtp_tls_session_cache_database = btree:/var/lib/postfix/smtp_tls_session_cache
+#  relay_domains = $mydestination hash:/etc/postfix/relay # ohne Komma
+#  # always_bcc = mailarchive@localhost
+# in sasl_passwd ergänzen:
+#  [smtp.gmail.com]:587 meine.mail@gmail.com:meinpasswort
+# systemctl restart postfix
+# mail schicken mit: echo "Inhalt"|mail -s "Titel" an.wen@provider.com
+}
 
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
