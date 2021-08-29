@@ -24,9 +24,6 @@ ausfd() {
 
 # Befehlszeilenparameter auswerten
 commandline() {
-  verb=;
-  obdel=;
-  sdneu=;
 	while [ $# -gt 0 ]; do
    case "$1" in 
      SD=*) sdneu=1;SDQ=${1##*SD=};SD=${1##*/};;
@@ -109,10 +106,8 @@ kopiermt() { # mit test
         tue="scp -p \"$SDQ\" \"$Z/$QV/$SD\"";
         tu2="scp -p \"$SDQ\" \"/$ZV/$SD\"";
       fi
-      echo $tue;
-      eval $tue;
-      echo $tu2;
-      eval $tu2;
+      ausf "$tue";
+      ausf "$tu2";
     }
     return 0;
   }
@@ -127,7 +122,7 @@ kopiermt() { # mit test
     fi;
     diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
 #    printf "${blau}$diffbef$reset\n"
-    if ! eval $diffbef; then
+    if ! ausf "$diffbef"; then
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$Z$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${Q:-$LINEINS:} zu /$QV vor Kopie auf ${Z%:}!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
@@ -160,9 +155,7 @@ kopiermt() { # mit test
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
-    tue="$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
-    echo $tue
-    eval $tue;
+    ausf "$kopbef \"$Q/$1\" \"$Z/$2\" $4 -avu --rsync-path=\"$kopbef\" --exclude={""$EX""}";
 		case $1 in *var/lib/mysql*)
 			echo starte mysql auf $Z;
 			test -z "$Z"&&{ systemctl start mysql;:; }||ssh ${Z%:} systemctl start mysql;
@@ -191,6 +184,9 @@ kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
 [ "$HOST" ]||HOST=$(hostname);
+verb=;
+obdel=;
+sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 HOSTK=${HOST%%.*}; # $HOST kurz, also z.B. linux1 anstatt linux1.site
 if [ $HOSTK/ = $LINEINS/ ]; then
@@ -217,15 +213,14 @@ if [ $HOSTK/ = $LINEINS/ -a "$Z/" = : ]; then
   printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
   exit;
 fi;
-[ "$verb" ]&&echo ANDERER: $ANDERER
-exit
+[ "$verb" ]&&echo ANDERER: $blau$ANDERER$reset
 ping -c1 $ANDERER >/dev/null || exit;
-[ "$1"/ = -d/ ]&&OBDEL="--delete"||OBDEL="";
+[ "$obdel" ]&&OBDEL="--delete"||OBDEL="";
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
-echo Prot: $PROT
-echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
+[ "$verb" ]&&echo Prot: $PROT
+[ "$verb" ]&&echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 ziel=${Z%:} # für bulinux.sh benötigt, nicht für butm.sh
 [ -z $ziel ]&&ziel=$HOSTK
-echo Q: $Q, Z: $Z, ziel: $ziel
+[ "$verb" ]&&echo Q: $Q, Z: $Z, ziel: $ziel
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
