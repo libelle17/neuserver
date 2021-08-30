@@ -905,6 +905,7 @@ postfix() {
 #  [smtp.gmail.com]:587 meine.mail@gmail.com:meinpasswort
 # systemctl restart postfix
 # mail schicken mit: echo "Inhalt"|mail -s "Titel" an.wen@provider.com
+ echo postfix muss noch geschrieben werden;
 }
 
 bildschirm() {
