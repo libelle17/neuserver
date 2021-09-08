@@ -16,7 +16,7 @@ kopiermt "etc/sysconfig/postfix" "etc/sysconfig" "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
   kopiermt "etc/postfix/$D" "etc/postfix" "" "" "" "" 1
 done;
-V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"
+V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$ZL$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 mountpoint -q /$Dt || mount /$Dt;
@@ -24,7 +24,7 @@ ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
-  if test $uverz = Praxis || test $ziel != linux7; then # wegen Speicherplatz auf linux7
+  if test $uverz = Praxis || test $ZoD != linux7; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
@@ -34,14 +34,15 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
    done;
   fi;
  done;
- for A in Patientendokumente turbomed shome eigene\\\ Dateien sql TMBack rett down DBBack ifap vontosh Oberanger att; do
+ for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
   auslass=;
-  [ $ziel = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
+  [ $ZoD = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
   [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
   EXCL=${EXCL}"$A/,";
  done;
  EXCL=${EXCL}"TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/";
- kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
+# kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
+ kopiermt "$Dt" "" "" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19
 # kopieretc "hosts" # hier muesste noch eine Zeile geaendert werden!
@@ -74,4 +75,4 @@ echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
 echo Fertig;
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
-# rsync $Q:/etc/samba $Q:/etc/hosts $Q:/etc/vsftpd*.conf $Q:/etc/my.cnf $Q:/etc/fstab $Z/etc/ -avuz # keine Anführungszeichen um den Stern!
+# rsync $QL:/etc/samba $QL:/etc/hosts $QL:/etc/vsftpd*.conf $QL:/etc/my.cnf $QL:/etc/fstab $ZL/etc/ -avuz # keine Anführungszeichen um den Stern!

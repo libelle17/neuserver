@@ -12,5 +12,5 @@ ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL"
 fi;
-P=Patientendokumente
-kopiermt "$Dt/$P/eingelesen" "$Dt/$P/" "" "$OBDEL"
+Pt=Patientendokumente
+kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL"

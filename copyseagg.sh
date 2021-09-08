@@ -1,40 +1,62 @@
 #!/bin/zsh
-PNAME=Seagate\ Expansion\ Drive
-logf=/var/log/$PNAME.log
-#Z=/mnt/seag
-Z=/mnt/SeagateBackupPlusDrive
-Q=""
-blau="\e[1;34m";
-dblau="\e[0;34;1;47m";
-rot="\e[1;31m";
-reset="\e[0m";
+USB=Seagate\ Expansion\ Drive
+logf=/var/log/$USB.log
+#ZoD=/mnt/seag
+ZoD=/mnt/SeagateBackupPlusDrive
+MUPR="$0"; # Mutterprogramm
+. ./bugem.sh
+if false; then
+mountpoint -q "$ZoD" || mount "$ZoD"
+echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
+kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
+kopiermt "DATA/shome/gerald/Schade/sz" ... "" --delete
+kopiermt "DATA/turbomed" ... "" --delete
+kopiermt "DATA/rett/ungera" ... "" --delete
+kopiermt "DATA/Patientendokumente" ... "plz/" "--delete --iconv=latin1,utf8"
+kopiermt "DATA/eigene Dateien/DM" ... "" --delete
+kopiermt "DATA/eigene Dateien/TMExport" ... "" --delete
+kopiermt "shome/gerald/Schade" ... "" --delete
+kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
+kopiermt "DATA/eigene Dateien/Angiologie" ... "" --delete
+kopiermt "opt/turbomed" ... "netsetupalt/" "--delete --iconv=latin1,utf8"
+kopiermt "DATA/down" ... "" --delete
+kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete --iconv=latin1,utf8"
+fi;
+kopiermt "var/spool/hylafax" ... "" --delete
+kopiermt "root/.vim" ... "" --delete
+kopiermt "root/.smbcredentials" ... "" --delete
+echo Schluss erstmal
+exit
 
 tukopier() {
   printf "${blau}tukopier()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c3 nice -n19 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
+  mountpoint -q "$ZoD"||{ echo "$ZoD" nicht gemountet; exit;}&& ionice -c3 nice -n19 rsync -avu --delete "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 tukopierol() {
   printf "${blau}tukopierol()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  mountpoint -q "$Z"||{ echo "$Z" nicht gemountet; exit;}&& ionice -c3 nice -n19 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
+  mountpoint -q "$ZoD"||{ echo "$ZoD" nicht gemountet; exit;}&& ionice -c3 nice -n19 rsync -avu --iconv=utf8,latin1 "$1/" "$2" --exclude "$3" --exclude "$4" --exclude "$5" --exclude "$6" --exclude "$7" --exclude "$8" --exclude "$9" --exclude "$10" --exclude "$11" --exclude "$12" --exclude "$13"
   echo `date +"%d.%m.%Y %X"` "Fertig mit: " "$1" >>"$logf"
 }
 
 datakopier() {
   printf "${blau}datakopier()${reset} 1: ${blau}$1${reset} 2: ${blau}$2${reset}\n"
-  tukopier "/DATA/$1" "$Z/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe" "$2" "$3" "$4" "$5" "$6"
+  tukopier "/DATA/$1" "$ZoD/DATA/$1" "Papierkorb" "ausgelagert" "DBBackloe" "TMBackloe" "sqlloe" "$2" "$3" "$4" "$5" "$6"
 }
 
-# mountpoint -q "$Z" && umount $Z
-# mountpoint -q "$Z" || mount `fdisk -l 2>/dev/null | grep '  2048' | grep NTFS | cut -f1 -d' '` $Z -t ntfs-3g -O users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail
-# mountpoint -q "$Z" || mount $Z
-mountpoint -q "$Z" || mount "$Z"
+# mountpoint -q "$ZoD" && umount $ZoD
+# mountpoint -q "$ZoD" || mount `fdisk -l 2>/dev/null | grep '  2048' | grep NTFS | cut -f1 -d' '` $ZoD -t ntfs-3g -O users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail
+# mountpoint -q "$ZoD" || mount $ZoD
+if false; then
+mountpoint -q "$ZoD" || mount "$ZoD"
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
 datakopier "shome/gerald/Schade/sz"
 datakopier "turbomed"
 datakopier "rett/ungera"
+fi;
 datakopier "Patientendokumente" "plz"
+exit
 datakopier "eigene Dateien/QZ"
 datakopier "eigene Dateien/TMExport"
 datakopier "shome/gerald/Schade"
@@ -42,30 +64,30 @@ datakopier "Patientendokumente/plz"
 datakopier "Patientendokumente/Schade zu benennen"
 datakopier "eigene Dateien/Angiologie"
 datakopier "eigene Dateien/DM"
-tukopier "/opt/turbomed" "$Z/turbomed" "netsetupalt" "Papierkorb"
+tukopier "/opt/turbomed" "$ZoD/turbomed" "netsetupalt" "Papierkorb"
 datakopier "down/cpp"
-tukopier "/var/spool/fax" "$Z/varspoolfax" 
-tukopier "/root/bin" "$Z/root/bin" "*.swp" "Papierkorb"
-mkdir -p $Z/root
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/root/.vimrc $Q/root/.smbcredentials $Q/root/crontabakt $Q/root/.getmail $Q/root/.mysqlpwd $Q/root/.7zpassw $Q/root/bin $Z/root/ -avu --exclude ".*.swp"
-mkdir -p $Z/etc
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/etc/samba $Q/etc/hosts $Q/etc/vsftpd*.conf $Q/etc/my.cnf $Q/etc/fstab $Z/etc/ -avu # keine Anführungszeichen um den Stern!
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu $Q/obsl* $Q/gerade $Q/ungera $Z/ # 
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/etc/openvpn $Z/etc -avu 
-mountpoint -q "$Z" && ionice -c3 nice -n19 mkdir -p $Z/etc/profile.d
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu --include gs_openssl101g.sh --exclude "*" /etc/profile.d/ $Z/etc/profile.d
-mkdir -p $Z/var
-mkdir -p $Z/var/lib
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/var/lib/mysql $Z/var/lib/ -avu --delete
+tukopier "/var/spool/fax" "$ZoD/varspoolfax" 
+tukopier "/root/bin" "$ZoD/root/bin" "*.swp" "Papierkorb"
+mkdir -p $ZoD/root
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/root/.vimrc $QL/root/.smbcredentials $QL/root/crontabakt $QL/root/.getmail $QL/root/.mysqlpwd $QL/root/.7zpassw $QL/root/bin $ZoD/root/ -avu --exclude ".*.swp"
+mkdir -p $ZoD/etc
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/etc/samba $QL/etc/hosts $QL/etc/vsftpd*.conf $QL/etc/my.cnf $QL/etc/fstab $ZoD/etc/ -avu # keine Anführungszeichen um den Stern!
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync -avu $QL/obsl* $QL/gerade $QL/ungera $ZoD/ # 
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/etc/openvpn $ZoD/etc -avu 
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 mkdir -p $ZoD/etc/profile.d
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync -avu --include gs_openssl101g.sh --exclude "*" /etc/profile.d/ $ZoD/etc/profile.d
+mkdir -p $ZoD/var
+mkdir -p $ZoD/var/lib
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/var/lib/mysql $ZoD/var/lib/ -avu --delete
 datakopier "shome/gerald"
 datakopier "eigene Dateien/QZ"
 datakopier "eigene Dateien/Angiologie"
-# tukopierol "$Z/RUECK/bin" "/root/bin" "*.swp" "Papierkorb" # auskommentiert 1.5.19
+# tukopierol "$ZoD/RUECK/bin" "/root/bin" "*.swp" "Papierkorb" # auskommentiert 1.5.19
 chmod 770 -R /root/bin/*
 chown root:praxis -R /root/bin/*
-# tukopierol "$Z/RUECK/cpp" "/DATA/down/cpp" "*.swp" "Papierkorb" # auskommentiert 1.5.19
+# tukopierol "$ZoD/RUECK/cpp" "/DATA/down/cpp" "*.swp" "Papierkorb" # auskommentiert 1.5.19
 datakopier "eigene Dateien/Programmierung"
-tukopier "/root" "$Z/root" "*.swp" "Papierkorb"
+tukopier "/root" "$ZoD/root" "*.swp" "Papierkorb"
 datakopier "eigene Dateien/Programmierung/VS08"
 datakopier "down/neu"
 datakopier "down"
@@ -75,5 +97,5 @@ datakopier "ungera"
 datakopier "gerade"
 datakopier "Mail"
 datakopier ""
-# tukopier "/DATA/Papierkorb" "$Z/DATA/Papierkorb"
-# mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu --delete /opt/turbomed/ $Z/turbomed --excbude Papierkorb # ist schon in /DATA/rett/turbomed
+# tukopier "/DATA/Papierkorb" "$ZoD/DATA/Papierkorb"
+# mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync -avu --delete /opt/turbomed/ $ZoD/turbomed --excbude Papierkorb # ist schon in /DATA/rett/turbomed
