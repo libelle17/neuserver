@@ -163,7 +163,8 @@ kopiermt() { # mit test
     schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
     [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
-    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du \"/$QV\" -maxd 0;"|cut -f1|awk '{print $1*1024}')
+    QVobs=$(echo "$QV"|sed 's/\\//g');
+    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du \"/$QVobs\" -maxd 0;"|cut -f1|awk '{print $1*1024}')
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
