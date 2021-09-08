@@ -187,10 +187,9 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
-    [ "$QL" ]&&Quelle=\"$QL$(echo $QVofs|sed 's/\\\\//')\"||Quelle=$QVofs;
-    echo Quelle: $Quelle
+    Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
-    [ -d "$QL/$QV" ]&&EXINT=${EXINT},$QL/$QV/;
+    [ -d "$QL/$QVofs" ]&&EXINT=${EXINT},$QL/$QVofs/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obssh systemctl start mysql";
