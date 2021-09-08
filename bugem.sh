@@ -160,10 +160,10 @@ kopiermt() { # mit test
     verfueg=$(eval "$obssh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat \$(echo \"/$ZV\"|sed 's/\\//') -c %s 2>/dev/null||echo 1; }"|awk -F $'\t' '{print $1*1024}')
+    schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
     [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
-    zukop=$(eval "$obssh [ -f "/$QV" ]&&{ $obssh stat /$QV -c %s 2>/dev/null||echo 0;:; }||$obssh du /$QV -maxd 0;"|cut -f1|awk '{print $1*1024}') # keine Anführungszeichen um /$1!
+    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du \"/$QV\" -maxd 0;"|cut -f1|awk '{print $1*1024}')
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -187,7 +187,9 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
-    ausf "$kopbef $QL/$QVofs \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
+    [ "$QL" ]&&Quelle=\"$QL$(echo $QVofs|sed 's/\\\\//')\"||Quelle=$QVofs;
+    echo Quelle: $Quelle
+    ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
     [ -d "$QL/$QV" ]&&EXINT=${EXINT},$QL/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
