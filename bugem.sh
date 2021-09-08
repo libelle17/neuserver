@@ -163,8 +163,7 @@ kopiermt() { # mit test
     schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
     [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
-    QVobs=$(echo "$QV"|sed 's/\\//g');
-    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du \"/$QVobs\" -maxd 0;"|cut -f1|awk '{print $1*1024}')
+    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du \'/$QV\' -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -190,7 +189,8 @@ kopiermt() { # mit test
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
     Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
-    [ -d "$QL/$QVofs" ]&&EXINT=${EXINT},$QL/$QVofs/;
+    [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
+    eval "$obssh [ -d \"/$QV\" ]"&&EXINT=${EXINT},/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obssh systemctl start mysql";
