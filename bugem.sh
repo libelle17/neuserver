@@ -156,17 +156,14 @@ kopiermt() { # mit test
     rest=1;
   else
   # Platz ausrechnen:
-  [ "$USB" -o -z $ZL ]&&{ obssh=; QVa=$QV;:; }||{ obssh="ssh $ZoD"; QVa=$(echo $QV|sed 's/\\/\\\\\\/g'); };
+  [ "$USB" -o -z $ZL ]&&{ obssh=; QVa=$QV;:; }||{ obssh="ssh $ZoD"; };
     verfueg=$(eval "$obssh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
     schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
-    echo QV: $QV
-    echo QVa: $QVa
-    echo obssh: $obssh
-    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du /$QV -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
+    [ "$USB" -o "$ZL" ]&&{ obssh=; QVa=/$QV;:; }||{ obssh="ssh $QoD"; QVa=\'/$QV\'; }
+    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -193,7 +190,10 @@ kopiermt() { # mit test
     Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
     [ "$USB" -o "$ZL" ]&&obssh=||obssh="ssh $QoD";
-    eval "$obssh [ -d \"/$QV\" ]"&&EXINT=${EXINT},/$QV/;
+    echo Quelle: $Quelle
+    echo /QV: /$QV
+    echo obssh: $obssh
+    eval "$obssh [ -d /$QV ]"&&EXINT=${EXINT},/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obssh systemctl start mysql";
