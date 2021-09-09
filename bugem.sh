@@ -89,8 +89,6 @@ kopiermt() { # mit test
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QV=${QVofs%/}; # Quellverzeichnis (ohne slashes)
-  echo QVofs: $QVofs;
-  echo QV: $QV;
 # Zielverzeichnis: wegen der rsync-Grammatik das letzte Verzeichnis von $1 noch an $2 anhängen, falls kein / am Schluss; erstes / streichen
   if [ "$USB" ]; then
     ZV=$(echo $ZL/$QV|sed 's/\([^\\]\) /\1\\ /g');
