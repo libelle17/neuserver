@@ -87,14 +87,16 @@ kopiermt() { # mit test
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # $7 = ob ohne Platzprüfung
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
-  QVofs=${1#/}; # Quellverzeichnis ohne führenden slash
+  QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QV=${QVofs%/}; # Quellverzeichnis (ohne slashes)
+  echo QVofs: $QVofs;
+  echo QV: $QV;
 # Zielverzeichnis: wegen der rsync-Grammatik das letzte Verzeichnis von $1 noch an $2 anhängen, falls kein / am Schluss; erstes / streichen
   if [ "$USB" ]; then
-    ZV=$ZL/$QV;
+    ZV=$(echo $ZL/$QV|sed 's/\([^\\]\) /\1\\ /g');
   else
-    ZV=${2%/};
-    case $1 in */);;*)ZV=$ZV/${1##*/};;esac;
+    ZV=$(echo ${2%/}|sed 's/\([^\\]\) /\1\\ /g');
+    case $QVofs in */);;*)ZV=$ZV/${1##*/};;esac;
   fi;
   ZV=${ZV#/};
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
@@ -109,16 +111,18 @@ kopiermt() { # mit test
   EXAKT=;
   while [ "$EXREST" ]; do
     EXHIER=$(readlink -f ${EXREST##*,}); EXREST=${EXREST%,*};
-    case $EXHIER in $(readlink -f /$1)*) EXAKT="$EXAKT,$EXHIER";; esac;
+    case $EXHIER in $(readlink -f /$QVofs)*) EXAKT="$EXAKT,$EXHIER";; esac;
   done;
   EX="$3$EXAKT$EXFEST";
 # falls nur die Schutzdatei überall etabliert werden soll
   [ "$sdneu" -a ! -f "/$ZV" ]&&{
     # beim Kopieren einzelner Dateien hierauf verzichten
-    [ ! -f /$ZV -a ! -f "/$QV" ]&&{
+    echo ZV: $ZV
+    echo QV: $QV
+    [ ! -f "/$ZV" -a ! -f "/$QV" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       if [ "$USB" ]; then
-        tue="cp -a \"$SDQ\" \"/$QV/$SD\"";
+        tue="cp -a \"$SDQ\" /$QV/$SD";
         mkdir -p /$ZV;
         tu2="cp -a \"$SDQ\" /$ZV/$SD";
       elif [ "$ZL" ]; then
@@ -145,7 +149,7 @@ kopiermt() { # mit test
       SDDORT=/$QV/$SD
     fi;
     if [ "$USB" ]; then
-      diffbef="diff \"$SDHIER\" \"$SDDORT\" 2>/dev/null";
+      diffbef="diff $SDHIER $SDDORT 2>/dev/null";
     else
       diffbef="ssh $ANDERER \"cat $SDDORT\" 2>/dev/null| diff - $SDHIER 2>/dev/null";
     fi;
@@ -189,7 +193,7 @@ kopiermt() { # mit test
       eval "$obssh pkill -9 mysqld";
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
-    [ "$2" = ... ]&&case $1 in */)ZVK=$1;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
+    [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
