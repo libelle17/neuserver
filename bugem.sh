@@ -104,8 +104,14 @@ kopiermt() { # mit test
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
-  [ "$EXINT" ]||EXINT=",Papierkorb/,mnt/";
-  EX="$3$EXINT";
+  EXFEST=",Papierkorb/,mnt/";
+  EXREST=$EXGES;
+  EXAKT=;
+  while [ "$EXREST" ]; do
+    EXHIER=$(readlink -f ${EXREST##*,}); EXREST=${EXREST%,*};
+    case $EXHIER in $(readlink -f /$1)*) EXAKT="$EXAKT,$EXHIER";; esac;
+  done;
+  EX="$3$EXAKT$EXFEST";
 # falls nur die Schutzdatei überall etabliert werden soll
   [ "$sdneu" -a ! -f "/$ZV" ]&&{
     # beim Kopieren einzelner Dateien hierauf verzichten
@@ -190,7 +196,7 @@ kopiermt() { # mit test
     Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
     [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obssh=||obssh="ssh $QoD";
-		eval "$obssh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXINT=${EXINT},/$QV/;
+		eval "$obssh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obssh systemctl start mysql";
