@@ -109,7 +109,7 @@ kopiermt() { # mit test
   EXAKT=;
   while [ "$EXREST" ]; do
     EXHIER=$(readlink -f ${EXREST##*,}); EXREST=${EXREST%,*};
-    case $EXHIER in $(readlink -f /$QVofs)*) EXAKT="$EXAKT,$EXHIER";; esac;
+    case $EXHIER in $(readlink -f /$QVofs)*) EXAKT="$EXAKT,${EXHIER%/}/";; esac;
   done;
   EX="$3$EXAKT$EXFEST";
 # falls nur die Schutzdatei überall etabliert werden soll
@@ -196,7 +196,10 @@ kopiermt() { # mit test
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
     Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
+    altverb=$verb;
+    verb=1;
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
+    verb=$altverb;
     [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obssh=||obssh="ssh $QoD";
 		eval "$obssh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QV/;
 		case $QV in *var/lib/mysql*)
