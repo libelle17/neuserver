@@ -193,7 +193,7 @@ kopiermt() { # mit test
     echo Quelle: $Quelle
     echo /QV: /$QV
     echo obssh: $obssh
-    eval "$obssh [ -d /$QV ]"&&EXINT=${EXINT},/$QV/;
+		eval "$obssh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXINT=${EXINT},/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obssh systemctl start mysql";
