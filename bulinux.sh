@@ -4,8 +4,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 Dt=DATA; 
 [ "$ZoD/" = linux7 ]&&obkurz=1||obkurz=;
+kopiermt "var/spool" ... "" "" "" "" 1
 kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-kopiermt "var/spool/hylafax" ... "" "" "" "" 1
 kopieros ".vim"
 kopieros ".smbcredentials"
 kopieros "crontabakt"

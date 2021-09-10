@@ -52,7 +52,7 @@ commandline() {
 obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
-  DaQ="/$QV/${1#/}";
+  DaQ="/$QVos/${1#/}";
   DaZ="/$ZV/${1#/}";
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
@@ -94,7 +94,7 @@ kopiermt() { # mit test
   if [ "$USB" ]; then
     ZV=$(echo $ZL/$QVos|sed 's/\([^\\]\) /\1\\ /g');
   else
-    ZV=$(echo ${2%/}|sed 's/\([^\\]\) /\1\\ /g');
+    ZV=$(echo ${ZVK%/}|sed 's/\([^\\]\) /\1\\ /g');
     case $QVofs in */);;*)ZV=$ZV/${1##*/};;esac;
   fi;
   ZV=${ZV#/};
