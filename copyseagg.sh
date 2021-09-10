@@ -3,8 +3,8 @@ USB=Seagate\ Expansion\ Drive
 logf=/var/log/$USB.log
 #ZoD=/mnt/seag
 ZoD=/mnt/SeagateBackupPlusDrive
-MUPR="$0"; # Mutterprogramm
-. $(readlink -f ${0%/*})/bugem.sh
+MUPR=$(readlink -f $0); # Mutterprogramm
+. ${MUPR%/*}/bugem.sh
 mountpoint -q "$ZoD" || mount "$ZoD"
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
 kopiermt "DATA/down" ... "" "--delete --iconv=latin1,utf8"
