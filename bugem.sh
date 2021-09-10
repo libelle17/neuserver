@@ -56,17 +56,17 @@ obalt() {
   DaZ="/$ZV/${1#/}";
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
-  [ "$USB" -o "$ZL" -o $ANDERER/ = localhost/ ]&&obssh=||obssh="ssh $ANDERER";
-  eval "$obssh stat \"$DaQ\" >/dev/null 2>&1||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
+  [ "$USB" -o "$ZL" -o $ANDERER/ = localhost/ ]&&obsh=||obsh="ssh $ANDERER";
+  eval "$obsh stat \"$DaQ\" >/dev/null 2>&1||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
 	faz=; # <> "" = Datei fehlt auf Ziel
-  [ "$USB" -o -z "$ZL" -o $ANDERER/ = localhost/ ]&&obssh=||obssh="ssh $ANDERER";
-  eval "$obssh stat \"$DaZ\" >/dev/null 2>&1||{ faz=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
+  [ "$USB" -o -z "$ZL" -o $ANDERER/ = localhost/ ]&&obsh=||obsh="ssh $ANDERER";
+  eval "$obsh stat \"$DaZ\" >/dev/null 2>&1||{ faz=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
 	[ "$faq" -o "$faz" ]&& return 0;
-  [ "$USB" -o "$ZL" -o $ANDERER/ = localhost/ ]&&obssh=||obssh="ssh $ANDERER";
-  eval "geaenq=\$($obssh date +%s -r \"$DaQ\")";
+  [ "$USB" -o "$ZL" -o $ANDERER/ = localhost/ ]&&obsh=||obsh="ssh $ANDERER";
+  eval "geaenq=\$($obsh date +%s -r \"$DaQ\")";
   printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
-  [ "$USB" -o -z "$ZL" -o $ANDERER/ = localhost/ ]&&obssh=||obssh="ssh $ANDERER";
-  eval "geaenz=\$($obssh date +%s -r \"$DaZ\")";
+  [ "$USB" -o -z "$ZL" -o $ANDERER/ = localhost/ ]&&obsh=||obsh="ssh $ANDERER";
+  eval "geaenz=\$($obsh date +%s -r \"$DaZ\")";
   printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
 #	geaenq=$(expr $geaenq + 2000);
   diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
@@ -79,7 +79,7 @@ obalt() {
 
 # kopiere mit Test auf ausreichenden Speicher
 kopiermt() { # mit test
-  # $1 = Verzeichnis auf Quelle, mit "\ " statt Leerzeichen
+  # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
   # $3 = excludes
   # $4 = Optionen 
@@ -100,7 +100,7 @@ kopiermt() { # mit test
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
   echo ""
   echo `date +%Y:%m:%d\ %T` "vor /$QV" >> $PROT
-  printf "${blau}kopiermt $1 $2 $3 $4 $5 $6 $7, QL: $QL, /QV: /$QV, ZL: $ZL, /ZV: /$ZV$reset\n";
+  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QV: /$QV, ZL: $ZL, /ZV: /$ZV$reset\n";
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
@@ -125,7 +125,7 @@ kopiermt() { # mit test
         tu2="cp -a \"$SDQ\" /$ZV/$SD";
       elif [ "$ZL" ]; then
         tue="scp -p \"$SDQ\" /$QV/$SD";
-        ssh "$ZL" mkdir -p /$ZV;
+        ssh "$ZoD" mkdir -p /$ZV;
         tu2="scp -p \"$SDQ\" $ZL/$ZV/$SD";
       else
         tue="scp -p \"$SDQ\" \"$ZL/$QV/$SD\"";
@@ -164,31 +164,31 @@ kopiermt() { # mit test
     rest=1;
   else
   # Platz ausrechnen:
-  [ "$USB" -o -z $ZL -o $ZoD/ = localhost/ ]&&{ obssh=; QVa=$QV;:; }||{ obssh="ssh $ZoD"; };
-    verfueg=$(eval "$obssh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
+  [ "$USB" -o -z $ZL -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QV;:; }||{ obsh="ssh $ZoD"; };
+    verfueg=$(eval "$obsh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    schonda=$(eval "$obssh [ -d \"/$ZV\" ]&&{ $obssh du \"/$ZV\" -maxd 0;:; }||{ $obssh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
+    schonda=$(eval "$obsh [ -d \"/$ZV\" ]&&{ $obsh du \"/$ZV\" -maxd 0;:; }||{ $obsh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&{ obssh=; QVa=/$QV;:; }||{ obssh="ssh $QoD"; QVa=\'/$QV\'; }
-    zukop=$(eval "$obssh [ -f \"/$QV\" ]&&{ $obssh stat /$QV -c %s ||echo 0;:; }||$obssh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
+    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&{ obsh=; QVa=/$QV;:; }||{ obsh="ssh $QoD"; QVa=\'/$QV\'; }
+    zukop=$(eval "$obsh [ -f \"/$QV\" ]&&{ $obsh stat /$QV -c %s ||echo 0;:; }||$obsh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
     for E in $(echo $EX|sed 's/,/ /g');do
       E=${E#/};
       papz=$(test -d "$ZL/$ZV/$E" && du $ZL/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-      [ "$USB" -o -z $ZL -o $QoD/ = localhost/ ]&&obssh=||obssh="ssh $QoD";
-      papq=$($obssh test -d "/$QV/$E" && $obssh du /$QV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+      [ "$USB" -o -z $ZL -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
+      papq=$($obsh test -d "/$QV/$E" && $obsh du /$QV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
       rest=$(expr $rest - $papz + $papq);
     done;
   fi; # if [ "$7" ]
   if test $rest > 0; then
-    [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obssh=||obssh="ssh $ZoD";
+    [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD";
 		case $QV in *var/lib/mysql*)
 			echo stoppe mysql auf $ZL;
-			eval "$obssh systemctl stop mysql";
-      eval "$obssh pkill -9 mysqld";
+			eval "$obsh systemctl stop mysql";
+      eval "$obsh pkill -9 mysqld";
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
     [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
@@ -200,11 +200,11 @@ kopiermt() { # mit test
     verb=1;
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
     verb=$altverb;
-    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obssh=||obssh="ssh $QoD";
-		eval "$obssh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QV/;
+    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
+		eval "$obsh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QV/;
 		case $QV in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
-			eval "$obssh systemctl start mysql";
+			eval "$obsh systemctl start mysql";
 			echo "Fertig mit Starten von mysql";;
 	  esac;
 		return 0;

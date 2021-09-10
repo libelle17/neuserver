@@ -3,18 +3,19 @@
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 Dt=DATA; 
-ot=opt/turbomed
-kopiermt "$ot" "opt/" "" "$OBDEL" PraxisDB/objects.dat 1800
-kopieros ".vim" "" "" "" "" "" 1
-kopieros ".smbcredentials" "" "" "" "" "" 1
-kopieros "crontabakt" "" "" "" "" "" 1
-kopieros ".getmail" "" "" "" "" "" 1
-kopieros ".7zpassw" "" "" "" "" "" 1
-kopieros ".mysqlpwd" "" "" "" "" "" 1
-kopieros ".mysqlrpwd" "" "" "" "" "" 1
-kopiermt "etc/sysconfig/postfix" "etc/sysconfig" "" "" "" "" 1
+[ "$ZoD/" = linux7 ]&&obkurz=1||obkurz=;
+kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
+kopiermt "var/spool/hylafax" ... "" "" "" "" 1
+kopieros ".vim"
+kopieros ".smbcredentials"
+kopieros "crontabakt"
+kopieros ".getmail"
+kopieros ".7zpassw"
+kopieros ".mysqlpwd"
+kopieros ".mysqlrpwd"
+kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
-  kopiermt "etc/postfix/$D" "etc/postfix" "" "" "" "" 1
+  kopiermt "etc/postfix/$D" ... "" "" "" "" 1
 done;
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$ZL$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
@@ -38,11 +39,11 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
   auslass=;
   [ $ZoD = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
   [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
-  EXCL=${EXCL}"$A/,";
+#  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
- EXCL=${EXCL}"TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/";
-# kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
- kopiermt "$Dt" "" "" "-W $OBDEL";
+ EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/";
+ [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/";
+ kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19
 # kopieretc "hosts" # hier muesste noch eine Zeile geaendert werden!
