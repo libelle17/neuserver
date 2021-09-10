@@ -88,10 +88,11 @@ kopiermt() { # mit test
   # $7 = ob ohne Platzprüfung
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
-  QV=${QVofs%/}; # Quellverzeichnis (ohne slashes)
+  QVos=${QVofs%/}; # Quellverzeichnis (ohne abschließenden slash)
+  [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
 # Zielverzeichnis: wegen der rsync-Grammatik das letzte Verzeichnis von $1 noch an $2 anhängen, falls kein / am Schluss; erstes / streichen
   if [ "$USB" ]; then
-    ZV=$(echo $ZL/$QV|sed 's/\([^\\]\) /\1\\ /g');
+    ZV=$(echo $ZL/$QVos|sed 's/\([^\\]\) /\1\\ /g');
   else
     ZV=$(echo ${2%/}|sed 's/\([^\\]\) /\1\\ /g');
     case $QVofs in */);;*)ZV=$ZV/${1##*/};;esac;
@@ -99,8 +100,8 @@ kopiermt() { # mit test
   ZV=${ZV#/};
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
   echo ""
-  echo `date +%Y:%m:%d\ %T` "vor /$QV" >> $PROT
-  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QV: /$QV, ZL: $ZL, /ZV: /$ZV$reset\n";
+  echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
+  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, ZL: $ZL, /ZV: /$ZV$reset\n";
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
@@ -116,19 +117,19 @@ kopiermt() { # mit test
   [ "$sdneu" -a ! -f "/$ZV" ]&&{
     # beim Kopieren einzelner Dateien hierauf verzichten
     echo ZV: $ZV
-    echo QV: $QV
-    [ ! -f "/$ZV" -a ! -f "/$QV" ]&&{
+    echo QVos: $QVos
+    [ ! -f "/$ZV" -a ! -f "/$QVos" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       if [ "$USB" ]; then
-        tue="cp -a \"$SDQ\" /$QV/$SD";
+        tue="cp -a \"$SDQ\" /$QVos/$SD";
         mkdir -p /$ZV;
         tu2="cp -a \"$SDQ\" /$ZV/$SD";
       elif [ "$ZL" ]; then
-        tue="scp -p \"$SDQ\" /$QV/$SD";
+        tue="scp -p \"$SDQ\" /$QVos/$SD";
         ssh "$ZoD" mkdir -p /$ZV;
         tu2="scp -p \"$SDQ\" $ZL/$ZV/$SD";
       else
-        tue="scp -p \"$SDQ\" \"$ZL/$QV/$SD\"";
+        tue="scp -p \"$SDQ\" \"$ZL/$QVos/$SD\"";
         mkdir -p /$ZV;
         tu2="scp -p \"$SDQ\" /$ZV/$SD";
       fi
@@ -138,13 +139,13 @@ kopiermt() { # mit test
     return 0;
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
-  [ "$SD" -a ! -f "/$ZV" -a ! -f "/$QV" ]&&{
+  [ "$SD" -a ! -f "/$ZV" -a ! -f "/$QVos" ]&&{
     if [ "$ZL" -o "$USB" ]; then
-      SDHIER=/$QV/$SD
+      SDHIER=/$QVos/$SD
       SDDORT=/$ZV/$SD
     else
       SDHIER=/$ZV/$SD
-      SDDORT=/$QV/$SD
+      SDDORT=/$QVos/$SD
     fi;
     if [ "$USB" ]; then
       diffbef="diff $SDHIER $SDDORT 2>/dev/null";
@@ -154,7 +155,7 @@ kopiermt() { # mit test
 #    printf "${blau}$diffbef$reset\n"
     ausf "$diffbef";
     if [ $ret/ != 0/ ]; then
-      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QV vor Kopie auf $ZoD!" diabetologie@dachau-mail.de
+      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZoD!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
       return 1;
     fi
@@ -164,14 +165,14 @@ kopiermt() { # mit test
     rest=1;
   else
   # Platz ausrechnen:
-  [ "$USB" -o -z $ZL -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QV;:; }||{ obsh="ssh $ZoD"; };
+  [ "$USB" -o -z $ZL -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QVos;:; }||{ obsh="ssh $ZoD"; };
     verfueg=$(eval "$obsh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
     schonda=$(eval "$obsh [ -d \"/$ZV\" ]&&{ $obsh du \"/$ZV\" -maxd 0;:; }||{ $obsh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&{ obsh=; QVa=/$QV;:; }||{ obsh="ssh $QoD"; QVa=\'/$QV\'; }
-    zukop=$(eval "$obsh [ -f \"/$QV\" ]&&{ $obsh stat /$QV -c %s ||echo 0;:; }||$obsh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
+    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&{ obsh=; QVa=/$QVos;:; }||{ obsh="ssh $QoD"; QVa=\'/$QVos\'; }
+    zukop=$(eval "$obsh [ -f \"/$QVos\" ]&&{ $obsh stat /$QVos -c %s ||echo 0;:; }||$obsh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
@@ -179,19 +180,18 @@ kopiermt() { # mit test
       E=${E#/};
       papz=$(test -d "$ZL/$ZV/$E" && du $ZL/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
       [ "$USB" -o -z $ZL -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
-      papq=$($obsh test -d "/$QV/$E" && $obsh du /$QV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+      papq=$($obsh test -d "/$QVos/$E" && $obsh du /$QVos/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
       rest=$(expr $rest - $papz + $papq);
     done;
   fi; # if [ "$7" ]
   if test $rest > 0; then
     [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD";
-		case $QV in *var/lib/mysql*)
+		case $QVos in *var/lib/mysql*)
 			echo stoppe mysql auf $ZL;
 			eval "$obsh systemctl stop mysql";
       eval "$obsh pkill -9 mysqld";
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
-    [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
     [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
@@ -201,8 +201,8 @@ kopiermt() { # mit test
     ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
     verb=$altverb;
     [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
-		eval "$obsh [ -d \"/$(echo $QV|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QV/;
-		case $QV in *var/lib/mysql*)
+		eval "$obsh [ -d \"/$(echo $QVos|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QVos/;
+		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
 			eval "$obsh systemctl start mysql";
 			echo "Fertig mit Starten von mysql";;
