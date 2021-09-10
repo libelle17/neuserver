@@ -1,7 +1,8 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR="$0"; # Mutterprogramm
-. ./bugem.sh
+vp=$(readlink -f $0)
+. ${vp%/*}/bugem.sh
 Dt=DATA; 
 ot=opt/turbomed
 kopiermt "$ot" "opt/" "" "$OBDEL" PraxisDB/objects.dat 1800

@@ -7,6 +7,7 @@ MUPR="$0"; # Mutterprogramm
 . $(readlink -f ${0%/*})/bugem.sh
 mountpoint -q "$ZoD" || mount "$ZoD"
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
+kopiermt "DATA/down" ... "" "--delete --iconv=latin1,utf8"
 kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
 kopiermt "DATA/shome/gerald/Schade/sz" ... "" --delete
 kopiermt "DATA/turbomed" ... "" --delete
@@ -15,10 +16,8 @@ kopiermt "DATA/Patientendokumente" ... "plz/" "--delete --iconv=latin1,utf8"
 kopiermt "DATA/eigene Dateien/DM" ... "" --delete
 kopiermt "DATA/eigene Dateien/TMExport" ... "" --delete
 kopiermt "shome/gerald/Schade" ... "" --delete
-kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
 kopiermt "DATA/eigene Dateien/Angiologie" ... "" --delete
 kopiermt "opt/turbomed" ... "netsetupalt/" "--delete --iconv=latin1,utf8"
-kopiermt "DATA/down" ... "" --delete
 kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete --iconv=latin1,utf8"
 kopiermt "var/spool/hylafax" ... "" --delete
 kopiermt "root/.vim" ... "" --delete
