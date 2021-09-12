@@ -54,6 +54,11 @@ obalt() {
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   DaQ="/$QVos/${1#/}";
   DaZ="/$ZV/${1#/}";
+	[ "$verb" ]&&{
+		echo obalt "$1" "$2" "$3" "$4"
+	  echo QV: $QVos, ZV: $ZV
+	  echo DaQ: $DaQ, DaZ: $DaZ
+	}
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
   [ "$USB" -o "$ZL" -o $ANDERER/ = localhost/ ]&&obsh=||obsh="ssh $ANDERER";
@@ -94,7 +99,8 @@ kopiermt() { # mit test
   if [ "$USB" ]; then
     ZV=$(echo $ZL/$QVos|sed 's/\([^\\]\) /\1\\ /g');
   else
-    ZV=$(echo ${ZVK%/}|sed 's/\([^\\]\) /\1\\ /g');
+		[ "$2" = ... ]&&case $QVofs in */)ZV=$QVofs;;*)ZV=${1%/*};;esac||ZV=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
+    ZV=$(echo ${ZV%/}|sed 's/\([^\\]\) /\1\\ /g');
     case $QVofs in */);;*)ZV=$ZV/${1##*/};;esac;
   fi;
   ZV=${ZV#/};
@@ -165,7 +171,7 @@ kopiermt() { # mit test
     rest=1;
   else
   # Platz ausrechnen:
-  [ "$USB" -o -z $ZL -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QVos;:; }||{ obsh="ssh $ZoD"; };
+  [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QVos;:; }||{ obsh="ssh $ZoD"; };
     verfueg=$(eval "$obsh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
   # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
@@ -179,7 +185,7 @@ kopiermt() { # mit test
     for E in $(echo $EX|sed 's/,/ /g');do
       E=${E#/};
       papz=$(test -d "$ZL/$ZV/$E" && du $ZL/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-      [ "$USB" -o -z $ZL -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
+      [ "$USB" -o -z "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
       papq=$($obsh test -d "/$QVos/$E" && $obsh du /$QVos/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
       rest=$(expr $rest - $papz + $papq);
     done;
