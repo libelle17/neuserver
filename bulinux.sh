@@ -3,7 +3,7 @@
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 Dt=DATA; 
-[ "$ZoD/" = linux7 ]&&obkurz=1||obkurz=;
+[ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 kopieros ".vim"
@@ -41,8 +41,8 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
   [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
- EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/";
- [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/";
+ EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/";
+ [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 # kopieretc "samba" # auskommentiert 29.7.19

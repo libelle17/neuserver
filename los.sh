@@ -801,9 +801,9 @@ proginst() {
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
-  # dann VirtualBox aufrufen, Add, die z.B. Wind10.vdi-Datei auswählen; File -> Host Network Manager, Create
   # einmal ging das erst nach zypper up und Neustart des Computers
   # Datei -> Einstellungen -> Zusatzpakete -> Extensionpack auswählen
+  # dann VirtualBox aufrufen, Add, die z.B. Wind10.vdi-Datei auswählen; File -> Host Network Manager, Create
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
        for dt in php7 version; do
