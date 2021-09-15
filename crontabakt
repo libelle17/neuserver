@@ -222,4 +222,4 @@ ELG=/var/log/cronf.log
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
 # VBoxManage controlvm Win10 poweroff
- * * * * * ps -Alf|grep -v grep|grep -q Win10||VBoxManage startvm Win10 --type headless 
+# * * * * * ps -Alf|grep -v grep|grep -q Win10||VBoxManage startvm Win10 --type headless 
