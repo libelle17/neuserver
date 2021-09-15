@@ -1,0 +1,2 @@
+#!/bin/bash
+rname=virtwin0;vip=$(ssh linux0 VBoxManage guestproperty get Win10 /VirtualBox/GuestInfo/Net/2/V4/IP 2>/dev/null|cut -d' ' -f2);if test "$vip"; then vhost=$(if nerg=$(nmblookup -A $vip); then echo $nerg|sed -n "s/.*"$vip"[[:space:]]*\([^[:space:]]*\).*/\L\1/p"; else ssh sturm@$vip hostname|sed 's/\r$//'; fi); if test "$vhost"/ != "$rname"/; then ssh sturm@$vip "WMIC computersystem where caption=\"$vhost\" rename \"$rname\""; ssh sturm@$vip shutdown -t 1 -r; fi; fi;
