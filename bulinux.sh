@@ -13,6 +13,7 @@ kopieros ".getmail"
 kopieros ".7zpassw"
 kopieros ".mysqlpwd"
 kopieros ".mysqlrpwd"
+kopiermt home/schade/.wincredentials ... "" "" "" "" 1
 kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
   kopiermt "etc/postfix/$D" ... "" "" "" "" 1

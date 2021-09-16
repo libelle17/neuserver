@@ -40,6 +40,7 @@ komprsql.sh
 logrotate.conf
 los.sh
 lwwarn.sh
+mountvirt.sh
 nampruef.sh
 permissselten.sh
 rett.sh
