@@ -60,16 +60,13 @@ else
 #   esac;
 #   case $(hostname) in $wirt*)tussh=;;*)tussh="ssh $wirt ";;esac;
      [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tussh: $tussh, gast: $gast
+     mp=/mnt/$gpc/turbomed;
      if [ "$iru" = 1 ]; then
        grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;
-         ergae=${ergae}"//$gpc/Turbomed /mnt/$gpc/turbomed cifs nofail,vers=3.11,credentials=$cre 0 2";
+         ergae=${ergae}"//$gpc/Turbomed $mp cifs nofail,vers=3.11,credentials=$cre 0 2";
        };
      else
-       mp=/mnt/$gpc/turbomed;
-       [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
-       [ -d "$mp" ]||mkdir -p "$mp";
-#      [ "$verb" ]&&echo mp: $mp, gpc: $gpc, tussh: $tussh, gast: $gast
 #       ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
        ausf "${tussh}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
        ausf "${tussh}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
@@ -96,6 +93,10 @@ else
     fi;
   done; # iru in 1 2
   for wirt in $gausw; do
+.   ${MUPR%/*}/virtnamen.sh
+     mp=/mnt/$gpc/turbomed;
+     [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
+     [ -d "$mp" ]||mkdir -p "$mp";
      mountpoint -q $mp||{ ausf "mount $mp" $blau; }
   done;
 fi;
