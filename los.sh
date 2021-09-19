@@ -767,6 +767,7 @@ proginst() {
 	# fehlende Programme installieren
   # postfix, ist wohl schon datei
 	doinst htop;
+	doinst nmap;
 	doinst vsftpd;
 	doinst openssh;
 	doinst zsh;

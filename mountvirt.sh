@@ -1,16 +1,33 @@
 #!/bin/bash
 ftb="/etc/fstab";
 cre="/home/schade/.wincredentials"
-verb=v;
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
 
+# Befehlszeilenparameter auswerten
+commandline() {
+  verb=;
+  oballe=;
+	while [ $# -gt 0 ]; do
+    para=$(echo "$1"|sed 's;^[-/]\+;;');
+		case $para in
+      a) oballe=a;;
+      v) verb=v;;
+		esac;
+		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
+		shift;
+	done;
+	if [ "$verb" ]; then
+		printf "oballe: $blau$oballe$reset\n";
+	fi;
+} # commandline
+
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$dblau$anzeige$reset";}; # escape für %, soll kein printf-specifier sein
 	if test "$3"; then 
     eval "$1"; 
   else 
@@ -24,32 +41,38 @@ ausf() {
   }
 } # ausf
 
+commandline "$@"; # alle Befehlszeilenparameter übergeben
 if ! test -f "$cre"; then 
   echo Datei $cre nicht gefunden, breche ab!!;
 else
   ergae=;
   for iru in 1 2; do
-    for wirt in linux0 linux1 linux7; do
+    [ "$HOST" ]||HOST=$(hostname);
+    [ "$oballe" ]&&auswahl="linux0 linux1 linux7"||auswahl=${HOST%%.*};
+    for wirt in $auswahl; do
      case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
                    *1*) gpc=virtwin;  gast=Win10;;
                    *7*) gpc=virtwin7; gast=Wi10;;
      esac;
-     case $(hostname) in $wirt*)tussh=;;*)tussh="ssh $wirt";;esac;
+     case $(hostname) in $wirt*)tussh=;;*)tussh="ssh $wirt ";;esac;
      [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tussh: $tussh, gast: $gast
      if [ "$iru" = 1 ]; then
+       echo Stelle 1
        grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;
          ergae=${ergae}"//$gpc/Turbomed /mnt/$gpc/turbomed cifs nofail,vers=3.11,credentials=$cre 0 2";
        };
      else
        mp=/mnt/$gpc/turbomed;
+       [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
        [ -d "$mp" ]||mkdir -p "$mp";
 #      [ "$verb" ]&&echo mp: $mp, gpc: $gpc, tussh: $tussh, gast: $gast
 #       ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
-       ausf "$tussh pgrep -f \" $gast \" >/dev/null"||{
+       ausf "${tussh}pgrep -f \" $gast \" >/dev/null";
+       [ $ret != 0 ]&&{
          [ "$verb" ]&&echo tussh: $tussh, gast: $gast; 
-         ausf "umount -a -t -cifs -l" $blau;
-         ausf "$tussh VBoxManage startvm $gast --type headless" $blau;
+         ausf "umount -a -t -cifs -l $mp";
+         ausf "${tussh}VBoxManage startvm $gast --type headless" $blau;
          sleep 10;
 # das Folgende ist zumindest nicht durchgehend nötig
 #         ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
