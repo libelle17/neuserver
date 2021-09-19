@@ -52,7 +52,7 @@ else
   gausw="linux0 linux1 linux7";
   [ "$oballe" ]&&auswahl=$gausw||auswahl=${HOST%%.*};
   for iru in 1 2; do
-   for wirt in $auswahl; do
+   for wirt in $gausw; do
 .   ${MUPR%/*}/virtnamen.sh
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
@@ -67,20 +67,25 @@ else
          ergae=${ergae}"//$gpc/Turbomed $mp cifs nofail,vers=3.11,credentials=$cre 0 2";
        };
      else
-#       ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
-       ausf "${tussh}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
-       ausf "${tussh}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
-       [ $pret != 0 -o $nret != 0 ]&&{
-         [ "$verb" ]&&echo tussh: $tussh, gast: $gast; 
-         ausf "umount -l $mp";
-         [ $nret != 0 ]&&{
-           ausf "${tussh}VBoxManage controlvm \"$gast\" poweroff" $blau;
-         }
-         ausf "${tussh}VBoxManage startvm $gast --type headless" $blau;
-         sleep 13;
-# das Folgende ist zumindest nicht durchgehend nötig
-#         ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
-       };
+       if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
+#         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
+         ausf "${tussh}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
+         ausf "${tussh}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
+         [ $pret != 0 -o $nret != 0 ]&&{
+           [ "$verb" ]&&echo tussh: $tussh, gast: $gast; 
+           ausf "umount -l $mp";
+           [ $nret != 0 ]&&{
+             ausf "${tussh}VBoxManage controlvm \"$gast\" poweroff" $blau;
+           }
+           ausf "${tussh}VBoxManage startvm $gast --type headless" $blau;
+           sleep 13;
+#          das Folgende ist zumindest nicht durchgehend nötig
+#          ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
+         };
+       fi;
+       [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
+       [ -d "$mp" ]||mkdir -p "$mp";
+       mountpoint -q $mp||{ ausf "mount $mp" $blau; }
      fi;
     done; # wirt in $auswahl
     if test "$iru" = 1 -a "$ergae"; then
@@ -92,11 +97,4 @@ else
       fi
     fi;
   done; # iru in 1 2
-  for wirt in $gausw; do
-.   ${MUPR%/*}/virtnamen.sh
-     mp=/mnt/$gpc/turbomed;
-     [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
-     [ -d "$mp" ]||mkdir -p "$mp";
-     mountpoint -q $mp||{ ausf "mount $mp" $blau; }
-  done;
 fi;
