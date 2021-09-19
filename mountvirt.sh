@@ -1,6 +1,7 @@
 #!/bin/bash
 ftb="/etc/fstab";
 cre="/home/schade/.wincredentials"
+# zur Funktionsfaehigkeit auf den Reservesystemen: scp -p linux1:/home/schade/.wincredentials /home/schade/
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
@@ -47,9 +48,10 @@ if ! test -f "$cre"; then
   echo Datei $cre nicht gefunden, breche ab!!;
 else
   ergae=;
+  [ "$HOST" ]||HOST=$(hostname);
+  gausw="linux0 linux1 linux7";
+  [ "$oballe" ]&&auswahl=$gausw||auswahl=${HOST%%.*};
   for iru in 1 2; do
-    [ "$HOST" ]||HOST=$(hostname);
-    [ "$oballe" ]&&auswahl="linux0 linux1 linux7"||auswahl=${HOST%%.*};
    for wirt in $auswahl; do
 .   ${MUPR%/*}/virtnamen.sh
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
@@ -82,9 +84,8 @@ else
 # das Folgende ist zumindest nicht durchgehend nötig
 #         ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
        };
-       mountpoint -q $mp||{ ausf "mount $mp" $blau; }
      fi;
-    done;
+    done; # wirt in $auswahl
     if test "$iru" = 1 -a "$ergae"; then
       if grep -q "^LABEL" $ftb; then
 #        [ "$verb" ]&&echo ergae: $ergae;
@@ -93,5 +94,8 @@ else
         ausf "sed -i.bak \"$ a $ergae\" $ftb" $blau;
       fi
     fi;
+  done; # iru in 1 2
+  for wirt in $gausw; do
+     mountpoint -q $mp||{ ausf "mount $mp" $blau; }
   done;
 fi;
