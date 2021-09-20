@@ -1,5 +1,10 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
+EXFEST=",Papierkorb/,mnt/";
+blau="\033[1;34m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
+reset="\033[0m";
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
@@ -111,7 +116,6 @@ kopiermt() { # mit test
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
-  EXFEST=",Papierkorb/,mnt/";
   EXREST=$EXGES;
   EXAKT=;
   while [ "$EXREST" ]; do
@@ -128,16 +132,13 @@ kopiermt() { # mit test
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       if [ "$USB" ]; then
         tue="cp -a \"$SDQ\" /$QVos/$SD";
-        mkdir -p /$ZV;
-        tu2="cp -a \"$SDQ\" /$ZV/$SD";
+        tu2="mkdir -p /$ZV; cp -a \"$SDQ\" /$ZV/$SD";
       elif [ "$ZL" ]; then
         tue="scp -p \"$SDQ\" /$QVos/$SD";
-        ssh "$ZoD" mkdir -p /$ZV;
-        tu2="scp -p \"$SDQ\" $ZL/$ZV/$SD";
+        tu2="ssh "$ZoD" mkdir -p /$ZV; scp -p \"$SDQ\" $ZL/$ZV/$SD";
       else
-        tue="scp -p \"$SDQ\" \"$ZL/$QVos/$SD\"";
-        mkdir -p /$ZV;
-        tu2="scp -p \"$SDQ\" /$ZV/$SD";
+        tue="mkdir -p \"$ZL/$QVos\"; scp -p \"$SDQ\" \"$ZL/$QVos/$SD\"";
+        tu2="mkdir -p /$ZV; scp -p \"$SDQ\" /$ZV/$SD";
       fi
       ausf "$tue";
       ausf "$tu2";
@@ -182,7 +183,7 @@ kopiermt() { # mit test
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
-    for E in $(echo $EX|sed 's/,/ /g');do
+    [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
       E=${E#/};
       papz=$(test -d "$ZL/$ZV/$E" && du $ZL/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
       [ "$USB" -o -z "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
@@ -200,11 +201,13 @@ kopiermt() { # mit test
 	  esac;
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
 #    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
-    [ "$USB" ]||ergae="--rsync-path=\"$kopbef\"";
+    ergae=;[ -z "$USB" ]&&[ "$QL" -o "$ZL" ]&&ergae="--rsync-path=\"$kopbef\"";
     Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     altverb=$verb;
     verb=1;
-    ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae --exclude={""$EX""}";
+    [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
+#    printf "$dblau$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae$AUSSCHL$reset\n";
+    ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae$AUSSCHL";
     verb=$altverb;
     [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
 		eval "$obsh [ -d \"/$(echo $QVos|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QVos/;
@@ -280,7 +283,7 @@ PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 [ "$verb" ]&&echo Prot: $PROT
 [ "$verb" ]&&printf "ANDERER: $blau$ANDERER$reset\n";
 [ "$USB" ]||{ ping -c1 $ANDERER >/dev/null ||{ echo $ANDERER nicht anpingbar; exit; } };
-[ "$obdel" ]&&OBDEL="--delete"||OBDEL="";
+[ "$obdel" ]&&OBDEL="--delete"||OBDEL=;
 [ -z $ZoD ]&&ZoD=$HOSTK
 [ "$verb" ]&&echo QL: $QL, ZL: $ZL, ZoD: $ZoD
 [ "$verb" ]&&echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT

@@ -2,10 +2,28 @@
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
+wirt=$ZoD;
+. ${MUPR%/*}/virtnamen.sh
+# vorher noch den SmartUpdateStandAlone-Dienst auf Zielsystem ausschalten
+altZL=$ZL; ZL=;
+altEXFEST=$EXFEST;EXFEST=;
+USB=1;
+iniKop=1;
+[ "$iniKop" ]&&ur=opt||ur=mnt/virtwin;
+# for V in PraxisDB StammDB DruckDB Dictionary Vorlagen labor Formulare LaborStaber KVDT Dokumente Daten; do
+for V in Vorlagen; do
+  case $V in Vorlagen|Formulare|KVDT|Dokumente|Daten)obOBDEL=;;*)obOBDEL=$OBDEL;;esac;
+  case $V in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+  kopiermt "$ur/turbomed/$V" "mnt/$gpc/turbomed/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+done;
+ZL=$altZL;
+EXFEST=$altEXFEST;
+USB=;
+exit
+# kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 Dt=DATA; 
 [ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
-kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 kopieros ".vim"
 kopieros ".smbcredentials"
 kopieros "crontabakt"
