@@ -5,23 +5,22 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 wirt=$ZoD;
 . ${MUPR%/*}/virtnamen.sh
 # vorher noch den SmartUpdateStandAlone-Dienst auf Zielsystem ausschalten
+Dt=DATA; 
+USB=1;
 altZL=$ZL; ZL=;
 altEXFEST=$EXFEST;EXFEST=;
-USB=1;
 iniKop=1;
 [ "$iniKop" ]&&ur=opt||ur=mnt/virtwin;
-# for V in PraxisDB StammDB DruckDB Dictionary Vorlagen labor Formulare LaborStaber KVDT Dokumente Daten; do
-for V in Vorlagen; do
-  case $V in Vorlagen|Formulare|KVDT|Dokumente|Daten)obOBDEL=;;*)obOBDEL=$OBDEL;;esac;
+for V in PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber; do
   case $V in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+  case $V in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL=$OBDEL;;esac;
   kopiermt "$ur/turbomed/$V" "mnt/$gpc/turbomed/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
 ZL=$altZL;
 EXFEST=$altEXFEST;
 USB=;
-exit
+[ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-Dt=DATA; 
 [ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopieros ".vim"
@@ -49,7 +48,7 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
-		 kopiermt $qverz/ $qverz "" -d "${inbox##/$qverz/}" 604800;
+		 kopiermt $qverz ... "" -d "${inbox##/$qverz/}" 604800;
 		 break;
    done;
   fi;
@@ -57,13 +56,16 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
   auslass=;
   [ $ZoD = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
-  [ -z $auslass ]&&kopiermt "$Dt/$A" "$Dt/" "" "$OBDEL";
+  [ -z $auslass ]&&kopiermt "$Dt/$A" ... "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
+exit; # Ende
+
+
 # kopieretc "samba" # auskommentiert 29.7.19
 # kopieretc "hosts" # hier muesste noch eine Zeile geaendert werden!
 # kopieretc "vsftpd.conf" # auskommentiert 29.7.19

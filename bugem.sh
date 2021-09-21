@@ -31,23 +31,30 @@ ausfd() {
 commandline() {
 	while [ $# -gt 0 ]; do
    case "$1" in 
-     SD=*) sdneu=1;SDQ=${1##*SD=};SD=${1##*/};;
+     SD=*) sdneu=2; SDQ=${1##*SD=};SD=${SDQ##*/};;
+     SD) sdneu=1; SDQ=$(readlink -f $0);SDQ=${SDQ%/*}/$SD;
+         [ ! -f "$SD" ]&&{ 
+           printf "Option '${blau}SD$reset' angegeben, aber $blau$SD$reset nicht in "$blau$(readlink -f $0)$reset" gefunden, ${rot}breche ab$reset.\n"; exit 3;
+         };;
      -*|/*)
-      para=$(echo "$1"|sed 's;^[-/];;');
+      para=${1#[-/]};
       case $para in
         v|-verbose) verb=1;;
-        d) obdel=1;;
-      esac;
-      [ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";;
+        e|-echt) obecht=1;;
+        d|-del) obdel=1;;
+      esac;;
      *)
       ZoD=${1%%:*};; # z.B. linux0
    esac;
    shift;
 	done;
 	if [ "$verb" ]; then
+    printf "Parameter: $blau-v$reset => gesprächig\n";
+		printf "obecht: $blau$obecht$reset\n";
 		printf "obdel: $blau$obdel$reset\n";
 		printf "sdneu: $blau$sdneu$reset\n";
 		printf "SD: $blau$SD$reset\n";
+		printf "SDQ: $blau$SDQ$reset\n";
 		printf "ZoD: $blau$ZoD$reset\n";
 	fi;
 } # commandline
@@ -61,7 +68,7 @@ obalt() {
   DaZ="/$ZV/${1#/}";
 	[ "$verb" ]&&{
 		echo obalt "$1" "$2" "$3" "$4"
-	  echo QV: $QVos, ZV: $ZV
+	  echo QVos: $QVos, ZV: $ZV
 	  echo DaQ: $DaQ, DaZ: $DaZ
 	}
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
@@ -99,20 +106,14 @@ kopiermt() { # mit test
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/}; # Quellverzeichnis (ohne abschließenden slash)
-  [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${1%/*};;esac||ZVK=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
+  [ "$2" = ... ]&&case $QVofs in */)ZVK=$QVofs;;*)ZVK=${QVos%/*};;esac||ZVK=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
 # Zielverzeichnis: wegen der rsync-Grammatik das letzte Verzeichnis von $1 noch an $2 anhängen, falls kein / am Schluss; erstes / streichen
-  if [ "$USB" ]; then
-    ZV=$(echo $ZL/$QVos|sed 's/\([^\\]\) /\1\\ /g');
-  else
-		[ "$2" = ... ]&&case $QVofs in */)ZV=$QVofs;;*)ZV=${1%/*};;esac||ZV=$2; # Ziel-Verzeichnis kurz; rsync-Grammatik berücksichtigen
-    ZV=$(echo ${ZV%/}|sed 's/\([^\\]\) /\1\\ /g');
-    case $QVofs in */);;*)ZV=$ZV/${1##*/};;esac;
-  fi;
-  ZV=${ZV#/};
+  ZV=$ZVK;
+  case $QVofs in */);;*)ZV=${ZV%/}/$(echo ${1##*/}|sed 's/\([^\\]\) /\1\\ /g');ZV=${ZV#/};;esac;
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
   echo ""
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
-  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, ZL: $ZL, /ZV: /$ZV$reset\n";
+  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, QVofs: $QVofs, ZL: $ZL, ZV: $ZV, ZVK: $ZVK, USB: $USB$reset\n";
   [ "$5" -a "$6" ]&&{
    if ! obalt "$5" "$6"; then return 1; fi; 
 	}
@@ -124,25 +125,27 @@ kopiermt() { # mit test
   done;
   EX="$3$EXAKT$EXFEST";
 # falls nur die Schutzdatei überall etabliert werden soll
-  [ "$sdneu" -a ! -f "/$ZV" ]&&{
-    # beim Kopieren einzelner Dateien hierauf verzichten
-    echo ZV: $ZV
-    echo QVos: $QVos
-    [ ! -f "/$ZV" -a ! -f "/$QVos" ]&&{
+# beim Kopieren einzelner Dateien hierauf verzichten
+# gerade die neue Bedeutung von ZV ohne vorangestelltes ZL überall ab hier prüfen
+  [ "$sdneu" -a \( "$ZoD" -o ! -f "/$ZV" \) -a \( "$QL" -o ! -f "/$QVos" \) ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       if [ "$USB" ]; then
         tue="cp -a \"$SDQ\" /$QVos/$SD";
         tu2="mkdir -p /$ZV; cp -a \"$SDQ\" /$ZV/$SD";
       elif [ "$ZL" ]; then
         tue="scp -p \"$SDQ\" /$QVos/$SD";
-        tu2="ssh "$ZoD" mkdir -p /$ZV; scp -p \"$SDQ\" $ZL/$ZV/$SD";
+        tu2="ssh \"$ZoD\" mkdir -p /$ZV; scp -p \"$SDQ\" \"$ZL/$ZV/$SD\"";
       else
-        tue="mkdir -p \"$ZL/$QVos\"; scp -p \"$SDQ\" \"$ZL/$QVos/$SD\"";
+        tue="ssh "QoD" mkdir -p /$QVos; scp -p \"$SDQ\" \"$QL/$QVos/$SD\"";
         tu2="mkdir -p /$ZV; scp -p \"$SDQ\" /$ZV/$SD";
       fi
-      ausf "$tue";
-      ausf "$tu2";
-    }
+      if [ "$obecht" ]; then
+        ausf "$tue";
+        ausf "$tu2";
+      else
+        printf "$dblau$tue$reset\n";
+        printf "$dblau$tu2$reset\n";
+      fi;
     return 0;
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
@@ -171,28 +174,29 @@ kopiermt() { # mit test
   # keine Platzprüfung
     rest=1;
   else
-  # Platz ausrechnen:
-  [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&{ obsh=; QVa=$QVos;:; }||{ obsh="ssh $ZoD"; };
+    # Platz ausrechnen:
+    [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD"; # Ziel hier / nicht hier
     verfueg=$(eval "$obsh df /${ZV%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
-  # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
+    # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
     schonda=$(eval "$obsh [ -d \"/$ZV\" ]&&{ $obsh du \"/$ZV\" -maxd 0;:; }||{ $obsh stat /$ZV -c %s ||echo 1; }"|awk -F $'\t' '{print $1*1024}')
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&{ obsh=; QVa=/$QVos;:; }||{ obsh="ssh $QoD"; QVa=\'/$QVos\'; }
+    [ "$USB" -o "$QL" -o $QoD/ = localhost/ ]&&{ obsh=; QVa=/$QVos;:; }||{ obsh="ssh $QoD"; QVa=\'/$QVos\'; } # Quelle hier / nicht hier
     zukop=$(eval "$obsh [ -f \"/$QVos\" ]&&{ $obsh stat /$QVos -c %s ||echo 0;:; }||$obsh du $QVa -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
     [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
-      E=${E#/};
-      papz=$(test -d "$ZL/$ZV/$E" && du $ZL/$ZV/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-      [ "$USB" -o -z "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
-      papq=$($obsh test -d "/$QVos/$E" && $obsh du /$QVos/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
-      rest=$(expr $rest - $papz + $papq);
+       E=${E#/};
+       [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD"; # Ziel hier / nicht hier
+       papz=$($obsh test -d "/$ZV/$E" && du "/$ZV/$E" -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+       [ "$USB" -o -z "$QL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD"; # Quelle hier / nicht hier
+       papq=$($obsh test -d "/$QVos/$E" && $obsh du /$QVos/$E -maxd 0|cut -f1|awk '{print $1*1024}'||echo 0)
+       rest=$(expr $rest - $papz + $papq);
     done;
   fi; # if [ "$7" ]
   if test $rest > 0; then
-    [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD";
+    [ "$USB" -o -z "$ZL" -o $ZoD/ = localhost/ ]&&obsh=||obsh="ssh $ZoD"; # Ziel hier / nicht hier
 		case $QVos in *var/lib/mysql*)
 			echo stoppe mysql auf $ZL;
 			eval "$obsh systemctl stop mysql";
@@ -206,8 +210,11 @@ kopiermt() { # mit test
     altverb=$verb;
     verb=1;
     [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
-#    printf "$dblau$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae$AUSSCHL$reset\n";
-    ausf "$kopbef $Quelle \"$ZL/${ZVK#/}\" $4 -avu $ergae$AUSSCHL";
+    if [ "$obecht" ]; then
+      ausf "$kopbef $Quelle \"$ZL/$ZVK\" $4 -avu $ergae$AUSSCHL" $dblau;
+    else
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZL/$ZVK\" $4 -avu $ergae$AUSSCHL$reset\n";
+    fi;
     verb=$altverb;
     [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
 		eval "$obsh [ -d \"/$(echo $QVos|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QVos/;
@@ -241,6 +248,7 @@ SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
 [ "$HOST" ]||HOST=$(hostname);
 verb=;
+obecht=;
 obdel=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
@@ -251,28 +259,26 @@ if [ "$USB" ]; then
   ZoD=${ZoD%/}; # muss im aufrufenden Programm (als Gesamtpfad) definiert werden
   if [ -z "$ZoD" ]; then
     printf "$blau$0$reset wurde aufgerufen (Mutterprogrammvariable MUPR: $blau$MUPR$reset), ohne dass dort die Variable ${blau}ZoD$reset definiert wurde, breche ab\n";
-    exit;
+    exit 4;
   fi;
-  ZL=$ZoD;
+  ZL=$ZoD; # der Eingangs-slash muss ggf. dran bleiben!
 elif [ $HOSTK/ = $LINEINS/ ]; then
   QL=;
   QoD=localhost; # Quelle ohne Doppelpunkt
-#  ZL=${2%%:*}; # z.B. linux0: # jetzt in commandline
   if [ -z "$ZoD" ]; then
     printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-    exit;
+    exit 0;
   fi;
   ANDERER=$ZoD; # z.B. linux0
   ZL=$ZoD:;
 else
   QoD=$LINEINS;     # Quelle ohne Doppelpunkt, linux1
   QL=$QoD:;      # linux1:
-  ZL=;         # Ziel
+  ZL=;         # Ziel, dieser PC
   ZoD=;         # Ziel ohne Doppelpunkt
   ANDERER=$QoD; # linux1
 fi;
-ZL=${ZL%/}; # der Eingangs-slash muss ggf. dran bleiben!
-[ "$sdneu" ]&&{
+[ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
   sed -i.bak "/^SD=/c\\SD=\"$SD\"" "$0"
   echo SD: $SD;
@@ -282,7 +288,7 @@ ZL=${ZL%/}; # der Eingangs-slash muss ggf. dran bleiben!
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 [ "$verb" ]&&echo Prot: $PROT
 [ "$verb" ]&&printf "ANDERER: $blau$ANDERER$reset\n";
-[ "$USB" ]||{ ping -c1 $ANDERER >/dev/null ||{ echo $ANDERER nicht anpingbar; exit; } };
+[ "$USB" ]||{ ping -c1 $ANDERER >/dev/null ||{ echo $ANDERER nicht anpingbar; exit 2; } };
 [ "$obdel" ]&&OBDEL="--delete"||OBDEL=;
 [ -z $ZoD ]&&ZoD=$HOSTK
 [ "$verb" ]&&echo QL: $QL, ZL: $ZL, ZoD: $ZoD

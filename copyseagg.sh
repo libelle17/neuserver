@@ -15,7 +15,7 @@ kopiermt "DATA/rett/ungera" ... "" --delete
 kopiermt "DATA/Patientendokumente" ... "plz/" "--delete --iconv=latin1,utf8"
 kopiermt "DATA/eigene Dateien/DM" ... "" --delete
 kopiermt "DATA/eigene Dateien/TMExport" ... "" --delete
-kopiermt "shome/gerald/Schade" ... "" --delete
+kopiermt "DATA/shome/gerald/Schade" ... "" --delete
 kopiermt "DATA/eigene Dateien/Angiologie" ... "" --delete
 kopiermt "opt/turbomed" ... "netsetupalt/" "--delete --iconv=latin1,utf8"
 kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete --iconv=latin1,utf8"
