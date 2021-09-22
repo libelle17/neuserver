@@ -542,7 +542,7 @@ shziel:
         : 'printf "$$blau$$D $$Z/$$D$$reset\n";\
         echo Zeitstempel Git: $$AGit;\
         echo Zeitstempel $$(pwd)"  ": $$AHr;\
-        echo Zeitstempel $$Z/$$D : $$APC';\
+        echo Zeitstempel $$Z/$$D : $$APC;:';\
         cmp -s -- $$D $$Z/$$D;DIFF=$$?;\
         : 'nur wenn sie sich unterscheiden, Kopie in Betracht ziehen';\
         if [ 0$$DIFF -ne 0 ]; then \
