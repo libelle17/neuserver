@@ -2,9 +2,7 @@
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
-wirt=$ZoD;
 . ${MUPR%/*}/virtnamen.sh
-# vorher noch den SmartUpdateStandAlone-Dienst auf Zielsystem ausschalten
 Dt=DATA; 
 USB=1;
 altZL=$ZL; ZL=;
