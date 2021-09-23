@@ -1,6 +1,6 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
-EXFEST=",Papierkorb/,mnt/";
+EXFEST=",Papierkorb/";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
@@ -44,6 +44,7 @@ commandline() {
         d|-del) obdel=1;;
       esac;;
      *)
+      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7
       ZL=${1%%:*};; # z.B. linux0
    esac;
    shift;
@@ -59,23 +60,21 @@ commandline() {
 	fi;
 } # commandline
 
-nix() {
-  USB:
-    QL=; 
-    ZL=;
-  weg:
-    QL=;
-    ZL=linux7
-  her:
-    QL=linux1
-    ZL=;
-    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
-    QVofs=/ Pfad/zum/qv[/]
-    obsub 1: qv, obsub: qv/
-    obdat 1: obsub und /Pfad/zum/qv = Datei
-    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
-    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
-}
+#  USB:
+#    QL=; 
+#    ZL=;
+#  weg:
+#    QL=;
+#    ZL=linux7
+#  her:
+#    QL=linux1
+#    ZL=;
+#    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
+#    QVofs=/ Pfad/zum/qv[/]
+#    obsub 1: qv, obsub: qv/
+#    obdat 1: obsub und /Pfad/zum/qv = Datei
+#    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
+#    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
 
 # ob eine Datei auf dem Zielsystem alt genug ist zum Kopieren, aufgerufen aus kopiermt: $1= Dateipfad, $2= Mindestalter [s]
 # wird nicht aufgerufen, wenn nur eine Datei kopiert wird
@@ -92,19 +91,21 @@ obalt() {
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
   eval "$qssh 'stat \"$DaQ\" >/dev/null 2>&1'||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
-	faz=; # <> "" = Datei fehlt auf Ziel
-  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ faz=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
-	[ "$faq" -o "$faz" ]&& return 0;
-  eval "geaenq=\$(${qssh}date +%s -r \"$DaQ\")";
-  printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
-  eval "geaenz=\$($zssh 'date +%s -r \"$DaZ\"')";
-  printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
-#	geaenq=$(expr $geaenq + 2000);
-  diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
-	ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
-#  ! awk "func abs(v){return v<0?-v:v}; BEGIN{ exit abs($alterdort-$alterhier)>$2 }";
-  printf "Altersdifferenz $blau $diff ";if test $ret = 0; then printf ">="; else printf "<";fi; printf "$2$reset s\n";
-	# wenn die Funktion 0 zurückliefert, wird in in "if obalt" verzweigt
+	[ "$faq" ]&& return 0;
+	ret=; # <> "" = Datei fehlt auf Ziel
+  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
+  if test $ret = 0; then
+    ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
+    printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
+    ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
+    printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
+  #	geaenq=$(expr $geaenq + 2000);
+    diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
+    ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
+  #  ! awk "func abs(v){return v<0?-v:v}; BEGIN{ exit abs($alterdort-$alterhier)>$2 }";
+    printf "Altersdifferenz $blau $diff ";if test $ret = 0; then printf ">="; else printf "<";fi; printf "$2$reset s\n";
+    # wenn die Funktion 0 zurückliefert, wird in in "if obalt" verzweigt
+  fi;
   return $ret;
 } # obalt
 
@@ -119,26 +120,26 @@ kopiermt() { # mit test
   # $7 = ob ohne Platzprüfung
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
 
-  [ "$QL" ]&&qssh="ssh $QL "||qssh="sh -c ";
-  [ "$ZL" ]&&zssh="ssh $ZL "||zssh="sh -c ";
+  [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+  [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
   [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
-  [ "$obsub" ]&&{ $qssh [ -f /"$QVos" ]&&obdat=1||obdat=;};
+  [ "$obsub" ]&&{ $qssh '[ -f /"$QVos" ]'&&obdat=1||obdat=;};
   if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; else
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
    [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
   if [ "$verb" ]; then
     echo QVofs: $QVofs
-    echo QVos: $QVos
+    echo QVos : $QVos
     echo obsub: $obsub
     echo obdat: $obdat
-    echo ZVos: $ZVos
+    echo ZVos : $ZVos
     echo ZVofs: $ZVofs
-    echo qssh: $qssh
-    echo zssh: $zssh
+    echo qssh : $qssh
+    echo zssh : $zssh
   fi;
 
 #  case $QVos in */)ZVos=${ZVos%/};;*)ZVos=${ZVos%/}/${QVos##*/};QVos=${QVos%/};;esac;
@@ -208,59 +209,61 @@ kopiermt() { # mit test
     rest=1;
   else
     # Platz ausrechnen:
-#    verfueg=$(eval "$zssh df /${ZVos%%/*}"|sed -n '/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p'); # die vierte Spalte der df-Ausgabe
-    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; # die vierte Spalte der df-Ausgabe
-    verfueg=$resu;
+    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; verfueg=${resu:-0}; # die vierte Spalte der df-Ausgabe
     printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
     # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-#    schonda=$(eval "$zssh [ -d \"/$ZVofs\" ]&&{ $zssh du \"/$ZVofs\" -maxd 0;:;}||{ $zssh stat /$ZVofs -c %s||echo 1;}"|awk -F $'\t' '{print $1*1024}')
-    ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'";
-    schonda=$resu;
+    ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
     printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-#    zukop=$(eval "$qssh [ -f \"/$QVos\" ]&&{ $obsh stat /$QVos -c %s ||echo 0;:;}||$qssh du \'$QVos\' -maxd 0;"|cut -f1|awk '{print $1*1024}') # mit doppelten Anführungszeichen geht's nicht von beiden Seiten
-    ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'";
-    zukop=$resu;
+    ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
     printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
     rest=$(expr $verfueg - $zukop + $schonda);
-    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
-    exit
     [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
        E=${E#/};
-       papz=$($zssh 'test -d "/$ZVos/$E" && du "/$ZVos/$E" -maxd 0|cut -f1'|awk '{print $1*1024}'||echo 0)
-       papq=$($qssh 'test -d "/$QVos/$E" && $obsh du /$QVos/$E -maxd 0|cut -f1'|awk '{print $1*1024}'||echo 0)
+       [ "$verb" ]&&printf "E: $blau$E$reset\n";
+       [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
+       ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
+       ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
        rest=$(expr $rest - $papz + $papq);
     done;
+    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
   fi; # if [ "$7" ]
   if test $rest > 0; then
 		case $QVos in *var/lib/mysql*)
-			echo stoppe mysql auf $ZL;
-			eval "$zssh 'systemctl stop mysql'";
-      eval "$zssh 'pkill -9 mysqld'";
+			printf "stoppe mysql auf $blau$ZL$reset\n";
+			ausf "$zssh 'systemctl stop mysql'";
+      ausf "$zssh 'pkill -9 mysqld'";
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
-#    [ "$USB" ]&&ergae="--iconv=utf8,latin1"||ergae="--rsync-path=\"$kopbef\"";
-    ergae=;[ "$QL" -o "$ZL" ]&&ergae="--rsync-path=\"$kopbef\"";
-    Quelle=$QL/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
+    [ "$QL" -o "$ZL" ]&&ergae="--rsync-path=\"$kopbef\""||ergae=;
+    QmD=$QL:;QmD=${QmD#:};
+    ZmD=$ZL:;ZmD=${ZmD#:};
+    Quelle=$QmD/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     altverb=$verb;
     verb=1;
     [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
+#    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
+#    QVofs=/ Pfad/zum/qv[/]
+#    obsub 1: qv, obsub: qv/
+#    obdat 1: obsub und /Pfad/zum/qv = Datei
+#    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
+#    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZL/$ZVos\" $4 -avu $ergae$AUSSCHL" $dblau;
+      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $OBDEL $ergae$AUSSCHL" $dblau;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZL/$ZVK\" $4 -avu $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $OBDEL $ergae$AUSSCHL$reset\n";
     fi;
     verb=$altverb;
-    [ "$USB" -o "$ZL" -o $QoD/ = localhost/ ]&&obsh=||obsh="ssh $QoD";
-		eval "$qssh [ -d \"/$(echo $QVos|sed 's/\\\\//g')\" ]"&&EXGES=${EXGES},/$QVos/;
+		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret = 0 ]&&EXGES=${EXGES},/$QVos/;
+    [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
-			eval "$zssh 'systemctl start mysql'";
+			ausf "$zssh 'systemctl start mysql'";
 			echo "Fertig mit Starten von mysql";;
 	  esac;
 		return 0;
   else
-    echo Kopieren nicht begonnen, Speicherreserve: $rest
+    printf "Kopieren nicht begonnen, Speicherreserve: $blau$rest$reset\n";
 		return 1;
   fi;
 } # kopiermt
@@ -287,35 +290,9 @@ obecht=;
 obdel=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
+[ ${HOST##.*} = $LINEINS -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 #im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
 
-if false; then
-HOSTK=${HOST%%.*}; # $HOST kurz, also z.B. linux1 anstatt linux1.site
-if [ "$USB" ]; then
-  QL=;
-  QoD=;
-  ZoD=${ZoD%/}; # muss im aufrufenden Programm (als Gesamtpfad) definiert werden
-  if [ -z "$ZoD" ]; then
-    printf "$blau$0$reset wurde aufgerufen (Mutterprogrammvariable MUPR: $blau$MUPR$reset), ohne dass dort die Variable ${blau}ZoD$reset definiert wurde, breche ab\n";
-    exit 4;
-  fi;
-  ZL=$ZoD; # der Eingangs-slash muss ggf. dran bleiben!
-elif [ $HOSTK/ = $LINEINS/ ]; then
-  QL=;
-  QoD=localhost; # Quelle ohne Doppelpunkt
-  if [ -z "$ZoD" ]; then
-    printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-    exit 0;
-  fi;
-  ANDERER=$ZoD; # z.B. linux0
-  ZL=$ZoD:;
-else
-  QoD=$LINEINS;     # Quelle ohne Doppelpunkt, linux1
-  QL=$QoD:;      # linux1:
-  ZL=;         # Ziel, dieser PC
-  ZoD=;         # Ziel ohne Doppelpunkt
-  ANDERER=$QoD; # linux1
-fi;
 [ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
   sed -i.bak "/^SD=/c\\SD=\"$SD\"" "$0"
@@ -323,7 +300,7 @@ fi;
   echo SDQ: $SDQ;
   [ "$SD" ]||exit 0;
 }
-fi;
+
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 [ "$verb" ]&&printf "Prot: $blau$PROT$reset\n"
 [ "$obdel" ]&&OBDEL="--delete"||OBDEL=;
