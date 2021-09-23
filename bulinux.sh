@@ -2,21 +2,6 @@
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
-. ${MUPR%/*}/virtnamen.sh
-Dt=DATA; 
-USB=1;
-altZL=$ZL; ZL=;
-altEXFEST=$EXFEST;EXFEST=;
-iniKop=1;
-[ "$iniKop" ]&&ur=opt||ur=mnt/virtwin;
-for V in PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber; do
-  case $V in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
-  case $V in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL=$OBDEL;;esac;
-  kopiermt "$ur/turbomed/$V" "mnt/$gpc/turbomed/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
-done;
-ZL=$altZL;
-EXFEST=$altEXFEST;
-USB=;
 [ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 [ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
@@ -36,6 +21,7 @@ done;
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$ZL$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
+Dt=DATA; 
 mountpoint -q /$Dt || mount /$Dt;
 ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
