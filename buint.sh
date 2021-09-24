@@ -1,7 +1,6 @@
 #!/bin/zsh
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
 # mountvirt.sh -a
-USB=1;
 wirt=$(hostname); wirt=${wirt%%.*};
 [ $wirt = linux1 ]&&obsh=||obsh="ssh linux1";
 ot=/opt/turbomed;
@@ -26,15 +25,14 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ $obvirt ]&&ZoD=${ot#/}||ZoD=/mnt/$gpc;
 . ${MUPR%/*}/bugem.sh
 [ "$verb" ]&&echo obvirt: $obvirt;
-USB=1;
 altEXFEST=$EXFEST;EXFEST=;
 for Vz in $VzL; do
   case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
-  case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL=$OBDEL;;esac;
+  case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
+    # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   [ $obvirt ]&&{ ur=mnt/$gpc/turbomed; hin=$ot-res;}||{ ur=$ot; hin=mnt/$gpc/turbomed;}
   kopiermt "$ur/$Vz" "$hin/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
 exit;
-USB=;
 ZL=$altZL;
 EXFEST=$altEXFEST;

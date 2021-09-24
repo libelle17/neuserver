@@ -94,7 +94,7 @@ obalt() {
 	[ "$faq" ]&& return 0;
 	ret=; # <> "" = Datei fehlt auf Ziel
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
-  if test $ret = 0; then
+  if test $ret/ = 0/; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
     printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
     ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
@@ -103,7 +103,7 @@ obalt() {
     diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
     ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
   #  ! awk "func abs(v){return v<0?-v:v}; BEGIN{ exit abs($alterdort-$alterhier)>$2 }";
-    printf "Altersdifferenz $blau $diff ";if test $ret = 0; then printf ">="; else printf "<";fi; printf "$2$reset s\n";
+    printf "Altersdifferenz $blau $diff ";if test $ret/ = 0/; then printf ">="; else printf "<";fi; printf "$2$reset s\n";
     # wenn die Funktion 0 zurückliefert, wird in in "if obalt" verzweigt
   fi;
   return $ret;
@@ -249,12 +249,12 @@ kopiermt() { # mit test
 #    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $OBDEL $ergae$AUSSCHL" $dblau;
+      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $ergae$AUSSCHL" $dblau;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $OBDEL $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $ergae$AUSSCHL$reset\n";
     fi;
     verb=$altverb;
-		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret = 0 ]&&EXGES=${EXGES},/$QVos/;
+		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret/ = 0/ ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
@@ -290,7 +290,7 @@ obecht=;
 obdel=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
-[ ${HOST##.*} = $LINEINS -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+[ ${HOST##.*}/ = $LINEINS/ -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 #im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
 
 [ "$sdneu"/ = 2/ ]&&{
