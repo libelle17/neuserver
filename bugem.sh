@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/dash
 # soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
@@ -130,7 +130,24 @@ kopiermt() { # mit test
   if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; else
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
-   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
+  [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
+  for zute in "/$QVos" "/$ZVos"; do # zutesten
+    if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
+      [ "$Lfw" ]||Lfw=${HOST%%.*}" (hier) ";
+    if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
+      ok=;
+      zuteh=${zute%/};
+      while :; do
+        [ "$zuteh" ]||break;
+        if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
+        zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
+      done;
+      [ "$ok" ]||{
+        printf "Laufwerk $blau$zute$reset auf $blau$Lfw$reset nicht gemountet, breche ab!\n";
+        return 7;
+      }
+    fi;
+  done;
   if [ "$verb" ]; then
     echo QVofs: $QVofs
     echo QVos : $QVos
@@ -278,8 +295,8 @@ kopieretc() {
 
 # hier geht's los
 blau="\033[1;34m";
-dblau="\e[0;34;1;47m";
-rot="\e[1;31m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
 reset="\033[0m";
 kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"

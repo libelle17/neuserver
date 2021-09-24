@@ -1,6 +1,12 @@
-#!/bin/zsh
+#!/bin/dash
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
 # mountvirt.sh -a
+wirt=$(hostname); wirt=${wirt%%.*};
+[ $wirt = linux1 ]&&obsh="sh -c"||obsh="ssh linux1";
+ot=/opt/turbomed;
+if eval "$obsh 'test -d $ot/PraxisDB'"; then 
+else
+fi;
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 wirt=$ZoD;

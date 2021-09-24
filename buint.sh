@@ -1,11 +1,12 @@
-#!/bin/zsh
+#!/bin/dash
+# zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
 # mountvirt.sh -a
-wirt=$(hostname); wirt=${wirt%%.*};
-[ $wirt = linux1 ]&&obsh=||obsh="ssh linux1";
+wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
+[ $wirt = linux1 ]&&obsh="sh -c"||obsh="ssh linux1";
 ot=/opt/turbomed;
-if $obsh test -d $ot/PraxisDB; then 
-  obvirt=; 
+if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+  obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
 else 
   obvirt=1; 
@@ -21,10 +22,10 @@ if [ $wirt != linux1 ]; then
 fi;
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/virtnamen.sh # braucht $wirt
-. ./virtnamen.sh
 [ $obvirt ]&&ZoD=${ot#/}||ZoD=/mnt/$gpc;
 . ${MUPR%/*}/bugem.sh
-[ "$verb" ]&&echo obvirt: $obvirt;
+[ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
+[ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=;
 for Vz in $VzL; do
   case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
