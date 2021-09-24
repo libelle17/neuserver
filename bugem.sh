@@ -96,7 +96,10 @@ obalt() {
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
-    printf "geändert Quelle: $blau%15d$reset s (" $geaenq; date -d "1970-01-01 UTC $geaenq seconds" +"%Y-%m-%d %T %z"; printf ")\n";
+    printf "geändert Quelle: $blau%15d$reset s (" $geaenq; 
+    awk 'BEGIN { printf strftime("%d.%m.%Y %T %z", '$geaenq'); }';
+    printf ")\n";
+#    date -d "1970-01-01 UTC $geaenq seconds" +"%Y-%m-%d %T %z"; 
     ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
     printf "geändert Ziel  : $blau%15d$reset s (%x %X)\n" $geaenz $geaenz $geaenz;
   #	geaenq=$(expr $geaenq + 2000);
