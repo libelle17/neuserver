@@ -13,7 +13,7 @@ commandline() {
   verb=;
   oballe=;
 	while [ $# -gt 0 ]; do
-    para=$(echo "$1"|sed 's;^[-/]\+;;');
+    para=${1#[-/]};
 		case $para in
       a) oballe=a;;
       v) verb=v;;
@@ -54,6 +54,7 @@ else
   for iru in 1 2; do
    for wirt in $gausw; do
 .   ${MUPR%/*}/virtnamen.sh
+. ./virtnamen.sh
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
 #                 *7*) gpc=virtwin7; gast=Wi10;;
