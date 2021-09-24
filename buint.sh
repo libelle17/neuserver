@@ -33,6 +33,7 @@ for Vz in $VzL; do
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   [ $obvirt ]&&{ ur=mnt/$gpc/turbomed; hin=$ot-res;}||{ ur=$ot; hin=mnt/$gpc/turbomed;}
   kopiermt "$ur/$Vz" "$hin/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+  exit;
 done;
 exit;
 ZL=$altZL;

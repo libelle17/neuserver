@@ -94,11 +94,11 @@ obalt() {
 	[ "$faq" ]&& return 0;
 	ret=; # <> "" = Datei fehlt auf Ziel
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
-  if test $ret/ = 0/; then
+  if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
-    printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
+    printf "geändert Quelle: $blau%15d$reset s (" $geaenq; date -d "1970-01-01 UTC $geaenq seconds" +"%Y-%m-%d %T %z"; printf ")\n";
     ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
-    printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
+    printf "geändert Ziel  : $blau%15d$reset s (%x %X)\n" $geaenz $geaenz $geaenz;
   #	geaenq=$(expr $geaenq + 2000);
     diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
     ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
