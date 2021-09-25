@@ -306,7 +306,6 @@ commandline "$@"; # alle Befehlszeilenparameter übergeben, QL und ZL festlegen
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 [ "$HOST" ]||HOST=$(hostname);
 if [ ${HOST##.*}/ = $LINEINS/ ]; then
-  QL=$LINEINS;
   [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 #im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
 fi;

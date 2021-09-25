@@ -5,6 +5,7 @@
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
 wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
+[ $(hostname) != $LINEINS ]&&QL=$LINEINS;
 [ $wirt = linux1 ]&&obsh="sh -c"||obsh="ssh linux1";
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
