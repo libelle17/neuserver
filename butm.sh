@@ -35,8 +35,9 @@ fi;
 kopiermt "$ur" "$hin" "" "$OBDEL" "PraxisDB/objects.dat" "1800" 1; # ohne --iconv
 Dt=DATA; 
 Pt=Patientendokumente;
-ausf "$qssh 'mountpoint -q /$Dt 2>/dev/null||mount /$Dt'";
-ausf "$zssh 'mountpoint -q /$Dt 2>/dev/null||mount /$Dt'";
+for zug in "$qssh" "$zssh"; do
+  ausf "$zug 'mountpoint -q /$Dt 2>/dev/null||mount /$Dt'";
+done;
 ausf "$qssh 'mountpoint -q /${Dt} 2>/dev/null'&&$zssh 'mountpoint -q /${Dt} 2>/dev/null'"
 if [ "$ret"/ = 0/ ]; then
  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL"

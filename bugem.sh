@@ -241,7 +241,7 @@ kopiermt() { # mit test
     done;
     printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
   fi; # if [ "$7" ]
-  if test $rest > 0; then
+  if test $rest -gt 0; then
 		case $QVos in *var/lib/mysql*)
 			printf "stoppe mysql auf $blau$ZL$reset\n";
 			ausf "$zssh 'systemctl stop mysql'";
@@ -277,7 +277,7 @@ kopiermt() { # mit test
 	  esac;
 		return 0;
   else
-    printf "Kopieren nicht begonnen, Speicherreserve: $blau$rest$reset\n";
+    printf "${rot}Kopieren nicht begonnen${reset}, Speicherreserve: $blau$rest$reset\n";
 		return 1;
   fi;
 } # kopiermt
