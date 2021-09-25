@@ -96,12 +96,9 @@ obalt() {
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
-    printf "geändert Quelle: $blau%15d$reset s (" $geaenq; 
-    awk 'BEGIN { printf strftime("%d.%m.%Y %T %z", '$geaenq'); }';
-    printf ")\n";
-#    date -d "1970-01-01 UTC $geaenq seconds" +"%Y-%m-%d %T %z"; 
+    awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
     ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
-    printf "geändert Ziel  : $blau%15d$reset s (%x %X)\n" $geaenz $geaenz $geaenz;
+    awk 'BEGIN{printf strftime("geändert   Ziel: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenz');}';
   #	geaenq=$(expr $geaenq + 2000);
     diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
     ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
@@ -123,9 +120,6 @@ kopiermt() { # mit test
   # $7 = ob ohne Platzprüfung
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
 
-  [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
-  [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
-  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
@@ -304,12 +298,15 @@ reset="\033[0m";
 kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
-[ "$HOST" ]||HOST=$(hostname);
 verb=;
 obecht=;
 obdel=;
 sdneu=;
-commandline "$@"; # alle Befehlszeilenparameter übergeben
+commandline "$@"; # alle Befehlszeilenparameter übergeben, QL und ZL festlegen
+[ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+[ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
+[ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
+[ "$HOST" ]||HOST=$(hostname);
 [ ${HOST##.*}/ = $LINEINS/ -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 #im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
 
