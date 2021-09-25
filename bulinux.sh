@@ -1,6 +1,7 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1
 [ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;ZL=$(hostname);}
 . ${MUPR%/*}/bugem.sh
 [ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;

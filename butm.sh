@@ -4,6 +4,7 @@
 # das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1
 [ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;ZL=$(hostname);}
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
 [ -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}

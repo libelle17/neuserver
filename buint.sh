@@ -4,9 +4,11 @@
 # wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1
+QL=;ZL=;
 wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
 [ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;ZL=$(hostname);}
-[ $wirt = linux1 ]&&obsh="sh -c"||obsh="ssh linux1";
+[ $wirt = $LINEINS ]&&obsh="sh -c"||obsh="ssh $LINEINS";
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
 ot=/opt/turbomed;
