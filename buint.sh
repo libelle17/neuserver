@@ -21,7 +21,7 @@ else
   ur=mnt/$gpc/turbomed; 
   hin=$res;
 fi;
-if [ $wirt != linux1 ]; then
+if [ $wirt/ != $LINEINS/ ]; then
   if [ "$obvirt" ]; then
     [ -d $ot -a ! -d $res ]&& mv $ot $res;
   else

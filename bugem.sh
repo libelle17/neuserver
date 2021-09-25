@@ -67,7 +67,7 @@ commandline() {
 #    QL=;
 #    ZL=linux7
 #  her:
-#    QL=linux1
+#    QL=LINEINS
 #    ZL=;
 #    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
 #    QVofs=/ Pfad/zum/qv[/]
@@ -303,12 +303,15 @@ obecht=;
 obdel=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, QL und ZL festlegen
-[ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
-[ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 [ "$HOST" ]||HOST=$(hostname);
-[ ${HOST##.*}/ = $LINEINS/ -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+if [ ${HOST##.*}/ = $LINEINS/ ]; then
+  QL=$LINEINS;
+  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 #im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
+fi;
+[ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+[ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 
 [ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }

@@ -16,7 +16,7 @@ rgpc=$gpc; # Gast-PC des Reserveservers
 ot=/opt/turbomed;
 res=$ot-res;
 wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
-case $wirt in linux1)obsh="sh -c";;*)obsh="ssh linux1";;esac
+case $wirt in $LINEINS)obsh="sh -c";;*)obsh="ssh $LINEINS";;esac
 if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
