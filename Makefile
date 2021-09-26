@@ -311,7 +311,9 @@ git: README.md
 	$(call setz_gitv,".")
 	-git config --global push.default simple
 	-git add -u
-	@printf "vor commit\n"
+	@printf "vor commit 1\n"
+#  @printf "vor commit, DProg: $(DPROG) \n"
+	@printf "vor commit 2\n"
 	-git commit -m "Version $$(cat versdt)"
   @printf "nach commit, DProg: $(DPROG) \n"
   -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
