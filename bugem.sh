@@ -1,5 +1,6 @@
 #!/bin/dash
-# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
+# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh, buint.sh
+#im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -44,7 +45,7 @@ commandline() {
         d|-del) obdel=1;;
       esac;;
      *)
-      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7
+#      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
       ZL=${1%%:*};; # z.B. linux0
    esac;
    shift;
@@ -67,7 +68,7 @@ commandline() {
 #    QL=;
 #    ZL=linux7
 #  her:
-#    QL=linux1
+#    QL=LINEINS
 #    ZL=;
 #    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
 #    QVofs=/ Pfad/zum/qv[/]
@@ -94,11 +95,11 @@ obalt() {
 	[ "$faq" ]&& return 0;
 	ret=; # <> "" = Datei fehlt auf Ziel
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
-  if test $ret/ = 0/; then
+  if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
-    printf "geändert Quelle: $blau%15d$reset s\n" $geaenq;
+    awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
     ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
-    printf "geändert Ziel  : $blau%15d$reset s\n" $geaenz;
+    awk 'BEGIN{printf strftime("geändert   Ziel: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenz');}';
   #	geaenq=$(expr $geaenq + 2000);
     diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
     ret=$(awk "BEGIN{print ($diff<$2);}"); # wenn richtig, liefert awk 1, sonst 0
@@ -120,9 +121,6 @@ kopiermt() { # mit test
   # $7 = ob ohne Platzprüfung
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
 
-  [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
-  [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
-  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
@@ -133,7 +131,7 @@ kopiermt() { # mit test
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
-      [ "$Lfw" ]||Lfw=${HOST%%.*}" (hier) ";
+      [ "$Lfw" ]||Lfw=$buhost" (hier) ";
     if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
       ok=;
       zuteh=${zute%/};
@@ -226,25 +224,27 @@ kopiermt() { # mit test
     rest=1;
   else
     # Platz ausrechnen:
-    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; verfueg=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
-    # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
-    printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
-    printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
-    rest=$(expr $verfueg - $zukop + $schonda);
-    [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
-       E=${E#/};
-       [ "$verb" ]&&printf "E: $blau$E$reset\n";
-       [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-       ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
-       ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
-       rest=$(expr $rest - $papz + $papq);
-    done;
-    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
+    printf "verfuegbar          : $blau%15d$reset Bytes\n" $rest;
+    if test $rest -gt 0; then
+      # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
+      printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
+      rest=$(expr $rest - $zukop + $schonda);
+      [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
+         E=${E#/};
+         [ "$verb" ]&&printf "E: $blau$E$reset\n";
+         [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
+         ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
+         ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
+         rest=$(expr $rest - $papz + $papq);
+      done;
+      printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+    fi;
   fi; # if [ "$7" ]
-  if test $rest > 0; then
+  if test $rest -gt 0; then
 		case $QVos in *var/lib/mysql*)
 			printf "stoppe mysql auf $blau$ZL$reset\n";
 			ausf "$zssh 'systemctl stop mysql'";
@@ -280,7 +280,7 @@ kopiermt() { # mit test
 	  esac;
 		return 0;
   else
-    printf "Kopieren nicht begonnen, Speicherreserve: $blau$rest$reset\n";
+    printf "${rot}Kopieren nicht begonnen${reset}, Speicherreserve: $blau$rest$reset\n";
 		return 1;
   fi;
 } # kopiermt
@@ -301,14 +301,17 @@ reset="\033[0m";
 kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
-[ "$HOST" ]||HOST=$(hostname);
 verb=;
 obecht=;
 obdel=;
 sdneu=;
-commandline "$@"; # alle Befehlszeilenparameter übergeben
-[ ${HOST##.*}/ = $LINEINS/ -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-#im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
+commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
+[ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
+if [ "$buhost"/ = "$LINEINS"/ ]; then
+  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+fi;
+[ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+[ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 
 [ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }

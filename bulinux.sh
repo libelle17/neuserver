@@ -1,10 +1,14 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bugem.sh
-[ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+[ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-[ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
+[ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopieros ".vim"
 kopieros ".smbcredentials"
@@ -44,7 +48,7 @@ if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/";
- [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/";
+ [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
 fi;
 exit; # Ende
@@ -64,7 +68,7 @@ scp $PROT $ANDERER:/var/log/
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  scp $PROT $ANDERER:/$Dt/
 fi;
-if [ $HOSTK/ != $LINEINS/ ]; then
+if [ "$buhost"/ != "$LINEINS"/ ]; then
 	NES=~/neuserver;
 	echo Rufe los.sh auf;
 	LOS=los.sh;
