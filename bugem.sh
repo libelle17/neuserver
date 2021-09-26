@@ -223,23 +223,25 @@ kopiermt() { # mit test
     rest=1;
   else
     # Platz ausrechnen:
-    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; verfueg=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
-    # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
-    printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
-    printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
-    rest=$(expr $verfueg - $zukop + $schonda);
-    [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
-       E=${E#/};
-       [ "$verb" ]&&printf "E: $blau$E$reset\n";
-       [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-       ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
-       ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
-       rest=$(expr $rest - $papz + $papq);
-    done;
-    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
+    printf "verfuegbar          : $blau%15d$reset Bytes\n" $rest;
+    if test $rest -gt 0; then
+      # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
+      printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
+      rest=$(expr $rest - $zukop + $schonda);
+      [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
+         E=${E#/};
+         [ "$verb" ]&&printf "E: $blau$E$reset\n";
+         [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
+         ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
+         ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
+         rest=$(expr $rest - $papz + $papq);
+      done;
+      printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+    fi;
   fi; # if [ "$7" ]
   if test $rest -gt 0; then
 		case $QVos in *var/lib/mysql*)
