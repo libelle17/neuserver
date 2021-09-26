@@ -24,14 +24,14 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
   hin=$ot;
-  ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv $res $otP'" $blau; # umgekehrt
+  ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
 else 
   obvirt=1; 
   ur=mnt/$l1gpc/turbomed/; 
   hin=mnt/$rgpc/turbomed;
   QL=;
   ZL=; # dann werden die cifs-Laufwerke verwendet
-  ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP $res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
+  ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";

@@ -20,7 +20,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   ur=$ot # opt/turbomed
   hin=mnt/$gpc/turbomed;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$otP" ]; then
-    ausf "mv $res $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
+    ausf "mv /$res $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
 else 
   obvirt=1; 
@@ -28,7 +28,7 @@ else
   ur=mnt/$gpc/turbomed; 
   hin=$ot;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$res" ]; then
-    ausf "mv $otP $res" $blau; # dann ggf. die linux-Datenbank umbenennen
+    ausf "mv $otP /$res" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
