@@ -15,7 +15,7 @@ res=$ot-res;
 if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
-  ur=$ot/; 
+  ur=$ot; 
   hin=mnt/$gpc/turbomed;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$ot" ]; then
     ausf "mv $res $ot" $blau; # # dann ggf. die linux-Datenbank umbenennen
@@ -23,8 +23,8 @@ if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/
 else 
   obvirt=1; 
   VzL="PraxisDB StammDB DruckDB Dictionary";
-  ur=mnt/$gpc/turbomed/; 
-  hin=$res/;
+  ur=mnt/$gpc/turbomed; 
+  hin=$res;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$ot" -a ! -d "$res" ]; then
     ausf "mv $ot $res" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
