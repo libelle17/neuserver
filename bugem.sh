@@ -82,6 +82,7 @@ commandline() {
 obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
+  # liefert 0, wenn auf Quelle vorhanden und (alt genug oder auf Ziel fehlend), sonst 1
   [ "$obdat" ]&&DaQ="/${QVos%/*}${1#/}"||DaQ="/$QVos/${1#/}";
   [ "$obdat" ]&&DaZ="/${ZVos%/*}${1#/}"||DaZ="/$ZVos/${1#/}";
 	[ "$verb" ]&&{
@@ -92,9 +93,9 @@ obalt() {
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
   eval "$qssh 'stat \"$DaQ\" >/dev/null 2>&1'||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
-	[ "$faq" ]&& return 0;
+	[ "$faq" ]&& return 1;
 	ret=; # <> "" = Datei fehlt auf Ziel
-  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
+  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=0; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
     awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
