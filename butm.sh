@@ -18,7 +18,8 @@ rgpc=$gpc; # Gast-PC des Reserveservers
 
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
-res=$otP-res;
+resD=PraxisDB-res;
+res=$ot/$resD;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
@@ -32,7 +33,7 @@ else
   QL=;
   ZL=; # dann werden die cifs-Laufwerke verwendet
   ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP $res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
-  ex=PraxisDB-res;
+  ex=$resD;
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";

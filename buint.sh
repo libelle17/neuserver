@@ -12,7 +12,8 @@ wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
-res=$otP-res;
+resD=PraxisDB-res;
+res=$ot/$resD;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
@@ -39,7 +40,7 @@ for Vz in $VzL; do
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   case $Vz in PraxisDB) 
     uq=$Vz;
-    [ "$obvirt" ]&&uz=$res||uz=$Vz;;
+    [ "$obvirt" ]&&uz=$resD||uz=$Vz;;
     *) uq=$Vz; uz=$Vz;;
   esac;
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
