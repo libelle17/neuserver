@@ -4,6 +4,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1
 [ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
 . ${MUPR%/*}/bugem.sh
+[ "$(hostname)" = $LINEINS -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 [ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 [ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
