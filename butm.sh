@@ -42,6 +42,6 @@ for zug in "$qssh" "$zssh"; do
 done;
 ausf "$qssh 'mountpoint -q /${Dt} 2>/dev/null'&&$zssh 'mountpoint -q /${Dt} 2>/dev/null'"
 if [ "$ret"/ = 0/ ]; then
- kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL"
- kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL"
+ kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
+ kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
 fi;
