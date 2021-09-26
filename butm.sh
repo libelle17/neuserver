@@ -25,7 +25,6 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   ur=$ot/; 
   hin=$ot;
   ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv $res $otP'" $blau; # umgekehrt
-  ex=PraxisDB;
 else 
   obvirt=1; 
   ur=mnt/$l1gpc/turbomed/; 
@@ -33,11 +32,12 @@ else
   QL=;
   ZL=; # dann werden die cifs-Laufwerke verwendet
   ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP $res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
-  ex=$resD;
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-kopiermt "$ur" "$hin" "" "$OBDEL" "$ex" "1800" 1; # ohne --iconv
+echo ur: $ur
+echo hin: $hin
+kopiermt "$ur" "$hin" "" "$OBDEL" "PraxisDB/" "1800" 1; # ohne --iconv
 ZL=$altZL;
 Dt=DATA; 
 Pt=Patientendokumente;
