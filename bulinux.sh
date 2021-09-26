@@ -26,12 +26,12 @@ V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" -
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 Dt=DATA; 
-mountpoint -q /$Dt || mount /$Dt;
-ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
-if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
+ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
-  if test $uverz = Praxis || test $ZoD != linux7; then # wegen Speicherplatz auf linux7
+  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
