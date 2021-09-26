@@ -1,12 +1,38 @@
-#!/bin/zsh
+#!/bin/dash
 USB=Seagate\ Expansion\ Drive
 logf=/var/log/$USB.log
 #ZoD=/mnt/seag
-ZoD=/mnt/SeagateBackupPlusDrive
+ZL=;
+Ziel=/mnt/SeagateBackupPlusDrive
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
-mountpoint -q "$ZoD" || mount "$ZoD"
+mountpoint -q "$Ziel" || mount "$Ziel"
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
+for u in \
+  "Patientendokumente/Schade zu benennen" \
+  down \
+  shome/gerald/Schade/sz \
+  turbomed \
+  rett/ungera \
+  Patientendokumente \
+  "eigene Dateien/DM" \
+  "eigene Dateien/TMExport" \
+  shome/gerald/Schade \
+  "eigene Dateien/Angiologie"; \
+do \
+  kopiermt "DATA/$u/" "$Ziel/DATA/$u/" "";
+done;
+exit;
+for u in \
+  opt/turbomed \
+  "DATA/eigene Dateien" \
+  var/spool/hylafax \
+  "root/.vim" \
+  "root/.smbcredentials" \
+do \
+  kopiermt "$u/" "$Ziel/$u/" "";
+done;
+exit;
 kopiermt "DATA/down" ... "" "--delete --iconv=latin1,utf8"
 kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
 kopiermt "DATA/shome/gerald/Schade/sz" ... "" --delete
