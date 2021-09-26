@@ -40,7 +40,7 @@ for Vz in $VzL; do
   case $Vz in PraxisDB) 
     uq=$Vz;
     [ "$obvirt" ]&&uz=$res||uz=$Vz;;
-    *) uq=$Vz; qz=$Vz;;
+    *) uq=$Vz; uz=$Vz;;
   esac;
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
