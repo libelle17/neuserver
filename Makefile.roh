@@ -312,7 +312,7 @@ git: README.md
 	-git config --global push.default simple
 	-git add -u
 	@printf "vor commit 1\n"
-#  @printf "vor commit, DProg: $(DPROG) \n"
+	echo $(DPROG)
 	@printf "vor commit 2\n"
 	-git commit -m "Version $$(cat versdt)"
   @printf "nach commit, DProg: $(DPROG) \n"
