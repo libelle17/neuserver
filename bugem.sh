@@ -1,5 +1,6 @@
 #!/bin/dash
-# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
+# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh, buint.sh
+#im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -44,7 +45,7 @@ commandline() {
         d|-del) obdel=1;;
       esac;;
      *)
-      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7
+#      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
       ZL=${1%%:*};; # z.B. linux0
    esac;
    shift;
@@ -130,7 +131,7 @@ kopiermt() { # mit test
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
-      [ "$Lfw" ]||Lfw=${HOST%%.*}" (hier) ";
+      [ "$Lfw" ]||Lfw=$buhost" (hier) ";
     if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
       ok=;
       zuteh=${zute%/};
@@ -304,12 +305,10 @@ verb=;
 obecht=;
 obdel=;
 sdneu=;
-commandline "$@"; # alle Befehlszeilenparameter übergeben, QL und ZL festlegen
+commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
-[ "$HOST" ]||HOST=$(hostname);
-if [ ${HOST##.*}/ = $LINEINS/ ]; then
+if [ "$buhost"/ = "$LINEINS"/ ]; then
   [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-#im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
 fi;
 [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";

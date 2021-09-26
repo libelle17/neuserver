@@ -4,10 +4,10 @@
 # das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
-. ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
-[ "$(hostname)" = $LINEINS -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+[ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
 l1gpc=$gpc; # Gast-PC von Linux1
@@ -17,8 +17,7 @@ rgpc=$gpc; # Gast-PC des Reserveservers
 
 ot=/opt/turbomed;
 res=$ot-res;
-wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
-case $wirt in $LINEINS)obsh="sh -c";;*)obsh="ssh $LINEINS";;esac
+case $buhost in $LINEINS)obsh="sh -c";;*)obsh="ssh $LINEINS";;esac
 if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 

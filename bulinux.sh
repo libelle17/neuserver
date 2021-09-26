@@ -1,13 +1,13 @@
 #!/bin/zsh
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
-. ${MUPR%/*}/bugem.sh
-[ "$(hostname)" = $LINEINS -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
-[ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+[ "$buhost"/ != "$LINEINS"/ ]&&QL=$LINEINS||ZL=;
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-[ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
+[ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopieros ".vim"
 kopieros ".smbcredentials"
@@ -67,7 +67,7 @@ scp $PROT $ANDERER:/var/log/
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  scp $PROT $ANDERER:/$Dt/
 fi;
-if [ $HOSTK/ != $LINEINS/ ]; then
+if [ "$buhost"/ != "$LINEINS"/ ]; then
 	NES=~/neuserver;
 	echo Rufe los.sh auf;
 	LOS=los.sh;

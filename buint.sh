@@ -6,8 +6,7 @@
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1
 QL=;ZL=;
-wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 [ $wirt = $LINEINS ]&&obsh="sh -c"||obsh="ssh $LINEINS";
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
