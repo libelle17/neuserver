@@ -87,7 +87,6 @@ obalt() {
   [ "$obdat" ]&&DaZ="/${ZVos%/*}${1#/}"||DaZ="/$ZVos/${1#/}";
 	[ "$verb" ]&&{
 		echo obalt "$1" "$2" "$3" "$4"
-	  echo QVos: $QVos, ZVos: $ZVos
 	  echo DaQ: $DaQ, DaZ: $DaZ
 	}
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
@@ -126,9 +125,10 @@ kopiermt() { # mit test
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
   [ "$obsub" ]&&{ $qssh "[ -f '/$QVos' ]"&&obdat=1||obdat=;};
-  if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; else
+  if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; [ "$ZVofs" = "$QVofs/" ]&&ZVofs=""; else # letzteres für QVofs ohne /
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
+  ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
@@ -171,12 +171,13 @@ kopiermt() { # mit test
   printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, QVofs: $QVofs, ZL: $ZL, ZVos: $ZVos, ZVofs: $ZVofs$reset\n";
   [ "$5" -a "$6" -a -z "$obdat" ]&&{
    obalt "$5" "$6"||return 1;
+   [ "$faq" ]&&return 2;
 	}
   EXREST=$EXGES;
   EXAKT=;
   while [ "$EXREST" ]; do
-    EXHIER=$(readlink -f ${EXREST##*,}); EXREST=${EXREST%,*};
-    case $EXHIER in $(readlink -f /$QVofs)*) EXAKT="$EXAKT,${EXHIER%/}/";; esac;
+    EXHIER=$(readlink -f "${EXREST##*,}"); EXREST=${EXREST%,*};
+    case "$EXHIER" in $(readlink -f "/$QVofs")*) EXAKT="$EXAKT,"${EXHIER%/}"/";; esac;
   done;
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
@@ -225,24 +226,27 @@ kopiermt() { # mit test
     rest=1;
   else
     # Platz ausrechnen:
-    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    printf "verfuegbar          : $blau%15d$reset Bytes\n" $rest;
+#    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
+    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'"; rest=${resu:-0}; # *1024 => Bytes
+    echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if test $rest -gt 0; then
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
-      printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
-      printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'"; schonda=${resu:-0};
+      echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       rest=$(expr $rest - $zukop + $schonda);
-      [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
-         E=${E#/};
+      [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
+         E=$(echo $E|sed 's/\\/\\ /g');
+         case $E in /*) zQ=/${E#/};zZ=$zQ;;*) zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};;esac;
+         echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ 
          [ "$verb" ]&&printf "E: $blau$E$reset\n";
          [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-         ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
-         ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
+         ausf "$zssh 'test -d \"$zZ\" && du \"$zZ\" -d0'|awk '{print \$1*1}'"; papz=${resu:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du \"$zQ\" -d0'|awk '{print \$1*1}'"; papq=${resu:-0};
          rest=$(expr $rest - $papz + $papq);
       done;
-      printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+      echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
     fi;
   fi; # if [ "$7" ]
   if test $rest -gt 0; then

@@ -43,13 +43,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
  done;
  for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
   auslass=;
-  [ $ZoD = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
+  [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
   [ -z $auslass ]&&kopiermt "$Dt/$A" ... "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
- kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
+ kopiermt "$Dt" ... "$EXCL" "-W $OBDEL";
 fi;
 exit; # Ende
 

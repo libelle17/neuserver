@@ -16,25 +16,27 @@ wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 
-ot=/opt/turbomed;
-res=$ot-res;
-altZL=$ZL;
-if eval "$tush 'test -d $ot/PraxisD'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+ot=opt/turbomed;
+otP=/$ot/PraxisDB;
+res=$otP-res;
+if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
   hin=$ot;
-  ausf "$zssh '[ -d $res -a ! -d $ot ]&& mv $res $ot'" $blau; # umgekehrt
+  ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv $res $otP'" $blau; # umgekehrt
+  ex=PraxisDB;
 else 
   obvirt=1; 
   ur=mnt/$l1gpc/turbomed/; 
   hin=mnt/$rgpc/turbomed;
   QL=;
   ZL=; # dann werden die cifs-Laufwerke verwendet
-  ausf "$zssh '[ -d $ot -a ! -d $res ]&& mv $ot $res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
+  ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP $res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
+  ex=PraxisDB-res;
 fi;
-[ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
+[ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-kopiermt "$ur" "$hin" "" "$OBDEL" "PraxisDB/objects.dat" "1800" 1; # ohne --iconv
+kopiermt "$ur" "$hin" "" "$OBDEL" "$ex" "1800" 1; # ohne --iconv
 ZL=$altZL;
 Dt=DATA; 
 Pt=Patientendokumente;

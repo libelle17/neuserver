@@ -10,23 +10,24 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
-ot=/opt/turbomed;
-res=$ot-res;
-if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+ot=opt/turbomed;
+otP=/$ot/PraxisDB;
+res=$otP-res;
+if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
-  ur=$ot; 
+  ur=$ot # opt/turbomed
   hin=mnt/$gpc/turbomed;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$ot" ]; then
-    ausf "mv $res $ot" $blau; # # dann ggf. die linux-Datenbank umbenennen
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$otP" ]; then
+    ausf "mv $res $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
 else 
   obvirt=1; 
   VzL="PraxisDB StammDB DruckDB Dictionary";
   ur=mnt/$gpc/turbomed; 
-  hin=$res;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$ot" -a ! -d "$res" ]; then
-    ausf "mv $ot $res" $blau; # dann ggf. die linux-Datenbank umbenennen
+  hin=$ot;
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$res" ]; then
+    ausf "mv $otP $res" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
@@ -36,7 +37,12 @@ for Vz in $VzL; do
   case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-  kopiermt "$ur/$Vz" "$hin/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+  case $Vz in PraxisDB) 
+    uq=$Vz;
+    [ "$obvirt" ]&&uz=$res||uz=$Vz;;
+    *) uq=$Vz; qz=$Vz;;
+  esac;
+  kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
 exit;
 ZL=$altZL;
