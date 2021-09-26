@@ -12,13 +12,14 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 l1gpc=$gpc; # Gast-PC von Linux1
-wirt=$ZL;
+wirt=${ZL:-$buhost};
+echo wirt:  $wirt !!!!!!
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 
 ot=/opt/turbomed;
 res=$ot-res;
-if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+if eval "$tush 'test -d $ot/PraxisD'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
   hin=$ot;
