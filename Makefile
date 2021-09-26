@@ -319,7 +319,7 @@ git: README.md
 	-@printf "vor commit 3, $(DPROG) \n"
   -grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;
 	-@printf "vor commit 4, $(DPROG) \n"
-  -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
+  #-[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
 	@printf "vor push\n"
 	-git push -u origin master
 	@printf "nach push\n"
