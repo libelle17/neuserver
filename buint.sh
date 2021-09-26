@@ -43,6 +43,7 @@ for Vz in $VzL; do
     [ "$obvirt" ]&&uz=$resD||uz=$Vz;;
     *) uq=$Vz; uz=$Vz;;
   esac;
+  [ "$obforce" ]&&testdt=;
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
 exit;

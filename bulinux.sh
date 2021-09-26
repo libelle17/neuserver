@@ -36,7 +36,8 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
-		 kopiermt $qverz ... "" -d "${inbox##/$qverz/}" 604800;
+     [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
+		 kopiermt $qverz ... "" -d "$testdat" 604800;
 		 break;
    done;
   fi;
@@ -62,7 +63,8 @@ exit; # Ende
 kopiermt "gerade" "/" "" "$OBDEL"
 kopiermt "ungera" "/" "" "$OBDEL"
 VLM="var/lib/mysql";
-kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" ibdata1 86400;
+[ "$obforce" ]&&testdat=||testdat=ibdata1;
+kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
 # kopieretc "openvpn" # auskommentiert 29.7.19
 scp $PROT $ANDERER:/var/log/
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
