@@ -313,7 +313,9 @@ git: README.md
 	-git add -u
 	-git commit -m "Version $$(cat versdt)"
   -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
+	@printf "vor push\n"
 	-git push -u origin master
+	@printf "nach push\n"
 
 .PHONY: giterlaub
 giterlaub:

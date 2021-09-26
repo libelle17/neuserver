@@ -5,7 +5,7 @@
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;ZL=$(hostname);}
+[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
 [ -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=$QL;
