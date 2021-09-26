@@ -314,6 +314,7 @@ git: README.md
 	-git commit -m "Version $$(cat versdt)"
 	-@[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;}
 	-git push -u origin master
+	-printf "Fertig mit make .git";
 
 .PHONY: giterlaub
 giterlaub:
