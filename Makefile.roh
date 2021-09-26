@@ -315,7 +315,9 @@ git: README.md
 	-@printf "vor commit, $(DPROG) \n"
 	@printf "vor commit 2\n"
 	-git commit -m "Version $$(cat versdt)"
+	-@printf "vor commit, $(DPROG) \n"
   @printf "nach commit, DProg: $(DPROG) \n"
+	-@printf "vor commit, $(DPROG) \n"
   -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
 	@printf "vor push\n"
 	-git push -u origin master
