@@ -7,18 +7,18 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=$QL;
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 l1gpc=$gpc; # Gast-PC von Linux1
 wirt=$ZL;
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 
 ot=/opt/turbomed;
 res=$ot-res;
-case $buhost in $LINEINS)obsh="sh -c";;*)obsh="ssh $LINEINS";;esac
-if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   ur=$ot/; 
   hin=$ot;

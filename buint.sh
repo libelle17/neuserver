@@ -4,30 +4,29 @@
 # wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1
-QL=;ZL=;
-[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
-[ $wirt = $LINEINS ]&&obsh="sh -c"||obsh="ssh $LINEINS";
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
-. ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
+wirt=$buhost;
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
 ot=/opt/turbomed;
 res=$ot-res;
-if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+if eval "$tush 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
-  ur=$ot; 
+  ur=$ot/; 
   hin=mnt/$gpc/turbomed;
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$ot" ]; then
+    ausf "mv $res $ot" $blau; # # dann ggf. die linux-Datenbank umbenennen
+  fi;
 else 
   obvirt=1; 
   VzL="PraxisDB StammDB DruckDB Dictionary";
-  ur=mnt/$gpc/turbomed; 
-  hin=$res;
-fi;
-if [ $wirt/ != $LINEINS/ ]; then
-  if [ "$obvirt" ]; then
-    [ -d $ot -a ! -d $res ]&& mv $ot $res;
-  else
-    [ -d $res -a ! -d $ot ]&& mv $res $ot;
+  ur=mnt/$gpc/turbomed/; 
+  hin=$res/;
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$ot" -a ! -d "$res" ]; then
+    ausf "mv $ot $res" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
