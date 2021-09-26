@@ -312,13 +312,8 @@ git: README.md
 	-git config --global push.default simple
 	-git add -u
 	-git commit -m "Version $$(cat versdt)"
-	-[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git; echo gibts;}
-	-@printf "vor commit 3, $(DPROG) \n"
 	-[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;}
-	-@printf "vor commit 4, $(DPROG) \n"
-	@printf "vor push\n"
 	-git push -u origin master
-	@printf "nach push\n"
 
 .PHONY: giterlaub
 giterlaub:
