@@ -35,9 +35,7 @@ else
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-echo ur: $ur
-echo hin: $hin
-kopiermt "$ur" "$hin" "" "$OBDEL" "PraxisDB/" "1800" 1; # ohne --iconv
+kopiermt "$ur" "$hin" "" "$OBDEL" "PraxisDB/objects.dat" "1800" 1; # ohne --iconv
 ZL=$altZL;
 Dt=DATA; 
 Pt=Patientendokumente;
