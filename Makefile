@@ -314,6 +314,7 @@ git: README.md
 	@printf "vor commit 1\n"
 	-@printf "vor commit, $(DPROG) \n"
 	@printf "vor commit 2\n"
+	-@printf "vor commit, $(DPROG) \n"
 	-git commit -m "Version $$(cat versdt)"
 	-@printf "vor commit, $(DPROG) \n"
   @printf "nach commit, DProg: $(DPROG) \n"
