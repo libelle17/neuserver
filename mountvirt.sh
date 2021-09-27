@@ -85,7 +85,7 @@ else
        fi;
        [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
        [ -d "$mp" ]||mkdir -p "$mp";
-       mountpoint -q $mp||{ ausf "mount $mp" $blau; }
+       mountpoint -q $mp||{ ausf "mount $mp 2>/dev/null" $blau; }
      fi;
     done; # wirt in $auswahl
     if test "$iru" = 1 -a "$ergae"; then
