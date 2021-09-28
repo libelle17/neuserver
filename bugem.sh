@@ -333,7 +333,7 @@ fi;
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 [ "$verb" ]&&printf "Prot: $blau$PROT$reset\n"
 [ "$obdel" ]&&OBDEL="--delete"||OBDEL=;
-[ "$verb" ]&&echo QL: $QL, ZL: $ZL
+[ "$verb" ]&&echo QL: $QL, ZL: $ZL;
 # [ "$verb" ]&&echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
