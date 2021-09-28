@@ -29,7 +29,9 @@ else
   obvirt=1; 
   ur=mnt/$l1gpc/turbomed/; 
   hin=mnt/$rgpc/turbomed;
+  uQL=$QL;
   QL=;
+  uZL=$ZL;
   ZL=; # dann werden die cifs-Laufwerke verwendet
   ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
@@ -45,6 +47,8 @@ for zug in "$qssh" "$zssh"; do
 done;
 ausf "$qssh 'mountpoint -q /${Dt} 2>/dev/null'&&$zssh 'mountpoint -q /${Dt} 2>/dev/null'"
 if [ "$ret"/ = 0/ ]; then
+ QL=$uQL;
+ ZL=$uZL;
  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
  kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
 fi;
