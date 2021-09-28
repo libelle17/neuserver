@@ -1,4 +1,5 @@
 #!/bin/bash
+# zeigt alle PraxisDB-Inhalte an
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
