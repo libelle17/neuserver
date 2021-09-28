@@ -42,8 +42,9 @@ commandlhier() {
 commandlhier "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 ot=/opt/turbomed;
 pr=PraxisDB;
-for p in "" 0 7; do
-  case $p in "")tsh="sh -c";;*)tsh="ssh linux$p";;esac;
+hosthier=$(hostname); hosthier=${hosthier%%.*};
+for p in 1 0 7; do
+  case $hosthier in *p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
   v=$ot/$pr; 
   ausf "$tsh '[ -d $v ]'"; [ $ret/ != 0/ ]&&v=$v-res;
   printf "p: $blau$p$reset v: $blau$v$reset\n"
