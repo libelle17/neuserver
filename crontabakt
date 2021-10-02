@@ -196,11 +196,12 @@ ELG=/var/log/cronf.log
 #0 1 * * * ionice -c3 nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
 10 06 * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,18:C0:4D:EC:A4:F7,192.168.178.45,192.168.178.95>/dev/null
 # * * * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
-*/1 * * * * Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"
+# */1 * * * * Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"
+*/1 * * * * Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=MM1966 -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"
 -5 22 * * * ionice -c3 /root/bin/stutzeTMBack.sh
 -5 23 * * * ionice -c3 /root/bin/stutze.sh
 -5 0 * * * ionice -c3 /root/bin/stutzeDBBack.sh
--0 1 * * * ionice -3 /root/bin/stutzeTMExport.sh
+-0 1 * * * ionice -c3 /root/bin/stutzeTMExport.sh
 -35 0 * * * ionice -c3 /root/bin/komprsql.sh
 0 9 * * * rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
