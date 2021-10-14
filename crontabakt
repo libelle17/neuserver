@@ -217,7 +217,6 @@ ELG=/var/log/cronf.log
 10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in /mnt/szoo1 /mnt/szon1 /mnt/anmmw;do mount "$V" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$V"/ "$Z"&&find $V -type f -mtime +7 -delete; chmod 770 -R "$Z";};done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
 0 9 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 rsync -avu /opt/turbomed/labor /mnt/virtwin/turbomed/
 0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
-* * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
 0 3 * * * G=/DATA/Patientendokumente/zufaxen;D=$G/2145; find $D -type f -exec sh -c 'mv "$@" '$G/ find-sh {} +
