@@ -9,7 +9,9 @@ reset="\033[0m";
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
 	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
-	if test "$3"; then 
+  if test "$3"/ = direkt/; then
+    "$1";
+  elif test "$3"; then 
     eval "$1"; 
   else 
     resu=$(eval "$1"); 
@@ -47,11 +49,11 @@ echo hosthier: $hosthier
 for p in 1 0 7; do
   case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
   v=$ot/$pr; 
-  ausf "$tsh '[ -d $v ]'"; [ $ret/ != 0/ ]&&v=$v-res;
+  ausf "$tsh '[ -d $v ]'" "" direkt; [ $ret/ != 0/ ]&&v=$v-res; 
   printf "p: $blau$p$reset v: $blau$v$reset\n"
   altverb=$verb;
   verb=1;
-  ausf "$tsh 'ls -l $v'";
+  ausf "$tsh 'ls -l $v'"
   verb=$altverb;
 done;
 
