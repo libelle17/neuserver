@@ -49,11 +49,11 @@ echo hosthier: $hosthier
 for p in 1 0 7; do
   case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
   v=$ot/$pr; 
-  ausf "$tsh '[ -d $v ]'" "" direkt; [ $ret/ != 0/ ]&&v=$v-res; 
+  ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
   printf "p: $blau$p$reset v: $blau$v$reset\n"
   altverb=$verb;
   verb=1;
-  ausf "$tsh 'ls -l $v'"
+  ausf "$tsh 'ls -l $v'" $blau
   verb=$altverb;
 done;
 
