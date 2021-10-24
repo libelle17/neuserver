@@ -35,6 +35,9 @@ else
   ZL=; # dann werden die cifs-Laufwerke verwendet
   ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
   [ "$obkill" ]&&{ mv /$ur/lauf /$ur/lau;sleep 1m;echo Ende Schlaf;} # dann killt der windows-task "Turbomed töten" turbomed
+  [ "$obkill" ]&&{ sleep 1m;} # dann killt der windows-task "Turbomed töten" turbomed
+  [ "$obkill" ]&&{ echo Ende Schlaf;} # dann killt der windows-task "Turbomed töten" turbomed
+
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
