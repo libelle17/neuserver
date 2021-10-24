@@ -1,7 +1,7 @@
 #!/bin/dash
 # soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
-# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed/PraxisDB gibt
+# wenn des das Verzeichnis /opt/turbomed gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
+# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
@@ -22,23 +22,25 @@ resD=PraxisDB-res;
 res=$ot/$resD;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
-  ur=$ot/; 
+  ur=$ot; 
   hin=$ot;
   ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
 else 
   obvirt=1; 
-  ur=mnt/$l1gpc/turbomed/; 
+  ur=mnt/$l1gpc/turbomed; 
   hin=mnt/$rgpc/turbomed;
   uQL=$QL;
   QL=;
   uZL=$ZL;
   ZL=; # dann werden die cifs-Laufwerke verwendet
   ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
+  [ "$obkill" ]&&{ mv /$ur/lauf /$ur/lau;sleep 1m;echo Ende Schlaf;} # dann killt der windows-task "Turbomed töten" turbomed
 fi;
 [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 [ "$obforce" ]&&testdat=||testdat=PraxisDB/objects.dat;
-kopiermt "$ur" "$hin" "" "$OBDEL" "$testdat" "1800" 1; # ohne --iconv
+kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdat" "1800" 1; # ohne --iconv
+[ "$obkill" -a "$obvirt" ]&&{ mv /$ur/lau /$ur/lauf||touch /$ur/lauf;}
 ZL=$altZL;
 Dt=DATA; 
 Pt=Patientendokumente;

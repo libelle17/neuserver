@@ -44,6 +44,7 @@ commandline() {
         e|-echt) obecht=1;;
         d|-del) obdel=1;;
         f|-force) obforce=1;;
+        k|-kill) obkill=1;;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -56,6 +57,7 @@ commandline() {
 		printf "obecht: $blau$obecht$reset\n";
 		printf "obdel: $blau$obdel$reset\n";
 		printf "obforce: $blau$obforce$reset\n";
+    printf "obkill: $blau$obkill$reset\n";
 		printf "sdneu: $blau$sdneu$reset\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
@@ -313,6 +315,7 @@ verb=;
 obecht=;
 obdel=;
 obforce=;
+obkill=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
