@@ -21,25 +21,36 @@ otP=/$ot/PraxisDB;
 resD=PraxisDB-res;
 res=$ot/$resD;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
-  obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
-  ur=$ot; 
-  hin=$ot;
-  ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
-else 
-  obvirt=1; 
-  ur=mnt/$l1gpc/turbomed; 
-  hin=mnt/$rgpc/turbomed;
-  uQL=$QL;
-  QL=;
-  uZL=$ZL;
-  ZL=; # dann werden die cifs-Laufwerke verwendet
-  ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
-  [ "$obkill" ]&&{ mv /$ur/lauf /$ur/lau&&sleep 1m;} # dann killt der windows-task "Turbomed töten" turbomed
+    obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
+    ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
+else
+    obvirt=1; 
+    ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
-[ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
-[ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-[ "$obforce" ]&&testdat=||testdat=PraxisDB/objects.dat;
-kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdat" "1800" 1; # ohne --iconv
+for iru in 1 2; do
+  if test $iru = 1; then
+    if test ! "$obvirt"; then
+      ur=$ot; 
+      hin=$ot;
+    else
+      ur=$res;
+      hin=$res;
+    fi;
+  else  # iru = 2
+    [ "$obvirt" ]||break;
+    ur=mnt/$l1gpc/turbomed; 
+    hin=mnt/$rgpc/turbomed;
+    uQL=$QL;
+    QL=;
+    uZL=$ZL;
+    ZL=; # dann werden die cifs-Laufwerke verwendet
+    [ "$obkill" ]&&{ mv /$ur/lauf /$ur/lau&&sleep 1m;} # dann killt der windows-task "Turbomed töten" turbomed
+  fi;
+  [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
+  [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
+  [ "$obforce" ]&&testdat=||testdat=PraxisDB/objects.dat;
+  kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdat" "1800" 1; # ohne --iconv
+done;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ur/lau /$ur/lauf||touch /$ur/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 ZL=$altZL;
 Dt=DATA; 
