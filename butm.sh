@@ -29,13 +29,8 @@ else
 fi;
 for iru in 1 2; do
   if test $iru = 1; then
-    if test ! "$obvirt"; then
-      ur=$ot; 
-      hin=$ot;
-    else
-      ur=$res;
-      hin=$res;
-    fi;
+    ur=$ot; 
+    hin=$ot;
   else  # iru = 2
     [ "$obvirt" ]||break;
     ur=mnt/$l1gpc/turbomed; 
