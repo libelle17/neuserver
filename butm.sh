@@ -22,9 +22,11 @@ resD=PraxisDB-res;
 res=$ot/$resD;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
     obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
+    Pr=PraxisDB;
     ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
 else
     obvirt=1; 
+    Pr=PraxisDB-res;
     ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
 for iru in 1 2; do
@@ -33,6 +35,7 @@ for iru in 1 2; do
     hin=$ot;
   else  # iru = 2
     [ "$obvirt" ]||break;
+    Pr=PraxisDB;
     ur=mnt/$l1gpc/turbomed; 
     hin=mnt/$rgpc/turbomed;
     uQL=$QL;
@@ -43,7 +46,7 @@ for iru in 1 2; do
   fi;
   [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
   [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-  [ "$obforce" ]&&testdat=||testdat=PraxisDB/objects.dat;
+  [ "$obforce" ]&&testdat=||testdat=$Pr/objects.dat;
   kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdat" "1800" 1; # ohne --iconv
 done;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ur/lau /$ur/lauf||touch /$ur/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
