@@ -159,6 +159,8 @@ ELG=/var/log/cronf.log
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 -37 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
+-15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e
+
 #ein Abbild des Servers linux1 auf linux0 erstellen:
 -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
 #ein Abbild wichtiger Verzeichnisse des Servers linux1 auf linux7 erstellen:
