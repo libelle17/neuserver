@@ -1319,7 +1319,7 @@ tvversion() {
 	 [ "$tversion" ]||tversion=0;
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 }
-
+# teamviewer15: in /usr/share/applications/org.kde.kdeconnect_open.desktop : -MimeType=*/*; +MimeType=application/octet-stream;
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
