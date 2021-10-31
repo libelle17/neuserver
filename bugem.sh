@@ -18,7 +18,7 @@ ausf() {
   fi;
   ret=$?;
   [ "$verb" ]&&{
-    printf "ret: $blau$ret$reset"
+    printf ", ret: $blau$ret$reset"
     [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
     printf "\n";
   }
@@ -320,7 +320,7 @@ sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 if [ "$buhost"/ = "$LINEINS"/ ]; then
-  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 fi;
 [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
