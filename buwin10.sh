@@ -20,7 +20,7 @@ ret2=$ret;
 diffbef="diff $qv/$SD $zv/$SD 2>/dev/null";
 [ $ret1 = 0 -a $ret2 = 0 ]&&{
   ausf "$diffbef";
-  [ $ret = 0 ]&&{
+  if [ $ret/ = 0/ ]; then
    datei="/DATA/VirtualBox/Wind10/Wind10.vdi";
    if [ "$QL" ]; then
      tue="rsync -avu \"$QL:$datei\" \"$datei\"";
@@ -32,24 +32,10 @@ diffbef="diff $qv/$SD $zv/$SD 2>/dev/null";
    else 
      printf "$dblau$tue$reset\n";
    fi; 
-  }
-}
-exit;
-[ "$SD" ]&&{
-  if [ -z "$QL" -a -z "$ZL" ]; then
-    diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
-  elif [ "$QL" ]; then
-    diffbef="ssh $QL cat \"/$QVos/$SD\" 2>/dev/null| diff - /$ZVos/$SD 2>/dev/null";
-  elif [ "$ZL" ]; then
-    diffbef="ssh $ZL cat \"/$ZVos/$SD\" 2>/dev/null| diff - /$QVos/$SD 2>/dev/null";
-  fi;
-#    printf "${blau}$diffbef$reset\n"
-  ausf "$diffbef";
-  if [ $ret/ != 0/ ]; then
+ else
     printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
     printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
     return 1;
-  fi
+ fi;
 }
-
 
