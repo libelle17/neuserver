@@ -43,9 +43,10 @@ ELG=/var/log/cronf.log
 # @reboot mount /mnt/sam >>$NLG 2>>$ELG
 # @reboot P=/mnt/verbatim; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
 # @reboot systemctl start cifs >>$NLG 2>>$ELG
-# wird nicht benoetigt, da capisuite verwendet wird
-@reboot systemctl start capisuite >>$NLG 2>>$ELG
-@reboot systemctl start isdn >>$NLG 2>>$ELG
+# inaktiviert 2.11.21:
+# @reboot systemctl start capisuite >>$NLG 2>>$ELG
+# inaktiviert 2.11.21:
+# @reboot systemctl start isdn >>$NLG 2>>$ELG
 #@reboot /opt/teamviewer/tv_bin/teamviewerd -d
 #@reboot /opt/teamviewer/tv_bin/wine/bin/wineserver
 #@reboot /opt/teamviewer/tv_bin/TVGuiSlave.64 13 1
@@ -57,11 +58,12 @@ ELG=/var/log/cronf.log
 @reboot chown -R uucp:dialout /dev/capi* >>$NLG 2>>$ELG
 @reboot ln -s /dev/capi20 /dev/faxCAPI >>$NLG 2>>$ELG
 
+# Status der Raid-Mitglieder dokumentieren:
 -* * * * * mountpoint -q /DATA&&test -d /proc/mdstat&&sed 's/$/\r/g' /proc/mdstat >"/DATA/Fpm0 `date +\%H` Uhr.txt" 2>>$VL/FPS-Aufruf.log
 # -* * * * *   if test -f /DATA/gibts; then mountpoint -q /DATA && cat /proc/mdstat | sed 's/$/\r/g' > "/DATA/Fpm0 `date +\%H` Uhr.txt" 2>>$VL/FPS-Aufruf.log; fi
-# diese Datei sichern
+# diese Datei sichern:
 -7 * * * * R=/root;NS=$R/neuserver;CT=crontabakt;ionice -c3 crontab -l >$R/$CT&&test -d $R&&{ diff $R/$CT $NS/ >/dev/null 2>&1||{ cd $NS;git pull;ERG=$?;cp -a $R/$CT $NS/$CT;[ $ERG -eq 0 ]&&make git;cd -;};};:;
-# Funktionsfaehigkeit des Linux-Servers, Mount-Status von dessen Festplatten und Funktion von samba demonstrieren
+# Funktionsfaehigkeit des Linux-Servers, Mount-Status von dessen Festplatten und Funktion von samba dokumentieren:
 -* * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatus.sh   > "/DATA/Festplattenstatus minuetlich.txt" 2>&1
 -0 * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%H` Uhr.txt" 2>&1
 -0 0 * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%A`.txt" 2>&1
@@ -69,30 +71,33 @@ ELG=/var/log/cronf.log
 -0 0 1 * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%B`.txt" 2>&1
 -0 0 1 1 * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
-# mariadb-Datenbanken sichern
+# mariadb-Datenbanken sichern:
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 # mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern:
 -26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
--00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
+# fehlerhafte sql-Dumps auflisten:
+-00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed"|sed "s/^/rm /">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
 #-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
-# Daten jeden Freitag nach szn1 sichern
+# Daten jeden Freitag nach szn1 sichern:
 #-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
-# Daten einmal taeglich nach anmeldl sichern
+# Daten einmal taeglich nach anmeldl sichern:
 #-27 19 * * * pgrep -c -f "dorsync.* /mnt/anmeldl/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /mnt/anmeldl/daten 
 #-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q /DATA && mountpoint -q "/DAT2" && /root/bin/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1 
-# Kontrolldatei für Laufen des Turbomed-Servers erstellen
+# Kontrolldatei für Laufen des Turbomed-Servers erstellen:
 -*/2 * * * * mountpoint -q /DATA && ps h opid,time,cmd -C ptserver > /DATA/poet_aktiv.txt 2>>$VL/poet_aktiv-Auruf.log
-# Kontrolldatei zur Auslastung des Datenlaufwerks erstellen
+# Kontrolldatei zur Auslastung des Datenlaufwerks erstellen:
 -*/12 * * * * mountpoint -q /DATA && df -l > /DATA/Auslastung_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
-# Patienten- und Stammdatenbanken auf /gerade, /ungera, /DATA/gerade und /DATA/ungera sichern
+# Patienten- und Stammdatenbanken auf /gerade und /DATA/gerade sichern:
 -14 2,8-22/2 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/gerade_PraxisDB.sh >>$NLG 2>>$ELG
+# Patienten- und Stammdatenbanken auf /ungera und /DATA/ungera sichern:
 -14 3,9-19/2 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/ungera_PraxisDB.sh >>$NLG 2>>$ELG
 #-30 2,8-22/2 * * * /root/bin/verhdop.sh /root/bin/DATAgerade_PraxisDB.sh >>$NLG 2>>$ELG
 # -30 1-23/2 * * * /root/bin/verhdop.sh /root/bin/DATAungera_PraxisDB.sh >>$NLG 2>>$ELG
 # >>$VL/dorsync-Aufruf-gerade.log 2>&1
 #-57 0 * * * dorsync.sh --delete /opt/turbomed/PraxisDB/ /mnt/diabfb/ADATA-USBFlashDrive-01/PraxisDB # >>$VL/dorsync-Aufruf-flash.log 2>&1
--57 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
+# Datensicherung auf USB-Stick:
+-45 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
 # -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0ur/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux0ur:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG

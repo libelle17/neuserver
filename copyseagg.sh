@@ -23,6 +23,7 @@ do \
   kopiermt "DATA/$u/" "$Ziel/DATA/$u/" "";
 done;
 exit;
+
 for u in \
   opt/turbomed \
   "DATA/eigene Dateien" \

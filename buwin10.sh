@@ -20,7 +20,7 @@ ret2=$ret;
 diffbef="diff $qv/$SD $zv/$SD 2>/dev/null";
 [ $ret1 = 0 -a $ret2 = 0 ]&&{
   ausf "$diffbef";
-  if [ $ret/ = 0/ ]; then
+  if [ $ret/ = 0/ -o 1 ]; then
    datei="/DATA/VirtualBox/Wind10/Wind10.vdi";
    if [ "$QL" ]; then
      tue="rsync -avu \"$QL:$datei\" \"$datei\"";
