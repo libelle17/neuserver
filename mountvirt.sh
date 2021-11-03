@@ -86,6 +86,9 @@ else
        [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
        [ -d "$mp" ]||mkdir -p "$mp";
        mountpoint -q $mp||{ ausf "mount $mp 2>/dev/null" $blau; }
+       if [ $ret/ != 0/ ]; then
+         echo mounten fehlgeschlagen. Jetzt müsste evtl. was getan werden mit: tush: $tush, evtl. auch Namens- und IP-Zuweisung an der Fritzbox
+       fi;
      fi;
     done; # wirt in $auswahl
     if test "$iru" = 1 -a "$ergae"; then
