@@ -12,7 +12,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 
 auswahl="linux0 linux1 linux7";
 for wirt in $auswahl; do
-. ${MUPR%/*}/virtnamen.sh
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 #  case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                *1*) gpc=virtwin;  gast=Win10;;
 #                *7*) gpc=virtwin7; gast=Wi10;;

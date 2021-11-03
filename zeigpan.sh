@@ -61,7 +61,7 @@ done;
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 for wirt in 1 0 7; do
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
  cifs=/mnt/$gpc/turbomed;
  printf "cifs: $blau$cifs$reset\n";
  if mountpoint -q $cifs; then

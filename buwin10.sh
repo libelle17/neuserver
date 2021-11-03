@@ -6,10 +6,10 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=${QL:-$buhost};
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 l1gpc=$gpc; # Gast-PC von Linux1
 wirt=${ZL:-$buhost};
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast sowie aus $buhost: tush
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 qv=/mnt/virtwin/turbomed;
 zv=/mnt/$gpc/turbomed;

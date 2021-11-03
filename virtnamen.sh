@@ -3,4 +3,4 @@
                *1*) gpc=virtwin;  gast=Win10;;
                *7*) gpc=virtwin7; gast=Wi10;;
  esac;
- case $buhost in $LINEINS)tush="sh -c";;*)tush="ssh $LINEINS";;esac
+ case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
