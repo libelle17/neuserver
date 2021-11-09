@@ -44,7 +44,8 @@ for iru in 1 2; do
     QL=;
     uZL=$ZL;
     ZL=; # dann werden die cifs-Laufwerke verwendet
-    [ "$obkill" ]&&{ mv /$ur/lauf /$ur/lau&&sleep 1m;} # dann killt der windows-task "Turbomed töten" turbomed
+    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then mv /$ur/lauf /$ur/lau&&sleep 1m;fi;};# dann killt der windows-task "Turbomed töten" turbomed
+
   fi;
   [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
   [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
@@ -64,4 +65,6 @@ if [ "$ret"/ = 0/ ]; then
  ZL=$uZL;
  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
  kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
+else
+ printf $rot$Dt$reset kein Mountpoint, hier nichts kopiert!
 fi;

@@ -143,6 +143,7 @@ kopiermt() { # mit test
       zuteh=${zute%/};
       while :; do
         [ "$zuteh" ]||break;
+        echo "$hsh mountpoint -q \"$zuteh\""
         if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
         zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
       done;

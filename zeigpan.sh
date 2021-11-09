@@ -1,6 +1,7 @@
 #!/bin/bash
 # zeigt alle PraxisDB-Inhalte an
 blau="\033[1;34m";
+gruen="\033[1;32m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
@@ -19,7 +20,7 @@ ausf() {
   ret=$?;
   [ "$verb" ]&&{
     printf "ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
+    [ "$3" ]||printf ", resu: \"\n$blau$resu$reset\"";
     printf "\n";
   }
 } # ausf
@@ -53,20 +54,29 @@ for p in 1 0 7; do
   printf "p: $blau$p$reset v: $blau$v$reset\n"
   altverb=$verb;
   verb=1;
-  ausf "$tsh 'ls -l $v'" $blau
+  ausf "$tsh 'ls -l $v/objects.*'" $blau
   verb=$altverb;
 done;
 
 
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
-for wirt in 1 0 7; do
+for wirt in linux1 linux0 linux7; do
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
  cifs=/mnt/$gpc/turbomed;
- printf "cifs: $blau$cifs$reset\n";
+ printf "cifs: $gruen$cifs$reset\n";
  if mountpoint -q $cifs; then
-   ls -l $cifs/$pr;
+   altverb=$verb;
+   verb=1;
+   ausf "ls -l $cifs/$pr/objects.*";
+   verb=$altverb;
  else
   printf "kein Mountpoint\n";
  fi;
+ echo tush: $tush, gpc: $gpc, gast: $gast
+ altverb=$verb;
+ verb=1;
+ ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*'" $dblau;
+# ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
+ verb=$altverb;
 done;
