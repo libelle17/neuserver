@@ -11,6 +11,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=${QL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+g1=$gast;
 l1gpc=$gpc; # Gast-PC von Linux1
 wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -44,7 +45,11 @@ for iru in 1 2; do
     QL=;
     uZL=$ZL;
     ZL=; # dann werden die cifs-Laufwerke verwendet
-    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then mv /$ur/lauf /$ur/lau&&sleep 1m;fi;};# dann killt der windows-task "Turbomed töten" turbomed
+    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then 
+      mv /$ur/lauf /$ur/lau&&sleep 1m;
+      ausf "VBoxManage controlvm $g1 poweroff" $blau;
+      ausf "VBoxManage startvm $g1 --type headless" $blau;
+    fi;};# dann killt der windows-task "Turbomed töten" turbomed
 
   fi;
   [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";

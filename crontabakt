@@ -162,8 +162,9 @@ ELG=/var/log/cronf.log
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
--35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
--37 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
+# folgende beiden vorübergehend ausgesetzt 11.11.21:
+# -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
+# -37 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
 -15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e
 
 #ein Abbild des Servers linux1 auf linux0 erstellen:
@@ -204,6 +205,8 @@ ELG=/var/log/cronf.log
 10 4 * * * mountpoint -q /mnt/gmx && ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null
 0 1 * * * ionice -c3 /usr/bin/find /tmp -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * ionice -c3 nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
+# folgendes am 11.11.21 angesetzt:
+50 05 * * 1-5 reboot
 10 06 * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,18:C0:4D:EC:A4:F7,192.168.178.45,192.168.178.95>/dev/null
 # * * * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
 # */1 * * * * Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"
@@ -233,6 +236,7 @@ ELG=/var/log/cronf.log
 # */5 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
 # VBoxManage controlvm Win10 poweroff
+# geht irgendwie auch allein
 # * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Wind10;;*7*)vm=Wi10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
 * * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
 # Starten einer zusätzlichen Gui: VBoxSDL --startvm Win10 --separate
