@@ -1,5 +1,6 @@
 #!/bin/dash
-# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh
+# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh, buint.sh
+#im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -17,7 +18,7 @@ ausf() {
   fi;
   ret=$?;
   [ "$verb" ]&&{
-    printf "ret: $blau$ret$reset"
+    printf ", ret: $blau$ret$reset"
     [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
     printf "\n";
   }
@@ -42,9 +43,11 @@ commandline() {
         v|-verbose) verb=1;;
         e|-echt) obecht=1;;
         d|-del) obdel=1;;
+        f|-force) obforce=1;;
+        k|-kill) obkill=1;;
       esac;;
      *)
-      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7
+#      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
       ZL=${1%%:*};; # z.B. linux0
    esac;
    shift;
@@ -53,6 +56,8 @@ commandline() {
     printf "Parameter: $blau-v$reset => gesprächig\n";
 		printf "obecht: $blau$obecht$reset\n";
 		printf "obdel: $blau$obdel$reset\n";
+		printf "obforce: $blau$obforce$reset\n";
+    printf "obkill: $blau$obkill$reset\n";
 		printf "sdneu: $blau$sdneu$reset\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
@@ -81,19 +86,19 @@ commandline() {
 obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
+  # liefert 0, wenn auf Quelle vorhanden und (alt genug oder auf Ziel fehlend), sonst 1
   [ "$obdat" ]&&DaQ="/${QVos%/*}${1#/}"||DaQ="/$QVos/${1#/}";
   [ "$obdat" ]&&DaZ="/${ZVos%/*}${1#/}"||DaZ="/$ZVos/${1#/}";
 	[ "$verb" ]&&{
 		echo obalt "$1" "$2" "$3" "$4"
-	  echo QVos: $QVos, ZVos: $ZVos
 	  echo DaQ: $DaQ, DaZ: $DaZ
 	}
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
   eval "$qssh 'stat \"$DaQ\" >/dev/null 2>&1'||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
-	[ "$faq" ]&& return 0;
+	[ "$faq" ]&& return 1;
 	ret=; # <> "" = Datei fehlt auf Ziel
-  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=1; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
+  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=0; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
     awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
@@ -123,19 +128,22 @@ kopiermt() { # mit test
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
-  [ "$obsub" ]&&{ $qssh "[ -f '/$QVos' ]"&&obdat=1||obdat=;};
-  if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; else
+  [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";};
+  [ "$obsub" ]&&{ $qssh "[ -f \"/$QVos\" ]"&&obdat=1||obdat=;}; # das geht nicht mit zsh
+  if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; [ "$ZVofs" = "$QVofs/" ]&&ZVofs=""; else # letzteres für QVofs ohne /
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
+  ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
-      [ "$Lfw" ]||Lfw=${HOST%%.*}" (hier) ";
+      [ "$Lfw" ]||Lfw=$buhost" (hier) ";
     if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
       ok=;
       zuteh=${zute%/};
       while :; do
         [ "$zuteh" ]||break;
+        echo "$hsh mountpoint -q \"$zuteh\""
         if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
         zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
       done;
@@ -169,12 +177,13 @@ kopiermt() { # mit test
   printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, QVofs: $QVofs, ZL: $ZL, ZVos: $ZVos, ZVofs: $ZVofs$reset\n";
   [ "$5" -a "$6" -a -z "$obdat" ]&&{
    obalt "$5" "$6"||return 1;
+   [ "$faq" ]&&return 2;
 	}
   EXREST=$EXGES;
   EXAKT=;
   while [ "$EXREST" ]; do
-    EXHIER=$(readlink -f ${EXREST##*,}); EXREST=${EXREST%,*};
-    case $EXHIER in $(readlink -f /$QVofs)*) EXAKT="$EXAKT,${EXHIER%/}/";; esac;
+    EXHIER=$(readlink -f "${EXREST##*,}"); EXREST=${EXREST%,*};
+    case "$EXHIER" in $(readlink -f "/$QVofs")*) EXAKT="$EXAKT,"${EXHIER%/}"/";; esac;
   done;
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
@@ -190,7 +199,7 @@ kopiermt() { # mit test
       if [ -z "$ZL" ]; then
         tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" \"/$ZVos/$SD\"";
       else
-        tu2="$zssh 'mkdir -p /$ZVos; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"'";
+        tu2="$zssh 'mkdir -p /$ZVos'; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"";
       fi;
       if [ "$obecht" ]; then
         ausf "$tue";
@@ -223,23 +232,28 @@ kopiermt() { # mit test
     rest=1;
   else
     # Platz ausrechnen:
-    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; verfueg=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    printf "verfuegbar          : $blau%15d$reset Bytes\n" $verfueg;
-    # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-    ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1024}'"; schonda=${resu:-0};
-    printf "schonda             : $blau%15d$reset Bytes\n" $schonda;
-    ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1024}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
-    printf "zukopieren          : $blau%15d$reset Bytes\n" $zukop;
-    rest=$(expr $verfueg - $zukop + $schonda);
-    [ "$EX" ]&&for E in $(echo $EX|sed 's/,/ /g');do
-       E=${E#/};
-       [ "$verb" ]&&printf "E: $blau$E$reset\n";
-       [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-       ausf "$zssh 'test -d \"/$ZVos/$E\" && du \"/$ZVos/$E\" -d0'|awk '{print \$1*1024}'"; papz=${resu:-0};
-       ausf "$qssh 'test -d \"/$QVos/$E\" && du \"/$QVos/$E\" -d0'|awk '{print \$1*1024}'"; papq=${resu:-0};
-       rest=$(expr $rest - $papz + $papq);
-    done;
-    printf "Nach Kopie verfügbar: $blau%15d$reset Bytes\n" $rest;
+#    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
+    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'"; rest=${resu:-0}; # *1024 => Bytes
+    echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
+    if test $rest -gt 0; then
+      # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'"; schonda=${resu:-0};
+      echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
+      rest=$(expr $rest - $zukop + $schonda);
+      [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
+         E=$(echo $E|sed 's/\\/\\ /g');
+         case $E in /*) zQ=/${E#/};zZ=$zQ;;*) zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};;esac;
+         echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ 
+         [ "$verb" ]&&printf "E: $blau$E$reset\n";
+         [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
+         ausf "$zssh 'test -d \"$zZ\" && du \"$zZ\" -d0'|awk '{print \$1*1}'"; papz=${resu:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du \"$zQ\" -d0'|awk '{print \$1*1}'"; papq=${resu:-0};
+         rest=$(expr $rest - $papz + $papq);
+      done;
+      echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
+    fi;
   fi; # if [ "$7" ]
   if test $rest -gt 0; then
 		case $QVos in *var/lib/mysql*)
@@ -301,13 +315,13 @@ LINEINS=linux1;
 verb=;
 obecht=;
 obdel=;
+obforce=;
+obkill=;
 sdneu=;
-commandline "$@"; # alle Befehlszeilenparameter übergeben, QL und ZL festlegen
+commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
-[ "$HOST" ]||HOST=$(hostname);
-if [ ${HOST##.*}/ = $LINEINS/ ]; then
-  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
-#im aufrufenden Programm müssen QL und ZL (je ohne Doppelpunkt) definiert werden
+if [ "$buhost"/ = "$LINEINS"/ ]; then
+  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 fi;
 [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
@@ -323,7 +337,7 @@ fi;
 PROT=/var/log/$(echo $0|sed 's:.*/::;s:\..*::')prot.txt;
 [ "$verb" ]&&printf "Prot: $blau$PROT$reset\n"
 [ "$obdel" ]&&OBDEL="--delete"||OBDEL=;
-[ "$verb" ]&&echo QL: $QL, ZL: $ZL
+[ "$verb" ]&&echo QL: $QL, ZL: $ZL;
 # [ "$verb" ]&&echo `date +%Y:%m:%d\ %T` "vor chown" > $PROT
 chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh

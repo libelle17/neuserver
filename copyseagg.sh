@@ -1,27 +1,54 @@
-#!/bin/zsh
+#!/bin/dash
 USB=Seagate\ Expansion\ Drive
 logf=/var/log/$USB.log
 #ZoD=/mnt/seag
-ZoD=/mnt/SeagateBackupPlusDrive
+ZL=;
+Ziel=/mnt/SeagateBackupPlusDrive
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
-mountpoint -q "$ZoD" || mount "$ZoD"
+mountpoint -q "$Ziel" || mount "$Ziel"
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
-kopiermt "DATA/down" ... "" "--delete --iconv=latin1,utf8"
+for u in \
+  "Patientendokumente/Schade zu benennen" \
+  down \
+  shome/gerald/Schade/sz \
+  turbomed \
+  rett/ungera \
+  Patientendokumente \
+  "eigene Dateien/DM" \
+  "eigene Dateien/TMExport" \
+  shome/gerald/Schade \
+  "eigene Dateien/Angiologie"; \
+do \
+  kopiermt "DATA/$u/" "$Ziel/DATA/$u/" "";
+done;
+exit;
+
+for u in \
+  opt/turbomed \
+  "DATA/eigene Dateien" \
+  var/spool/hylafax \
+  "root/.vim" \
+  "root/.smbcredentials" \
+do \
+  kopiermt "$u/" "$Ziel/$u/" "";
+done;
+kopiermt "DATA/down" ... "" "--delete" # "--delete --iconv=latin1,utf8"
 kopiermt "DATA/Patientendokumente/Schade zu benennen" ... "" --delete
 kopiermt "DATA/shome/gerald/Schade/sz" ... "" --delete
 kopiermt "DATA/turbomed" ... "" --delete
 kopiermt "DATA/rett/ungera" ... "" --delete
-kopiermt "DATA/Patientendokumente" ... "plz/" "--delete --iconv=latin1,utf8"
+kopiermt "DATA/Patientendokumente" ... "plz/" "--delete" # "--delete --iconv=latin1,utf8"
 kopiermt "DATA/eigene Dateien/DM" ... "" --delete
 kopiermt "DATA/eigene Dateien/TMExport" ... "" --delete
 kopiermt "DATA/shome/gerald/Schade" ... "" --delete
 kopiermt "DATA/eigene Dateien/Angiologie" ... "" --delete
-kopiermt "opt/turbomed" ... "netsetupalt/" "--delete --iconv=latin1,utf8"
-kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete --iconv=latin1,utf8"
+kopiermt "opt/turbomed" ... "netsetupalt/" "--delete" # "--delete --iconv=latin1,utf8"
+kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete" # "--delete --iconv=latin1,utf8"
 kopiermt "var/spool/hylafax" ... "" --delete
 kopiermt "root/.vim" ... "" --delete
 kopiermt "root/.smbcredentials" ... "" --delete
+# kopiermt "DATA/" DATA "" --delete
 echo Schluss erstmal
 exit
 

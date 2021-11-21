@@ -312,8 +312,9 @@ git: README.md
 	-git config --global push.default simple
 	-git add -u
 	-git commit -m "Version $$(cat versdt)"
-  -[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};:;
+	-@[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;}
 	-git push -u origin master
+	-printf "Fertig mit make .git\n";
 
 .PHONY: giterlaub
 giterlaub:

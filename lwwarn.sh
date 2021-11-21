@@ -3,7 +3,7 @@ prot=${0%%sh}prot;                                  # Datei mit dem Stand des le
 [ -f "$prot" ]&&zp=$(stat $prot -c %y|sed 's/\..*//'); # wenn diese Datei da, dann deren Änderungszeitpunkt ohne Sekundenbruchteile in $zp merken
 for iru in 1 2; do                                  # 1. Runde zum Prüfen und Melden, 2. zum Protokollieren
   for lw in / /DATA; do                             # zu untersuchende Laufwerke
-    pc=$(df --output=pcent $lw|sed -n '/^Use/!{s/%//p}'); # Prozentzahl der Belegung
+    pc=$(df --output=pcent $lw|sed -n '/^Use/!{/^Verw/!{s/%//p}}'); # Prozentzahl der Belegung, bei englischer oder deutscher shell
     case $iru in
     1)
     [ -f "$prot" ]&&pca=$(sed -n '/\'$lw' /{s/[^ ]* *//;p}' $prot)||pca=100; # bei wiederholtem Aufruf letzte Prozentzahl in $pca speichern

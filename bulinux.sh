@@ -1,12 +1,14 @@
-#!/bin/zsh
+#!/bin/dash
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;ZL=$(hostname);}
-. ${MUPR%/*}/bugem.sh
-[ "$ZoD"/ = "$HOSTK"/ ]&&exit 0;
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+[ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-[ "$ZoD/" = linux7/ ]&&obkurz=1||obkurz=;
+[ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopieros ".vim"
 kopieros ".smbcredentials"
@@ -24,30 +26,31 @@ V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" -
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 Dt=DATA; 
-mountpoint -q /$Dt || mount /$Dt;
-ssh $ANDERER mountpoint -q /$Dt 2>/dev/null || ssh $ANDERER mount /$Dt;
-if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
+ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
-  if test $uverz = Praxis || test $ZoD != linux7; then # wegen Speicherplatz auf linux7
+  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
-		 kopiermt $qverz ... "" -d "${inbox##/$qverz/}" 604800;
+     [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
+		 kopiermt $qverz ... "" -d "$testdat" 604800;
 		 break;
    done;
   fi;
  done;
  for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
   auslass=;
-  [ $ZoD = linux7 ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
+  [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
   [ -z $auslass ]&&kopiermt "$Dt/$A" ... "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/";
- [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/";
- kopiermt "$Dt" "" "$EXCL" "-W $OBDEL";
+ [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
+ kopiermt "$Dt" ... "$EXCL" "-W $OBDEL";
 fi;
 exit; # Ende
 
@@ -60,13 +63,14 @@ exit; # Ende
 kopiermt "gerade" "/" "" "$OBDEL"
 kopiermt "ungera" "/" "" "$OBDEL"
 VLM="var/lib/mysql";
-kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" ibdata1 86400;
+[ "$obforce" ]&&testdat=||testdat=ibdata1;
+kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
 # kopieretc "openvpn" # auskommentiert 29.7.19
 scp $PROT $ANDERER:/var/log/
 if mountpoint -q /$Dt && ssh $ANDERER mountpoint -q /$Dt 2>/dev/null; then
  scp $PROT $ANDERER:/$Dt/
 fi;
-if [ $HOSTK/ != $LINEINS/ ]; then
+if [ "$buhost"/ != "$LINEINS"/ ]; then
 	NES=~/neuserver;
 	echo Rufe los.sh auf;
 	LOS=los.sh;

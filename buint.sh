@@ -4,31 +4,31 @@
 # wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1
-QL=;ZL=;
-wirt=$(hostname); wirt=${wirt%%.*}; # linux1, linux0 oder linux7
-[ $(hostname) != $LINEINS ]&&{ QL=$LINEINS;}
-[ $wirt = $LINEINS ]&&obsh="sh -c"||obsh="ssh $LINEINS";
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tussh
-. ${MUPR%/*}/bugem.sh # commandline-Parameter, $QL, $ZL, $qssh, $zssh festlegen
-ot=/opt/turbomed;
-res=$ot-res;
-if eval "$obsh 'test -d $ot/PraxisDB'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+[ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
+wirt=$buhost;
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+ot=opt/turbomed;
+otP=/$ot/PraxisDB;
+resD=PraxisDB-res;
+res=$ot/$resD;
+if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
-  ur=$ot; 
+  ur=$ot # opt/turbomed
   hin=mnt/$gpc/turbomed;
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$otP" ]; then
+    ausf "mv /$res $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
+  fi;
 else 
   obvirt=1; 
   VzL="PraxisDB StammDB DruckDB Dictionary";
   ur=mnt/$gpc/turbomed; 
-  hin=$res;
-fi;
-if [ $wirt/ != $LINEINS/ ]; then
-  if [ "$obvirt" ]; then
-    [ -d $ot -a ! -d $res ]&& mv $ot $res;
-  else
-    [ -d $res -a ! -d $ot ]&& mv $res $ot;
+  hin=$ot;
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$res" ]; then
+    ausf "mv $otP /$res" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
@@ -38,7 +38,13 @@ for Vz in $VzL; do
   case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-  kopiermt "$ur/$Vz" "$hin/" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+  case $Vz in PraxisDB) 
+    uq=$Vz;
+    [ "$obvirt" ]&&uz=$resD||uz=$Vz;;
+    *) uq=$Vz; uz=$Vz;;
+  esac;
+  [ "$obforce" ]&&testdt=;
+  kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
 exit;
 ZL=$altZL;

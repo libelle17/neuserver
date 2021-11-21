@@ -177,7 +177,7 @@ setzhost() {
 
 setzbenutzer() {
   printf "${dblau}setzbenutzer$reset()\n";
-  grep -q "^$gruppe:" /etc/group||groupadd $gruppe
+  pruefgruppe $gruppe
   $SPR samba 2>/dev/null||$IPR samba
   systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
   systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
@@ -269,7 +269,7 @@ fstabteil=$resu;
 nochmal=1;
 while test "$nochmal"; do # wenn eine Partition neu erstellt werden musste
   unset nochmal;
-ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,PARTTYPE -bidnspPx SIZE|tac";
+ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,PARTTYPE,PTTYPE -bidnspPx SIZE|tac";
 fstabteil=$resu;
 # echo fstabteil: "$fstabteil";
 [ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
@@ -284,6 +284,7 @@ while read -r zeile; do
 	mtp=$(echo $zeile|cut -d\" -f12|sed 's/[[:space:]]//g');
 	typ=$(echo $zeile|cut -d\" -f14);
 	pty=$(echo $zeile|cut -d\" -f16);
+	ptt=$(echo $zeile|cut -d\" -f18);
   case "$fty" in swap|iso|fat|".*_member") continue;; esac;
   case "$typ" in rom) continue;; esac;
   case "$mtp" in /|/boot/efi) continue;; esac;
@@ -291,10 +292,12 @@ while read -r zeile; do
   if test -z "$fty"; then
 		[ "$pty" = 0xf ]&&continue; # Partitionstabelle
     case "$typ" in disk|part)
-      echo "Hier nochmal: " $zeile
-      ausf "mke2fs -t ext4 $dev"; 
-      nochmal=1;
-      continue;
+      if test "$ptt"/ != gpt/ -a "$ptt"/ != dos/; then
+	      echo "Hier nochmal: " $zeile
+	      ausf "mke2fs -t ext4 $dev"; 
+	      nochmal=1;
+	      continue;
+      fi;
     esac;
   fi;
   echo zeile: $zeile;
@@ -400,6 +403,10 @@ done; # nochmal
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
 } # mountlaufwerke
 
+pruefgruppe() {
+    grep -q "^$1:" /etc/group||groupadd $1
+}
+
 pruefuser() {
 	printf "${dblau}pruefuser$reset($1)\n";
 		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
@@ -415,6 +422,7 @@ pruefuser() {
 			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
 		} fi;
     groups $1|grep -q praxis||usermod -aG praxis $1
+    pruefgruppe www
     groups $1|grep -q www||usermod -aG www $1
 		if test $obs -eq 1; then {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
@@ -1319,7 +1327,7 @@ tvversion() {
 	 [ "$tversion" ]||tversion=0;
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 }
-
+# teamviewer15: in /usr/share/applications/org.kde.kdeconnect_open.desktop : -MimeType=*/*; +MimeType=application/octet-stream;
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";

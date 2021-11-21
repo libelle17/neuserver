@@ -53,14 +53,13 @@ else
   [ "$oballe" ]&&auswahl=$gausw||auswahl=${HOST%%.*};
   for iru in 1 2; do
    for wirt in $gausw; do
-.   ${MUPR%/*}/virtnamen.sh
-. ./virtnamen.sh
+.   ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
 #                 *7*) gpc=virtwin7; gast=Wi10;;
 #   esac;
-#   case $(hostname) in $wirt*)tussh=;;*)tussh="ssh $wirt ";;esac;
-     [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tussh: $tussh, gast: $gast
+# case $wirt in $LINEINS)tush="sh -c";;*)tush="ssh $wirt";;esac
+     [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tush: $tush, gast: $gast
      mp=/mnt/$gpc/turbomed;
      if [ "$iru" = 1 ]; then
        grep -q /$gpc/ $ftb||{ 
@@ -70,15 +69,15 @@ else
      else
        if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
 #         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
-         ausf "${tussh}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
-         ausf "${tussh}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
+         ausf "${tush}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
+         ausf "${tush}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
          [ $pret != 0 -o $nret != 0 ]&&{
-           [ "$verb" ]&&echo tussh: $tussh, gast: $gast; 
+           [ "$verb" ]&&echo tush: $tush, gast: $gast; 
            ausf "umount -l $mp";
            [ $nret != 0 ]&&{
-             ausf "${tussh}VBoxManage controlvm \"$gast\" poweroff" $blau;
+             ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;
            }
-           ausf "${tussh}VBoxManage startvm $gast --type headless" $blau;
+           ausf "${tush}VBoxManage startvm $gast --type headless" $blau;
            sleep 13;
 #          das Folgende ist zumindest nicht durchgehend nötig
 #          ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
@@ -86,7 +85,10 @@ else
        fi;
        [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
        [ -d "$mp" ]||mkdir -p "$mp";
-       mountpoint -q $mp||{ ausf "mount $mp" $blau; }
+       mountpoint -q $mp||{ ausf "mount $mp 2>/dev/null" $blau; }
+       if [ $ret/ != 0/ ]; then
+         echo mounten fehlgeschlagen. Jetzt müsste evtl. was getan werden mit: tush: $tush, evtl. auch Namens- und IP-Zuweisung an der Fritzbox
+       fi;
      fi;
     done; # wirt in $auswahl
     if test "$iru" = 1 -a "$ergae"; then

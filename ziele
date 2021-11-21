@@ -16,12 +16,13 @@ bulinux.sh
 butm.sh
 bugem.sh
 bulinux3.sh
+buwin10.sh
 copydat.sh
 copyseag.sh
 copyseagg.sh
 copytoshz.sh
-copyusb.sh
 copyverb.sh
+copyverba.sh
 copywd.sh
 dojpgumw.sh
 dopdfumw.sh
@@ -72,6 +73,7 @@ wegmailen.sh
 wiederherstell.sh
 xlstocsv.sh
 zeich.sh
+zeigpan.sh
 zusalat.sh
 [/root]
 .smbcredentials
