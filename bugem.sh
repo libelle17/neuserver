@@ -199,7 +199,7 @@ kopiermt() { # mit test
       if [ -z "$ZL" ]; then
         tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" \"/$ZVos/$SD\"";
       else
-        tu2="$zssh 'mkdir -p /$ZVos; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"'";
+        tu2="$zssh 'mkdir -p /$ZVos'; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"";
       fi;
       if [ "$obecht" ]; then
         ausf "$tue";
