@@ -865,6 +865,8 @@ proginst() {
 # RESET="\[$(tput sgr0)\]"
 # PS1="${GRUEN}\u@\h: \w${RESET}>"
 
+# fehlt: /etc/environment festlegen
+
   D=/var/log/journal;[ -d $D ]||mkdir -p $D;
 	case $OSNR in
 	1|2|3) # mint, ubuntu, debian
