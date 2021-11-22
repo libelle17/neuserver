@@ -74,9 +74,8 @@ else
          [ $pret != 0 -o $nret != 0 ]&&{
            [ "$verb" ]&&echo tush: $tush, gast: $gast; 
            ausf "umount -l $mp";
-           [ $nret != 0 ]&&{
-             ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;
-           }
+# Kommentar 22.11.21 vorläufig:
+#           [ $nret != 0 ]&&{ ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;}
            ausf "${tush}VBoxManage startvm $gast --type headless" $blau;
            sleep 13;
 #          das Folgende ist zumindest nicht durchgehend nötig
