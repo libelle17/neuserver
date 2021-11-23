@@ -47,7 +47,7 @@ ot=/opt/turbomed;
 pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 echo hosthier: $hosthier
-for p in 1 0 7; do
+for p in 1 0 7 8; do
   case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
   v=$ot/$pr; 
   ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
@@ -61,7 +61,7 @@ done;
 
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
-for wirt in linux1 linux0 linux7; do
+for wirt in linux1 linux0 linux7 linux8; do
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
  cifs=/mnt/$gpc/turbomed;
  printf "cifs: $gruen$cifs$reset\n";
