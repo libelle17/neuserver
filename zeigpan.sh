@@ -4,6 +4,7 @@ blau="\033[1;34m";
 gruen="\033[1;32m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
+lila="\033[1;35m";
 reset="\033[0m";
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
@@ -48,35 +49,40 @@ pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 echo hosthier: $hosthier
 for p in 1 0 7 8; do
-  case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
-  v=$ot/$pr; 
-  ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
-  printf "p: $blau$p$reset v: $blau$v$reset\n"
-  altverb=$verb;
-  verb=1;
-  ausf "$tsh 'ls -l $v/objects.*'" $blau
-  verb=$altverb;
+  if ping -c1 -W1 linux$p >/dev/null 2>&1; then
+    case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
+    v=$ot/$pr; 
+    printf "${lila}linux$p$reset:\n";
+    ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
+    printf "p: $blau$p$reset v: $blau$v$reset\n"
+    altverb=$verb;
+    verb=1;
+    ausf "$tsh 'ls -l $v/objects.*'" $blau
+    verb=$altverb;
+  fi;
 done;
 
 
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 for wirt in linux1 linux0 linux7 linux8; do
+  if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
- cifs=/mnt/$gpc/turbomed;
- printf "cifs: $gruen$cifs$reset\n";
- if mountpoint -q $cifs; then
+   cifs=/mnt/$gpc/turbomed;
+   printf "wirt: $lila$wirt$reset, cifs: $lila$cifs$reset:\n";
+   if mountpoint -q $cifs; then
+     altverb=$verb;
+     verb=1;
+     ausf "ls -l $cifs/$pr/objects.*";
+     verb=$altverb;
+   else
+    printf "kein Mountpoint\n";
+   fi;
+   echo tush: $tush, gpc: $gpc, gast: $gast
    altverb=$verb;
    verb=1;
-   ausf "ls -l $cifs/$pr/objects.*";
+   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*'" $dblau;
+  # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
    verb=$altverb;
- else
-  printf "kein Mountpoint\n";
  fi;
- echo tush: $tush, gpc: $gpc, gast: $gast
- altverb=$verb;
- verb=1;
- ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*'" $dblau;
-# ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
- verb=$altverb;
 done;
