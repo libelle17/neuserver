@@ -1,4 +1,5 @@
-#!/bin/dash
+#!/bin/bash
+# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
 # wenn des das Verzeichnis /opt/turbomed gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
 # das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed gibt

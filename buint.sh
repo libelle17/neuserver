@@ -1,4 +1,5 @@
-#!/bin/dash
+#!/bin/bash
+# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
 # wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed

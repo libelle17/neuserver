@@ -1,4 +1,5 @@
-#!/bin/dash
+#!/bin/bash
+# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh, buint.sh
 #im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
 EXFEST=",Papierkorb/";
