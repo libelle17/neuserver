@@ -11,10 +11,6 @@
     $_SESSION['OAU']=!$_SESSION['OAU'];
  } else  IF(isset($_POST['HbA1c'])) {
     $_SESSION['HbA1c']=!$_SESSION['HbA1c'];
- } else  IF(isset($_POST['Uzu'])) {
-    $_SESSION['Uzu']=!$_SESSION['Uzu'];
- } else  IF(isset($_POST['Hypo'])) {
-    $_SESSION['Hypo']=!$_SESSION['Hypo'];
  } else  IF(isset($_POST['Hyper'])) {
     $_SESSION['Hyper']=!$_SESSION['Hyper'];
  } else  IF(isset($_POST['NeuSt'])) {
@@ -61,16 +57,12 @@
     $_SESSION['RR-Vgl']=!$_SESSION['RR-Vgl'];
  } else  IF(isset($_POST['BZ-Vgl'])) {
     $_SESSION['BZ-Vgl']=!$_SESSION['BZ-Vgl'];
- } else  IF(isset($_POST['Schul'])) {
-    $_SESSION['Schul']=!$_SESSION['Schul'];
  } else  IF(isset($_POST['TSH'])) {
     $_SESSION['TSH']=!$_SESSION['TSH'];
  } else  IF(isset($_POST['fT4 [pmol/l]'])) {
     $_SESSION['fT4 [pmol/l]']=!$_SESSION['fT4 [pmol/l]'];
  } else  IF(isset($_POST['fT3'])) {
     $_SESSION['fT3']=!$_SESSION['fT3'];
- } else  IF(isset($_POST['Schuleintr'])) {
-    $_SESSION['Schuleintr']=!$_SESSION['Schuleintr'];
  } else  IF(isset($_POST['Hb'])) {
     $_SESSION['Hb']=!$_SESSION['Hb'];
  } else  IF(isset($_POST['Vit B12'])) {
