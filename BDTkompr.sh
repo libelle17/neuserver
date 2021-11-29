@@ -2,8 +2,8 @@
 # 21.11.2010
 vz="/DATA/eigene Dateien/TMExport"
 lvz="/DATA/Papierkorb/eigene Dateien/TMExport"
-declare -i -r mint=7 # Mindesttage bis zum Komprimieren
-declare -i -r minl=12 # Mindesttage bis zum Löschen
+declare -i -r mint=18 # Mindesttage bis zum Komprimieren
+declare -i -r minl=23 # Mindesttage bis zum Löschen
 . /root/.7zpassw
 # declare -i alter
 # declare -i tage

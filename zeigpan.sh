@@ -10,7 +10,7 @@ reset="\033[0m";
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
   if test "$3"/ = direkt/; then
     "$1";
   elif test "$3"; then 
@@ -20,8 +20,8 @@ ausf() {
   fi;
   ret=$?;
   [ "$verb" ]&&{
-    printf "ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: \"\n$blau$resu$reset\"";
+    printf " -> ret: $blau$ret$reset"
+    [ "$3" ]||printf ", resu: \n$blau$resu$reset";
     printf "\n";
   }
 } # ausf
@@ -70,6 +70,14 @@ for wirt in linux1 linux0 linux7 linux8; do
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
    cifs=/mnt/$gpc/turbomed;
    printf "wirt: $lila$wirt$reset, cifs: $lila$cifs$reset:\n";
+   for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+     if ! mountpoint -q $cifs; then
+       ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials" $blau
+     else
+#       printf " ${blau}$cifs$reset gemountet!\n"
+       break;
+     fi;
+   done;
    if mountpoint -q $cifs; then
      altverb=$verb;
      verb=1;
@@ -81,7 +89,7 @@ for wirt in linux1 linux0 linux7 linux8; do
    echo tush: $tush, gpc: $gpc, gast: $gast
    altverb=$verb;
    verb=1;
-   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*'" $dblau;
+   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $dblau;
   # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
    verb=$altverb;
  fi;

@@ -11,17 +11,18 @@ reset="\033[0m";
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
-	if test "$3"; then 
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+  if test "$3"/ = direkt/; then
+    "$1";
+  elif test "$3"; then 
     eval "$1"; 
   else 
     resu=$(eval "$1"); 
   fi;
   ret=$?;
   [ "$verb" ]&&{
-    printf ", ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
-    printf "\n";
+    printf " -> ret: $blau$ret$reset";
+    if [ "$3" ]; then printf '\n'; else printf ", resu: $blau"; echo $resu|sed -e '$a\'; printf $reset; fi;
   }
 } # ausf
 
@@ -88,6 +89,7 @@ obalt() {
 	# $1 = Datei auf $QV und $ZV, deren Alter verglichen werden soll 
 	# $2 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # liefert 0, wenn auf Quelle vorhanden und (alt genug oder auf Ziel fehlend), sonst 1
+  machssh;
   [ "$obdat" ]&&DaQ="/${QVos%/*}${1#/}"||DaQ="/$QVos/${1#/}";
   [ "$obdat" ]&&DaZ="/${ZVos%/*}${1#/}"||DaZ="/$ZVos/${1#/}";
 	[ "$verb" ]&&{
@@ -136,6 +138,10 @@ kopiermt() { # mit test
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
   ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
+  machssh;
+  echo ""
+  echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
+  printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
       [ "$Lfw" ]||Lfw=$buhost" (hier) ";
@@ -145,6 +151,7 @@ kopiermt() { # mit test
       while :; do
         [ "$zuteh" ]||break;
         echo "$hsh mountpoint -q \"$zuteh\""
+        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
         if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
         zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
       done;
@@ -154,16 +161,6 @@ kopiermt() { # mit test
       }
     fi;
   done;
-  if [ "$verb" ]; then
-    echo QVofs: $QVofs
-    echo QVos : $QVos
-    echo obsub: $obsub
-    echo obdat: $obdat
-    echo ZVos : $ZVos
-    echo ZVofs: $ZVofs
-    echo qssh : $qssh
-    echo zssh : $zssh
-  fi;
 
 #  case $QVos in */)ZVos=${ZVos%/};;*)ZVos=${ZVos%/}/${QVos##*/};QVos=${QVos%/};;esac;
 #  QVos=${QVofs%/}; # Quellverzeichnis (ohne abschließenden slash)
@@ -173,9 +170,6 @@ kopiermt() { # mit test
 #  case $QVofs in */);;*)ZV=${ZV%/}/$(echo ${1##*/}|sed 's/\([^\\]\) /\1\\ /g');ZV=${ZV#/};;esac;
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
 
-  echo ""
-  echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
-  printf "${blau}kopiermt Q: $1, Z: $2, Ex: $3, Opt: $4, AltPrf: $5, >s: $6, oPlP: $7, QL: $QL, /QVos: /$QVos, QVofs: $QVofs, ZL: $ZL, ZVos: $ZVos, ZVofs: $ZVofs$reset\n";
   [ "$5" -a "$6" -a -z "$obdat" ]&&{
    obalt "$5" "$6"||return 1;
    [ "$faq" ]&&return 2;
@@ -305,6 +299,12 @@ kopieretc() {
   kopiermt etc/$1 "etc/" "" "" "" "" 1
 }
 
+machssh() {
+  [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+  [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
+#  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
+}
+
 # hier geht's los
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -320,12 +320,9 @@ obforce=;
 obkill=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-[ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 if [ "$buhost"/ = "$LINEINS"/ ]; then
   [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
 fi;
-[ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
-[ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 
 [ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
