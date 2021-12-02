@@ -236,9 +236,9 @@ ELG=/var/log/cronf.log
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
 # VBoxManage controlvm Win10 poweroff
 # geht irgendwie auch allein
-# * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
+* * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
 # ich glaub, ich weiß schon warum ...
-# * * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
+* * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
 # Starten einer zusätzlichen Gui: VBoxSDL --startvm Win10 --separate
 # Starten einer zusätzlichen Gui: VBoxManage startvm Win10 --type separate
 # Beenden dieser Gui: Ctrl+C, pkill VBoxSVC -9
