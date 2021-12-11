@@ -10,6 +10,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+# [ "$QL" ]&& pruefpc "$QL";
+# [ "$ZL" ]&& pruefpc "$ZL";
 wirt=${QL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 g1=$gast;
@@ -22,16 +24,15 @@ case $buhost in $LINEINS)tush="sh -c ";;*)tush="ssh $buhost ";;esac
 
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
-resD=PraxisDB-res;
-res=$ot/$resD;
+otr=/$ot/PraxisDB-res;
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
     obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
     Pr=PraxisDB;
-    ausf "$zssh '[ -d $res -a ! -d $otP ]&& mv /$res $otP'" $blau; # umgekehrt
+    ausf "$zssh '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt
 else
     obvirt=1; 
     Pr=PraxisDB-res;
-    ausf "$zssh '[ -d $otP -a ! -d $res ]&& mv $otP /$res'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
+    ausf "$zssh '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
 for iru in 1 2; do
   if test $iru = 1; then

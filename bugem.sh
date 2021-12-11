@@ -4,7 +4,7 @@
 #im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
-gruen="\033[1;35m";
+lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
@@ -308,26 +308,27 @@ kopieretc() {
   kopiermt etc/$1 "etc/" "" "" "" "" 1
 }
 
-machssh() {
-  printf "${gruen}qssh$reset: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
-  for PC in "$QL" "$ZL"; do
-    if [ "$PC" ]; then
-      [ "$PC"/ = "$QL"/ ]&&qssh="ssh $QL"||zssh="ssh $ZL";
-      for iru in 1 2; do
-        if ping -c1 -W100 "$PC"; then 
-          break;
-        elif [ $iru = 1 ]; then
-          weckalle.sh "$PC";
-          sleep 60s;
-        else
-         printf "$PC nicht erreichbar und nicht weckbar. Breche ab!\n";
-         exit 1;
-        fi;
+pruefpc() {
+  for iru in 1 2; do
+    if ping -c1 -W100 "$1"; then 
+      break;
+    elif [ $iru = 1 ]; then
+      weckalle.sh "$1";
+      for ii in $(seq 1 1 100); do
+        ping -c1 -W100 "$1"&&break;
       done;
-    else 
-      [ "$PC"/ = "$QL"/ ]&&qssh="sh -c"||zssh="sh -c";
+    else
+     printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
+     exit 1;
     fi;
   done;
+}
+
+machssh() {
+[ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";
+[ "$ZL" ]&&{ zssh="ssh $ZL";pruefpc "$ZL";:;}||zssh="sh -c";
+# [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
+# [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 }
 
