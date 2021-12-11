@@ -810,6 +810,13 @@ proginst() {
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
+# fuer fbfax:
+# zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
+# zypper in /DATA/down/i4l-base-2011.8.29-lp152.8.37.x86_64.rpm
+# zypper in /DATA/down/ppp-userpass-2011.8.29-lp152.8.37.x86_64.rpm
+# zypper in /DATA/down/libcapi20-2-2011.8.29-lp152.8.37.x86_64.rpm
+# zypper in /DATA/down/capi4linux-2011.8.29-lp152.8.37.x86_64.rpm
+# zypper in /DATA/down/capi4linux-devel-2011.8.29-lp152.8.37.x86_64.rpm 
   # einmal ging das erst nach zypper up und Neustart des Computers
   # Datei -> Einstellungen -> Zusatzpakete -> Extensionpack auswählen
   # dann VirtualBox aufrufen, Add, die z.B. Wind10.vdi-Datei auswählen; File -> Host Network Manager, Create

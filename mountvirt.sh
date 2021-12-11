@@ -60,21 +60,22 @@ else
 #   esac;
 # case $wirt in $LINEINS)tush="sh -c";;*)tush="ssh $wirt";;esac
      [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tush: $tush, gast: $gast
-     mp=/mnt/$gpc/turbomed;
+     cifs=/mnt/$gpc/turbomed;
      if [ "$iru" = 1 ]; then
        grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;
-         ergae=${ergae}"//$gpc/Turbomed $mp cifs nofail,vers=3.11,credentials=$cre 0 2";
+         ergae=${ergae}"//$gpc/Turbomed $cifs cifs nofail,vers=3.11,credentials=$cre 0 2";
        };
      else
        if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
+          printf "$rot vor pgrep und nmap$reset\n"
 #         ping -c1 -W100 -q $gpc &> /dev/null
 #         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
          ausf "${tush}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
          ausf "${tush}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
          [ $pret != 0 -o $nret != 0 ]&&{
            [ "$verb" ]&&echo tush: $tush, gast: $gast; 
-           ausf "umount -l $mp";
+           ausf "umount -l $cifs";
 # Kommentar 22.11.21 vorläufig:
 #           [ $nret != 0 ]&&{ ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;}
            ausf "${tush}VBoxManage startvm $gast --type headless" $blau;
@@ -83,9 +84,17 @@ else
 #          ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
          };
        fi;
-       [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$mp$reset\n";
-       [ -d "$mp" ]||mkdir -p "$mp";
-       mountpoint -q $mp||{ ausf "mount $mp 2>/dev/null" $blau; }
+       [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$cifs$reset\n";
+       [ -d "$cifs" ]||mkdir -p "$cifs";
+#       mountpoint -q $cifs||{ ausf "mount $cifs 2>/dev/null" $blau; }
+       for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+         if ! mountpoint -q $cifs; then
+           ausf "mount $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1" $blau
+         else
+    #       printf " ${blau}$cifs$reset gemountet!\n"
+           break;
+         fi;
+       done;
        if [ $ret/ != 0/ ]; then
          echo mounten fehlgeschlagen. Jetzt müsste evtl. was getan werden mit: tush: $tush, evtl. auch Namens- und IP-Zuweisung an der Fritzbox
        fi;
