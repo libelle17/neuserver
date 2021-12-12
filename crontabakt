@@ -235,6 +235,7 @@ ELG=/var/log/cronf.log
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
 0 3 * * * G=/DATA/Patientendokumente/zufaxen;D=$G/2145; find $D -type f -exec sh -c 'mv "$@" '$G/ find-sh {} +
+0 1 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/briefautor.sh
 # */5 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
 30 1,13 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/pznbdt >/dev/null 2>&1
