@@ -34,8 +34,10 @@ for D in $(mysql --defaults-file=~/.mysqlpwd -B -e"SELECT  concat(ID,'<$>',REPLA
         break;
       fi;
     done;
-    mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"$autor\" WHERE id=${arr[0]}";
+    [ "$verb" -a "$autor" = "-" ]&&echo ${arr[0]} ${arr[1]}: ${abk[$indx]} nein;
   else
-    [ "$verb" ]&&echo  \"${arr[1]}\" nicht gefunden
+   autor='?';
+   [ "$verb" ]&&echo  ${arr[0]} ${arr[1]}: nicht gefunden;
   fi;
+  mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"$autor\" WHERE id=${arr[0]}";
 done;
