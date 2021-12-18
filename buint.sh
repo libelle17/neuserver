@@ -37,15 +37,27 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-printf "${lila}1. intern hier kopieren${reset}\n";
-for Vz in $VzL; do
+printf "${lila}1. intern hier kopieren${reset}";
+for iru in 1 2; do
+  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
+  if [ -z "$offen" ]; then
+    echo "";
+    [ "$obkill" ]&&ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
+  fi;
+  [ "$obkill" ]||break;
+done;
+if [ "$offen" ]; then
+ for Vz in $VzL; do
   [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   uq=$Vz;
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
-done;
+ done;
+else
+ echo "";
+fi;
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren

@@ -50,7 +50,7 @@ for iru in 1 2; do
     ZL=; # dann werden die cifs-Laufwerke verwendet
     [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then 
       if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
-       ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 1m";
+       ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
       fi;
       if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
         ausf "VBoxManage controlvm $g1 poweroff" $blau;

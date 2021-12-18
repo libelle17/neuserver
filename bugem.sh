@@ -153,19 +153,28 @@ kopiermt() { # mit test
     if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
       ok=;
       zuteh=${zute%/};
-      while :; do
+      testz="$zuteh";
+      while :; do # rausfinden, ob nicht ein linker Teil des Verzeichnispfades schon gemountet ist
+        [ "$testz" ]||break;
+        findmnt "$testz" >/dev/null&&{ ok=1;break;}
+        testz=${testz%/*};
+      done;
+      [ $ok ]||while :; do # wenn nicht, dann schauen, was zu mounten ist
         [ "$zuteh" ]||break;
-        echo "$hsh mountpoint -q \"$zuteh\""
-#        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
-        for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-         if ! $hsh "mountpoint -q \"$zuteh\""; then
-           ausf "$hsh \"mount \\\"$zuteh\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1\"" $blau
-         else
-    #       printf " ${blau}$cifs$reset gemountet!\n"
-           break;
-         fi;
-        done;
-        if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
+        if [ -d "$zuteh" ]; then # das sollte dann ein schon bestehendes Verzeichnis sein
+          echo "$hsh 'mountpoint -q \"$zuteh\"'"
+  #        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
+          for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+           if ! $hsh "mountpoint -q \"$zuteh\""; then
+             ausf "$hsh \"mount \\\"$zuteh\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1\"" $blau
+             echo "";
+           else
+      #       printf " ${blau}$cifs$reset gemountet!\n"
+             break;
+           fi;
+          done;
+          if $hsh "mountpoint -q \"$zuteh\""; then ok=1; break; fi; # wenn eins gemountet is, o.k.
+        fi;
         zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
       done;
       [ "$ok" ]||{
@@ -314,12 +323,12 @@ kopieretc() {
 
 pruefpc() {
   for iru in 1 2; do
-    if ping -c1 -W100 "$1"; then 
+    if ping -c1 -W100 "$1" >/dev/null 2>&1; then 
       break;
     elif [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1";
       for ii in $(seq 1 1 100); do
-        ping -c1 -W100 "$1"&&break;
+        ping -c1 -W100 "$1" >/dev/null 2>&1&&break;
       done;
     else
      printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
