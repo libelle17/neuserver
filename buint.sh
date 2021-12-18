@@ -14,39 +14,66 @@ wirt=$buhost;
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
 resD=PraxisDB-res;
-res=$ot/$resD;
+otr=/$ot/$resD;
+VzLg="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber"; # VzL groß
+VzLk="PraxisDB StammDB DruckDB Dictionary"; # VzL klein
 if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
-  VzL="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber";
+  VzL="$VzLg";
   ur=$ot # opt/turbomed
   hin=mnt/$gpc/turbomed;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$res" -a ! -d "$otP" ]; then
-    ausf "mv /$res $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
+    ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
 else 
   obvirt=1; 
-  VzL="PraxisDB StammDB DruckDB Dictionary";
+  VzL="$VzLk";
   ur=mnt/$gpc/turbomed; 
   hin=$ot;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$res" ]; then
-    ausf "mv $otP /$res" $blau; # dann ggf. die linux-Datenbank umbenennen
+  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
+    ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-altEXFEST=$EXFEST;EXFEST=;
+altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
+printf "${lila}1. intern hier kopieren${reset}\n";
 for Vz in $VzL; do
-  case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+  [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-  case $Vz in PraxisDB) 
-    uq=$Vz;
-    [ "$obvirt" ]&&uz=$resD||uz=$Vz;;
-    *) uq=$Vz; uz=$Vz;;
-  esac;
-  [ "$obforce" ]&&testdt=;
+  uq=$Vz;
+  [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
 done;
-exit;
-ZL=$altZL;
+if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+printf "${lila}2. butm aufrufen${reset}\n";
+# 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
+  ziele="linux0 linux7 linux8";
+  for ziel in $ziele; do
+    if [ "$obecht" ]; then
+      butm.sh $ziel -nv -e;
+    else
+      butm.sh $ziel -nv;
+    fi;
+  done;
+printf "${lila}3. intern drüben kopieren${reset}\n";
+# 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
+  ZL=;
+  for QL in $ziele; do
+    if pruefpc $QL kurz; then
+      for Vz in $VzLk; do
+        [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+        obOBDEL=;
+          # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
+        uq=$Vz;
+        [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
+        wirt=$QL;
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+        hin=mnt/$gpc/turbomed;
+        kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+      done; # Vz in $VzLk; do
+    fi; # pruefpc $QL kurz; then
+  done; # QL in $ziele; do
+fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 EXFEST=$altEXFEST;

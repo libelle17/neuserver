@@ -48,6 +48,8 @@ commandline() {
         d|-del) obdel=1;;
         f|-force) obforce=1;;
         k|-kill) obkill=1;;
+        m|-mehr) obmehr=1;;
+        nv|-nichtvirt) obnv=1;;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -61,6 +63,8 @@ commandline() {
 		printf "obdel: $blau$obdel$reset\n";
 		printf "obforce: $blau$obforce$reset\n";
     printf "obkill: $blau$obkill$reset\n";
+    printf "obmehr: $blau$obmehr$reset\n";
+    printf "obnv: $blau$obnv$reset\n";
 		printf "sdneu: $blau$sdneu$reset\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
@@ -312,7 +316,7 @@ pruefpc() {
   for iru in 1 2; do
     if ping -c1 -W100 "$1"; then 
       break;
-    elif [ $iru = 1 ]; then
+    elif [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1";
       for ii in $(seq 1 1 100); do
         ping -c1 -W100 "$1"&&break;
@@ -345,10 +349,12 @@ obecht=;
 obdel=;
 obforce=;
 obkill=;
+obnv=1;
+obmehr=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 if [ "$buhost"/ = "$LINEINS"/ ]; then
-  [ -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD=/Pfad/zur/Schutzdatei${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließender Vergleich dieser Dateien vor jedem Kopiervorgang\n";
+  [ "$verb" -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m{reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${reset}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
 fi;
 
 [ "$sdneu"/ = 2/ ]&&{
