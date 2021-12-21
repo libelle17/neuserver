@@ -34,9 +34,6 @@ else
     Pr=PraxisDB-res;
     ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
-echo obnv: $obnv
-echo ZL: $ZL
-exit
 if [ -z "$obnv" ]; then
   for iru in 1 2; do
     if test $iru = 1; then
