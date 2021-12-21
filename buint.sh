@@ -65,8 +65,10 @@ printf "${lila}2. butm aufrufen${reset}\n";
   ziele="linux0 linux7 linux8";
   for ziel in $ziele; do
     if [ "$obecht" ]; then
+      echo butm.sh $ziel -nv -e;
       butm.sh $ziel -nv -e;
     else
+      echo butm.sh $ziel -nv;
       butm.sh $ziel -nv;
     fi;
   done;

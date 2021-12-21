@@ -34,6 +34,9 @@ else
     Pr=PraxisDB-res;
     ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
+echo obnv: $obnv
+echo ZL: $ZL
+exit
 if [ -z "$obnv" ]; then
   for iru in 1 2; do
     if test $iru = 1; then
@@ -67,6 +70,10 @@ if [ -z "$obnv" ]; then
     if [ "$offen" ]; then
      kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdt" "1800" 1; # ohne --iconv
     fi;
+    if test $iru = 2; then
+      QL=$uQL;
+      ZL=$uZL;
+    fi;
     [ "$nichtvirt" ]&&break;
   done;
 fi;
@@ -78,8 +85,6 @@ for zug in "$tush" "$zish"; do
 done;
 ausf "$tush 'mountpoint -q /${Dt} 2>/dev/null'&&$zish 'mountpoint -q /${Dt} 2>/dev/null'"
 if [ "$ret"/ = 0/ ]; then
- QL=$uQL;
- ZL=$uZL;
  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
  kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
 else
