@@ -346,8 +346,6 @@ machssh() {
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 }
 
-echo $#
-exit
 # hier geht's los
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
