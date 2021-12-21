@@ -50,6 +50,7 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
+        h|-help|-hilfe) obhilfe=1;;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -345,6 +346,8 @@ machssh() {
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 }
 
+echo $#
+exit
 # hier geht's los
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
@@ -358,12 +361,14 @@ obecht=;
 obdel=;
 obforce=;
 obkill=;
-obnv=1;
 obmehr=;
+obnv=;
+obhilfe=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-if [ "$buhost"/ = "$LINEINS"/ ]; then
-  [ "$verb" -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m{reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${reset}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
+if [ \( "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o $obhilfe ]; then 
+  printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m{reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${reset}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
+  exit;
 fi;
 
 [ "$sdneu"/ = 2/ ]&&{

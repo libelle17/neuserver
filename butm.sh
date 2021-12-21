@@ -34,40 +34,42 @@ else
     Pr=PraxisDB-res;
     ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
-for iru in 1 2; do
-  if test $iru = 1; then
-    ur=$ot; 
-    hin=$ot;
-    offen=1;
-  else  # iru = 2
-    [ "$obvirt" ]||break;
-    Pr=PraxisDB;
-    ur=mnt/$l1gpc/turbomed; 
-    hin=mnt/$rgpc/turbomed;
-    uQL=$QL;
-    QL=;
-    uZL=$ZL;
-    ZL=; # dann werden die cifs-Laufwerke verwendet
-    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then 
-      if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
-       ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
-      fi;
-      if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
-        ausf "VBoxManage controlvm $g1 poweroff" $blau;
-        ausf "VBoxManage startvm $g1 --type headless" $blau;
-      fi;
-    fi;};# dann killt der windows-task "Turbomed töten" turbomed
-    if ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
-  fi;
-  [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
-  [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
-  [ "$verb" ]&&printf "offen: ${blau}$offen$reset\n";
-  [ "$obforce" ]&&testdt=||testdt=$Pr/objects.dat;
-  if [ "$offen" ]; then
-   kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdt" "1800" 1; # ohne --iconv
-  fi;
-  [ "$nichtvirt" ]&&break;
-done;
+if [ -z "$obnv" ]; then
+  for iru in 1 2; do
+    if test $iru = 1; then
+      ur=$ot; 
+      hin=$ot;
+      offen=1;
+    else  # iru = 2
+      [ "$obvirt" ]||break;
+      Pr=PraxisDB;
+      ur=mnt/$l1gpc/turbomed; 
+      hin=mnt/$rgpc/turbomed;
+      uQL=$QL;
+      QL=;
+      uZL=$ZL;
+      ZL=; # dann werden die cifs-Laufwerke verwendet
+      [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then 
+        if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
+         ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
+        fi;
+        if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
+          ausf "VBoxManage controlvm $g1 poweroff" $blau;
+          ausf "VBoxManage startvm $g1 --type headless" $blau;
+        fi;
+      fi;};# dann killt der windows-task "Turbomed töten" turbomed
+      if ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
+    fi;
+    [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
+    [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
+    [ "$verb" ]&&printf "offen: ${blau}$offen$reset\n";
+    [ "$obforce" ]&&testdt=||testdt=$Pr/objects.dat;
+    if [ "$offen" ]; then
+     kopiermt "$ur/" "$hin" "" "$OBDEL" "$testdt" "1800" 1; # ohne --iconv
+    fi;
+    [ "$nichtvirt" ]&&break;
+  done;
+fi;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 Dt=DATA; 
 Pt=Patientendokumente;
