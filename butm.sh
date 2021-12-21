@@ -34,21 +34,21 @@ else
     Pr=PraxisDB-res;
     ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
 fi;
-for iru in 1 2; do
+for iru in 1 2; do # interne Runde
   if test $iru = 1; then
-    ur=$ot; 
+    ur=$ot;  # kopiere das gesamte /opt/turbomed
     hin=$ot;
     offen=1;
   else  # iru = 2
     [ "$obvirt" ]||break;
     Pr=PraxisDB;
-    ur=mnt/$l1gpc/turbomed; 
+    ur=mnt/$l1gpc/turbomed; # kopiere das gesamte /mnt/virtwin/turbomed
     hin=mnt/$rgpc/turbomed;
     uQL=$QL;
     QL=;
     uZL=$ZL;
-    ZL=; # dann werden die cifs-Laufwerke verwendet
-    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then 
+    ZL=; # dann werden die cifs-Laufwerke verwendet, alle auf selbem Server
+    [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then # dann pruefen, ob objects.idx gesperrt ist
       if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
        ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
       fi;
@@ -70,18 +70,18 @@ for iru in 1 2; do
     QL=$uQL;
     ZL=$uZL;
   fi;
-  [ "$obnv" ]&&break;
+  [ "$obnv" ]&&break; # dann keine iru 2
 done;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 Dt=DATA; 
 Pt=Patientendokumente;
 for zug in "$tush" "$zish"; do
-ausf "$zug 'mountpoint -q /$Dt 2>/dev/null||mount /$Dt'";
+  ausf "$zug 'mountpoint -q /$Dt 2>/dev/null||mount /$Dt'";
 done;
 ausf "$tush 'mountpoint -q /${Dt} 2>/dev/null'&&$zish 'mountpoint -q /${Dt} 2>/dev/null'"
 if [ "$ret"/ = 0/ ]; then
-kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
-kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
+  kopiermt "$Dt/turbomed" "$Dt/" "" "$OBDEL" "" "" 1
+  kopiermt "$Dt/$Pt/eingelesen" "$Dt/$Pt/" "" "$OBDEL" "" "" 1
 else
  printf $rot$Dt$reset kein Mountpoint, hier nichts kopiert!
 fi;
