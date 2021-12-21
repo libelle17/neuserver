@@ -1,0 +1,3 @@
+#!/bin/bash
+# Abkuerzung fuer haeufigen Gebrauch
+VBoxManage "$@"
