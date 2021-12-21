@@ -50,6 +50,7 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
+        h|-help|-hilfe) obhilfe=1;;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -136,6 +137,7 @@ kopiermt() { # mit test
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
+  machssh;
   [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";};
   [ "$obsub" ]&&{ $qssh "[ -f \"/$QVos\" ]"&&obdat=1||obdat=;}; # das geht nicht mit zsh
   if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; [ "$ZVofs" = "$QVofs/" ]&&ZVofs=""; else # letzteres für QVofs ohne /
@@ -143,7 +145,6 @@ kopiermt() { # mit test
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
   ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
-  machssh;
   echo ""
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
@@ -358,12 +359,14 @@ obecht=;
 obdel=;
 obforce=;
 obkill=;
-obnv=1;
 obmehr=;
+obnv=;
+obhilfe=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-if [ "$buhost"/ = "$LINEINS"/ ]; then
-  [ "$verb" -a -z "$ZL" ]&&printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n-d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m{reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${reset}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
+if [ \( "${0##*/}" != buint.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
+  printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m${reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
+  exit;
 fi;
 
 [ "$sdneu"/ = 2/ ]&&{

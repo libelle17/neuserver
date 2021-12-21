@@ -58,14 +58,17 @@ if [ "$offen" ]; then
 else
  echo "";
 fi;
+[ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   ziele="linux0 linux7 linux8";
   for ziel in $ziele; do
     if [ "$obecht" ]; then
+      echo butm.sh $ziel -nv -e;
       butm.sh $ziel -nv -e;
     else
+      echo butm.sh $ziel -nv;
       butm.sh $ziel -nv;
     fi;
   done;
