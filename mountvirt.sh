@@ -64,7 +64,7 @@ else
      if [ "$iru" = 1 ]; then
        grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;
-         ergae=${ergae}"//$gpc/Turbomed $cifs cifs nofail,vers=3.11,credentials=$cre 0 2";
+         ergae=${ergae}"//$gpc/Turbomed $cifs cifs nofail,vers=3.11,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw 1 2";
        };
      else
        if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
@@ -89,7 +89,7 @@ else
 #       mountpoint -q $cifs||{ ausf "mount $cifs 2>/dev/null" $blau; }
        for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
          if ! mountpoint -q $cifs; then
-           ausf "mount $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1" $blau
+           ausf "mount $cifs -t cifs -o nofail,vers=$vers,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw >/dev/null 2>&1" $blau
          else
     #       printf " ${blau}$cifs$reset gemountet!\n"
            break;
