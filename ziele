@@ -78,6 +78,7 @@ xlstocsv.sh
 zeich.sh
 zeigpan.sh
 zusalat.sh
+zuutf.sh
 [/root]
 .smbcredentials
 crontabdump
