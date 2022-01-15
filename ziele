@@ -84,6 +84,17 @@ zuutf.sh
 [/root]
 .smbcredentials
 crontabdump
+.vim
+.vim/vimrc
+.vim/Schutzdatei_bitte_belassen.doc
+.vim/.VimballRecord
+.vim/.netrwhist
+.vim/plugin
+.vim/plugin/gtags.vim
+.vim/plugin/bufexplorer.vim
+.vim/doc
+.vim/doc/tags
+.vim/doc/bufexplorer.txt
 [/etc/apache2]
 httpd.conf.local
 [/etc]
