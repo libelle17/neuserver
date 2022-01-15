@@ -300,7 +300,8 @@ while read -r zeile; do
       fi;
     esac;
   fi;
-  echo zeile: $zeile;
+  printf "${blau}zeile$reset: $zeile\n";
+  if [ "$uid" ]; then
   umbenenn=;
   if [ "$lbl" ]; then
     case $ges in 
@@ -393,6 +394,7 @@ while read -r zeile; do
 		printf "$eintr\n" >>$ftb;
 		printf "\"$blau$eintr$reset\" in $blau$ftb$reset eingetragen.\n";
 	fi;
+ fi; # [ "$uid" ]
 	# byt=$(echo $zeile|cut -d\" -f4);
 	#   altbyt=$byt; byt=$(echo $z|cut -d' ' -f2); [ "$byt" -lt "$altbyt" ]&&gr=ja||gr=nein; echo "      byt: "$byt "$gr";
 done << EOF
@@ -1337,6 +1339,15 @@ tvversion() {
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
 }
 # teamviewer15: in /usr/share/applications/org.kde.kdeconnect_open.desktop : -MimeType=*/*; +MimeType=application/octet-stream;
+
+teamviewer15() {
+ if [ $(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}') \< 15 ]; then
+   sudo rpm --import  https://download.teamviewer.com/download/linux/signature/TeamViewer2017.asc;
+   wget https://download.teamviewer.com/download/linux/teamviewer-suse.x86_64.rpm;
+   sudo sudo zypper install teamviewer-suse.x86_64.rpm; 
+ fi;
+} # teamviewer15()
+
 teamviewer10() {
 	printf "${dblau}teamviewer$reset()\n";
 	[ ! -d "$Dw" ]&&mkdir -p "$Dw";
@@ -1713,7 +1724,7 @@ variablen;
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
- [ $obteil = 0 -o $obtv = 1 ]&&teamviewer10;
+ [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
