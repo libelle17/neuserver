@@ -176,7 +176,7 @@ setzhost() {
 } # setzhost
 
 setzbenutzer() {
-  printf "${dblau}setzbenutzer$reset()\n";
+  printf "${dblau}setzbenutzer$reset(), gruppe: $gruppe\n";
   pruefgruppe $gruppe
   $SPR samba 2>/dev/null||$IPR samba
   systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
@@ -289,6 +289,7 @@ while read -r zeile; do
   case "$typ" in rom) continue;; esac;
   case "$mtp" in /|/boot/efi) continue;; esac;
   case "$lbl" in EFI) continue;; esac;
+  [ "$uid" ]||continue;
   if test -z "$fty"; then
 		[ "$pty" = 0xf ]&&continue; # Partitionstabelle
     case "$typ" in disk|part)
