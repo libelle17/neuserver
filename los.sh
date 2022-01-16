@@ -106,7 +106,7 @@ commandline() {
 variablen() {
  printf "${dblau}variablen$reset()\n";
  qverz=/root/neuserver
- [ -s "$meinpfad/vars" ]||{ echo $meinpfad/vars fehlt, rufe auf: sh configure; sh configure;}
+ [ -s "$meinpfad/vars" ]||{ echo $meinpfad/vars fehlt, rufe auf: sh $meinpfad/configure; sh configure;}
  while :; do
   sed 's/:://;/\$/d;s/=/="/;s/$/"/;s/""/"/g;s/="$/=""/' "$meinpfad/vars" >"$meinpfad/shvars"
   . "$meinpfad/shvars"
