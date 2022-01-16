@@ -20,7 +20,8 @@ wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 # hier wir tush nicht nicht wirt festgelegt, wie in virtnamen.sh, sondern nach buhost:
-case $buhost in $LINEINS)tush="sh -c ";zish="ssh $buhost ";;*)tush="ssh $buhost ";zish="sh -c ";;esac
+[ "$verb" ]&&{ printf "ZL: ${blau}$ZL$reset\n"; sleep 1;};
+case $buhost in $LINEINS)tush="sh -c ";zish="ssh $ZL ";;*)tush="ssh $ZL ";zish="sh -c ";;esac
 
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
