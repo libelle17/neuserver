@@ -163,6 +163,7 @@ ELG=/var/log/cronf.log
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+-35 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
@@ -172,7 +173,6 @@ ELG=/var/log/cronf.log
 -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
 #ein Abbild wichtiger Verzeichnisse des Servers linux1 auf linux7 erstellen:
 -56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
--56 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
@@ -240,6 +240,7 @@ ELG=/var/log/cronf.log
 # */5 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
 30 1,13 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/pznbdt >/dev/null 2>&1
+0 2 * * * HOST$$(hostname);[ $HOST/ != linux1/ -a mountpoint -q /DATA ]&&for db in programmstaende konten kvaerzte haerzte_neu haerzte fotosinp faxeinp depot dp quelle office; do dt=$(ls /DATA/sql/$db* -t|head -n1); mysql --defaults-extra-file=~/.mysqlpwd < $dt; done;
 # VBoxManage controlvm Win10 poweroff
 # geht irgendwie auch allein
 * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 

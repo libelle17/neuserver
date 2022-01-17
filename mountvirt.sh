@@ -68,7 +68,7 @@ else
        };
      else
        if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
-          printf "$rot vor pgrep und nmap$reset\n"
+          [ $verb ]&&printf "$rot vor pgrep und nmap$reset\n"
 #         ping -c1 -W100 -q $gpc &> /dev/null
 #         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
          ausf "${tush}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
@@ -78,7 +78,7 @@ else
            ausf "umount -l $cifs";
 # Kommentar 22.11.21 vorläufig:
 #           [ $nret != 0 ]&&{ ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;}
-           ausf "${tush}VBoxManage startvm $gast --type headless" $blau;
+           ausf "${tush}VBoxManage list runningvms|grep -q $gast||${tush}VBoxManage startvm $gast --type headless" $blau;
            sleep 13;
 #          das Folgende ist zumindest nicht durchgehend nötig
 #          ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau

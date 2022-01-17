@@ -202,6 +202,7 @@ exportvars() {
 	rm -f vars;
 	for v in OSNR IPR IP_R UPR UDPR SPR UNROH UNF AUNF ILOG PGROFF LT LT5 LBOOST LBIO LBLO LACL LCURL LCURS LSPAN LGLIB LSOUP LSND QPDF LTERM LGSSDP LCAPI LM18 dev libmdb REPOS UREPO COMP GITV DTN DPROG; do
 		eval nv=\$$v; 
+#    echo v: $v, nv: $nv
 		printf "$v::=$nv\n" >>vars; 
 	done;
 #	printf "testvar::=rot gelb grün\n" >>vars
