@@ -38,11 +38,20 @@ fi;
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 printf "${lila}1. intern hier kopieren${reset}";
-for iru in 1 2; do
+for iru in 1 2 3; do
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
-  if [ -z "$offen" ]; then
+  [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
+  if [ "$offen" ]; then
+    break;
+  else
     echo "";
-    [ "$obkill" ]&&ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null'&&sleep 80s";
+    [ "$obkill" ]&&{
+      if [ "$iru" = 1 ]; then
+        ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
+      else
+        VBoxManage controlvm Win10 poweroff; VBoxManage startvm Win10 --type headless;
+      fi;
+    }
   fi;
   [ "$obkill" ]||break;
 done;
