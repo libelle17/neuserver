@@ -376,14 +376,20 @@ wecken() {
 				echo "$zeile"|
           awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
 			else
-				printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
-				for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
-					fragab; # hier geschieht das Wecken
-					break; # Ip, Name und Interface überspringen
-				done;
+        aktpc=$(echo $zeile|awk 'END{print $3" "$4}');
+        case "$schonda" in *$aktpc*);;*)
+          schonda="$schonda $aktpc";
+          printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
+          Inhalt=${zeile%% *}; # das erste Wort: Mac-Adresse
+          fragab; # hier geschieht das Wecken
+#          for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
+#            fragab; # hier geschieht das Wecken
+#            break; # Ip, Name und Interface überspringen
+#          done;;
+        esac;
 			fi;
 		done << EOF
-$(cat "$gesausdt")
+$(tac "$gesausdt")
 EOF
  fi;
 }
