@@ -364,10 +364,12 @@ obnv=;
 obhilfe=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
+case $0 in bu*)
 if [ \( "${0##*/}" != buint.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m${reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
   exit;
-fi;
+fi;;
+esac;
 
 [ "$sdneu"/ = 2/ ]&&{
   [ "$SD" -a ! -f "$SDQ" ]&&{ printf "$rot$SDQ$reset nicht gefunden. Breche ab.\n"; exit 1; }
