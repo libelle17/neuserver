@@ -131,10 +131,12 @@ tufrag() {
 # Befehlszeilenparameter auswerten
 commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
+  obgrue=0; # 1=gruendlicher wecken, s.u.
 	while [ $# -gt 0 ]; do
     para=$(echo "$1"|sed 's;^/;-;');
 		case $para in
 			-neu|-new) obneu=1;;
+      -grue|-prof) obgrue=1;;
       -nicht|-not|--nicht|--not) npc=$2;shift;; # kann komma-getrennte Liste nicht zu weckender Geräte sein
 			-not*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,5))}');; 
 			-nicht*) npc=$(echo "$para"|awk '{print gensub(/["'\''](.*)["'\'']/,"\\1",1,substr($0,7))}');; 
@@ -155,8 +157,9 @@ commandline() {
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
         printf "  zusammengeschrieben von: Gerald Schade 6.4.2019\n";
         printf "  Benutzung:\n";
-				printf "$blau$0 [-neu] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-vi] [-v] [-h|--hilfe|-?]$reset\n";
+				printf "$blau$0 [-neu] [-grue] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-vi] [-v] [-h|--hilfe|-?]$reset\n";
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
+        printf "  $blau-grue$reset: weckt gruendlicher (alle MAC, die je seit Beginn der Aufzeichnungen diese/n IP/Namen hatten\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
 				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
 				printf "                    Wenn bloß MAC-Adressen angegeben werden, so arbeitet das Programm ohne Geräteliste (und schneller).\n";
@@ -172,6 +175,7 @@ commandline() {
         printf "  Usage:\n";
 				printf "$blau$0 [-new] [-not[ ]<pc1>[,pc2...]] [<pc1>[,pc2...]] [-forbi[ ]<interface1>[,interface2...]] [-all[ ]<interface1>[,interface2...]] [-show] [-ol] [-v] [-h|--hilfe|-help]$reset\n";
 				printf "  $blau-new$reset: asks again for the fritz box user und password\n";
+        printf "  $blau-prof$reset: wakes up more profound (all MACs that ever since the beginning of the documentation hat this ip/name\n";
         printf "  $blau-not$reset: excludes the specified pcs (Mac,IP,Hostname,Interface)\n";
 				printf "  $blau[<pc1>[,pc2...]]$reset: tries to wake only the specified pcs (Mac,ip,hostname,interface) instead of all\n";
 				printf "                    If only MAC-addresses are given, the program works without the list of devices (and faster).\n";
@@ -377,16 +381,16 @@ wecken() {
           awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
 			else
         aktpc=$(echo $zeile|awk 'END{print $3" "$4}');
-        case "$schonda" in *$aktpc*);;*)
+        for iru in 1; do # nur wegen break
+          if [ $obgrue/ != 1/ ]; then # Verkürzungsmöglichkeit nur, wenn nicht obgrue=1
+            case "$schonda" in *$aktpc*) break;; esac; # falls PC schon mal abgefragt, dann Schleife verlassen
+          fi;
           schonda="$schonda $aktpc";
+          [ "$verb" ]&&printf "schonda: $rot$schonda$reset\n"; 
           printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$zeile$reset\n";
           Inhalt=${zeile%% *}; # das erste Wort: Mac-Adresse
           fragab; # hier geschieht das Wecken
-#          for Inhalt in $zeile; do # bis zum ersten Leerzeichen = Mac-Adresse
-#            fragab; # hier geschieht das Wecken
-#            break; # Ip, Name und Interface überspringen
-#          done;;
-        esac;
+        done; # iru in 1
 			fi;
 		done << EOF
 $(tac "$gesausdt")
