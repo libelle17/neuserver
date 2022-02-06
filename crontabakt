@@ -244,9 +244,9 @@ ELG=/var/log/cronf.log
 0 2 * * * HOST$$(hostname);[ $HOST/ != linux1/ -a mountpoint -q /DATA ]&&for db in programmstaende konten kvaerzte haerzte_neu haerzte fotosinp faxeinp depot dp quelle office; do dt=$(ls /DATA/sql/$db* -t|head -n1); mysql --defaults-extra-file=~/.mysqlpwd < $dt; done;
 # VBoxManage controlvm Win10 poweroff
 # geht irgendwie auch allein
-# * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
+* * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
 # ich glaub, ich weiß schon warum ...
-# * * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
+* * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
 */10 * * * * zuutf.sh
 # Starten einer zusätzlichen Gui: VBoxSDL --startvm Win10 --separate
 # Starten einer zusätzlichen Gui: VBoxManage startvm Win10 --type separate
