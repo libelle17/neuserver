@@ -2,14 +2,14 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux7, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-[ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
+[ "$ZL/" = linux7ur/ ]&&obkurz=1||obkurz=;
 kopiermt "var/spool" ... "" "" "" "" 1
 kopieros ".vim"
 kopieros ".smbcredentials"
@@ -32,7 +32,7 @@ ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
-  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
+  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7ur
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX|while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";

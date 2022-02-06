@@ -9,7 +9,7 @@ vorgaben() {
   # Musterende der interessanten Dateien
   muende="_????????.7z";
   # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
-  gr1=183;
+  gr1=30;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
   # Grenze, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen

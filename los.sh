@@ -408,7 +408,7 @@ done; # nochmal
 } # mountlaufwerke
 
 pruefgruppe() {
-    grep -q "^$1:" /etc/group||groupadd $1
+    [ "$1" ]&&{ grep -q "^$1:" /etc/group||groupadd $1;}||echo Aufruf pruefgruppe ohne Gruppe!
 }
 
 pruefuser() {
@@ -938,18 +938,18 @@ bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
 	for SITZ in gnome.desktop cinnamon.settings-daemon; do
 			gsettings set org.$SITZ.peripherals.keyboard repeat-interval 40 2>/dev/null;
-			gsettings set org.$SITZ.peripherals.keyboard delay 200 2>/dev/null;
+			gsettings set org.$SITZ.peripherals.keyboard delay 250 2>/dev/null;
 	done;
 	if false; then
     if test "$(id -u)" -ne 0 -o true; then
   #		github;
       if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
         gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
-        gsettings set org.gnome.desktop.peripherals.keyboard delay 200;
+        gsettings set org.gnome.desktop.peripherals.keyboard delay 250;
       fi;
       if [ "$DESKTOP_SESSION" = cinnamon ]; then
         gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
-        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 200;
+        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 250;
       fi;
     fi;
 	fi;

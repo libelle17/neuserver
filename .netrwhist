@@ -1,8 +1,10 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =6
+let g:netrw_dirhist_cnt =8
 let g:netrw_dirhist_1='/opt/turbomed/Formulare/Patientenmenue'
 let g:netrw_dirhist_2='/DATA/Patientendokumente/zutxt'
 let g:netrw_dirhist_3='/root/.config/VirtualBox'
 let g:netrw_dirhist_4='/DATA/Patientendokumente'
 let g:netrw_dirhist_5='/DATA/Patientendokumente/test'
 let g:netrw_dirhist_6='/root/neuserver/zu'
+let g:netrw_dirhist_7='/home/schade'
+let g:netrw_dirhist_8='/etc/my.cnf.d'
