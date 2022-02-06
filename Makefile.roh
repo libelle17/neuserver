@@ -530,11 +530,8 @@ shziel:
 	 for D in $$(cat ziele);do \
     case $$D in \
       los.sh) \
-       echo Stelle 1;\
 	     if ! test -f instvz; then printf \"$$(pwd)\" >instvz; fi;\
-       echo Stelle 2;\
        grep -q '^instvz=' los.sh&&{ grep -q ^instvz=$$(cat instvz)$$ los.sh||sed -i '/^instvz=/{s:.*:instvz='$$(cat instvz)':}' los.sh;};\
-       echo Stelle 3;\
        zwi=zeit.tmp;zw="qverz=";touch -r $$D $$zwi;sed -i '/^[ ]*'$$zw'/s:'$$zw'.*:'$$zw$$(pwd)':' $$D; touch -r $$zwi $$D; rm $$zwi;;\
     esac; \
     case $$D in \
