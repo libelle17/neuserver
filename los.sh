@@ -842,7 +842,7 @@ proginst() {
   systemctl restart apache2;
   case $OSNR in
    4) # suse
-    zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;;
+#    zypper lr|grep home_Alexander_Pozdnyakov >/dev/null||zypper ar https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov/openSUSE_Leap_$(lsb-release -r|cut -f2)/home:Alexander_Pozdnyakov.repo;; # auskommentiert 5.2.22
   esac;
   doinst tesseract-ocr 
   doinst tesseract-ocr-traineddata-german
