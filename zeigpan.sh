@@ -49,7 +49,8 @@ pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 echo hosthier: $hosthier
 for p in 1 0 7 8; do
-  if ping -c1 -W1 linux$p >/dev/null 2>&1; then
+  echo p: $p
+  if ping -c1 -W1 linux$p >/dev/null; then
     case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
     v=$ot/$pr; 
     printf "${lila}linux$p$reset:\n";
