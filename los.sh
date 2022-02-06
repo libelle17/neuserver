@@ -814,6 +814,16 @@ proginst() {
   doinst doxygen; # fuer alle moegelichen cmake
   doinst getmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
+  doinst e2fsprogs-devel; # wg. fehler et/com_err.h missing
+  zypper lr home_mnhauke_ISDN >/dev/null 2>&1||{
+   zypper addrepo https://download.opensuse.org/repositories/home:mnhauke:ISDN/openSUSE_Leap_15.2/home:mnhauke:ISDN.repo
+   zypper refresh;
+  }
+  doinst i4l-base;
+  doinst libcapi20-2;
+  doinst libcapi20-3;
+  doinst capi4linux-devel;
+
 # fuer fbfax:
 # zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
 # zypper in /DATA/down/i4l-base-2011.8.29-lp152.8.37.x86_64.rpm
@@ -900,13 +910,30 @@ proginst() {
     make;
     make install;
   }
-  for D in anrliste autofax dicom fbfax impgl labimp termine vmparse2; do
+  for D in autofax vmime anrliste dicom fbfax impgl labimp termine vmparse2; do
     cd $HOME;
-    [ -s "$HOME/$D/kons.cpp" ]||git clone http://github.com/libelle17/$D;
+    [ -s "$HOME/$D/kons.cpp" -o -d "$HOME/$D/cmake" ]||{ 
+      [ -d "$HOME/$D" ]&&{
+        find "$HOME/$D" -ls
+        printf "Soll das Verzeichnis $HOME/$D zum Neuholung von git gelöscht werden (jyJYnN)? ";read obloe;
+        case $obloe in 
+         [jyJY]*) rm -rf "$HOME/$D";;
+        esac;
+      }
+      echo hole $D; git clone http://github.com/libelle17/$D;
+    };
     cd $HOME/$D;
-    [ -f vars ]||sh configure;
-    [ -s $D ]||make;
-    [ -s /usr/bin/$D ]||make install;
+    if [ -d cmake ]; then
+     [ -d build ]||mkdir build;
+     cd build;
+     [ -f Makefile ]||cmake ..;
+     make;
+     make install;
+    else
+      [ -f vars ]||sh configure;
+      [ -s $D ]||make;
+      [ -s /usr/bin/$D ]||make install;
+    fi;
     git remote set-url origin  git+ssh://git@github.com/libelle17/$D.git
   done;
   cd $VORVZ;
