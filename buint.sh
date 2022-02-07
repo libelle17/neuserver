@@ -71,7 +71,7 @@ fi;
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
-  ziele="linux0ur linux7ur linux8";
+  ziele="linux0 linux7 linux8";
   for ziel in $ziele; do
     if [ "$obecht" ]; then
       echo butm.sh $ziel -nv -e;
