@@ -3,16 +3,13 @@ DBV=/DATA/Patientendokumente/Datenbanken/
 DBV2="/DATA/eigene Dateien/"
 SichV=/DATA/DBBack
 AccuVerz=Diaries
-if false; then
-echo Falsch!
-fi
-cd "${DBV}Roche Diagnostics/Accu-Chek Smart Pix Software/$AccuVerz"
-echo $PWD
+
+cd "${DBV}AccuChek/$AccuVerz" && \
 mountpoint -q "/DATA" && ionice -c3 nice -n19 7z u $SichV/${AccuVerz}_`date +\%Y\%m\%d` -r -x!"*.bak" -mx=9 -mtc=on -mmt=on
 echo $PWD
 cd -
 
-cd "${DBV}"
+cd "${DBV}" && \
 mountpoint -q "/DATA" && ionice -c3 nice -n19 7z u $SichV/Diabass_`date +\%Y\%m\%d` DiabassPro Diabass diabassdata -r -mx=9 -mtc=on -mmt=on
 echo $PWD
 cd -
