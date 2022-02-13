@@ -65,6 +65,28 @@
       $text=$text."HbA1c";
       echo "<button class='".$stil."' name='HbA1c'>".$text."</button>";
     }
+    if ($_SESSION['obUzu']) {
+      if ($_SESSION['Uzu']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } else {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Uzu";
+      echo "<button class='".$stil."' name='Uzu'>".$text."</button>";
+    }
+    if ($_SESSION['obHypo']) {
+      if ($_SESSION['Hypo']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } else {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Hypo";
+      echo "<button class='".$stil."' name='Hypo'>".$text."</button>";
+    }
     if ($_SESSION['obHyper']) {
       if ($_SESSION['Hyper']) {
         $stil=cave;
@@ -318,6 +340,17 @@
       $text=$text."BZ-Vgl";
       echo "<button class='".$stil."' name='BZ-Vgl'>".$text."</button>";
     }
+    if ($_SESSION['obSchul']) {
+      if ($_SESSION['Schul']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } else {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Schul";
+      echo "<button class='".$stil."' name='Schul'>".$text."</button>";
+    }
     if ($_SESSION['obTSH']) {
       if ($_SESSION['TSH']) {
         $stil=cave;
@@ -350,6 +383,17 @@
       }
       $text=$text."fT3";
       echo "<button class='".$stil."' name='fT3'>".$text."</button>";
+    }
+    if ($_SESSION['obSchuleintr']) {
+      if ($_SESSION['Schuleintr']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } else {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Schuleintr";
+      echo "<button class='".$stil."' name='Schuleintr'>".$text."</button>";
     }
     if ($_SESSION['obHb']) {
       if ($_SESSION['Hb']) {

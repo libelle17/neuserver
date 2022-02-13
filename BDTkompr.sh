@@ -9,7 +9,7 @@ declare -i -r minl=23 # Mindesttage bis zum Löschen
 # declare -i tage
 # declare -i jetzt
 jetzt=`date +%s`
-Dateien=("$vz"/*.BDT)
+Dateien=("$vz"/*.BDT "$vz"/*.bdt)
 for datei in  "${Dateien[@]}";  do
  echo " "`ls --full-time "$datei"`:
 # zdatei=`echo $datei | sed s/".BDT"/".BDT.7z"/g`   # ginge auch
@@ -58,9 +58,9 @@ for datei in "${Dateien[@]}"; do
  tage=$((alter/60/60/24))
  echo "  ""Alter: " $tage " Tage"
  if [ $tage -ge $minl ]; then
-  echo "  -> wird gelöscht"
+  echo "  -> wird geloescht"
   rm "$datei"
  else
-  echo "  -> wird noch nicht gelöscht"
+  echo "  -> wird noch nicht geloescht"
  fi
 done
