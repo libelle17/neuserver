@@ -230,12 +230,18 @@ kopiermt() { # mit test
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
   [ "$SD" -a ! "$obdat" ]&&{
-    if [ -z "$QL" -a -z "$ZL" ]; then
-      diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
-    elif [ "$QL" ]; then
+    if [ "$QL" ]; then
+      PZiel=$QL;
       diffbef="ssh $QL cat \"/$QVos/$SD\" 2>/dev/null| diff - /$ZVos/$SD 2>/dev/null";
     elif [ "$ZL" ]; then
+      PZiel=$ZL;
       diffbef="ssh $ZL cat \"/$ZVos/$SD\" 2>/dev/null| diff - /$QVos/$SD 2>/dev/null";
+    else
+      PZiel=;
+      diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
+    fi;
+    [ "$PZiel" ]&&if ! ping -c1 -W100 "$1" >/dev/null 2>&1; then 
+      return 1;
     fi;
 #    printf "${blau}$diffbef$reset\n"
     ausf "$diffbef";
