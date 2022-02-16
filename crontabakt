@@ -164,7 +164,7 @@ ELG=/var/log/cronf.log
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # kurz pausiert 16.2.22 wg. Frau Müller
-# -35 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;}
+-35 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;}
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
