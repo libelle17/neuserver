@@ -240,7 +240,9 @@ kopiermt() { # mit test
       PZiel=;
       diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
     fi;
-    [ "$PZiel" ]&&if ! ping -c1 -W100 "$1" >/dev/null 2>&1; then 
+    AND=$QL;[ "$AND" ]||AND=$ZL;
+    [ "$PZiel" ]&&if ! ping -c1 -W100 "$AND" >/dev/null 2>&1; then 
+      printf "$rot$AND$reset nicht anpingbar! Kehre zurueck!\n";
       return 1;
     fi;
 #    printf "${blau}$diffbef$reset\n"
