@@ -97,7 +97,7 @@ ELG=/var/log/cronf.log
 # >>$VL/dorsync-Aufruf-gerade.log 2>&1
 #-57 0 * * * dorsync.sh --delete /opt/turbomed/PraxisDB/ /mnt/diabfb/ADATA-USBFlashDrive-01/PraxisDB # >>$VL/dorsync-Aufruf-flash.log 2>&1
 # Datensicherung auf USB-Stick:
--45 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
+-55 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
 # -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0ur/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux0ur:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
 # -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
@@ -164,7 +164,7 @@ ELG=/var/log/cronf.log
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # kurz pausiert 16.2.22 wg. Frau Müller
--35 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;}
+-45 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;}
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
