@@ -53,6 +53,7 @@ else
   [ "$oballe" ]&&auswahl=$gausw||auswahl=${HOST%%.*};
   for iru in 1 2; do
    for wirt in $gausw; do
+    if ping -c1 -W1 -q $wirt >/dev/null 2>&1; then
 .   ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
@@ -98,8 +99,9 @@ else
        if [ $ret/ != 0/ ]; then
          echo mounten fehlgeschlagen. Jetzt müsste evtl. was getan werden mit: tush: $tush, evtl. auch Namens- und IP-Zuweisung an der Fritzbox
        fi;
-     fi;
-    done; # wirt in $auswahl
+     fi; #      if [ "$iru" = 1 ]; then else
+     fi; #     if ping -c1 -W1 -q $wirt >/dev/null 2>&1; then
+    done; # wirt in $gausw
     if test "$iru" = 1 -a "$ergae"; then
       if grep -q "^LABEL" $ftb; then
 #        [ "$verb" ]&&echo ergae: $ergae;

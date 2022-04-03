@@ -155,6 +155,7 @@ commandline() {
 			-v|--verbose) verb=1;;
 			-h|--h|--hilfe|-hilfe|-?|/?|--?)
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
+        printf "  Aktuelle Geraeteliste: $blau$ausgdt$reset, Gesamtliste: $blau$gesausdt$reset, Log-Datei: $blau$logdt$reset\n";
         printf "  zusammengeschrieben von: Gerald Schade 6.4.2019\n";
         printf "  Benutzung:\n";
 				printf "$blau$0 [-neu] [-grue] [-nicht[ ]<PC1>[,PC2...]] [<PC1>[,PC2...]] [-verbo[ ]<Interface1>[,Interface2...]] [-erl[ ]<Interface1>[,Interface2...]] [-zeig] [-al] [-vi] [-v] [-h|--hilfe|-?]$reset\n";

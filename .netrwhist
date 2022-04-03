@@ -1,3 +1,8 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =1
+let g:netrw_dirhist_cnt =6
 let g:netrw_dirhist_1='/var/spool/hylafax'
+let g:netrw_dirhist_2='/DATA/down'
+let g:netrw_dirhist_3='/DATA/Patientendokumente/settings.xml.rels'
+let g:netrw_dirhist_4='/etc/my.cnf.d'
+let g:netrw_dirhist_5='/etc'
+let g:netrw_dirhist_6='/etc/my.cnf.d'
