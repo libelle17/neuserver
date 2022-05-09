@@ -31,7 +31,7 @@ ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
- for uverz in Praxis Schade Wagner Kothny Beraterinnen; do
+ for uverz in Praxis Schade Wagner Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7ur
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
    find /$qverz -iname INBOX|while IFS= read -r inbox; do

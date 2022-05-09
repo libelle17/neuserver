@@ -1,6 +1,6 @@
 #!/bin/bash
 abk=(wd gs tk)
-sus=("^Dr.*D.*Wagner" "^G.*Schade" "^Dr.*Kothny")
+sus=("^Dr.*D.*Wagner" "^G.*Schade" "^Dr.*Kothny" "^Dr.*A.*Hammerschmidt")
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";

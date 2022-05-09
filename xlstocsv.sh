@@ -3,6 +3,7 @@
 St=/DATA/Patientendokumente;
 La="$St/LaborAlt";
 KL="$St"/KothnyLabor/;
+HL="$St"/HammerschmidtLabor/;
 WL="$St"/WagnerLabor/;
 SL="$St"/SchadeLabor/;
 [ "$1" = "-v" ]&&verbose=1;
