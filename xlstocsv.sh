@@ -28,6 +28,7 @@ for Vz in "$St"; do
      [ "$Vz" == "$La" ]|| mv "$F" "$La";
      cp -a "$G" "$KL";
      cp -a "$G" "$WL";
+     cp -a "$G" "$HL";
      mv "$G" "$SL";
     };
    fi;
