@@ -59,6 +59,7 @@ commandline() {
 	obmysql=0; # nur mysql soll eingerichtet werden
   obsmb=0; # nur smbconf soll aufgerufen werden
   obmust=0; # ob von musterserver kopiert werden soll
+  obfritz=0; # ob fritzbox eingehaengt werden soll
 	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obfb=0; # Firebird
   obtv=0; # Teamviewer
@@ -81,6 +82,7 @@ commandline() {
           smb) obsmb=1;;
           must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
+          fritz) obfritz=1;;
           firebird) obfb=1;;
           teamviewer) obtv=1;;
 				esac;;
@@ -100,6 +102,7 @@ commandline() {
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
 		[ "$obsmb" = 1 ]&& printf "obsmb: ${blau}1$reset\n"
 		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
+		[ "$obfritz" = 1 ]&& printf "obfritz: ${blau}1$reset\n"
 		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
 } # commandline
@@ -1745,7 +1748,7 @@ variablen;
  [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
- [ $obteil = 0 ]&&fritzbox;
+ [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
 	setzinstprog;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
@@ -1759,7 +1762,7 @@ variablen;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&{ [ $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
- [ $obteil = 0 -o $obfb = 1 ]&&firebird;
+ [                $obfb = 1 ]&&firebird;
 printf "${dblau}Ende von $0$reset\n";
 
 if false; then
