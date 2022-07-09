@@ -26,4 +26,5 @@ echo $NNAM.site > /etc/hostname
 sed -i.bak 's/^'$IP'[[:space:]]\+$ANAM.site $ANAM/'$IP' $NNAM.site $NNAM/g;s/^127.0.0.1[[:space:]]\+$ANAM.site $ANAM/127.0.0.1  $NNAM.site $NNAM/g' /etc/hosts 
 hostname $NNAM.site
 export hostname=$NNAM
+rm -rf /obslaeuft
 # reboot
