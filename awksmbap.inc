@@ -2,7 +2,7 @@
 BEGIN {
  A[0]="[turbomed]"; P[0]="/opt/turbomed"; avail[0]=1;
  A[1]="[php]"; P[1]="/srv/www/htdocs"; avail[1]=1;
- A[2]="[obslaueft]"; P[2]="/obslaeuft"; avail[2]=1;
+ A[2]="[obslaeuft]"; P[2]="/obslaeuft"; avail[2]=1;
  A[3]="[efi]"; P[3]="/boot/efi"; avail[3]=0;
  A[4]="[diabfb]"; P[4]="/mnt/diabfb"; avail[4]=0;
  A[5]="[virtwin0turbomed]"; P[5]="/mnt/virtwin0/turbomed"; avail[5]=0;

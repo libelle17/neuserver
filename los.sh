@@ -1030,7 +1030,7 @@ sambaconf() {
       printf "BEGIN {\n";
       drucke("turbomed","/opt/turbomed",1);
       drucke("php","/srv/www/htdocs",1);
-      drucke("obslaueft","/obslaeuft",1);
+      drucke("obslaeuft","/obslaeuft",1);
     }
     $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
        n=$2;
