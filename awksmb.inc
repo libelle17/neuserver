@@ -20,6 +20,7 @@ N[16]="socket options"; 					I[16]="TCP_NODELAY";
 N[17]="hosts allow"; 	 						I[17]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[18]="interfaces"; 	 						I[18]="192.168.178.0/24 10.0.0.0/14 10.5.0.";
 N[19]="time server"; 				  		I[19]="Yes";
+N[20]="disable spoolss";		  		I[20]="Yes";
 Na[0]="comment";									Ia[0]="";
 Na[1]="path";											Ia[1]="";
 Na[2]="directory mask";						Ia[2]="0660";

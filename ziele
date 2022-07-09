@@ -6,11 +6,8 @@ alsserver.sh
 awkcron.sh
 awkfdatei.sh
 awkmount.sh
-awksmb.inc
 awksmb.sh
-awksmbap.inc
 awktv.sh
-awktv.inc
 berecht.sh
 bertest.sh
 briefautor.sh
