@@ -1019,16 +1019,18 @@ sambaconf() {
 	[ "$arbgr" ]||{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
 	[ "$arbgr/" = "$workgr/" ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
-	S2="$instvz/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für smbd.sh (s.u)
+	S2="$instvz/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für awksmb.sh (s.u)
   awk -v z=0 '
     function drucke(s1,s2,avail) {
       printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
       z=z+1;
     }
     BEGIN {
+      printf "# diese Datei wird durch los.sh vor Gebrauch ueberschrieben.\n";
       printf "BEGIN {\n";
       drucke("turbomed","/opt/turbomed",1);
       drucke("php","/srv/www/htdocs",1);
+      drucke("obslaueft","/obslaeuft",1);
     }
     $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
        n=$2;
