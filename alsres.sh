@@ -27,6 +27,7 @@ sed -i.bak 's/^'$IP'[[:space:]]\+$ANAM.site $ANAM/'$IP' $NNAM.site $NNAM/g;s/^12
 hostname $NNAM.site
 export hostname=$NNAM
 rm -rf /obslaeuft
+autofax -st
 systemctl disable smb;
 systemctl stop smb;
 systemctl disable nmb;
