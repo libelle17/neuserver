@@ -334,7 +334,7 @@ while read -r zeile; do
 				ntfs*|exfat*|vfat)
 					while :;do	
 						abbruch=0;
-						[ -z "$bishwin" ]&&abbruch=1|| eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
+						[ -z "$bishwin" -o "$bishwin"ß = "|ß" ]&&abbruch=1|| eval "case "$wnamnr" in "$bishwin"):;;*)false;;esac;"||abbruch=1;
 						[ $abbruch -eq 1 ]&&break;
 						wnamnr=$(expr $wnamnr + 1 );
 					done;
