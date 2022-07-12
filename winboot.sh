@@ -1,4 +1,8 @@
 #/bin/bash
 # bootet einmalig Windows
-grub2-reboot 'Windows Boot Manager (on /dev/nvme0n1p1)'
+HOST=$(hostname); case $HOST/ in linux8/) LW=/dev/nvme0n1p1;; linux3/) LW=/sde/sde2;; esac;
+echo LW: $LW;
+echo "Windows Boot Manager (on $LW)"
+exit;
+grub2-reboot "Windows Boot Manager (on $LW)"
 reboot
