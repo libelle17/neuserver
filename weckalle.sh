@@ -153,7 +153,7 @@ commandline() {
 			-al|-ol|--alteliste|--oldlist) alteliste=1;;
       -vi) obvi=1;;
 			-v|--verbose) verb=1;;
-			-h|--h|--hilfe|-hilfe|-?|/?|--?)
+			-h|--h|--hilfe|--help|-?|/?|--?)
         printf "Programm $blau$0$reset: versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken,\n";
         printf "  Aktuelle Geraeteliste: $blau$ausgdt$reset, Gesamtliste: $blau$gesausdt$reset, Log-Datei: $blau$logdt$reset\n";
         printf "  zusammengeschrieben von: Gerald Schade 6.4.2019\n";

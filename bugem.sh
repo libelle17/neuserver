@@ -38,7 +38,8 @@ commandline() {
      SD=*) sdneu=2; SDQ=${1##*SD=};SD=${SDQ##*/};;
      SD) sdneu=1; SDQ=$(readlink -f $0);SDQ=${SDQ%/*}/$SD;
          [ ! -f "$SD" ]&&{ 
-           printf "Option '${blau}SD$reset' angegeben, aber $blau$SD$reset nicht in "$blau$(readlink -f $0)$reset" gefunden, ${rot}breche ab$reset.\n"; exit 3;
+           printf "Option '${blau}SD$reset' angegeben, aber $blau$SD$reset nicht in "$blau$(readlink -f $0)$reset" gefunden, ${rot}breche ab$reset.\n";
+           exit 3;
          };;
      -*|/*)
       para=${1#[-/]};
@@ -50,7 +51,7 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
-        h|-help|-hilfe) obhilfe=1;;
+        h|-h|-help|-hilfe|?|-?) obhilfe=1;;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -374,7 +375,17 @@ sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
 if [ \( "${0##*/}" != buint.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
-  printf "$blau$0$reset, Syntax: \n $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien\n ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang\n ${blau}-e${reset} bewirkt echten Lauf\n ${blau}-m${reset} bei buint.sh bewirkt, dass noch mehr getan wird (Dateien auf /opt auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)\n ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt\n ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei objects.dat nicht aelter ist\n ${blau}-nv${reset} bei butm.sh bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.\n";
+  printf "%b\n" \
+  "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien" \
+  " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
+  " ${blau}-e${reset} bewirkt echten Lauf" \
+  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
+  " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist"
+    if [ $(basename $0) == buint.sh ]; then
+  printf "%b\n" \
+  " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
+  " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.";
+    fi;
   exit;
 fi;;
 esac;
