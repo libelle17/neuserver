@@ -51,7 +51,7 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
-        h|-h|-help|-hilfe|?|-?) obhilfe=1;;
+        h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
