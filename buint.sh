@@ -67,8 +67,6 @@ if [ "$offen" ]; then
 else
  echo "";
 fi;
-printf "geweckt: $lila$geweckt$schwarz\n"
-exit
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
@@ -83,6 +81,8 @@ printf "${lila}2. butm aufrufen${reset}\n";
       butm.sh $ziel -nv;
     fi;
   done;
+printf "geweckt: $lila$geweckt$schwarz\n"
+exit
 printf "${lila}3. intern drüben kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
