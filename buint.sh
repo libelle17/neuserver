@@ -67,7 +67,7 @@ if [ "$offen" ]; then
 else
  echo "";
 fi;
-echo geweckt: $geweckt
+echo geweckt: $lila$geweckt$schwarz
 exit
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
