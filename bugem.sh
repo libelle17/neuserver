@@ -355,6 +355,7 @@ pruefpc() {
 machssh() {
 [ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";
 [ "$ZL" ]&&{ zssh="ssh $ZL";pruefpc "$ZL";:;}||zssh="sh -c";
+geweckt=linux3;
 # [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 # [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
