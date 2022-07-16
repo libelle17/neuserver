@@ -49,17 +49,19 @@ pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 echo hosthier: $hosthier
 for p in 1 0 3 7 8; do
-  echo p: $p
+  printf "${lila}linux$p$reset:";
   if ping -c1 -W1 linux$p >/dev/null; then
     case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
     v=$ot/$pr; 
-    printf "${lila}linux$p$reset:\n";
+    printf "\n";
     ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
     printf "p: $blau$p$reset v: $blau$v$reset\n"
     altverb=$verb;
     verb=1;
     ausf "$tsh 'ls -l $v/objects.*'" $blau
     verb=$altverb;
+  else
+    printf " nicht erreichbar (mit ping -cl -W1 linux$p)\n";
   fi;
 done;
 
