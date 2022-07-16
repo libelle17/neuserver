@@ -48,7 +48,7 @@ ot=/opt/turbomed;
 pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 echo hosthier: $hosthier
-for p in 1 0 7 8; do
+for p in 1 0 3 7 8; do
   echo p: $p
   if ping -c1 -W1 linux$p >/dev/null; then
     case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;

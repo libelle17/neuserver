@@ -139,7 +139,7 @@ kopiermt() { # mit test
   QVos=${QVofs%/};
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
   machssh;
-  [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";};
+  [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";}; # obdat=1 heisst, /$QVos ist eine Datei
   [ "$obsub" ]&&{ $qssh "[ -f \"/$QVos\" ]"&&obdat=1||obdat=;}; # das geht nicht mit zsh
   if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; [ "$ZVofs" = "$QVofs/" ]&&ZVofs=""; else # letzteres für QVofs ohne /
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
@@ -194,8 +194,9 @@ kopiermt() { # mit test
 #  case $QVofs in */);;*)ZV=${ZV%/}/$(echo ${1##*/}|sed 's/\([^\\]\) /\1\\ /g');ZV=${ZV#/};;esac;
 # falls Alterskriterium nicht erfuellt, dann abbrechen	
 
+  obaltgepr=; # ob Alter geprüft
   [ "$5" -a "$6" -a -z "$obdat" ]&&{
-   obalt "$5" "$6"||return 1;
+   obalt "$5" "$6"&&obaltgepr=1||return 1;
    [ "$faq" ]&&return 2;
 	}
   EXREST=$EXGES;
@@ -303,10 +304,11 @@ kopiermt() { # mit test
 #    obdat 1: obsub und /Pfad/zum/qv = Datei
 #    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
+    [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $ergae$AUSSCHL" $dblau;
+      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL" $dblau;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -avu $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
     verb=$altverb;
 		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret/ = 0/ ]&&EXGES=${EXGES},/$QVos/;
