@@ -37,7 +37,6 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-exit
 printf "${lila}1. intern hier kopieren${reset}";
 for iru in 1 2 3; do
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
@@ -56,6 +55,7 @@ for iru in 1 2 3; do
   fi;
   [ "$obkill" ]||break;
 done;
+exit
 if [ "$offen" ]; then
  for Vz in $VzL; do
   [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
