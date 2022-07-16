@@ -7,7 +7,7 @@ rot="\033[1;31m";
 lila="\033[1;35m";
 reset="\033[0m";
 
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ..."), $4=obstumm
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
 	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
@@ -28,6 +28,7 @@ ausf() {
 
 # Befehlszeilenparameter auswerten
 commandlhier() {
+  verb=;
 	while [ $# -gt 0 ]; do
    case "$1" in 
      -*|/*)
@@ -47,18 +48,17 @@ commandlhier "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline 
 ot=/opt/turbomed;
 pr=PraxisDB;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
-echo hosthier: $hosthier
+[ $verb ]&&printf "hosthier: $blau$hosthier$reset\n";
 for p in 1 0 3 7 8; do
-  printf "${lila}linux$p$reset:";
+  printf "${lila}linux$p$reset: ";
   if ping -c1 -W1 linux$p >/dev/null; then
     case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
     v=$ot/$pr; 
-    printf "\n";
     ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
-    printf "p: $blau$p$reset v: $blau$v$reset\n"
+    [ $verb ]&&printf "=> Verzeichnis: $blau$v$reset\n"
     altverb=$verb;
     verb=1;
-    ausf "$tsh 'ls -l $v/objects.*'" $blau
+    ausf "$tsh 'ls -l $v/objects.*'" $schwarz
     verb=$altverb;
   else
     printf " nicht erreichbar (mit ping -cl -W1 linux$p)\n";
@@ -72,10 +72,12 @@ for wirt in linux1 linux0 linux7 linux8; do
   if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
    cifs=/mnt/$gpc/turbomed;
-   printf "wirt: $lila$wirt$reset, cifs: $lila$cifs$reset:\n";
+   printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
    for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
      if ! mountpoint -q $cifs; then
+       printf "\n";
        ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials" $blau
+       printf "\n";
      else
 #       printf " ${blau}$cifs$reset gemountet!\n"
        break;
@@ -84,15 +86,16 @@ for wirt in linux1 linux0 linux7 linux8; do
    if mountpoint -q $cifs; then
      altverb=$verb;
      verb=1;
-     ausf "ls -l $cifs/$pr/objects.*";
+     ausf "ls -l $cifs/$pr/objects.*" $dblau;
      verb=$altverb;
    else
     printf "kein Mountpoint\n";
    fi;
-   echo tush: $tush, gpc: $gpc, gast: $gast
+   [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
    altverb=$verb;
    verb=1;
-   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $dblau;
+   printf " ";
+   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $schwarz;
   # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
    verb=$altverb;
  fi;
