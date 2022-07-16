@@ -8,8 +8,6 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux7, buhost festlegen
 QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
-echo geweckt: $geweckt
-exit
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -69,6 +67,8 @@ if [ "$offen" ]; then
 else
  echo "";
 fi;
+echo geweckt: $geweckt
+exit
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
