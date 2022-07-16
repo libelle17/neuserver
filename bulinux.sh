@@ -84,6 +84,9 @@ if [ "$buhost"/ != "$LINEINS"/ ]; then
 	fi;
 	echo Fertig mit los.sh;
 fi;
+[ $geweckt ]&&for pc in $geweckt; do
+ ssh $pc shutdown now;
+done;
 echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
 echo Fertig;
 # exit

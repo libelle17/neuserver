@@ -101,3 +101,6 @@ printf "${lila}3. intern drüben kopieren${reset}\n";
   done; # QL in $ziele; do
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 EXFEST=$altEXFEST;
+[ $geweckt ]&&for pc in $geweckt; do
+ ssh $pc shutdown now;
+done;

@@ -339,6 +339,7 @@ pruefpc() {
       break;
     elif [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1";
+      [ $iru = 1 ]&&geweckt=$geweckt" "$1;
       for ii in $(seq 1 1 100); do
         ping -c1 -W100 "$1" >/dev/null 2>&1&&break;
       done;
