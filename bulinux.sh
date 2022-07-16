@@ -84,6 +84,7 @@ if [ "$buhost"/ != "$LINEINS"/ ]; then
 	fi;
 	echo Fertig mit los.sh;
 fi;
+printf "$rot geweckt:$lila$geweckt$reset\n";
 [ $geweckt ]&&for pc in $geweckt; do
  ssh $pc shutdown now;
 done;
