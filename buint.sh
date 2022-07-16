@@ -55,7 +55,6 @@ for iru in 1 2 3; do
   fi;
   [ "$obkill" ]||break;
 done;
-exit
 if [ "$offen" ]; then
  for Vz in $VzL; do
   [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
@@ -68,6 +67,7 @@ if [ "$offen" ]; then
 else
  echo "";
 fi;
+exit
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
