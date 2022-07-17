@@ -2,10 +2,11 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn es auf dem Hauptserver linux7 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
+# wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux7, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
@@ -17,7 +18,7 @@ resD=PraxisDB-res;
 otr=/$ot/$resD;
 VzLg="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber"; # VzL groß
 VzLk="PraxisDB StammDB DruckDB Dictionary"; # VzL klein
-if eval "$tush 'test -d $otP'"; then # wenn es auf linux7 /opt/turbomed/PraxisDB gibt, 
+if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="$VzLg";
   ur=$ot # opt/turbomed
@@ -71,33 +72,32 @@ fi;
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 printf "${lila}2. butm aufrufen${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
-  ziele="linux0 linux3 linux7 linux8";
   for ziel in $ziele; do
     if [ "$obecht" ]; then
-      echo butm.sh $ziel -nv -e;
-      butm.sh $ziel -nv -e;
+      echo butm.sh linux$ziel -nv -e;
+      butm.sh linux$ziel -nv -e;
     else
-      echo butm.sh $ziel -nv;
-      butm.sh $ziel -nv;
+      echo butm.sh linux$ziel -nv;
+      butm.sh linux$ziel -nv;
     fi;
   done;
 printf "${lila}3. intern drüben kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for QL in $ziele; do
-    if pruefpc $QL kurz; then
+    if pruefpc linux$QL kurz; then
       for Vz in $VzLk; do
         [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
-        wirt=$QL;
+        wirt=linux$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
         hin=mnt/$gpc/turbomed;
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do
-    fi; # pruefpc $QL kurz; then
+    fi; # pruefpc linux$QL kurz; then
   done; # QL in $ziele; do
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 EXFEST=$altEXFEST;

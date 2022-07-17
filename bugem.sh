@@ -51,6 +51,8 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
+        z|-ziele) shift; ziele="$1";
+                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };
         h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
       esac;;
      *)
@@ -390,6 +392,7 @@ if [ \( "${0##*/}" != buint.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$o
   printf "%b\n" \
   " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
   " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.";
+  " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7";
     fi;
   exit;
 fi;;
