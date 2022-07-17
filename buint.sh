@@ -89,7 +89,7 @@ printf "${lila}3. intern drüben kopieren${reset}\n";
     if pruefpc linux$QL kurz; then
       [ $verb ]&&printf " fiel positiv aus.\n";
       for Vz in $VzLk; do
-        [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n;
+        [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n";
         [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
