@@ -52,7 +52,7 @@ commandline() {
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
         z|-ziele) shift; ziele="$1";
-                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };
+                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };;
         h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
       esac;;
      *)
