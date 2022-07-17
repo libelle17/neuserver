@@ -337,9 +337,10 @@ kopieretc() {
 
 pruefpc() {
   for iru in 1 2; do
-    if ping -c1 -W100 "$1" >/dev/null 2>&1; then 
-      break;
-    elif [ $iru = 1 -a ! $2/ = kurz/ ]; then
+    if [ $verb ]; then if ping -c1 -W100 "$1"; then break; fi;
+    else if ping -c1 -W100 "$1" >/dev/null 2>&1; then break; fi;
+    fi;
+    if [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1";
       [ $iru = 1 ]&&geweckt=$geweckt" "$1;
       for ii in $(seq 1 1 1000); do

@@ -85,8 +85,11 @@ printf "${lila}3. intern drüben kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for QL in $ziele; do
+    [ $verb ]&&printf "Prüfe PC ${blau}linux$QL$reset ...";
     if pruefpc linux$QL kurz; then
+      [ $verb ]&&printf " fiel positiv aus.\n";
       for Vz in $VzLk; do
+        [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n;
         [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
@@ -97,6 +100,8 @@ printf "${lila}3. intern drüben kopieren${reset}\n";
         hin=mnt/$gpc/turbomed;
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do
+    else
+      [ $verb ]&&printf" fiel negativ aus.\n";
     fi; # pruefpc linux$QL kurz; then
   done; # QL in $ziele; do
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
