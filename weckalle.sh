@@ -359,7 +359,7 @@ wecken() {
 	Action=X_AVM-DE_WakeOnLANByMACAddress
 	ParIn=NewMACAddress
 	zahl=0;
-  [ $verb ]&&printf "wecken(), obnurmac: \"$blau$obnurmac$reset\", pcs: \"$blau$pcs$reset\"\n";
+  [ $verb ]&&printf "${blau}wecken()$reset, obnurmac: \"$blau$obnurmac$reset\", pcs: \"$blau$pcs$reset\"\n";
 	if [ "$obnurmac" ]; then # wecken ohne geraeteliste(), wenn nur MAC-Adressen angegeben => geht schneller
 		geszahl=$(echo "$pcs"|awk 'END{print NF}');
 		for Inhalt in $pcs; do # hier keine Anführungszeichen!
@@ -367,12 +367,14 @@ wecken() {
 			printf "${lila}Waking/wecke ($zahl/$geszahl)$reset: $blau$Inhalt$reset\n";
 			fragab; # hier geschieht das Wecken
 		done;
+    [ $verb ]&&printf "Zahl: $blau$zahl$reset\n";
 	else
 		geszahl=$(wc -l <"$gesausdt"); # Zeilenzahl von $gesausdt
 		[ -f "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset not found/nicht gefunden\n";exit;};
 		[ -s "$gesausdt" ]||{ printf "File/Datei $blau$gesausdt$reset empty/leer\n";exit;};
 		while read -r zeile; do
 			# falls pcs angegeben, dann danach filtern; falls '-' in pcs, dann ' -' verwenden, da '-' im hostname enthalten sein kann
+      [ $verb ]&&printf "Zeile: $blau$zeile$reset\n";
       [ "$IFverbo" ]&&{ echo "$zeile"|awk '{if  (match("'$IFverbo'",$4)) exit 1;}' || continue;};
       [ "$IFerlau" ]&&{ echo "$zeile"|awk '{if (!match("'$IFerlau'",$4)) exit 1;}' || continue;};
 			[ "$npc" ]&&{ gefu=;for pc in $npc;do [ $pc = "-" ]&&pc=" -";echo "$zeile"|sed -n "/$pc/q1"||{ gefu=1;break;};done;[ "$gefu" ]&&continue;}; 

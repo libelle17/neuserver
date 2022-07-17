@@ -84,9 +84,10 @@ printf "${lila}2. butm aufrufen${reset}\n";
 printf "${lila}3. intern drüben kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
-  for QL in $ziele; do
+  for QLteil in $ziele; do
+    QL=linux$QLteil;
     [ $verb ]&&printf "Prüfe PC ${blau}linux$QL$reset ...";
-    if pruefpc linux$QL kurz; then
+    if pruefpc $QL kurz; then
       [ $verb ]&&printf " fiel positiv aus.\n";
       for Vz in $VzLk; do
         [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n";
@@ -95,14 +96,14 @@ printf "${lila}3. intern drüben kopieren${reset}\n";
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
-        wirt=linux$QL;
+        wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
         hin=mnt/$gpc/turbomed;
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do
     else
       [ $verb ]&&printf" fiel negativ aus.\n";
-    fi; # pruefpc linux$QL kurz; then
+    fi; # pruefpc $QL kurz; then
   done; # QL in $ziele; do
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 EXFEST=$altEXFEST;

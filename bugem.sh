@@ -336,7 +336,7 @@ kopieretc() {
 }
 
 pruefpc() {
-  [ $verb ]&&printf "aufgerufen: pruefpc mit Parameter: \"$1\"\n";
+  [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\"\n";
   [ "$1" ]||break;
   for iru in 1 2; do
     if [ $verb ]; then if ping -c1 -W100 "$1"; then break; fi;
