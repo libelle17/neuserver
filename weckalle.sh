@@ -359,6 +359,7 @@ wecken() {
 	Action=X_AVM-DE_WakeOnLANByMACAddress
 	ParIn=NewMACAddress
 	zahl=0;
+  [ $verb ]&&printf "wecken(), obnurmac: \"$blau$obnurmac$reset\", pcs: \"$blau$pcs$reset\"\n";
 	if [ "$obnurmac" ]; then # wecken ohne geraeteliste(), wenn nur MAC-Adressen angegeben => geht schneller
 		geszahl=$(echo "$pcs"|awk 'END{print NF}');
 		for Inhalt in $pcs; do # hier keine Anführungszeichen!
