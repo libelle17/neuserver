@@ -1,0 +1,19 @@
+#/bin/bash
+ssh administrator@anmmo shutdown /t 1 /s
+ssh administrator@anmmw shutdown /t 1 /s
+ssh administrator@anmoo shutdown /t 1 /s
+ssh administrator@anmww shutdown /t 1 /s
+ssh administrator@szn4 shutdown /t 1 /s
+ssh administrator@bzw2 shutdown /t 1 /s
+ssh administrator@sono1 shutdown /t 1 /s
+ssh administrator@szs1 shutdown /t 1 /s
+ssh administrator@szo1 shutdown /t 1 /s
+ssh administrator@fuss shutdown /t 1 /s
+ssh administrator@labor3 shutdown /t 1 /s
+ssh administrator@szon1 shutdown /t 1 /s
+ssh administrator@szoo1 shutdown /t 1 /s
+ssh administrator@szow1 shutdown /t 1 /s
+ssh administrator@sr6 shutdown /t 1 /s
+ssh administrator@srn2 shutdown /t 1 /s
+ssh administrator@res1 shutdown /t 1 /s
+ssh administrator@res3 shutdown /t 1 /s
