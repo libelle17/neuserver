@@ -167,6 +167,7 @@ commandline() {
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
 				printf "  $blau-zeig$reset: zeigt nur die Liste der Geräte an statt diese aufzuwecken\n";
+				printf "  $blau-scan$reset: scannt nur die Geräte\n";
 				printf "  $blau-al$reset: aktualisiert die Geräteliste seltener\n";
 				printf "  $blau-vi$reset: lädt die Gerätelisten und das Script in vi\n";
 			exit;;
