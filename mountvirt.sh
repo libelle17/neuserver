@@ -73,7 +73,7 @@ else
 #         ping -c1 -W100 -q $gpc &> /dev/null
 #         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
          ausf "${tush}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
-         ausf "${tush}nmap -sn -T5 -host-timeout 250ms $gpc|grep -q \"Host is up\""; nret=$ret;
+         ausf "${tush}nmap -sn -T5 -host-timeout 250ms $(dig +short $gpc)|grep -q \"Host is up\""; nret=$ret;
          [ $pret != 0 -o $nret != 0 ]&&{
            [ "$verb" ]&&echo tush: $tush, gast: $gast; 
            ausf "umount -l $cifs";
