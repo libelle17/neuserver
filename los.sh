@@ -630,6 +630,7 @@ doinst() {
 
 # aufgerufen in richtmariadb ein
 instmaria() {
+  # anderes Datenverzeichnis auf gehostetem Laufwerk: erst in my.cnf datadir=... eintragen, ohne dass es es schon gibt, dann einmal systemctl start mysql aufrufen, dann wieder schließen, die Daten dorthin kopieren
 	printf "${blau}instmaria$reset()\n"
 	case $OSNR in
 		1|2|3)
