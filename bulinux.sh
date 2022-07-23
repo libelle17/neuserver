@@ -10,26 +10,40 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 [ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
+# Faxprotokolle und alte Faxe, Linux-Mails
 kopiermt "var/spool" ... "" "" "" "" 1
+# Editoreinstellungen
 kopieros ".vim"
+# Berechtigungen zum Mounten der Fritz-Box als cifs-Laufwerk
 kopieros ".smbcredentials"
+# aktuelle Kopie dieser Datei
 kopieros "crontabakt"
+# Verzeichnis für den Mailaufruf in /root
 kopieros ".getmail"
+# Passwort für Verschlüsselung
 kopieros ".7zpassw"
+# Passwort für Mysql/Mariadb
 kopieros ".mysqlpwd"
+# Passwort für Mysql/Mariadb-Superuser
 kopieros ".mysqlrpwd"
+# Passwort für cifs-Mounts
 kopiermt home/schade/.wincredentials ... "" "" "" "" 1
+# Konfigurationsdateien für postfix-Mailprogramm
 kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
   kopiermt "etc/postfix/$D" ... "" "" "" "" 1
 done;
+# selbst erstellte Scripte
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$ZL$V"
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
+# DATA-Platte auf Quelle und Ziel mounten
 Dt=DATA; 
 ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+# falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
+#  ... dann Mail-Verzeichisse kopieren,
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
@@ -43,6 +57,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
    done;
   fi;
  done;
+#  ... sodann die folgenden Verzeichisse: 
  for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
@@ -53,6 +68,15 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  kopiermt "$Dt" ... "$EXCL" "-W $OBDEL";
 fi;
+#  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
+VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
+[ "$obforce" ]&&testdat=||testdat=ibdata1;
+#  ... und kopieren:
+$zssh systemctl stop mysql; 
+$zssh systemctl disable mysql; 
+kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
+$zssh systemctl start mysql; 
+$zssh systemctl enable mysql; 
 exit; # Ende
 
 
@@ -63,7 +87,8 @@ exit; # Ende
 # kopieretc "fstab.cnf" # auskommentiert 29.7.19
 kopiermt "gerade" "/" "" "$OBDEL"
 kopiermt "ungera" "/" "" "$OBDEL"
-VLM="var/lib/mysql";
+# VLM="var/lib/mysql";
+VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
 [ "$obforce" ]&&testdat=||testdat=ibdata1;
 kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
 # kopieretc "openvpn" # auskommentiert 29.7.19
