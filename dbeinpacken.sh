@@ -1,6 +1,6 @@
 #!/bin/bash
 dbs=$(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases' | grep -vE '^mysql$|^(performance|information)_schema$')
-echo $dbs>dbverzeichnis
+echo $dbs>~/dbverzeichnis
 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $dbs > ~/dbeingepackt.sql
 #    echo "$dbs" | while read -r db; do
 #        mysqladmin drop "$db"
