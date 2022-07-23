@@ -2,6 +2,7 @@
 HOST=$(hostname);
 # Datenverzeichnis von mysql
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf); VLM=${VLM:-/var/lib/mysql};
+echo VLM: $VLM;
 # nicht auf linux1, um nichts falsches zu löschen
 if [ ${HOST%%.*}/ != linux1/ ]; then
   # wenn dbeingepackt frisch erstellt und kopiert wurde
