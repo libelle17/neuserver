@@ -1,11 +1,11 @@
 #!/bin/bash
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle sehr relevanten Datenen von aktiven Server linux7 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn des das Verzeichnis /opt/turbomed gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
-# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux7 /opt/turbomed gibt
+# soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
+# wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
+# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed/PraxisDB gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux7, buhost aus hostname festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost aus hostname festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, in obalt und kopiermt $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
@@ -26,7 +26,7 @@ case $buhost in $LINEINS)tush="sh -c ";zish="ssh $ZL ";;*)tush="ssh $ZL ";zish="
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
 otr=/$ot/PraxisDB-res;
-if eval "$tush 'test -d $otP'"; then # wenn es auf linux7 /opt/turbomed/PraxisDB gibt, 
+if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
     obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
     Pr=PraxisDB;
     ausf "$zish '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt

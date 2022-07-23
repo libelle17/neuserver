@@ -45,30 +45,12 @@ commandlhier() {
 } # commandlhier
 
 commandlhier "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-ot=/opt/turbomed;
 pr=PraxisDB;
-hosthier=$(hostname); hosthier=${hosthier%%.*};
-[ $verb ]&&printf "hosthier: $blau$hosthier$reset\n";
-for p in 1 0 3 7 8; do
-  printf "${lila}linux$p$reset: ";
-  if ping -c1 -W1 linux$p >/dev/null; then
-    case $hosthier in *$p*)tsh="sh -c";;*)tsh="ssh linux$p";;esac;
-    v=$ot/$pr; 
-    ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
-    [ $verb ]&&printf "=> Verzeichnis: $blau$v$reset\n"
-    altverb=$verb;
-    verb=1;
-    ausf "$tsh 'ls -l $v/objects.*'" $schwarz
-    verb=$altverb;
-  else
-    printf " nicht erreichbar (mit ping -cl -W1 linux$p)\n";
-  fi;
-done;
-
-
+echo "Virtuelle Windows-Server:"
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
-for wirt in linux1 linux0 linux7 linux8; do
+for nr in 1 0 3 7 8; do
+  wirt=linux$nr;
   if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
    cifs=/mnt/$gpc/turbomed;
@@ -100,3 +82,24 @@ for wirt in linux1 linux0 linux7 linux8; do
    verb=$altverb;
  fi;
 done;
+
+printf "\nLinux-Server:\n"
+ot=/opt/turbomed;
+hosthier=$(hostname); hosthier=${hosthier%%.*};
+[ $verb ]&&printf "hosthier: $blau$hosthier$reset\n";
+for nr in 1 0 3 7 8; do
+  printf "${lila}linux$nr$reset: ";
+  if ping -c1 -W1 linux$nr >/dev/null; then
+    case $hosthier in *$nr*)tsh="sh -c";;*)tsh="ssh linux$nr";;esac;
+    v=$ot/$pr; 
+    ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
+    [ $verb ]&&printf "=> Verzeichnis: $blau$v$reset\n"
+    altverb=$verb;
+    verb=1;
+    ausf "$tsh 'ls -l $v/objects.*'" $schwarz
+    verb=$altverb;
+  else
+    printf " nicht erreichbar (mit ping -cl -W1 linux$nr)\n";
+  fi;
+done;
+
