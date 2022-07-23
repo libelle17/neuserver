@@ -12,6 +12,7 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+[ "$gpc" ]||exit; # auf linux3 gibts keinen virtuellen Server
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
 resD=PraxisDB-res;

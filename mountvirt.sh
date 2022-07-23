@@ -55,6 +55,7 @@ else
    for wirt in $gausw; do
     if ping -c1 -W1 -q $wirt >/dev/null 2>&1; then
 .   ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+    [ "$gpc" ]||exit; # auf linux3 gibts keinen virtuellen Server
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
 #                 *7*) gpc=virtwin7; gast=Wi10;;

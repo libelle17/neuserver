@@ -73,6 +73,7 @@ for iru in 1 2; do # interne Runde
     ZL=$uZL;
   fi;
   [ "$obnv" ]&&break; # dann keine iru 2
+  [ "$gpc" ]||break; # auf linux3 gibts keinen virtuellen Server
 done;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 Dt=DATA; 

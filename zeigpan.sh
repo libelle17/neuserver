@@ -53,33 +53,35 @@ for nr in 1 0 3 7 8; do
   wirt=linux$nr;
   if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-   cifs=/mnt/$gpc/turbomed;
-   printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
-   for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-     if ! mountpoint -q $cifs; then
-       printf "\n";
-       ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials" $blau
-       printf "\n";
+   if [ "$gpc" ]; then
+     cifs=/mnt/$gpc/turbomed;
+     printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
+     for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+       if ! mountpoint -q $cifs; then
+         printf "\n";
+         ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials" $blau
+         printf "\n";
+       else
+  #       printf " ${blau}$cifs$reset gemountet!\n"
+         break;
+       fi;
+     done;
+     if mountpoint -q $cifs; then
+       altverb=$verb;
+       verb=1;
+       ausf "ls -l $cifs/$pr/objects.*" $dblau;
+       verb=$altverb;
      else
-#       printf " ${blau}$cifs$reset gemountet!\n"
-       break;
+      printf "kein Mountpoint\n";
      fi;
-   done;
-   if mountpoint -q $cifs; then
+     [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
      altverb=$verb;
      verb=1;
-     ausf "ls -l $cifs/$pr/objects.*" $dblau;
+     printf " ";
+     ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $schwarz;
+    # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
      verb=$altverb;
-   else
-    printf "kein Mountpoint\n";
-   fi;
-   [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
-   altverb=$verb;
-   verb=1;
-   printf " ";
-   ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $schwarz;
-  # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
-   verb=$altverb;
+   fi; # if [ "$gpc" ]; then
  fi;
 done;
 
