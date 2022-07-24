@@ -384,7 +384,7 @@ obhilfe=;
 sdneu=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
-if [ \( "${0##*/}" != buint.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
+if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   printf "%b\n" \
   "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien" \
   " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
