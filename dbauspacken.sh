@@ -1,6 +1,6 @@
 #!/bin/bash
 HOST=$(hostname);
-Ds=/DATA/sql/;
+Ds=/DATA/sql;
 # Datenverzeichnis von mysql
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf); VLM=${VLM:-/var/lib/mysql};
 echo VLM: $VLM;
@@ -11,7 +11,7 @@ if [ ${HOST%%.*}/ != linux1/ ]; then
     mountpoint -q /DATA||mount /DATA;
     mountpoint -q /DATA&&{ 
       mkdir -p $Ds;
-      rsync -avuz linux1:/root/$datei $Ds;
+      rsync -avuz linux1:$Ds/$datei $Ds/;
     }
   done;
   # wenn dbeingepackt frisch erstellt und kopiert wurde
@@ -35,5 +35,6 @@ if [ ${HOST%%.*}/ != linux1/ ]; then
      mysql --defaults-extra-file=~/.mysqlpwd </$Ds/dbeingepackt.sql;
    done;
   done;
+  touch -r $Ds/dbeingepackt.sql $Ds/dbausgepackt
 #  for datei in dbverzeichnis dbeingepackt.sql; do rm $Ds/$datei; done;
 fi;
