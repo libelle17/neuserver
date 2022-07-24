@@ -72,12 +72,13 @@ fi;
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
 [ "$obforce" ]&&testdat=||testdat=ibdata1;
 #  ... und kopieren:
+exit; # Ende
+
 $zssh systemctl stop mysql; 
 $zssh systemctl disable mysql; 
 kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
 $zssh systemctl start mysql; 
 $zssh systemctl enable mysql; 
-exit; # Ende
 
 
 # kopieretc "samba" # auskommentiert 29.7.19
