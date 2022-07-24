@@ -90,8 +90,9 @@ else
        [ -d "$cifs" ]||mkdir -p "$cifs";
 #       mountpoint -q $cifs||{ ausf "mount $cifs 2>/dev/null" $blau; }
        for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+         ret=0;
          if ! mountpoint -q $cifs; then
-           ausf "mount $cifs -t cifs -o nofail,vers=$vers,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw >/dev/null 2>&1" $blau
+           ausf "mount $cifs -t cifs -o nofail,vers=$vers,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw >/dev/null 2>&1" # $blau # auskommentiert 24.7.22
          else
     #       printf " ${blau}$cifs$reset gemountet!\n"
            break;
