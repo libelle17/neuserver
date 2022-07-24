@@ -1,5 +1,6 @@
 #!/bin/bash
 HOST=$(hostname);
+Ds=/DATA/sql/;
 # Datenverzeichnis von mysql
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf); VLM=${VLM:-/var/lib/mysql};
 echo VLM: $VLM;
@@ -7,14 +8,15 @@ echo VLM: $VLM;
 if [ ${HOST%%.*}/ != linux1/ ]; then
   # nochmal kopieren, falls dieser Rechner zum Erstellungzeitpunkt ausschaltet sein sollte
   for datei in dbverzeichnis dbeingepackt.sql; do
-    rsync -avuz linux1:/root/$datei /root/
+    mountpoint -q /DATA||mount /DATA;
+    mountpoint -q /DATA&&rsync -avuz linux1:/root/$datei $Ds;
   done;
   # wenn dbeingepackt frisch erstellt und kopiert wurde
-  find ~/ -mtime -1 -name dbeingepackt.sql|while read q; do
+  find $Ds -mtime -1 -name dbeingepackt.sql|while read q; do
   # und genauso dbverzeichnis
-   find ~/ -mtime -1 -name dbverzeichnis|while read v; do
+   find $Ds -mtime -1 -name dbverzeichnis|while read v; do
      echo $q":"
-     for db in $(cat ~/dbverzeichnis);do 
+     for db in $(cat $Ds/dbverzeichnis);do 
        echo " "$db;
        # die alten Datenbanken löschen 
        mysqladmin --defaults-extra-file=~/.mysqlpwd -f drop $db; 
@@ -27,7 +29,8 @@ if [ ${HOST%%.*}/ != linux1/ ]; then
      rm -f $VLM/ib{data1,_logfile0}
      systemctl start mariadb;
      # und Daten übertragen
-     mysql --defaults-extra-file=~/.mysqlpwd </root/dbeingepackt.sql;
+     mysql --defaults-extra-file=~/.mysqlpwd </$Ds/dbeingepackt.sql;
    done;
   done;
+#  for datei in dbverzeichnis dbeingepackt.sql; do rm $Ds/$datei; done;
 fi;

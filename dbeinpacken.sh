@@ -3,6 +3,7 @@
 dbs=$(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases' | grep -vE '^mysql$|^(performance|information)_schema$')
 echo $dbs>~/dbverzeichnis
 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $dbs > ~/dbeingepackt.sql
+exit;
 
 for z in 0 3 7 8; do
   echo linux$z":";
