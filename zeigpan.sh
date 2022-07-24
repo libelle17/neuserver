@@ -104,4 +104,8 @@ for nr in 1 0 3 7 8; do
     printf " nicht erreichbar (mit ping -cl -W1 linux$nr)\n";
   fi;
 done;
-
+printf "\n${blau}Mysql:$reset\n";
+for nr in 1 0 3 7 8; do
+  printf "Mysql auf linux$nr:\n"
+  ssh linux$nr "mysql --defaults-extra-file=~/.mysqlpwd quelle -e\"select count(0) Zahl, max(lakttm) zuletzt from namen\""
+done;
