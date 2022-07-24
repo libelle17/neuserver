@@ -78,7 +78,7 @@ commandline() {
           mt) obmt=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
-					mysql) obmysql=1;;
+					maria|mariadb|mysql) obmysql=1;;
           smb) obsmb=1;;
           must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
@@ -616,7 +616,7 @@ doinst() {
   echo Fertig mit obprogda
 #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
 	for prog in "$1"; do
-    echo $psuch $prog
+    printf "$psuch $prog: "
 		$psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
 		printf "installiere $blau$prog$reset\n";
 		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
@@ -649,6 +649,7 @@ instmaria() {
 }
 
 pruefmroot() {
+	printf "${dblau}pruefmroot$reset()\n";
 	while true; do
 		[ "$mroot" ]&&break;
 		printf "Mariadb: Admin: ";[ $obbash -eq 1 ]&&read -rei root mroot||read mroot;
@@ -663,7 +664,8 @@ pruefmroot() {
 		# hier könnten noch Einträge wie "plugin-load-add=cracklib_password_check.so" in "/etc/my.cnf.d/cracklib_password_check.cnf" 
 		# auskommentiert werden und der Service neu gestartet werden
 	done;
-}
+	printf "${dblau}Ende pruefmroot$reset()\n";
+} # pruefmroot
 
 fragmusr() {
   while true; do
@@ -696,15 +698,21 @@ richtmariadbein() {
 	for iru in 1 2; do
 		systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
 		systemctl start $db_systemctl_name >/dev/null 2>&1;
-		minstalliert=1;
-		mysqld="mysqld";
+		minstalliert=1; # 1 = installiert, alle Kriterien sind erfüllt
+		mysqld=".*/\(mysqld\|mariadbd\)";
 		mysqlben="mysql";
 		mysqlbef="mysql";
-		! find /usr/sbin /usr/bin /usr/libexec -executable -size +1M -name "$mysqld" 2>/dev/null|grep -q .&&minstalliert=0;
+    wosuch=; for wo in /usr/sbin /usr/bin /usr/libexec; do [ -d $wo ]&&wosuch=$wosuch" "$wo; done;
+		! find $wosuch -executable -size +1M -regex "$mysqld" 2>/dev/null|grep -q .&&minstalliert=0;
+	[ "$verb" ]&& echo 1 minstalliert: $minstalliert;
 		[ $minstalliert -eq 1 ]&& obprogda $mysqlbef || minstalliert=0;
+	[ "$verb" ]&& echo 2 minstalliert: $minstalliert;
 		[ $minstalliert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || minstalliert=0;
+	[ "$verb" ]&& echo 3 minstalliert: $minstalliert;
 		[ $minstalliert -eq 1 ]&& $mysqlbef -V >/dev/null|| minstalliert=0;
+	[ "$verb" ]&& echo 4 minstalliert: $minstalliert;
 		[ $minstalliert -eq 1 ]&&break;
+	[ "$verb" ]&& echo 5 minstalliert: $minstalliert;
 		instmaria;
 	done;
 	if [ $minstalliert -eq 1 ]; then
@@ -1693,6 +1701,7 @@ dbinhalt() {
     dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
+      echo dbnichtda;
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh);
@@ -1736,6 +1745,7 @@ dbinhalt() {
       fi;
     fi;
   done;
+	printf "${dblau}Ende dbinhalt$reset()\n";
 } # dbinhalt
 
 # Start
