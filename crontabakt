@@ -168,7 +168,7 @@ ELG=/var/log/cronf.log
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
--15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e >/dev/null
+-15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e
 
 #ein Abbild des Servers linux1 auf linux0 erstellen:
 -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
@@ -249,7 +249,7 @@ ELG=/var/log/cronf.log
 # geht irgendwie auch allein
 * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
 # ich glaub, ich weiß schon warum ...
-* * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a >/dev/null
+* * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a
 */10 * * * * zuutf.sh
 # Starten einer zusätzlichen Gui: VBoxSDL --startvm Win10 --separate
 # Starten einer zusätzlichen Gui: VBoxManage startvm Win10 --type separate
