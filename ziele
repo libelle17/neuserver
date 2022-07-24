@@ -111,7 +111,6 @@ bufexplorer.txt
 [/etc/apache2]
 httpd.conf.local
 [/etc]
-my.cnf
 [/]
 srv/www/htdocs/fdatei.php
 srv/www/htdocs/index.php
