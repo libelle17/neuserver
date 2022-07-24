@@ -77,7 +77,7 @@ else
          ausf "${tush}nmap -sn -T5 -host-timeout 250ms $(dig +short $gpc)|grep -q \"Host is up\""; nret=$ret;
          [ $pret != 0 -o $nret != 0 ]&&{
            [ "$verb" ]&&echo tush: $tush, gast: $gast; 
-           ausf "umount -l $cifs";
+           ausf "mountpoint -q $cifs && umount -l $cifs";
 # Kommentar 22.11.21 vorläufig:
 #           [ $nret != 0 ]&&{ ausf "${tush}VBoxManage controlvm \"$gast\" poweroff" $blau;}
            ausf "${tush}VBoxManage list runningvms|grep -q $gast||${tush}VBoxManage startvm $gast --type headless" $blau;

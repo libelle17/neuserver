@@ -343,7 +343,7 @@ pruefpc() {
     else if ping -c1 -W100 "$1" >/dev/null 2>&1; then break; fi;
     fi;
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
-      weckalle.sh "$1";
+      weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
       [ $iru = 1 ]&&geweckt=$geweckt" "$1;
       for ii in $(seq 1 1 1000); do
         ping -c1 -W100 "$1" >/dev/null 2>&1&&break;
