@@ -12,7 +12,6 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-[ "$gpc" ]||exit; # auf linux3 gibts keinen virtuellen Server
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
 resD=PraxisDB-res;
@@ -27,6 +26,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
+  text="von linux1 nach virtwin"
 else 
   obvirt=1; 
   VzL="$VzLk";
@@ -35,11 +35,12 @@ else
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
+  text="von virtwin nach linux1"
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-printf "${lila}1. intern hier kopieren${reset}";
+printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
@@ -71,7 +72,7 @@ else
 fi;
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
-printf "${lila}2. butm aufrufen${reset}\n";
+printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   for ziel in $ziele; do
     if [ "$obecht" ]; then
@@ -82,11 +83,11 @@ printf "${lila}2. butm aufrufen${reset}\n";
       butm.sh linux$ziel -nv;
     fi;
   done;
-printf "${lila}3. intern drüben kopieren${reset}\n";
+printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
-  for QLteil in $ziele; do
-    QL=linux$QLteil;
+  for nr in $ziele; do
+    QL=linux$nr;
     [ $verb ]&&printf "Prüfe PC ${blau}linux$QL$reset ...";
     if pruefpc $QL kurz; then
       [ $verb ]&&printf " fiel positiv aus.\n";
