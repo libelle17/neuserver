@@ -2,7 +2,7 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux7, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
