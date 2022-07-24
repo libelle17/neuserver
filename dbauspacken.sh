@@ -4,19 +4,24 @@ Ds=/DATA/sql;
 # Datenverzeichnis von mysql
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf); VLM=${VLM:-/var/lib/mysql};
 Beleg=$VLM/dbausgepackt;
-echo VLM: $VLM;
+MUPR=$(readlink -f $0); # Mutterprogramm
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+printf "VLM: $blau$VLM$reset\n";
 # nicht auf linux1, um nichts falsches zu löschen
 if [ ${HOST%%.*}/ != linux1/ ]; then
   # nochmal kopieren, falls dieser Rechner zum Erstellungzeitpunkt ausschaltet sein sollte
   for datei in dbverzeichnis dbeingepackt.sql; do
     mountpoint -q /DATA||mount /DATA;
     mountpoint -q /DATA&&{ 
-      mkdir -p $Ds;
-      rsync -avuz linux1:$Ds/$datei $Ds/;
+      ausf "mkdir -p $Ds";
+      ausf "rsync -avuz linux1:$Ds/$datei $Ds/" $blau;
     }
   done;
   # wenn die Datei nicht schon ausgepackt wurde
-  [ -d $Beleg ]&&pruef="-newer $Beleg"||pruef=;
+  [ -f $Beleg ]&&pruef="-newer $Beleg"||pruef=;
+  [ "$verb" ]&&printf "Beleg: $blau$Beleg$reset\n";
+  [ "$verb" ]&&printf "pruef: $blau$pruef$reset\n";
+  [ "$verb" ]&&printf "${blau}find $Ds $pruef -name dbeingepackt.sql$resett\n";
   if find $Ds $pruef -name dbeingepackt.sql|grep -q .; then
     # wenn dbeingepackt frisch erstellt und kopiert wurde
     find $Ds -mtime -1 -name dbeingepackt.sql|while read q; do

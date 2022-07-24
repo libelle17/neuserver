@@ -21,10 +21,12 @@ ausf() {
     resu=$(eval "$1"); 
   fi;
   ret=$?;
-  [ "$verb" ]&&{
+  if [ "$verb" ]; then
     printf " -> ret: $blau$ret$reset";
     if [ "$3" ]; then printf '\n'; else printf ", resu: $blau"; echo $resu|sed -e '$a\'; printf " $reset"; fi;
-  }
+  elif [ "$2" ]; then
+    printf "\n";
+  fi;
 } # ausf
 
 ausfd() {
