@@ -9,7 +9,10 @@ if [ ${HOST%%.*}/ != linux1/ ]; then
   # nochmal kopieren, falls dieser Rechner zum Erstellungzeitpunkt ausschaltet sein sollte
   for datei in dbverzeichnis dbeingepackt.sql; do
     mountpoint -q /DATA||mount /DATA;
-    mountpoint -q /DATA&&rsync -avuz linux1:/root/$datei $Ds;
+    mountpoint -q /DATA&&{ 
+      mkdir -p $Ds;
+      rsync -avuz linux1:/root/$datei $Ds;
+    }
   done;
   # wenn dbeingepackt frisch erstellt und kopiert wurde
   find $Ds -mtime -1 -name dbeingepackt.sql|while read q; do

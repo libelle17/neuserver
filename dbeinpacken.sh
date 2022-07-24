@@ -1,13 +1,10 @@
 #!/bin/bash
 # packt die Datenbanktabellen ein, um sie umzuziehen oder ibdata1 zu loeschen
-dbs=$(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases' | grep -vE '^mysql$|^(performance|information)_schema$')
-echo $dbs>~/dbverzeichnis
-mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $dbs > ~/dbeingepackt.sql
-exit;
-
-for z in 0 3 7 8; do
-  echo linux$z":";
-  for datei in dbverzeichnis dbeingepackt.sql; do
-    rsync -avuz ~/$datei linux$z:/root/
-  done;
-done;
+Ds=/DATA/sql/;
+mountpoint -q /DATA||mount /DATA;
+mountpoint -q /DATA&&{
+  mkdir -p $Ds;
+  dbs=$(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases' | grep -vE '^mysql$|^(performance|information)_schema$')
+  echo $dbs>$Ds/dbverzeichnis
+  mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $dbs > $Ds/dbeingepackt.sql
+};
