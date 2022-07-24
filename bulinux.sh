@@ -74,6 +74,8 @@ VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/m
 #  ... und kopieren:
 exit; # Ende
 
+
+
 $zssh systemctl stop mysql; 
 $zssh systemctl disable mysql; 
 kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
