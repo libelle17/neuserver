@@ -65,7 +65,7 @@ if [ "$offen" ]; then
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   uq=$Vz;
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
-  ausf "rm -f /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
+  ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
   kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
  done;
 else
@@ -102,7 +102,7 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
         wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
         hin=mnt/$gpc/turbomed;
-        ausf "rm -f /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
+        ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do
     else
