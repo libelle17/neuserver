@@ -5,6 +5,10 @@ VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/m
 echo VLM: $VLM;
 # nicht auf linux1, um nichts falsches zu löschen
 if [ ${HOST%%.*}/ != linux1/ ]; then
+  # nochmal kopieren, falls dieser Rechner zum Erstellungzeitpunkt ausschaltet sein sollte
+  for datei in dbverzeichnis dbeingepackt.sql; do
+    rsync -avuz linux1:/root/$datei /root/
+  done;
   # wenn dbeingepackt frisch erstellt und kopiert wurde
   find ~/ -mtime -1 -name dbeingepackt.sql|while read q; do
   # und genauso dbverzeichnis
