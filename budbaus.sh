@@ -6,7 +6,7 @@ nr="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelb
 for nr in $nr; do
   ZL=linux$nr;
   pruefpc $ZL;
-  ssh $ZL dbauspacken.sh;
+  ausf "ssh $ZL dbauspacken.sh" $blau;
   [ "$geweckt" ]&&ssh $ZL shutdown now;
   geweckt=;
 done;

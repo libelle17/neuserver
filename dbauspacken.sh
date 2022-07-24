@@ -1,9 +1,9 @@
 #!/bin/bash
 HOST=$(hostname);
 Ds=/DATA/sql;
-Beleg=$Ds/dbausgepackt;
 # Datenverzeichnis von mysql
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf); VLM=${VLM:-/var/lib/mysql};
+Beleg=$VLM/dbausgepackt;
 echo VLM: $VLM;
 # nicht auf linux1, um nichts falsches zu löschen
 if [ ${HOST%%.*}/ != linux1/ ]; then
@@ -16,7 +16,8 @@ if [ ${HOST%%.*}/ != linux1/ ]; then
     }
   done;
   # wenn die Datei nicht schon ausgepackt wurde
-  if find $Ds -newer $Beleg -name dbeingepackt.sql|grep -q .; then
+  [ -d $Beleg ]&&pruef="-newer $Beleg"||pruef=;
+  if find $Ds $pruef -name dbeingepackt.sql|grep -q .; then
     # wenn dbeingepackt frisch erstellt und kopiert wurde
     find $Ds -mtime -1 -name dbeingepackt.sql|while read q; do
     # und genauso dbverzeichnis
