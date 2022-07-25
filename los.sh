@@ -735,7 +735,7 @@ richtmariadbein() {
     # datadir aus der lokalen Datei zurückübertragen
     [ -f /etc/my.cnf_0 ]&&{
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
-      [ $dad ]&&sed -i "s}^[[:space:]]*datadir[[:space:]]*=.*}$dad}" /etc/my.cnf;
+      [ "$dad" ]&&sed -i "s}^[[:space:]]*datadir[[:space:]]*=.*}$dad}" /etc/my.cnf;
     }
     chown mysql:mysql /etc/my.cnf;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
