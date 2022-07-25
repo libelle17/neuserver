@@ -1709,6 +1709,8 @@ dbinhalt() {
 #    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
 #    dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
+    echo 1: $1-;
+    echo dbda: $dbda-;
     if test "$1"/ = immer/ -o $dbda = 0; then
       echo dbnichtda;
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
