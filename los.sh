@@ -1710,7 +1710,7 @@ dbinhalt() {
     dbda=$(! mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
-      echo dbnichtda;
+      [ "$verb" ]&&{ [ "$1"/ = immer ]&&echo immer; [ "$dbda" = 0 ]&&echo dbnichtda;};
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f $instvz/awkfdatei.sh);
@@ -1744,6 +1744,7 @@ dbinhalt() {
          LC_NUMERIC=de_DE printf " Stelle sie von \"$blau$Q$reset\" her (Größe: $blau%'.f$reset)!\n" $Sz
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
 #         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
+         printf "Q: $blau$Q$reset;";
          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost <\"\$Q\""
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
