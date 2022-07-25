@@ -62,7 +62,7 @@ ELG=/var/log/cronf.log
 -* * * * * mountpoint -q /DATA&&test -d /proc/mdstat&&sed 's/$/\r/g' /proc/mdstat >"/DATA/Fpm0 `date +\%H` Uhr.txt" 2>>$VL/FPS-Aufruf.log
 # -* * * * *   if test -f /DATA/gibts; then mountpoint -q /DATA && cat /proc/mdstat | sed 's/$/\r/g' > "/DATA/Fpm0 `date +\%H` Uhr.txt" 2>>$VL/FPS-Aufruf.log; fi
 # diese Datei sichern:
--7 * * * * R=/root;NS=$R/neuserver;CT=crontabakt;ionice -c3 crontab -l >$R/$CT&&test -d $R&&{ diff $R/$CT $NS/ >/dev/null 2>&1||{ cd $NS;git pull;ERG=$?;cp -a $R/$CT $NS/$CT;[ $ERG -eq 0 ]&&make git;cd -;};};:;
+-7 * * * * HOST=$(hostname);R=/root;NS=$R/neuserver;CT=crontabakt;ionice -c3 crontab -l >$R/$CT&&test -d $R -a [ ${HOST\%\%.*}/ = linux1/ ]&&{ diff $R/$CT $NS/ >/dev/null 2>&1||{ cd $NS;git pull;ERG=$?;cp -a $R/$CT $NS/$CT;[ $ERG -eq 0 ]&&make git;cd -;};};:;
 # Funktionsfaehigkeit des Linux-Servers, Mount-Status von dessen Festplatten und Funktion von samba dokumentieren:
 -* * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatus.sh   > "/DATA/Festplattenstatus minuetlich.txt" 2>&1
 -0 * * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%H` Uhr.txt" 2>&1
@@ -74,7 +74,7 @@ ELG=/var/log/cronf.log
 # mariadb-Datenbanken sichern:
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 # mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern:
--26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=UTF8mb4 -c -C -K -B --routines $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
+-26 15,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in $(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases'|grep -vE '^mysql$|^(performance|information)_schema$'); do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 # fehlerhafte sql-Dumps auflisten:
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed"|sed "s/^/rm /">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
 #-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
