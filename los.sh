@@ -737,6 +737,7 @@ richtmariadbein() {
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
       [ $dad ]&&sed -i "s}^[[:space:]]*datadir[[:space:]]*=.*}$dad}" /etc/my.cnf;
     }
+    chown mysql:mysql /etc/my.cnf;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
 		[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
 		if ! [ -d $datadir ]; then
