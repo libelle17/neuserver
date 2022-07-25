@@ -1701,13 +1701,13 @@ turbomed() {
 dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset()\n";
-  pruefmroot;
+#  pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
-    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-    dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
+#    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+#    dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
       echo dbnichtda;
@@ -1718,8 +1718,8 @@ dbinhalt() {
       Sz=$(stat "$Q" --printf="%s\\n");
       pd=$instvz/sqlprot.txt;
       [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
-      test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-      mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
+#      test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+#      mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
       # überprüfen, ob ind $pd schon die gleiche oder eine jüngere Datei eingetragen wurde
       awk '/'$db'=/{\
         gef=1;\
@@ -1743,7 +1743,8 @@ dbinhalt() {
         if test "$(grep '^CREATE DATABASE' "$Q")"; then
          LC_NUMERIC=de_DE printf " Stelle sie von \"$blau$Q$reset\" her (Größe: $blau%'.f$reset)!\n" $Sz
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
-         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
+#         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
+         ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost <\"\$Q\""
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
