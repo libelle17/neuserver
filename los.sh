@@ -733,7 +733,7 @@ richtmariadbein() {
     backup /etc/my.cnf;
 		cp -an my.cnf /etc/;
     # datadir aus der lokalen Datei zurückübertragen
-    [ -f /etc/mycnf_0 ]&&{
+    [ -f /etc/my.cnf_0 ]&&{
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
       [ $dad ]&&sed -i "s}^[[:space:]]*datadir[[:space:]]*=.*}$dad}" /etc/my.cnf;
     }
