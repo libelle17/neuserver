@@ -1707,10 +1707,8 @@ dbinhalt() {
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
 #    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-#    dbda=$(! mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
+    dbda=$(! mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
-    echo 1: $1-;
-    echo dbda: $dbda-;
     if test "$1"/ = immer/ -o $dbda = 0; then
       echo dbnichtda;
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
