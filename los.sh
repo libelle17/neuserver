@@ -1703,6 +1703,9 @@ dbinhalt() {
 	printf "${dblau}dbinhalt$reset()\n";
 #  pruefmroot;
   echo obschreiben: $obschreiben, loscred: $loscred;
+  datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);
+  [ "$verb" ]&&echo datadir: $datadir;
+  [ "$datadir" ]&& chown mysql:mysql -R "$datadir";
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
