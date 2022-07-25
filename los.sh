@@ -762,8 +762,8 @@ richtmariadbein() {
     erg=$?;
     if test "$erg" -ne "0"; then
     # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
-     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-     erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+#     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+     erg=$(mysql --defaults-extra-file=~/.mysqlrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
     fi;
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
@@ -776,16 +776,16 @@ richtmariadbein() {
       erg=$?;
       if test "$erg" -ne "0"; then
       # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
-       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-       erg=$(mysql -u$mroot -p$mrpwd -e"select count(0)=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+#       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+       erg=$(mysql --defaults-extra-file=~/.mysqlrpwd -e"select count(0)=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
       fi;
       if test "$erg" -ne "0"; then
         echo Benutzer "$musr"  war schon eingerichtet;
       else
           pruefmroot;
-          test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
-          ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+#          test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
       fi;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
