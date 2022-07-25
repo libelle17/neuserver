@@ -704,15 +704,15 @@ richtmariadbein() {
 		mysqlbef="mysql";
     wosuch=; for wo in /usr/sbin /usr/bin /usr/libexec; do [ -d $wo ]&&wosuch=$wosuch" "$wo; done;
 		! find $wosuch -executable -size +1M -regex "$mysqld" 2>/dev/null|grep -q .&&minstalliert=0;
-	[ "$verb" ]&& echo 1 minstalliert: $minstalliert;
-		[ $minstalliert -eq 1 ]&& obprogda $mysqlbef || minstalliert=0;
-	[ "$verb" ]&& echo 2 minstalliert: $minstalliert;
-		[ $minstalliert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || minstalliert=0;
-	[ "$verb" ]&& echo 3 minstalliert: $minstalliert;
-		[ $minstalliert -eq 1 ]&& $mysqlbef -V >/dev/null|| minstalliert=0;
-	[ "$verb" ]&& echo 4 minstalliert: $minstalliert;
-		[ $minstalliert -eq 1 ]&&break;
-	[ "$verb" ]&& echo 5 minstalliert: $minstalliert;
+    [ "$verb" ]&& echo 1 minstalliert: $minstalliert;
+    [ $minstalliert -eq 1 ]&& obprogda $mysqlbef || minstalliert=0;
+    [ "$verb" ]&& echo 2 minstalliert: $minstalliert;
+    [ $minstalliert -eq 1 ]&& grep -q "^$mysqlben" /etc/passwd || minstalliert=0;
+    [ "$verb" ]&& echo 3 minstalliert: $minstalliert;
+    [ $minstalliert -eq 1 ]&& $mysqlbef -V >/dev/null|| minstalliert=0;
+    [ "$verb" ]&& echo 4 minstalliert: $minstalliert;
+    [ $minstalliert -eq 1 ]&&break;
+    [ "$verb" ]&& echo 5 minstalliert: $minstalliert;
 		instmaria;
 	done;
 	if [ $minstalliert -eq 1 ]; then
@@ -731,7 +731,7 @@ richtmariadbein() {
 			done;
 		fi;
     backup /etc/my.cnf;
-		cp -an my.cnf /etc/;
+		cp -an $instvz/my.cnf /etc/;
     # datadir aus der lokalen Datei zurückübertragen
     [ -f /etc/my.cnf_0 ]&&{
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
@@ -1065,7 +1065,7 @@ sambaconf() {
       printf "};\n";
      }
    ' $ftb >$S2;
-	AWKPATH="$instvz";awk -f awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
+	AWKPATH="$instvz";awk -f $instvz/awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
 	firewall samba;
 
 	if ! diff -q "$instvz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
@@ -1527,7 +1527,7 @@ teamviewer10() {
 	tvh="$instvz/tvglobal.conf";
 	systemctl stop teamviewerd
 	# einige Felder befüllen (außer Passwörtern und der Gruppenzugehörigkeit), sortieren nach dem Feld hinter dem Typbezeichner, Zeile 1 und 2 umstellen und 2 Leerzeilen einfügen
-	AWKPATH="$instvz";cd $instvz;awk -f awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";cd -;
+	AWKPATH="$instvz";cd $instvz;awk -f $instvz/awktv.sh "$tvconf"|sed '/^\s*$/d;'|sort -dt] -k2|sed '1{x;d};2{p;x;p;s/.*//;p}' >"$tvh";cd -;
 #	sed -i '/^\s*$/d' "$tvh";
 	systemctl start teamviewerd;
 	echo nach systemctl start teamviewerd;
@@ -1710,7 +1710,7 @@ dbinhalt() {
       echo dbnichtda;
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
-      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f awkfdatei.sh);
+      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f $instvz/awkfdatei.sh);
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g'); # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n");
       pd=$instvz/sqlprot.txt;
