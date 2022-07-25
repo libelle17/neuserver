@@ -731,7 +731,7 @@ richtmariadbein() {
 			done;
 		fi;
     backup /etc/my.cnf;
-		cp -a my.cnf /etc/;
+		cp -an my.cnf /etc/;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
 		[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
 		if ! [ -d $datadir ]; then
