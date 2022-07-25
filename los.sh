@@ -57,6 +57,7 @@ commandline() {
   obprog=0; # nur Programme sollen installiert werden
   obtm=0; # ob turbomed installiert werden soll
 	obmysql=0; # nur mysql soll eingerichtet werden
+	obmysqli=0; # nur mysql soll eingerichtet werden, jede Datenbank geprüft
   obsmb=0; # nur smbconf soll aufgerufen werden
   obmust=0; # ob von musterserver kopiert werden soll
   obfritz=0; # ob fritzbox eingehaengt werden soll
@@ -79,6 +80,7 @@ commandline() {
           prog) obprog=1;;
           turbomed) obtm=1;;
 					maria|mariadb|mysql) obmysql=1;;
+          mariai|mysqli) obmysqli=1;;
           smb) obsmb=1;;
           must) obmust=1;;
 					mysqlneu) mysqlneu=1;;
@@ -100,6 +102,7 @@ commandline() {
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
+		[ "$obmysqli" = 1 ]&& printf "obmysqli: ${blau}1$reset\n"
 		[ "$obsmb" = 1 ]&& printf "obsmb: ${blau}1$reset\n"
 		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
 		[ "$obfritz" = 1 ]&& printf "obfritz: ${blau}1$reset\n"
@@ -1779,7 +1782,7 @@ variablen;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
- [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&{ [ $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
+ [ $obteil = 0 -o $obmysql = 1 -o $obmysqli = 1 -o $mysqlneu = 1 ]&&{ [ $obmysqli = 1 -o $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
  [                $obfb = 1 ]&&firebird;
 printf "${dblau}Ende von $0$reset\n";
