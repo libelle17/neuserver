@@ -390,17 +390,19 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LIN
   printf "%b\n" \
   "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-f/-k/-m/-nv/-z\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
   " ${blau}-d$reset bewirkt auf dem Zielrechner Loeschen der auf dem Quellrechner nicht vorhandenen Dateien" \
-  " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
+  " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren jener Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
   " ${blau}-e${reset} bewirkt echten Lauf" \
-  " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist"
-  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
+  " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist" \
+  " ${blau}-h${reset} bewirkt das Anzeigen dieser Hilfe" \
+  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt";
     if [ $(basename $0) == buint.sh ]; then
   printf "%b\n" \
   " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
-  " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.";
-  " ${blau}-v${reset} bewirkt gesprächigere Ausgabe" \
+  " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden." \
   " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7";
     fi;
+  printf "%b\n" \
+  " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
   exit;
 fi;;
 esac;

@@ -49,6 +49,7 @@ incopy.sh
 instutz.sh
 kompr.sh
 komprsql.sh
+kuerze.sh
 logrotate.conf
 los.sh
 lwwarn.sh
