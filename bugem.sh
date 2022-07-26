@@ -46,16 +46,16 @@ commandline() {
      -*|/*)
       para=${1#[-/]};
       case $para in
-        v|-verbose) verb=1;;
-        e|-echt) obecht=1;;
         d|-del) obdel=1;;
+        e|-echt) obecht=1;;
         f|-force) obforce=1;;
+        h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
+        v|-verbose) verb=1;;
         z|-ziele) shift; ziele="$1";
                   echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };;
-        h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -388,15 +388,17 @@ commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline f
 case $0 in bu*)
 if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   printf "%b\n" \
-  "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-m/-f/-k/-nv\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>\n -d$reset bewirkt Loeschen auf dem Zielrechner der auf dem Quellrechner nicht vorhandenen Dateien" \
+  "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-f/-k/-m/-nv/-z\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
+  " ${blau}-d$reset bewirkt auf dem Zielrechner Loeschen der auf dem Quellrechner nicht vorhandenen Dateien" \
   " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren dieser Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
   " ${blau}-e${reset} bewirkt echten Lauf" \
-  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
   " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist"
+  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
     if [ $(basename $0) == buint.sh ]; then
   printf "%b\n" \
   " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
   " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden.";
+  " ${blau}-v${reset} bewirkt gesprächigere Ausgabe" \
   " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7";
     fi;
   exit;
