@@ -12,6 +12,9 @@ MAILTO=root
 VL=/var/log
 NLG=/var/log/cron.log
 ELG=/var/log/cronf.log
+# Schutz vor Überlauf, jeweils 100 MB
+-*/10 * * * * kuerze.sh $NLG 10^8
+-*/10 * * * * kuerze.sh $ELG 10^8
 #
 # check scripts in cron.hourly, cron.daily, cron.weekly, and cron.monthly
 #
