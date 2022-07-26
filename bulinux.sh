@@ -9,7 +9,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-[ "$ZL/" = linux7/ ]&&obkurz=1||obkurz=;
+# auf Rechner mit kleinen Platten weniger kopieren
+case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
 kopiermt "var/spool" ... "" "" "" "" 1
 # Editoreinstellungen
@@ -58,11 +59,14 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
   fi;
  done;
 #  ... sodann die folgenden Verzeichisse: 
- for A in eigene\\\ Dateien Patientendokumente turbomed shome sql TMBack rett down DBBack ifap vontosh Oberanger att; do
+ for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
   [ -z $auslass ]&&kopiermt "$Dt/$A" ... "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
+  if [ $A/ = sql/ ]; then
+    $zssh "if systemctl list-units --full -all|grep -q "mariadb.service.*running";then los.sh mysqli;fi;";
+  fi;
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";

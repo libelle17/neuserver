@@ -1,4 +1,6 @@
 #!/bin/bash
+datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);[ "$datadir" ]&&{ echo $datadir; chown mysql:mysql -R "$datadir";echo fertig;};
+exit;
 chown schade:praxis -R /DATA
 chmod 770 -R /DATA
 chown schade:praxis -R /DAT1

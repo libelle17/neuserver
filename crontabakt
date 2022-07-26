@@ -119,7 +119,9 @@ ELG=/var/log/cronf.log
 -0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
+# Eigentümer von Dateien und Verzeichnissen und Berechtigungen korrigieren:
 # -*/5 * * * * /root/bin/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
+-*/5 * * * * datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);[ "$datadir" ]&& chown mysql:mysql -R "$datadir";
 -30 2 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
 #-1 1 * * * /root/bin/berecht.sh
 #-59 */2 * * * chmod 774 -R /DATA/Patientendokumente
