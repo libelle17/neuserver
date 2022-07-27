@@ -13,7 +13,7 @@ VL=/var/log
 NLG=/var/log/cron.log
 ELG=/var/log/cronf.log
 # Schutz vor Überlauf, jeweils 100 MB
--*/10 * * * * for D in cron.log cronf.log cron.log.1 cronf.log.1;do kuerze.sh $NLG 10^8;done
+-*/10 * * * * for D in cron.log cronf.log cron.log.1 cronf.log.1;do kuerze.sh /var/log/$D 10^8;done
 -*/10 * * * * kuerze.sh /var/spool/mail/root 200000000
 #
 # check scripts in cron.hourly, cron.daily, cron.weekly, and cron.monthly
