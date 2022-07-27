@@ -49,7 +49,7 @@ commandline() {
         d|-del) obdel=1;;
         e|-echt) obecht=1;;
         f|-force) obforce=1;;
-        h|-h|-help|-hilfe|?|-?) obhilfe=1;; # Achtung: das ungeschuetzte Fragezeichen kann expandiert werden
+        h|-h|-help|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
