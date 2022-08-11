@@ -49,7 +49,7 @@ pr=PraxisDB;
 echo "Virtuelle Windows-Server:"
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
-for nr in 1 0 3 7 8; do
+for nr in 1 0 3 7; do
   wirt=linux$nr;
   if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
