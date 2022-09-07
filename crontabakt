@@ -169,7 +169,8 @@ ELG=/var/log/cronf.log
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # kurz pausiert 16.2.22 wg. Frau Müller
--45 14,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
+-45 14,23 * * 0,2,3,4,5,6 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
+-25 14,23 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
@@ -252,7 +253,7 @@ ELG=/var/log/cronf.log
 0 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ -a mountpoint -q /DATA ]&&for db in programmstaende konten kvaerzte haerzte_neu haerzte fotosinp faxeinp depot dp quelle office; do dt=$(ls /DATA/sql/$db* -t|head -n1); mysql --defaults-extra-file=~/.mysqlpwd < $dt; done;
 # VBoxManage controlvm Win10 poweroff
 # geht irgendwie auch allein
-* * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
+# * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
 # ich glaub, ich weiß schon warum ...
 # 24.7.22: das 2>&1 in der nächsten Zeile ist zum Schutz der Mail-Datei im Urlaub.
 * * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a >/dev/null 2>&1
