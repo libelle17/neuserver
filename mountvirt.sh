@@ -55,20 +55,18 @@ else
    for wirt in $gausw; do
     if ping -c1 -W1 -q $wirt >/dev/null 2>&1; then
 .   ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-    [ "${gpc##/}" ]||exit; # auf linux3 gibts keinen virtuellen Server
+    [ "$gpc" ]||exit; # auf linux3 gibts keinen virtuellen Server
 #   case $wirt in *0*) gpc=virtwin0; gast=Wind10;;
 #                 *1*) gpc=virtwin;  gast=Win10;;
 #                 *7*) gpc=virtwin7; gast=Wi10;;
 #   esac;
-#   gpc=/$gpc;
 # case $wirt in $LINEINS)tush="sh -c";;*)tush="ssh $wirt";;esac
      [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tush: $tush, gast: $gast
-     cifs=/mnt$gpc/turbomed;
+     cifs=/mnt/$gpc/turbomed;
      if [ "$iru" = 1 ]; then
-       grep -q $gpc/ $ftb||{ 
+       grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;
-         # Auchtung: hier ist der eine Strich / vor gpc Absicht:
-         ergae=${ergae}"/$gpc/Turbomed $cifs cifs nofail,vers=3.11,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw 1 2";
+         ergae=${ergae}"//$gpc/Turbomed $cifs cifs nofail,vers=3.11,credentials=$cre,iocharset=utf8,file_mode=0777,dir_mode=0777,rw 1 2";
        };
      else
        if [ "$oballe" -o $wirt = "${HOST%%.*}" ]; then
@@ -76,7 +74,7 @@ else
 #         ping -c1 -W100 -q $gpc &> /dev/null
 #         ping -c1 -W1 -q $gpc >/dev/null 2>&1||{ 
          ausf "${tush}pgrep -f \" $gast \" >/dev/null"; pret=$ret;
-         ausf "${tush}nmap -sn -T5 -host-timeout 250ms $(dig +short ${gpc##/})|grep -q \"Host is up\""; nret=$ret;
+         ausf "${tush}nmap -sn -T5 -host-timeout 250ms $(dig +short $gpc)|grep -q \"Host is up\""; nret=$ret;
          [ $pret != 0 -o $nret != 0 ]&&{
            [ "$verb" ]&&echo tush: $tush, gast: $gast; 
            ausf "mountpoint -q $cifs && umount -l $cifs";
@@ -85,7 +83,7 @@ else
            ausf "${tush}VBoxManage list runningvms|grep -q $gast||${tush}VBoxManage startvm $gast --type headless" $blau;
            sleep 13;
 #          das Folgende ist zumindest nicht durchgehend nötig
-#          ausf "ssh Administrator@${gpc##/} netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
+#          ausf "ssh Administrator@$gpc netsh advfirewall firewall show rule name=Samba_aus_mountvird >NUL || netsh advfirewall firewall add rule name=\"Samba_aus_mountvirt\" dir=in action=allow protocol=tcp localport=445" $blau
          };
        fi;
        [ "$verb" ]&&printf "Prüfe Verzeichnis: $blau$cifs$reset\n";

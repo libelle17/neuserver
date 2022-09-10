@@ -172,7 +172,7 @@ kopiermt() { # mit test
   #        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
            if ! $hsh "mountpoint -q \"$zuteh\""; then
-             ausf "$hsh \"mount \\\"$zuteh\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1\"" $blau
+             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1\"" $blau
              echo "";
            else
       #       printf " ${blau}$cifs$reset gemountet!\n"

@@ -7,13 +7,13 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=${QL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-[ "${gpc##/}" ]||exit; # auf linux3 gibts keinen virtuellen Server
+[ "$gpc" ]||exit; # auf linux3 gibts keinen virtuellen Server
 l1gpc=$gpc; # Gast-PC von Linux1
 wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 rgpc=$gpc; # Gast-PC des Reserveservers
 qv=/mnt/virtwin/turbomed;
-zv=/mnt$gpc/turbomed;
+zv=/mnt/$gpc/turbomed;
 ausf "mountpoint $qv 2>/dev/null";
 ret1=$ret;
 ausf "mountpoint $zv 2>/dev/null";

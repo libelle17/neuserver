@@ -11,6 +11,7 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
+./virtnamen.sh
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
@@ -22,7 +23,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="$VzLg";
   ur=$ot # opt/turbomed
-  hin=mnt$gpc/turbomed;
+  hin=mnt/$gpc/turbomed;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
@@ -30,7 +31,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
 else 
   obvirt=1; 
   VzL="$VzLk";
-  ur=mnt$gpc/turbomed; 
+  ur=mnt/$gpc/turbomed; 
   hin=$ot;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
@@ -42,7 +43,7 @@ fi;
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
-  if ssh administrator@${gpc##/} cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
+  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
   if [ "$offen" ]; then
     break;
@@ -73,6 +74,7 @@ else
 fi;
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+  if false; then
 printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   for ziel in $ziele; do
@@ -84,12 +86,13 @@ printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${r
       butm.sh linux$ziel -nv;
     fi;
   done;
+  fi;
 printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
     QL=linux$nr;
-    [ $verb ]&&printf "Prüfe PC ${blau}$QL$reset ...";
+    [ $verb ]&&printf "\nPrüfe PC ${blau}$QL$reset ...";
     if pruefpc $QL kurz; then
       [ $verb ]&&printf " fiel positiv aus.\n";
       for Vz in $VzLk; do
@@ -101,7 +104,14 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
         wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-        hin=mnt$gpc/turbomed;
+# case $wirt in *0*) gpc=virtwin0; gast=Win10;;
+#               *1*) gpc=virtwin;  gast=Win10;;
+#               *3*) gpc=virtwin3; gast=Win10;;
+#               *7*) gpc=virtwin7; gast=Win10;;
+#               *8*) gpc=virtwin8; gast=Win10;;
+# esac;
+# case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
+        hin=mnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do
