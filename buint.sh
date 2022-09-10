@@ -22,7 +22,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="$VzLg";
   ur=$ot # opt/turbomed
-  hin=mnt/$gpc/turbomed;
+  hin=mnt$gpc/turbomed;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
@@ -30,7 +30,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
 else 
   obvirt=1; 
   VzL="$VzLk";
-  ur=mnt/$gpc/turbomed; 
+  ur=mnt$gpc/turbomed; 
   hin=$ot;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
@@ -42,7 +42,7 @@ fi;
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
-  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
+  if ssh administrator@${gpc##/} cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
   if [ "$offen" ]; then
     break;
@@ -101,7 +101,7 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
         wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-        hin=mnt/$gpc/turbomed;
+        hin=mnt$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
       done; # Vz in $VzLk; do

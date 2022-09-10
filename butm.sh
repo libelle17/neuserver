@@ -16,7 +16,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 wirt=${QL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 g1=$gast;
-l1gpc=$gpc; # Gast-PC von Linux1, also virtwin
+l1gpc=$gpc; # Gast-PC von Linux1, also /virtwin
 wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 rgpc=$gpc; # Gast-PC des Reserveservers
@@ -44,22 +44,22 @@ for iru in 1 2; do # interne Runde
   else  # iru = 2
     [ "$obvirt" ]||break;
     Pr=PraxisDB;
-    ur=mnt/$l1gpc/turbomed; # kopiere das gesamte /mnt/virtwin/turbomed
-    hin=mnt/$rgpc/turbomed;
+    ur=mnt$l1gpc/turbomed; # kopiere das gesamte /mnt/virtwin/turbomed
+    hin=mnt$rgpc/turbomed;
     uQL=$QL;
     QL=;
     uZL=$ZL;
     ZL=; # dann werden die cifs-Laufwerke verwendet, alle auf selbem Server
     [ "$obkill" ]&&{ if mountpoint -q /$ur||[ $iru = 1 ];then # dann pruefen, ob objects.idx gesperrt ist
-      if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
+      if ! ssh administrator@${l1gpc##/} cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
        ausf "$tush 'mv /$ot/lauf /$ot/lau '&&sleep 80s";
       fi;
-      if ! ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
+      if ! ssh administrator@${l1gpc##/} cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then
         ausf "VBoxManage controlvm $g1 poweroff" $blau;
         ausf "VBoxManage startvm $g1 --type headless" $blau;
       fi;
     fi;};# dann killt der windows-task "Turbomed töten" turbomed
-    if ssh administrator@$l1gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
+    if ssh administrator@${l1gpc##/} cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   fi;
   [ "$verb" ]&&printf "tush: ${blau}$obsh$reset\n";
   [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
@@ -73,7 +73,7 @@ for iru in 1 2; do # interne Runde
     ZL=$uZL;
   fi;
   [ "$obnv" ]&&break; # dann keine iru 2
-  [ "$gpc" ]||break; # auf linux3 gibts keinen virtuellen Server
+  [ "${gpc##/}" ]||break; # auf linux3 gibts keinen virtuellen Server
 done;
 [ "$obkill" -a "$obvirt" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 Dt=DATA; 

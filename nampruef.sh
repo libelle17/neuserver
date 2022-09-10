@@ -18,6 +18,7 @@ for nr in 1 0 3 7 8; do
 #                *1*) gpc=virtwin;  gast=Win10;;
 #                *7*) gpc=virtwin7; gast=Wi10;;
 #  esac;
+#  gpc=/$gpc
 #  case $(hostname) in $wirt*)tussh=;;*)tussh="ssh $wirt ";;esac;
     printf "Wirt:  $blau$wirt$reset, gast: $blau$gast$reset, Soll-Gast-PC : $blau$gpc$reset";
     [ "$verb" ]&& printf "\n";
@@ -35,9 +36,9 @@ for nr in 1 0 3 7 8; do
                 fi); 
         [ -z "$verb" -a "$vhost" ]&&printf ", vip: $blau$vip$reset";
         [ "$verb" -o "$vhost" ]&&printf ", Adapter Nr: $blau$Nr$reset, vhost aus nmblookup: $blau$vhost$reset\n"
-        if test "$vhost" -a "$vhost"/ != "$gpc"/; then 
+        if test "$vhost" -a "$vhost"/ != "${gpc##/}"/; then 
           printf "$rot benenne $vhost in $gpc um!$reset\n";
-          ssh $user@$vip "WMIC computersystem where caption=\"$vhost\" rename \"$gpc\""; ssh $user@$vip shutdown -t 1 -r; 
+          ssh $user@$vip "WMIC computersystem where caption=\"$vhost\" rename \"${gpc##/}\""; ssh $user@$vip shutdown -t 1 -r; 
         fi; 
         [ "$vhost" ]&&break;;
        *)
