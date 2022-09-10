@@ -76,7 +76,7 @@ ELG=/var/log/cronf.log
 
 # mariadb-Datenbanken sichern:
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
-# mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern:
+# mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern (dumpen):
 -26 14,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in $(mysql --defaults-extra-file=~/.mysqlpwd -BNe 'show databases'|grep -vE '^mysql$|^(performance|information)_schema$'); do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
 # fehlerhafte sql-Dumps auflisten:
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed"|sed "s/^/rm /">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
@@ -119,7 +119,9 @@ ELG=/var/log/cronf.log
 # -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
+# Tabelle forminhfeld bereinigen:
 -0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
+# Dateien in u:\tmexport komprieren und ausmisten
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
 # Eigentümer von Dateien und Verzeichnissen und Berechtigungen korrigieren:
