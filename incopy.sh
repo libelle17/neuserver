@@ -27,5 +27,5 @@ datakopier() {
 # mountpoint -q "$Z" && umount $Z
 # mountpoint -q "$Z" || mount `fdisk -l 2>/dev/null | grep '  2048' | grep NTFS | cut -f1 -d' '` $Z -t ntfs-3g -O users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail
 # mountpoint -q "$Z" || mount $Z
-printf "Pruefe $Z\r";mountpoint -q "$Z"||{ printf "Mounte $Z ...\r"; mount "$Z";};
+printf "Pruefe $Z\r";mountpoint -q "$Z"||{ lsblk -oMOUNTPOINT|grep -q ^${Z}$&&{ printf "Mounte $Z ...\r"; mount "$Z";};};
 echo `date +"%d.%m.%Y %X"` "Fange an" >"$logf"
