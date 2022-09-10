@@ -175,15 +175,20 @@ ELG=/var/log/cronf.log
 -* * * * * ionice -c3 /root/bin/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
+# Kopieren der Turbomed-Datenbanken, der Dateien in /DATA/Patientendokumenten/turbomed und in p:\eingelesen auf Reserveserver:
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
+# falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1, dann auf die Reserveserver, dann Aufruf von butm.sh s.o.:
 -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+# ... das Ganze nach Ausschalten von Turbomed unbedingt:
 # kurz pausiert 16.2.22 wg. Frau Müller
 -45 14,23 * * 0,2,3,4,5,6 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
+# ... und am Montag früher:
 -25 14,23 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
+# falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1:
 -15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e >/dev/null
 
 #ein Abbild des Servers linux1 auf linux0 erstellen:
@@ -198,8 +203,10 @@ ELG=/var/log/cronf.log
 #-* * * * * rm $VL/warn
 #-*/60 * * * * crontab /etc/crontab
 -*/11 * * * * /root/bin/verhdop.sh chmod 770 /root/bin/*.sh >/dev/null 2>>$ELG
--* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >/dev/null 2>>$ELG
--0 2 * * * ionice -c3 /root/bin/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
+# teste, ab wann die Berechtigungen von /usr/bin/termine verändert wurden
+# -* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >/dev/null 2>>$ELG
+# hätte alte Dateien in /DATA/sql, /DATA/TMBack und /DATA/Papierkorb/Mail/Thunderbird gelöscht:
+# -0 2 * * * ionice -c3 /root/bin/berein -cfg ~/bin/berein1.cfg -d >>$NLG 2>>$ELG
 -1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
 -15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
@@ -208,10 +215,13 @@ ELG=/var/log/cronf.log
 -0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
 -40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
 -15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
+# ggf. Änderungen aus /srv/www/htdocs/php/datalist.html in /srv/www/htdocs/php/anzeig.php eintragen:
 -*/10 * * * * /root/bin/phpparse >/dev/null 2>>$ELG
 @reboot /sbin/modprobe capi >>$NLG 2>>$ELG
 @reboot /sbin/modprobe fcpci >>$NLG 2>>$ELG
+# alte Dateien in p:\HDI alt und p:\Dicom komprimieren
 -3 0 * * * ionice -c3 /root/bin/kompr.sh >>$NLG 2>>$ELG
+# umbenannte *.exe-Dateien AcKnack.ex_ und BDTkompr.ex_ wieder zurückbegennen:
 */9 * * * * ionice -c3 /root/bin/wiederherstell.sh >>$NLG 2>>$ELG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$NLG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$ELG
