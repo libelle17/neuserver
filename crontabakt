@@ -126,8 +126,9 @@ ELG=/var/log/cronf.log
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
 # Eigentümer von Dateien und Verzeichnissen und Berechtigungen korrigieren:
 # -*/5 * * * * /root/bin/permissoft.sh >>$VL/permissoft-Aufruf.log 2>&1
+# Berechtigung von z.B. /var/lib/mysql setzen:
 -*/5 * * * * datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);[ "$datadir" ]&& chown mysql:mysql -R "$datadir";
--30 2 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
+# -30 2 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
 #-1 1 * * * /root/bin/berecht.sh
 #-59 */2 * * * chmod 774 -R /DATA/Patientendokumente
 -0 * * * * chown sturm:praxis /DATA/Patientendokumente >/dev/null 2>>$ELG
@@ -136,34 +137,41 @@ ELG=/var/log/cronf.log
 -1 1 * * * mountpoint -q /DATA && chmod 550 "/DATA/eigene\ Dateien/Office.mdb" >/dev/null 2>>$ELG
 -1 1 * * * mountpoint -q /DATA && chmod 550 -R /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 -1 2 * * * mountpoint -q /DATA && chmod 774 /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
+# wandelt /DATA/Patientendokumente/plz/TMFTools.pdf mit pdftotext -layout in *.txt um und trägt dessen Inhalt in die Mysql-Datenbank termine ein:
 -27 5 * * * /usr/bin/termine >>$NLG 2>>$ELG
+# sichert Daten auf /DATA/rett:
 -15 23 * * * /root/bin/rett.sh >>$NLG 2>>$ELG
 # -15 22 * * * /root/bin/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
+# Uhrzeit ggf. korrigeren:
 -55 4 * * * /usr/sbin/ntpdate ptbtime1.ptb.de >>$NLG 2>>$ELG
-# Zeit aufs Bios schreiben
+# Zeit aufs Bios schreiben:
 -0 5 * * * /sbin/hwclock --systohc >>$NLG 2>>$ELG
-# Mails in mysql-Datenbank eintragen und Faxe des diabetologie-Kontos (weitergeleitet durch entspr. Einstellung der Faxfunktion der Fritzbox) auf p: speichern
+# alte Patientenlaufzettel löschen:
+-5 0 * * * for V in behand fertig vorb;do find /srv/www/htdocs/$V -maxdepth 1 -type f -not -newermt $(date +'\%Y\%m\%d') -not -name "*=*" -delete;done
 
+# Mails in mysql-Datenbank emails eintragen und Faxe des diabetologie-Kontos (weitergeleitet durch entspr. Einstellung der Faxfunktion der Fritzbox) auf p: speichern:
 # folgendes am 7.9.16 inaktiviert, auch 23.2.17
 -1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG
 -52 5 * * * /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG
 -3,11,19,27,35,39,47,55 7-22 * * * ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -1,33 7-22 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -52 6 * * * /root/bin/verhdop.sh ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--5 0 * * * for V in behand fertig vorb;do find /srv/www/htdocs/$V -maxdepth 1 -type f -not -newermt $(date +'\%Y\%m\%d') -not -name "*=*" -delete;done
-
-# ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
+# ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern:
 -*/2 7-22 * * * /root/bin/getmail_gmx7.sh >>$NLG 2>>$ELG 
 # -*/4 7-22 * * * pgrep -c -f "getmail -rgmx7rc" || /usr/bin/getmail -rgmx7rc
 # -*/4 7-22 * * *     getmail_mnet.sh # -*/4 7-22 * * * pgrep -c -f "getmail -rmnetrc" || /usr/bin/getmail -rmnetrc >>$VL/getmail-Aufruf_mnetrc.log 2>&1
 -0 3,11-22/2 * * * /root/bin/getmail_alle.sh >>$NLG 2>>$ELG 
+
 # -0 3,11,13,15 * * * pgrep -c -f "getmail -rbuchrc" || /usr/bin/getmail -rbuchhrc -rfreenetrc -rgmx1rc -rgmx2rc -rgmx3rc -rgmx4rc -rgmx5rc -rgmx6rc -rgmx7rc -rgooglerc -rgoogle2rc -rlrzrc -rmnetrc -rvrwebrc -rweb_rc -rwebrc
 # Faxe von der Fritzbox abholen (wenn Abspeichern in /mnt/diabfb/FRITZ/faxbox funktioniert) und in MySQL eintragen (ab 2020 in autofax)
 # -*/2 * * * * /root/bin/faxord >>$NLG 2>>$ELG
+# Dateien in /DATA/Patientendokumenten/zutxt parsen:
 -* * * * * ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
+# Dateien in /DATA/Patientendokumente/zupdf in pdf umwandeln:
 * * * * * ionice -c3 /root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente >>$NLG 2>>$ELG
+# wandelt Dateien in p:\zusalat in verschlüsselte *.pdf-Dateien um, entfernt Verschlüsselungen von p:\zufaxen:
 -* * * * * ionice -c3 /root/bin/zusalat.sh
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
