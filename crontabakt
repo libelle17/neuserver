@@ -275,15 +275,17 @@ ELG=/var/log/cronf.log
 # verkleinert vielleicht ein bißchen einen Papierkorb:
 -33 8 * * * ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
 -0 9 * * 1 ionice -c3 /usr/bin/auffaell
-# kopiert von Reserveservern aus Fax- und Turbomed-Dateien auf sich:
+# kopiert von Reserveservern aus Fax- und Turbomed-Dateien von linux1 auf erstere:
 -15,45 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/spool/hylafax var/spool/capisuite var/spool/dicomneu var/spool/fbfax opt/turbomed; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /$D/;done;};
-# Daten einmal taeglich von DATA nach DAT3 sichern
+# Daten einmal taeglich von DATA nach DAT3 und/oder DAT1 sichern, falls es die gibt:
 -56 23 * * * Q=/DATA;for Z in /DAT3 /DAT1;do mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};};done;
 # 31.7.21 die folgenden beiden in bulinux.sh
 # -25 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ D=DATA;mountpoint -q /$D&&ssh linux1 mountpoint -q /$D&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync"  --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" linux1:/$D/ /$D/;};
 # -55 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ D=DATA;mountpoint -q /$D&&ssh linux1 mountpoint -q /$D&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync"  --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "/DBBackloe***" --exclude "/sqlloe***" --exclude "/Papierkorb***" --exclude "*.tmp*" --exclude "/ausgelagert***" --exclude "/wrz***" --exclude "/vontosh***" --exclude "/Oberanger***" linux1:/$D/ /$D/;};
--5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
-10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in /mnt/szoo1 /mnt/szon1 /mnt/anmmw;do mount "$V" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$V"/ "$Z"&&find $V -type f -mtime +7 -delete; chmod 770 -R "$Z";};done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
+# hat von Reserveservern aus von linux1 mysql auf dort mysql_1 gesichert, ist durch direkte Kopie auf mysql veraltet:
+# -5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
+# holt BDT-Export-Dateien von Windows-Rechnern auf u:\TMExport und passt den Eintrag in eintragszahlen dafuer an:
+10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in /mnt/szoo1 /mnt/szon1 /mnt/anmmw /mnt/anmh;do mount "$V" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$V"/ "$Z"&&find $V -type f -mtime +7 -delete; chmod 770 -R "$Z";};done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
 0 9 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 rsync -avu /opt/turbomed/labor /mnt/virtwin/turbomed/
 0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
