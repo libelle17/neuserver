@@ -209,35 +209,48 @@ ELG=/var/log/cronf.log
 # -0 2 * * * ionice -c3 /root/bin/berein -cfg ~/bin/berein1.cfg -d >>$NLG 2>>$ELG
 -1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
--15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
+# ehemals Sicherungskopie auf toshz:
+# -15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
 # -45 1 * * * ionice -c3 /root/bin/copywd.sh >>$NLG 2>>$ELG
 # -15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
--0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
--40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
+# ehemals Sicherungskopie auf seag:
+# -0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
+# -40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
+# Sicherungskopien auf DBBack:
 -15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
 # ggf. Änderungen aus /srv/www/htdocs/php/datalist.html in /srv/www/htdocs/php/anzeig.php eintragen:
 -*/10 * * * * /root/bin/phpparse >/dev/null 2>>$ELG
+# für Capi-Fax:
 @reboot /sbin/modprobe capi >>$NLG 2>>$ELG
+# für Fax über die Fritzbox:
 @reboot /sbin/modprobe fcpci >>$NLG 2>>$ELG
 # alte Dateien in p:\HDI alt und p:\Dicom komprimieren
 -3 0 * * * ionice -c3 /root/bin/kompr.sh >>$NLG 2>>$ELG
 # umbenannte *.exe-Dateien AcKnack.ex_ und BDTkompr.ex_ wieder zurückbegennen:
 */9 * * * * ionice -c3 /root/bin/wiederherstell.sh >>$NLG 2>>$ELG
+# Zeitpunkte in /var/log/cron.log und /var/log/cronf.log eintragen:
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$NLG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$ELG
+# wandelte Dateien mit pathologischen Laborwerten von xls zu csv-Dateien und verschiebt die Originale nach LaborAlt:
 */5 * * * * /root/bin/xlstocsv.sh
-# * * * * * for a in $(find $VL -not -name autofax.log -size +150M 2>/dev/null); do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
-* * * * * find $VL -not -name autofax.log -size +150M 2>/dev/null|while read -r d;do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
+# in /var/log alles außer autofax.log kürzen, falls größer als 150 MByte:
+* * * * * find $VL -not -name autofax.log -size +150M 2>/dev/null|while read -r d;do [ -s "$d" ]&&{ tail -n 10000 "$d">"$d-k";mv "$d-k" "$d";}; done
 # */5 * * * * rogerj
+# fische Dateien in /DATA/Patientendokumente, denen das Datum verloren gegangen ist, mit einem versehen:
 */2 * * * * ionice -c3 find /DATA/Patientendokumente -maxdepth 1 -type f -mtime +10000 -exec touch {} \;
+# /opt/turbomed/labor/backup in /DATA/Patientendokumente/Labor sichern:
 0 8 * * * mountpoint -q /DATA && ionice -c3 rsync -avu /opt/turbomed/labor/backup/ /DATA/Patientendokumente/Labor/ >/dev/null
+# /custo in /DATA/Patientendokumente/Datenbanken/custo sichern:
 */10 * * * * mountpoint -q /DATA && test -d /custo && ionice -c3 rsync -avu /custo/ /DATA/Patientendokumente/Datenbanken >/dev/null
-10 4 * * * mountpoint -q /mnt/gmx && ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null
+# /gerade nach /mnt/gmx sichern, falls es das gibt:
+# 10 4 * * * mountpoint -q /mnt/gmx && ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null
+# alte Dateien aus /tmp löschen:
 0 1 * * * ionice -c3 /usr/bin/find /tmp -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * ionice -c3 nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
 # folgendes am 11.11.21 angesetzt:
 # 50 05 * * 1-5 reboot
-# wenn kein Feiertag
+# wenn kein Feiertag, früh die PCs wecken:
+# anmoo(14:DD:A9:EE:84:37),anmh(50:E5:49:C6:A1:42),anmww(1C:87:2C:42:80:4F),bzw2(E0:D5:5E:40:A8:A2),fuss(1C:87:2C:42:80:D0),labor1(D0:27:88:67:1F:AD),labor3(94:DE:80:B8:49:2D),rescue(94:DE:80:0E:41:E2),anmmo(74:D4:35:D6:80:82),anmh(94:DE:80:0E:41:E1),sr6(54:B2:03:0F:B3:25),srn2(64:5D:86:8E:AE:63),szn4(E0:D5:5E:40:A8:A9),szo1(FC:AA:14:CD:88:AC),szs1(E0:D5:5E:40:A8:DE),szon1(04:D4:C4:EE:98:F1),szoo1(04:D4:C4:EE:98:0B),szow1(04:D4:C4:EE:97:50),sono1(04:D4:C4:EE:88:07),anmmw(18:C0:4D:EC:A4:F7),bzw2(192.168.178.45),?
 10 06 * * 1-5 ! /root/bin/obft.sh && weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,18:C0:4D:EC:A4:F7,192.168.178.45,192.168.178.95 -grue >/dev/null
 # D0:50:99:68:0C:36,# linux3
 # D4:3D:7E:27:71:57 # res1

@@ -29,6 +29,7 @@ vorgaben() {
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
   Pkt=" ......................................"; # als Tabulatorfüllzeichen für Tabellenausgabe
+  obohnefritzbox=1; # arbeite mit ip neigh statt mit curl-Abfrage der Fritzbox der der Fritzbox
 	FritzboxAdressen="fritz.box 169.254.1.1"; # wenn "fritz.box" nicht geht, dann geht "169.254.1.1"
 # TR-064-Parameter für fragab(): für die beide Abfragen geraeteliste() und wecken()
 	controlURL=hosts
@@ -41,62 +42,78 @@ vorgaben() {
 # Parameter: 1 (optional): sed-filter für die zweite Abfrage
 fragab() {
 	[ "$verb" ]&&printf "fragab($1)\n";
-	if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
-  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
-  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
-  [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"; # im gesprächigen Modus tr-064-Parameter anzeigen ...
-  [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n";
-  [ "$verb" ]&&printf "Action: $blau$Action$reset\n";
-  [ "$verb" ]&&[ "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n"; # Parametername für Eingaben
-  [ "$verb" ]&&[ "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n"; # dessen Inhalt
-  Soap="http://schemas.xmlsoap.org/soap";
-  XML='<?xml version="1.0" encoding="utf-8"?>
-  <s:Envelope s:encodingStyle="'$Soap'/encoding/" xmlns:s="'$Soap'/envelope/">
-    <s:Body><u:'$Action' xmlns:u="'$serviceType'"';
-  [ "$ParIn" ]&&XML=$XML'><'$ParIn'>'${Inhalt}'</'$ParIn'></u:'$Action'>'||XML=$XML' />'
-  XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
-  # printf "XML derAbfrage: \n$blau$XML$reset\n"
-  for ipv in 4 6;do # der Reihe nach ipv4 und ipv6 versuchen
-		for adr in $FritzboxAdressen;do
-			FB=http://$adr:49000;
-			printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
-      while true; do
-        befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
-              -H \"Content-Type: text/xml; charset=utf-8\" \\n\
-              -H \"SoapAction: $serviceType#$Action\" \\n\
-              \"$FB$controlURL\" \\n\
-              -d '$XML'";
-        tufrag "$befehl" 1 "$FB$controlURL";
-        [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
-        # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
-        [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
-        case "$erg" in 
-           *Unauthorized*) 
-             echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
-             obneu=1;
-             authorize;;
-           *) break;;
+  if [ $obohnefritzbox ]; then
+    ip neigh|
+    awk '{
+     z=z+1;
+     if (NF>5) {
+      cmd="erg=$(dig -x "$1" +short|tail -n1);echo ${erg%%.fritz.box.}";
+      cmd|getline erg;
+      close(cmd);
+      if ($5!="") {
+        if(erg=="")erg="\"\"";
+        printf("%-17s %-38s %-20s %s\n",$5,$1,erg,"Ethernet");
+      }
+     }
+    }' >"$ausgdt";
+  else
+    if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
+    case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
+    case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
+    [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"; # im gesprächigen Modus tr-064-Parameter anzeigen ...
+    [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n";
+    [ "$verb" ]&&printf "Action: $blau$Action$reset\n";
+    [ "$verb" ]&&[ "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n"; # Parametername für Eingaben
+    [ "$verb" ]&&[ "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n"; # dessen Inhalt
+    Soap="http://schemas.xmlsoap.org/soap";
+    XML='<?xml version="1.0" encoding="utf-8"?>
+    <s:Envelope s:encodingStyle="'$Soap'/encoding/" xmlns:s="'$Soap'/envelope/">
+      <s:Body><u:'$Action' xmlns:u="'$serviceType'"';
+    [ "$ParIn" ]&&XML=$XML'><'$ParIn'>'${Inhalt}'</'$ParIn'></u:'$Action'>'||XML=$XML' />'
+    XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
+    # printf "XML derAbfrage: \n$blau$XML$reset\n"
+    for ipv in 4 6;do # der Reihe nach ipv4 und ipv6 versuchen
+      for adr in $FritzboxAdressen;do
+        FB=http://$adr:49000;
+        printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
+        while true; do
+          befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
+                -H \"Content-Type: text/xml; charset=utf-8\" \\n\
+                -H \"SoapAction: $serviceType#$Action\" \\n\
+                \"$FB$controlURL\" \\n\
+                -d '$XML'";
+          tufrag "$befehl" 1 "$FB$controlURL";
+          [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
+          # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
+          [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
+          case "$erg" in 
+             *Unauthorized*) 
+               echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
+               obneu=1;
+               authorize;;
+             *) break;;
+          esac;
+        done;
+        # wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
+        case $erg in *.lua*)
+          neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
+          case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac # ... ggf. um den Fritzbox-Namen erweitert werden ...
+          [ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
+          for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
+            # "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
+            befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
+            printf "Folgeaufruf/Second call: ";
+            tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
+            [ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
+          done;
+          [ "$ret" -eq 0 ]&&break; # wenn nach 2. curl-Befehl in tufrag Fehlercode 0
+          ;;
+          *) [ "$ret" -eq 0 ]&&break;; # wenn nach 1. curl-Befehl in tufrag Fehlercode 0
         esac;
-      done;
-			# wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
-			case $erg in *.lua*)
-				neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
-				case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac # ... ggf. um den Fritzbox-Namen erweitert werden ...
-				[ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
-				for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
-					# "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
-					befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
-					printf "Folgeaufruf/Second call: ";
-          tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
-					[ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
-  			done;
-				[ "$ret" -eq 0 ]&&break; # wenn nach 2. curl-Befehl in tufrag Fehlercode 0
-				;;
-				*) [ "$ret" -eq 0 ]&&break;; # wenn nach 1. curl-Befehl in tufrag Fehlercode 0
-			esac;
-	 done;
-	 [ $ret -eq 0 ]&&break;
-  done;
+     done;
+     [ $ret -eq 0 ]&&break;
+    done;
+  fi; # [ $obohnefritzbox ]
 	[ "$verb" ]&&printf "Ende fragab()\n";
 } # fragab
 
@@ -248,29 +265,33 @@ geraeteliste() {
 			Action=X_AVM-DE_GetHostListPath;
 			ParIn=; # diese Abfrage hat keinen solchen Parameter
 			Inhalt=;
-      # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
-      filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Variablen für XML-Namen angeben
-      # IP-Adresse mit 15 Zeichen ins hold-Register stellen
-      filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" 
-			filter=$filter"/'\\\$I' \/>/{s/.*/-              /;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
-      # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
-			filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" 
-			filter=$filter"/'\\\$M' \/>/{s/.*//;x;b;};" # Mac-Zeile ohne Mac-Adresse: Hold-Register löschen
-      # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname mit 20 Zeichen anhängen
-			filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;s/$/                             /;s/^\(.\{30\}\).*/\1/;H;};" 
-			filter=$filter"/<'\\\$T'/{"; # Zeile, die <InterfaceType enthält
-			filter=$filter"x;/^$/b;x;" # falls Hold-Register leer, Zeile auslassen
-			filter=$filter"/<'\\\$T' \/>/{"; # falls diese Zeile einen leeren Interface-Typ enthält
-      filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;" # dann '-' als Symbol für leeres Interface anhängen und drucken	
-			filter=$filter"};"; # Ende leerer Interface-Typ
-      # Interfacetyp bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
-			filter=$filter"/<'\\\$T'>/{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
-			filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
-			filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
       if [ "$ungefiltert" ]; then # Debugging-Funktion, mit der die ganze XML-Datei in 
         fragab; # fragab ohne filter erzeugt die ganze xml-Datei in $ausgdt gespeichert wird
       else
-        fragab "$filter"; # der fertige Filter wird mit -v unter "Befehl/command" nach ... eval  angezeigt
+        if [ $obohnefritzbox ]; then
+          fragab; # fragab ohne filter erzeugt die ganze xml-Datei in $ausgdt gespeichert wird
+        else
+          # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
+          filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Variablen für XML-Namen angeben
+          # IP-Adresse mit 15 Zeichen ins hold-Register stellen
+          filter=$filter"sed -n '/'\\\$I'>/{s/<'\\\$I'>\(.*\)<\/'\\\$I'>/\\\\1/;s/$/              /;s/^\(.\{15\}\).*/\1/;h};" 
+          filter=$filter"/'\\\$I' \/>/{s/.*/-              /;x;b;};" # falls keine IP-Adresse angegeben, dann "-" in hold-Register schreiben
+          # Mac-Adresse im pattern-Register merken und die IP-Adresse anhängen, Zeilenumbruch entfernen
+          filter=$filter"/'\\\$M'>/{s/<'\\\$M'>\(.*\)<\/'\\\$M'>/\\\\1/;G;s/\\\\n/ /;h};" 
+          filter=$filter"/'\\\$M' \/>/{s/.*//;x;b;};" # Mac-Zeile ohne Mac-Adresse: Hold-Register löschen
+          # Host-Zeile: falls Hold-Register leer, weiter, sonst Hostname mit 20 Zeichen anhängen
+          filter=$filter"/'\\\$H'/{x;/^$/{x;b;};x;s/<'\\\$H'>\(.*\)<\/'\\\$H'>/\\\\1/;s/$/                             /;s/^\(.\{30\}\).*/\1/;H;};" 
+          filter=$filter"/<'\\\$T'/{"; # Zeile, die <InterfaceType enthält
+          filter=$filter"x;/^$/b;x;" # falls Hold-Register leer, Zeile auslassen
+          filter=$filter"/<'\\\$T' \/>/{"; # falls diese Zeile einen leeren Interface-Typ enthält
+          filter=$filter"s/.*/-/;H;x;s/\\\\n/ /g;p;" # dann '-' als Symbol für leeres Interface anhängen und drucken	
+          filter=$filter"};"; # Ende leerer Interface-Typ
+          # Interfacetyp bereinigt an Hold-Register anhängen, dieses holen, Zeilenumbruch entfernen, drucken
+          filter=$filter"/<'\\\$T'>/{s/<'\\\$T'>\(.*\)<\/'\\\$T'>/\\\\1/;H;x;s/\\\\n/ /g;p;};" 
+          filter=$filter"};"; # Ende Zeile, die <InterfaceType enthält
+          filter=$filter"';}\"";  # o.g. shell-Block abschließen, der die Variablendefinition enthält
+          fragab "$filter"; # der fertige Filter wird mit -v unter "Befehl/command" nach ... eval  angezeigt
+        fi;
 				# gesausdt alle $loeschintervall Tage löschen und ganz erneuern
 				if [ "$loeschintervall" != 0 ]; then
 					if ! find "$meinpfad" -mtime -$loeschintervall -wholename "$gesausdt"|grep -q .; then # wenn die Summendatei zu alt ist ...
@@ -309,25 +330,29 @@ geraeteliste() {
           BEGIN {
             ausg="'$gesausdt'";
             liesein(ch,ausg);
+            cmd="stat -c %y '$ausgdt'"; # Änderungsdatum
+            cmd|getline aendd;
+            close(cmd);
           }
           {                  # Abschnitt für jede Zeile aus $ausgdt:
            trimzl=gtrim($0);
            if (trimzl!="") { # falls keine Leerzeile
-              obschreib=1;
+              obergaenz=1;
               for(j in ch) {
-                if (ch[j]==trimzl ||(mac[j]==$1 && ip[j]==$2 && name[j]==$3 && $4=="-")) { # falls Zeile schon da oder schon aussagekräftiger da ...
-                  obschreib=0;    # dann nicht schreiben
-									break;
-                } else if (mac[j]==$1 && ip[j]==$2 && name[j]==$3 && netz[j]=="-" && $4!="-") { # falls Zeile aussagekräftiger ...
-                  obschreib=0;
-                  if (0'$verb'==1) system("printf \"Ersetze: '$blau'"trimzl"'$reset'\\n\"");
-                  ch[j]=trimzl; # dann ersetzen
-                  netz[j]=$4;
-									break;
+                if (ch[j]==trimzl ||(toupper(mac[j])==toupper($1) && ip[j]==$2 && name[j]==$3)) { # falls Zeile schon da ...
+                  if ($4=="-" && netz[j]!="-") {
+                    if (0'$verb'==1) system("printf \"Ersetze: '$blau'"trimzl"'$reset'\\n\"");
+                    ch[j]=trimzl" "aendd; # dann ersetzen
+                    netz[j]=$4;
+                  } else {
+                    if (0'$verb'==1) system("printf \"Fuege nicht hinzu da gleich: '$blau'"ch[j]"'$reset'\\n\"");
+                  }
+                  obergaenz=0;
+                  break;
                 }
               }
-              if (obschreib) { # falls nicht "nicht schreiben" ermittelt oder ersetzt, dann Datensatz anfügen
-                ch[length(ch)+1]=trimzl;
+              if (obergaenz) { # falls nicht "nicht schreiben" ermittelt oder ersetzt, dann Datensatz anfügen
+                ch[length(ch)+1]=trimzl" "aendd; # dann ergänzen
                 if (0'$verb'==1) system("printf \"Ergaenze: '$blau'"trimzl"'$reset'\\n\"");
               }
             }
@@ -341,7 +366,9 @@ geraeteliste() {
             # for(j in chs) system("printf \""chs[j]"\" | xxd -ps -c 200 | tr -d \\\\n; echo \" \""chs[j]); # Debugging evtl. kryptischer Zeichen
             for(j in chs) {
               if (j==1 || chs[j]!=chs[j-1]) { # keine doppelten Zeilen drucken
-                print chs[j] >> (ausg); # die eindeutigen Sätze alle in die Gesamtdatei schreiben
+                split(chs[j],arr);
+                printf("%-17s %-38s %-20s %s %s %s %s\n",arr[1],arr[2],arr[3],arr[4],arr[5],arr[6],arr[7]) >> (ausg);
+#                print chs[j] >> (ausg); # die eindeutigen Sätze alle in die Gesamtdatei schreiben
               } else {
 								if (0'$verb'==1) system("printf \"Doppelt: '$blau'"chs[j]"'$reset'\\n\""); # evtl. doppelte (weggelassene) anzeigen
               }
