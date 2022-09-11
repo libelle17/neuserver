@@ -931,7 +931,7 @@ proginst() {
     make;
     make install;
   }
-  for D in autofax vmime anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein; do
+  for D in autofax vmime anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" -o -d "$HOME/$D/cmake" ]||{ 
       [ -d "$HOME/$D" ]&&{
