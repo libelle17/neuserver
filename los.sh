@@ -931,6 +931,7 @@ proginst() {
     make;
     make install;
   }
+  # eigene Programme holen:
   for D in autofax vmime anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" -o -d "$HOME/$D/cmake" ]||{ 
