@@ -42,78 +42,62 @@ vorgaben() {
 # Parameter: 1 (optional): sed-filter für die zweite Abfrage
 fragab() {
 	[ "$verb" ]&&printf "fragab($1)\n";
-  if [ $obohnefritzbox ]; then
-    ip neigh|
-    awk '{
-     z=z+1;
-     if (NF>5) {
-      cmd="erg=$(dig -x "$1" +short|tail -n1);echo ${erg%%.fritz.box.}";
-      cmd|getline erg;
-      close(cmd);
-      if ($5!="") {
-        if(erg=="")erg="\"\"";
-        printf("%-17s %-38s %-20s %s\n",$5,$1,erg,"Ethernet");
-      }
-     }
-    }' >"$ausgdt";
-  else
-    if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
-    case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
-    case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
-    [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"; # im gesprächigen Modus tr-064-Parameter anzeigen ...
-    [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n";
-    [ "$verb" ]&&printf "Action: $blau$Action$reset\n";
-    [ "$verb" ]&&[ "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n"; # Parametername für Eingaben
-    [ "$verb" ]&&[ "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n"; # dessen Inhalt
-    Soap="http://schemas.xmlsoap.org/soap";
-    XML='<?xml version="1.0" encoding="utf-8"?>
-    <s:Envelope s:encodingStyle="'$Soap'/encoding/" xmlns:s="'$Soap'/envelope/">
-      <s:Body><u:'$Action' xmlns:u="'$serviceType'"';
-    [ "$ParIn" ]&&XML=$XML'><'$ParIn'>'${Inhalt}'</'$ParIn'></u:'$Action'>'||XML=$XML' />'
-    XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
-    # printf "XML derAbfrage: \n$blau$XML$reset\n"
-    for ipv in 4 6;do # der Reihe nach ipv4 und ipv6 versuchen
-      for adr in $FritzboxAdressen;do
-        FB=http://$adr:49000;
-        printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
-        while true; do
-          befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
-                -H \"Content-Type: text/xml; charset=utf-8\" \\n\
-                -H \"SoapAction: $serviceType#$Action\" \\n\
-                \"$FB$controlURL\" \\n\
-                -d '$XML'";
-          tufrag "$befehl" 1 "$FB$controlURL";
-          [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
-          # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
-          [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
-          case "$erg" in 
-             *Unauthorized*) 
-               echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
-               obneu=1;
-               authorize;;
-             *) break;;
-          esac;
-        done;
-        # wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
-        case $erg in *.lua*)
-          neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
-          case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac # ... ggf. um den Fritzbox-Namen erweitert werden ...
-          [ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
-          for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
-            # "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
-            befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
-            printf "Folgeaufruf/Second call: ";
-            tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
-            [ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
-          done;
-          [ "$ret" -eq 0 ]&&break; # wenn nach 2. curl-Befehl in tufrag Fehlercode 0
-          ;;
-          *) [ "$ret" -eq 0 ]&&break;; # wenn nach 1. curl-Befehl in tufrag Fehlercode 0
+  if [ "$1" ];then filter="$1";else filter="sed -n p";fi; # ggf. leerer Filter
+  case $controlURL in /*);;*) controlURL=/upnp/control/$controlURL;;esac; # ggf. immer gleiche Vorsilben ergänzen
+  case $serviceType in urn:*);;*) serviceType=urn:dslforum-org:service:$serviceType;;esac; # ggf. immer gleiche Vorsilben ergänzen
+  [ "$verb" ]&&printf "controlURL: $blau$controlURL$reset\n"; # im gesprächigen Modus tr-064-Parameter anzeigen ...
+  [ "$verb" ]&&printf "serviceType: $blau$serviceType$reset\n";
+  [ "$verb" ]&&printf "Action: $blau$Action$reset\n";
+  [ "$verb" ]&&[ "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n"; # Parametername für Eingaben
+  [ "$verb" ]&&[ "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n"; # dessen Inhalt
+  Soap="http://schemas.xmlsoap.org/soap";
+  XML='<?xml version="1.0" encoding="utf-8"?>
+  <s:Envelope s:encodingStyle="'$Soap'/encoding/" xmlns:s="'$Soap'/envelope/">
+    <s:Body><u:'$Action' xmlns:u="'$serviceType'"';
+  [ "$ParIn" ]&&XML=$XML'><'$ParIn'>'${Inhalt}'</'$ParIn'></u:'$Action'>'||XML=$XML' />'
+  XML=$XML'</s:Body>\n</s:Envelope>' # mit neue-Zeile-Zeichen nach <s:Body> ging anrufen nicht
+  # printf "XML derAbfrage: \n$blau$XML$reset\n"
+  for ipv in 4 6;do # der Reihe nach ipv4 und ipv6 versuchen
+    for adr in $FritzboxAdressen;do
+      FB=http://$adr:49000;
+      printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
+      while true; do
+        befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
+              -H \"Content-Type: text/xml; charset=utf-8\" \\n\
+              -H \"SoapAction: $serviceType#$Action\" \\n\
+              \"$FB$controlURL\" \\n\
+              -d '$XML'";
+        tufrag "$befehl" 1 "$FB$controlURL";
+        [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
+        # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
+        [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
+        case "$erg" in 
+           *Unauthorized*) 
+             echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
+             obneu=1;
+             authorize;;
+           *) break;;
         esac;
-     done;
-     [ $ret -eq 0 ]&&break;
-    done;
-  fi; # [ $obohnefritzbox ]
+      done;
+      # wenn Ergebnis mit .lua zurückgeliefert wird, dann muss diese Adresse ...
+      case $erg in *.lua*)
+        neuurl=$(echo "$erg"|awk '/\.lua/{print gensub(/^[^>]*>([^<]*)<.*/,"\\1","1")}') # ... aus dem XML-Code herausgelöst werden ...
+        case $neuurl in *://*);;*)neuurl=$FB$neuurl;;esac # ... ggf. um den Fritzbox-Namen erweitert werden ...
+        [ "$verb" ]&&printf "New/Neue Url:\n$blau$neuurl$reset\n";
+        for faktor in "" 0 00; do # wenn die Zeit nicht reicht, dann verzehnfachen
+          # "--connect-timeout 1" schuetzt leider nicht vor Fehler 606 bei ipv4 # oder |tee
+          befehl="curl -m ${curlmaxtime}$faktor \"$neuurl\" 2>"$logdt"|eval "$filter" >\"$ausgdt\"";
+          printf "Folgeaufruf/Second call: ";
+          tufrag "$befehl" "" "$neuurl" "$ausgdt"; # ... und dann nochmal mit curl aufgerufen werden
+          [ -s "$ausgdt" ]&&break; # wenn Ausgabedatei in ${curlmaxtime}$faktor erstellt werden konnte
+        done;
+        [ "$ret" -eq 0 ]&&break; # wenn nach 2. curl-Befehl in tufrag Fehlercode 0
+        ;;
+        *) [ "$ret" -eq 0 ]&&break;; # wenn nach 1. curl-Befehl in tufrag Fehlercode 0
+      esac;
+   done;
+   [ $ret -eq 0 ]&&break;
+  done;
 	[ "$verb" ]&&printf "Ende fragab()\n";
 } # fragab
 
@@ -269,7 +253,19 @@ geraeteliste() {
         fragab; # fragab ohne filter erzeugt die ganze xml-Datei in $ausgdt gespeichert wird
       else
         if [ $obohnefritzbox ]; then
-          fragab; # fragab ohne filter erzeugt die ganze xml-Datei in $ausgdt gespeichert wird
+          ip neigh|
+          awk '{
+           z=z+1;
+           if (NF>5) {
+            cmd="erg=$(dig -x "$1" +short|tail -n1);echo ${erg%%.fritz.box.}";
+            cmd|getline erg;
+            close(cmd);
+            if ($5!="") {
+              if(erg=="")erg="\"\"";
+              printf("%-17s %-38s %-20s %s\n",$5,$1,erg,"Ethernet");
+            }
+           }
+          }' >"$ausgdt";
         else
           # XML parsen: Zeilen aus Mac,IP und Hostname erstellen; sed wird natürlich aus Gründen der Übersichtlichkeit verwendet :-)
           filter="\"{ I=IPAddress;M=MACAddress;H=HostName;T=InterfaceType;" # Variablen für XML-Namen angeben
@@ -410,7 +406,7 @@ wecken() {
 			zahl=$(printf $zahl|awk '{print $0+1}'); # zahl++
 			if [ "$zeig" ];then # zeigt die Liste an
 				echo "$zeile"|
-          awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset'\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4}';
+          awk '{printf "%4s/%4s: '$blau'%17s '$lila'%.15s '$blau'%.30s '$lila'%s'$reset' %s %s %s\n",'$zahl','$geszahl',$1,$2"'"$Pkt"'",$3"'"$Pkt"'",$4,$5,$6,$7}';
 			else
         aktpc=$(echo $zeile|awk 'END{print $3" "$4}');
         for iru in 1; do # nur wegen break
