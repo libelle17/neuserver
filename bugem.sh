@@ -398,6 +398,7 @@ obmehr=;
 obnv=;
 obhilfe=;
 sdneu=;
+nurdrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
 if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 

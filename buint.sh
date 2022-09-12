@@ -41,7 +41,6 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-nurdrei=;
 printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
@@ -68,17 +67,16 @@ if [ "$offen" ]; then
   uq=$Vz;
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
-  if ![ "$nurdrei" ]; then
+  if ! [ "$nurdrei" ]; then
     kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
   fi;
  done;
-else
- echo "";
 fi;
+[ ! "$offen" -o ! "$verb" ]&&echo "";
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+  printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
   if ! [ "$nurdrei" ]; then
-printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   for ziel in $ziele; do
     if [ "$obecht" ]; then
@@ -90,7 +88,7 @@ printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${r
     fi;
   done;
   fi;
-printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
+  printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
 # 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -109,7 +107,7 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
       # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
       [ "$gpc" ]&&{ 
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then 
-          printf "$blau$gpc$reset anpingbar.\n"; 
+          [ "$verb" ]&&printf "$blau$gpc$reset anpingbar.\n"; 
         else 
           printf "$blau$gpc$rot nicht anpingbar, verlasse Funktion$reset\n"; 
           continue;
@@ -127,7 +125,7 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
         if [ $dreieck ]; then
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
-          ausf "ssh $QL \"zl=$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$Vz \$zl\"";
+          ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz \$zl' ";
         fi;
       done; # Vz in $VzLk; do
     else
