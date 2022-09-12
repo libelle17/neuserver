@@ -356,7 +356,7 @@ pruefpc() {
       printf "$rot geweckt:$lila$geweckt$reset\n";
     else
      printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
-     exit 1;
+     return 1;
     fi;
   done;
 }
