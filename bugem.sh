@@ -16,8 +16,11 @@ ausf() {
   if test "$3"/ = direkt/; then
     "$1";
   elif test "$3"; then 
+    echo erstens: eval "$1";
     eval "$1"; 
   else 
+#    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
+#    printf "$rot$ne$reset";
     resu=$(eval "$1"); 
   fi;
   ret=$?;
@@ -53,6 +56,7 @@ commandline() {
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
+        nd|-nurdrei) nurdrei=1;;
         v|-verbose) verb=1;;
         z|-ziele) shift; ziele="$1";
                   echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };;
@@ -75,6 +79,8 @@ commandline() {
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
 		printf "ZL: $blau$ZL$reset\n";
+		printf "nichtvirt: $blau$obnv$reset\n";
+		printf "nurdrei: $blau$nurdrei$reset\n";
 	fi;
 } # commandline
 
@@ -109,10 +115,11 @@ obalt() {
 	}
   [ "$sdneu" ]&&return 0; # Altersprüfung im Modus der Schutzdateiverteilung nicht sinnvoll => hier immer weiter machen
 	faq=; # <> "" = Datei fehlt auf Quelle
-  eval "$qssh 'stat \"$DaQ\" >/dev/null 2>&1'||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
+  # das Leerzeichen nach &1 schützt vor ambiguous redirect-Fehler
+  eval "$qssh 'stat \"$DaQ\" >/dev/null 2>&1 '||{ faq=1; printf \"${blau}$DaQ ${rot}fehlt auf Quelle$reset\n\"; }"
 	[ "$faq" ]&& return 1;
 	ret=; # <> "" = Datei fehlt auf Ziel
-  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1'||{ ret=0; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
+  eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1 '||{ ret=0; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
     ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
     awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
@@ -174,7 +181,12 @@ kopiermt() { # mit test
   #        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
            if ! $hsh "mountpoint -q \"$zuteh\""; then
-             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1\"" $blau
+             # das Leerzeichen nach &1 schützt vor ambiguous redirect-Fehler
+             ausf "$hsh \"mount '$zuteh' $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+             # das würde gehen:
+#            ausf "$hsh \"mount $zuteh $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+             # hier geht gar nix:
+#             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              echo "";
            else
       #       printf " ${blau}$cifs$reset gemountet!\n"
@@ -343,7 +355,7 @@ pruefpc() {
   [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\"\n";
   [ "$1" ]||break;
   for iru in 1 2; do
-    if [ $verb ]; then if ping -c1 -W10 "$1"; then break; fi;
+    if [ $verb ]; then if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
     else if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
     fi;
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then

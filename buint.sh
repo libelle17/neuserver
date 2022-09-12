@@ -41,6 +41,7 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
+nurdrei=;
 printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
@@ -67,14 +68,16 @@ if [ "$offen" ]; then
   uq=$Vz;
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
-  kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+  if ![ "$nurdrei" ]; then
+    kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+  fi;
  done;
 else
  echo "";
 fi;
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
-  if true; then
+  if ![ "$nurdrei" ]; then
 printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   for ziel in $ziele; do
@@ -105,7 +108,7 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
       # esac;
       # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
       [ "$gpc" ]&&{ 
-        if ping -c1 -W1 "$gpc">/dev/null 2>&1; then 
+        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then 
           printf "$blau$gpc$reset anpingbar.\n"; 
         else 
           printf "$blau$gpc$rot nicht anpingbar, verlasse Funktion$reset\n"; 
