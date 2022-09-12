@@ -1,4 +1,5 @@
 #!/bin/sh
+# sichert gezippte Datenbanken nach DBBack, zuletzt geändert 8.2.22
 DBV=/DATA/Patientendokumente/Datenbanken/
 DBV2="/DATA/eigene Dateien/"
 SichV=/DATA/DBBack
