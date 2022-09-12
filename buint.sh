@@ -124,7 +124,11 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
         hin=mnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
-        kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+        if [ $dreieck ]; then
+          kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+        else
+          ausf "ssh $QL \"zl=$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$Vz \$zl\"";
+        fi;
       done; # Vz in $VzLk; do
     else
       [ $verb ]&&printf" fiel negativ aus.\n";
