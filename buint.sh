@@ -77,7 +77,7 @@ else
 fi;
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
-  if ![ "$nurdrei" ]; then
+  if ! [ "$nurdrei" ]; then
 printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
   for ziel in $ziele; do
