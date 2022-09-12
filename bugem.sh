@@ -153,6 +153,8 @@ kopiermt() { # mit test
   echo ""
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
+  [ "$QL" ]&&{ ping -c1 -W1 "$QL">/dev/null 2>&1||{ printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;};}; 
+  [ "$ZL" ]&&{ ping -c1 -W1 "$ZL">/dev/null 2>&1||{ printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;};}; 
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
       [ "$Lfw" ]||Lfw=$buhost" (hier) ";
@@ -166,7 +168,7 @@ kopiermt() { # mit test
         testz=${testz%/*};
       done;
       [ $ok ]||while :; do # wenn nicht, dann schauen, was zu mounten ist
-        [ "$zuteh" ]||break;
+        [ "$zuteh" -a "$zuteh" != /mnt ]||break;
         if [ -d "$zuteh" ]; then # das sollte dann ein schon bestehendes Verzeichnis sein
           echo "$hsh 'mountpoint -q \"$zuteh\"'"
   #        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
