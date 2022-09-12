@@ -95,6 +95,23 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
     [ $verb ]&&printf "\nPrüfe PC ${blau}$QL$reset ...";
     if pruefpc $QL kurz; then
       [ $verb ]&&printf " fiel positiv aus.\n";
+      wirt=$QL;
+      . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+      # case $wirt in *0*) gpc=virtwin0; gast=Win10;;
+      #               *1*) gpc=virtwin;  gast=Win10;;
+      #               *3*) gpc=virtwin3; gast=Win10;;
+      #               *7*) gpc=virtwin7; gast=Win10;;
+      #               *8*) gpc=virtwin8; gast=Win10;;
+      # esac;
+      # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
+      [ "$gpc" ]&&{ 
+        if ping -c1 -W1 "$gpc">/dev/null 2>&1; then 
+          printf "$blau$gpc$reset anpingbar.\n"; 
+        else 
+          printf "$blau$gpc$rot nicht anpingbar, verlasse Funktion$reset\n"; 
+          continue;
+        fi;
+      }; 
       for Vz in $VzLk; do
         [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n";
         [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
@@ -102,15 +119,6 @@ printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
-        wirt=$QL;
-. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
-# case $wirt in *0*) gpc=virtwin0; gast=Win10;;
-#               *1*) gpc=virtwin;  gast=Win10;;
-#               *3*) gpc=virtwin3; gast=Win10;;
-#               *7*) gpc=virtwin7; gast=Win10;;
-#               *8*) gpc=virtwin8; gast=Win10;;
-# esac;
-# case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
         hin=mnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
