@@ -29,7 +29,7 @@ for u in \
   "DATA/eigene Dateien" \
   var/spool/hylafax \
   "root/.vim" \
-  "root/.smbcredentials" \
+  "root/.fbcredentials" \
 do \
   kopiermt "$u/" "$Ziel/$u/" "";
 done;
@@ -47,7 +47,7 @@ kopiermt "opt/turbomed" ... "netsetupalt/" "--delete" # "--delete --iconv=latin1
 kopiermt "DATA/eigene Dateien" ... "DM/,TMExport/,Angiologie/" "--delete" # "--delete --iconv=latin1,utf8"
 kopiermt "var/spool/hylafax" ... "" --delete
 kopiermt "root/.vim" ... "" --delete
-kopiermt "root/.smbcredentials" ... "" --delete
+kopiermt "root/.fbcredentials" ... "" --delete
 # kopiermt "DATA/" DATA "" --delete
 echo Schluss erstmal
 exit
@@ -93,7 +93,7 @@ datakopier "down/cpp"
 tukopier "/var/spool/fax" "$ZoD/varspoolfax" 
 tukopier "/root/bin" "$ZoD/root/bin" "*.swp" "Papierkorb"
 mkdir -p $ZoD/root
-mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/root/.vimrc $QL/root/.smbcredentials $QL/root/crontabakt $QL/root/.getmail $QL/root/.mysqlpwd $QL/root/.7zpassw $QL/root/bin $ZoD/root/ -avu --exclude ".*.swp"
+mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/root/.vimrc $QL/root/.fbcredentials $QL/root/crontabakt $QL/root/.getmail $QL/root/.mysqlpwd $QL/root/.7zpassw $QL/root/bin $ZoD/root/ -avu --exclude ".*.swp"
 mkdir -p $ZoD/etc
 mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync $QL/etc/samba $QL/etc/hosts $QL/etc/vsftpd*.conf $QL/etc/my.cnf $QL/etc/fstab $ZoD/etc/ -avu # keine Anführungszeichen um den Stern!
 mountpoint -q "$ZoD" && ionice -c3 nice -n19 rsync -avu $QL/obsl* $QL/gerade $QL/ungera $ZoD/ # 

@@ -17,7 +17,7 @@ datakopier "Patientendokumente/plz"
 datakopier "Patientendokumente/Schade zu benennen"
 tukopier "/root/bin" "$Z/root/bin" "*.swp" "Papierkorb"
 mkdir $Z/root
-mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/root/.vimrc $Q/root/.smbcredentials $Q/root/crontabakt $Q/root/.getmail $Q/root/.mysqlpwd $Q/root/.7zpassw $Q/root/bin $Z/root/ -avu --exclude ".*.swp"
+mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/root/.vimrc $Q/root/.fbcredentials $Q/root/crontabakt $Q/root/.getmail $Q/root/.mysqlpwd $Q/root/.7zpassw $Q/root/bin $Z/root/ -avu --exclude ".*.swp"
 mkdir $Z/etc
 mountpoint -q "$Z" && ionice -c3 nice -n19 rsync $Q/etc/samba $Q/etc/hosts $Q/etc/vsftpd*.conf $Q/etc/my.cnf $Q/etc/fstab $Z/etc/ -avu # keine Anführungszeichen um den Stern!
 mountpoint -q "$Z" && ionice -c3 nice -n19 rsync -avu $Q/obsl* $Q/gerade $Q/ungera $Z/ # 

@@ -16,7 +16,7 @@ kopiermt "var/spool" ... "" "" "" "" 1
 # Editoreinstellungen
 kopieros ".vim"
 # Berechtigungen zum Mounten der Fritz-Box als cifs-Laufwerk
-kopieros ".smbcredentials"
+kopieros ".fbcredentials"
 # aktuelle Kopie dieser Datei
 kopieros "crontabakt"
 # Verzeichnis für den Mailaufruf in /root

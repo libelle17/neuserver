@@ -787,6 +787,7 @@ richtmariadbein() {
           ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
           ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
       fi;
+      printf "<?php \n $user="praxis";\n $pwt="sonne";\n?>" >/srv/www/phppwd.php;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
     fi;

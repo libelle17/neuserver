@@ -31,7 +31,7 @@ chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
 kopier "opt/turbomed" "opt/"
 kopieros "root/.vim"
-kopieros "root/.smbcredentials"
+kopieros "root/.fbcredentials"
 kopieros "root/crontabakt"
 kopieros "root/.getmail"
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"

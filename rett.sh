@@ -12,7 +12,7 @@ if $(mountpoint -q /DATA); then
   ionice -c3 nice -n19 rsync -avu /usr/lib64/capisuite /DATA/rett/usr/lib64
   ionice -c3 nice -n19 rsync -avu /etc/openvpn /DATA/rett/etc 
   ionice -c3 nice -n19 rsync -avu --delete --exclude "Papierkorb" /opt/turbomed/ /DATA/rett/turbomed/
-  ionice -c3 nice -n19 rsync -avu /root/.vimrc /root/.smbcredentials /root/.getmail /root/.mysqlpwd /root/.7zpassw /root/bin /root/crontabakt /DATA/rett/root/
+  ionice -c3 nice -n19 rsync -avu /root/.vimrc /root/.fbcredentials /root/.getmail /root/.mysqlpwd /root/.7zpassw /root/bin /root/crontabakt /DATA/rett/root/
   ionice -c3 nice -n19 rsync -avu -x /mnt/ /DATA/rett/mnt
   ionice -c3 nice -n19 rsync -avu /obsl* /DATA/rett/
   #ionice -c3 nice -n19 rsync -avu /gerade /DATA/rett/
