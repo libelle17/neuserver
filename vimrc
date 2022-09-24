@@ -88,6 +88,11 @@ vnoremap <F2> <Esc>/<C-R>=<SID>ScopeSearch('[[',2,0)<CR><CR>
 nnoremap <F5> :<C-R>=<SID>ScopeSearch('[[', 0,1)<CR>
 vnoremap <F5> <Esc>:<C-R>=<SID>ScopeSearch('[[',2,1)<CR><CR>
 
+set statusline=%<%f%<%{FileTime()}%<%h%m%r%=%-20.(line=%03l,col=%02c%V,totlin=%L%)\%h%m%r%=%-30(,BfNm=%n%Y%)\%P\*%=%{CurTime()}
+set rulerformat=%15(%c%V\ %p%%%)
+"set rulerformat=%<%f%<%{FileTime()}%<%h%m%r%=%-20.(line=%03l,col=%02c%V,totlin=%L%)\%h%m%r%=%-30(,BfNm=%n%Y%)\%P\*%=%{CurTime()}
+
+
 " Return a pattern to search within a specified scope, or
 " return a backslash to cancel search if scope not found.
 " navigator: a command to jump to the beginning of the desired scope
@@ -119,4 +124,19 @@ function! s:ScopeSearch(navigator, mode, ers)
 		endif
 	endif
 	return "\b"
+endfunction
+
+function! FileTime()
+  let ext=tolower(expand("%:e"))
+  let fname=tolower(expand('%<'))
+  let filename=fname . '.' . ext
+  let msg=""
+  let msg=msg." ".strftime("(geaendert %d.%m.%Y %H:%M:%S)",getftime(filename))
+  return msg
+endfunction
+
+function! CurTime()
+  let ftime=""
+  let ftime=ftime." ".strftime("%d.%m.%Y %H:%M:%S")
+  return ftime
 endfunction

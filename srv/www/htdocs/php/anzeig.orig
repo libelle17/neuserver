@@ -179,8 +179,7 @@ function verarbeite($pat_id)
     self::$basen=ltrim(basename("..".$_SERVER['PHP_SELF']));
     self::$copyq="../plz/".self::$basen;
     $pc="localhost";      // $pc=$_SERVER['SERVER_NAME'];
-    $user="praxis";
-    $pwt="sonne";
+include '../../phppwd.php';
     $db="quelle";
     date_default_timezone_set("Europe/Berlin");
     // $link = mysqli_connect($pc,$user,$pwt) or die ("Keine Verbindung zu $pc als $user moeglich");

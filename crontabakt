@@ -103,7 +103,7 @@ ELG=/var/log/cronf.log
 -55 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
 # -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux0:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
-# -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=sonne,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
+# -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=...,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
 # die Turbomed-Datenbank einmal taeglich komprimieren und in /DATA/TMBack sichern:

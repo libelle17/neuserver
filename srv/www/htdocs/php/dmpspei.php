@@ -1,9 +1,8 @@
 <?php
 	$servername = "linux1";
-	$username = "praxis";
-	$password = "sonne";
+include '../../phppwd.php';
 	$db="quelle";
-	$conn = mysqli_connect($servername, $username, $password,$db);
+	$conn = mysqli_connect($servername, $user, $pwt,$db);
   $pid=$_POST['pid'];
 	$resu=$_POST['dmp'];
   $zp=$_POST['zp'];

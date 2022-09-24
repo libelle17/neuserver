@@ -21,8 +21,7 @@ function dotausch($conn, $i) {
 
 // $pc=$_SERVER['SERVER_NAME'];
 $pc="localhost";
-$user="praxis";
-$pwt="sonne";
+include '../../phppwd.php';
 $db="quelle";
 // $link = mysqli_connect($pc,$user,$pwt) or die ("Keine Verbindung zu $pc als $user moeglich");
 // mysqli_select_db($link,$db) or die ("Die Datenbank $db existiert nicht"); 

@@ -1,5 +1,10 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =5
+let g:netrw_dirhistcnt =0
+let g:netrw_dirhist_0='/DATA/Mail/Clawsmail/inbox'
+let g:netrw_dirhist_9='/DATA/Mail/Clawsmail'
+let g:netrw_dirhist_8='/DATA/Mail/Clawsmail/queue'
+let g:netrw_dirhist_7='/DATA/Mail/Clawsmail'
+let g:netrw_dirhist_6='/DATA/Mail/Clawsmail/inbox'
 let g:netrw_dirhist_5='/DATA/Patientendokumente/erinnern'
 let g:netrw_dirhist_4='/DATA/Patientendokumente/erinnern/emleth'
 let g:netrw_dirhist_3='/DATA/Patientendokumente/erinnern'
