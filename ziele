@@ -96,7 +96,6 @@ zuocr.sh
 zusalat.sh
 zuutf.sh
 [/root]
-.smbcredentials
 crontabdump
 [/root/.vim]
 vimrc
