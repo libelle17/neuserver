@@ -28,8 +28,8 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Installation of a new linux server</b>: Allows the
-installation of a new linux server for a diabetologic
+&minus; Configuration of a new linux server</b>: Allows the
+configuration of a new linux server for a diabetologic
 practice in Dachau, after the operation system installation
 by the vendor&rsquo;s programme. <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
@@ -85,65 +85,8 @@ and answer some questions of the program.</p>
 program should have installed itsself after the first
 call(s) (see above) and one-time answering of some questions
 in a self-running way. <br>
-Then a directory e.g. &rsquo;<b>tobefaxed</b>&rsquo; exists,
-in which e.g. users in a network (e.g. via the above
-mentioned samba share) can deposit files to be faxed, e.g.
-<br>
-&quot;<b>Medical report on Frank Ill to Dr. Healthy and
-Frank Ill to fax 099 987654321 and 088
-887654321.doc</b>&quot; (it could also be e.g. an *.xls, a
-*.jpg, a *.tif, a *.txt, a *pdf file; the section &rsquo; to
-Dr. Healthy and Frank Ill&rsquo; is optional for the later
-allocation of the fax number(s) in the database, it may also
-be obmitted; on the other hand, if the program can assign
-the last (1-)3 faxes to a certain addressee clearly, the
-section &rsquo; to fax 099 987654321 and 088
-887654321&rsquo; may be obmitted). <br>
-When <b>neuserver</b> is called for the next time (per
-default 2 minutes), the above mentioned example file will
-initially be copied and renamed into <br>
-&quot;<b>Medical report on Frank Ill to Dr. Healthy to fax
-099 987654321.doc</b>&quot; and <br>
-&quot;<b>Medical report on Frank Ill to Frank Ill to fax 088
-887654321.doc</b>&quot; and converted into the pdf-files
-<br>
-&quot;<b>Medical report on Frank Ill to Dr. Healthy to fax
-099 987654321.pdf</b>&quot; and <br>
-&quot;<b>Medical report on Frank Ill to Frank Ill to fax 088
-887654321.pdf</b>&quot;. <br>
-Those are subsequently being relayed to <b>hylafax</b> or
-<b>Capisuite</b> and from there sent. <br>
-Simultaneously they are being moved from
-&rsquo;<b>tobefaxed</b>&rsquo; to the waiting directory,
-e.g. &rsquo;<b>waitingfaxes</b>&rsquo; and recorded in the
-spool table <b>spooltab</b>. <br>
-Faxes which are placed by a user in the directory
-&rsquo;<b>tobefaxed/2200</b>&rsquo; will be handled starting
-at 10 p.m., if neuserver is running. <br>
-If subdirectories in &rsquo;<b>tobefaxedfR&rsquo; are found
-named with a date or time (e.g. &rsquo;20180101
-0800</b>&rsquo; or &rsquo;<b>2200</b>&rsquo;), the contained
-faxes will be processed after that time an in the first case
-the subdirectory will then be deleted if empty. <br>
-At each call, neuserver checks the status of <b>hylafax</b>
-and/or <b>Capisuite</b>. The Finishing of a fax process
-there causes neuserver to move the source files (here the
-above mentioned .doc- and .pdf-files) from the waiting
-directory to one or several archive directories or a
-directory for failed faxes and to move their database record
-from &rsquo;<b>spooltab</b>&rsquo; to the archive table
-&rsquo;<b>outa</b>&rsquo;. <br>
-Further on, incoming faxes via <b>hylafax</b> or
-<b>Capisuite</b> are being transmitted to an incoming
-directory and if applicable named including the
-sender&rsquo;s name. To this purpose, customizeable sql
-commands are being used, if specified. <br>
-Depending on operating system, accessability and preferences
-the users thus could look up the status of their faxes in
-the above mentioned directories, in the database tables or
-by calling &rsquo;<b>neuserver&rsquo;, &rsquo;neuserver
--lista</b>&rsquo;, &rsquo;<b>neuserver -listf</b>&rsquo; or
-&rsquo;<b>neuserver -listi</b>&rsquo;.</p>
+If another fully configured Linux server is already running,
+which can be named when prompted, then it is easier.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS_D"></a>
@@ -724,69 +667,9 @@ sollte sich das Programm nach dem/n erstem/n Aufruf/en
 (s.o.) und Beantworten einmaliger R&uuml;ckfragen so
 eingerichtet haben, dass es von selbst weiter
 l&auml;uft. <br>
-Es existiert dann ein Verzeichnis z.B.
-&rsquo;<b>zufaxen</b>&rsquo;, in das z.B. Benutzer im
-Netzwerk (z.B. &uuml;ber die o.g. Samba-Freigabe) zu
-faxende Dateien stellen k&ouml;nnen wie z.B. <br>
-&quot;<b>Arztbericht zu Franz Krank an Dr. Gesund und Franz
-Krank an Fax 099 987654321 und 088 887654321.doc</b>&quot;
-(es k&ouml;nnte auch z.B. eine *.xls, eine *.jpg, eine
-*.tif, eine *.txt oder eine *.pdf-Datei sein; die Passage
-&rsquo;an Dr. Gesund und Franz Krank &rsquo; ist optional
-f&uuml;r die sp&auml;tere Zordnung der Faxnummer(n)
-in der Datenbank, sie darf auch fehlen; auf der anderen
-Seite darf f&uuml;r den Fall, dass das Programm die
-letzten (1-)3 Faxe zu einem Adressaten eindeutig einer
-Faxnummer zuordnen kann, die Passage &rsquo; an Fax 099
-987654321 und 088 887654321&rsquo; auch fehlen). <br>
-Wenn <b>neuserver</b> beim n&auml;chsten Mal automatisch
-aufgerufen wird (standardm&auml;&szlig;ig alle 2
-Minuten), wird die o.g. Beispieldatei zun&auml;chst
-kopiert und umbenannt in <br>
-&quot;<b>Arztbericht zu Franz Krank an Dr. Gesund an Fax 099
-987654321.doc</b>&quot; und <br>
-&quot;<b>Arztbericht zu Franz Krank an Franz Krank an Fax
-088 887654321.doc</b>&quot; und in die PDF-Dateien <br>
-&quot;<b>Arztbericht zu Franz Krank an Dr. Gesund an Fax 099
-987654321.pdf</b>&quot; und <br>
-&quot;<b>Arztbericht zu Franz Krank an Franz Krank an Fax
-088 887654321.pdf</b>&quot; umgewandelt. <br>
-Diese werden dann automatisch an <b>hylafax</b> oder
-<b>Capisuite</b> weitergeleitet und von dort aus verschickt.
-<br>
-Gleichzeitig werden sie aus &rsquo;<b>zufaxen</b>&rsquo; in
-das Warteverzeichnis, z.B. &rsquo;<b>warteauffax</b>&rsquo;
-verschoben und in die Spooltabelle <b>spooltab</b>
-eingetragen. <br>
-Gibt es in &rsquo;<b>zufaxenfR&rsquo; Unterverzeichnisse,
-deren Namen aus einem Datum oder Uhrzeit bestehen (z.B.
-&rsquo;20180101 0800</b>&rsquo; oder
-&rsquo;<b>2200</b>&rsquo;), so werden darin enthaltene Faxe
-erst nach diesem Zeitpunkt verarbeitet und im ersteren Fall
-das Unterverzeichnis nach Leerung geloescht. <br>
-Bei jedem Aufruf &uuml;berpr&uuml;ft neuserver den
-Status von <b>hylafax</b> und/oder <b>Capisuite</b>. Der
-Abschluss eines Faxvorgangs dort hat zur Folge, dass
-neuserver die Quelldateien (also hier die o.g. .doc- und
-.pdf-Dateien) aus dem Warteverzeichnis in ein oder mehrere
-alternative Archivverzeichnisse oder ein Verzeichnis
-f&uuml;r gescheiteterte Faxe ablegt und den
-Datenbankeintrag von &rsquo;<b>spooltab</b>&rsquo; in die
-Archivtabelle &rsquo;<b>outa</b>&rsquo; verschiebt. <br>
-Weiterhin werden &uuml;ber <b>hylafax</b> oder
-<b>Capisuite</b> angekommene Faxe in ein Empfangsverzeichnis
-kopiert und ggf. nach dem Sender benannt. Hierzu werden,
-falls angegeben, konfigurierbare SQL-Befehle verwendet, die
-in frei festlegbarer Zahl der Reihe nach so lange aufgerufen
-werden, bis einer einen Datensatz zu der Faxnummer findet.
-<br>
-Der Benutzer k&ouml;nnte also je nach Betriebssystem,
-Zugriffsm&ouml;glichkeit und Pr&auml;ferenz in den
-genannten Verzeichnissen, in den Datenbanktabellen oder
-durch Aufruf von z.B. &rsquo;<b>neuserver&rsquo;,
-&rsquo;neuserver -lista</b>&rsquo;, &rsquo;<b>neuserver
--listf</b>&rsquo; oder &rsquo;<b>neuserver -listi</b>&rsquo;
-den Stand des Faxens &uuml;berpr&uuml;fen.</p>
+Wenn schon ein anderer fertig eingerichteter Linuxserver
+l&auml;uft, der bei einer R&uuml;ckfrage benannt
+werden kann, dann geht es einfacher.</p>
 
 <h2>OPTIONEN
 <a name="OPTIONEN_D"></a>

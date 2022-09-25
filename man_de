@@ -28,32 +28,8 @@ und beantworten einige Rueckfragen des Programms.
 .SH GEBRAUCH
 Im Idealfall sollte sich das Programm nach dem/n erstem/n Aufruf/en (s.o.) und Beantworten einmaliger Rückfragen so eingerichtet haben, dass es von selbst weiter läuft.
 .br
-Es existiert dann ein Verzeichnis z.B. '\fBzufaxen\fR', in das z.B. Benutzer im Netzwerk (z.B. über die o.g. Samba-Freigabe) zu faxende Dateien stellen können wie z.B. 
+Wenn schon ein anderer fertig eingerichteter Linuxserver läuft, der bei einer Rückfrage benannt werden kann, dann geht es einfacher.
 .br
-"\fBArztbericht zu Franz Krank an Dr. Gesund und Franz Krank an Fax 099 987654321 und 088 887654321.doc\fR" (es könnte auch z.B. eine *.xls, eine *.jpg, eine *.tif, eine *.txt oder eine *.pdf-Datei sein; die Passage 'an Dr. Gesund und Franz Krank ' ist optional für die spätere Zordnung der Faxnummer(n) in der Datenbank, sie darf auch fehlen; auf der anderen Seite darf für den Fall, dass das Programm die letzten (1-)3 Faxe zu einem Adressaten eindeutig einer Faxnummer zuordnen kann, die Passage ' an Fax 099 987654321 und 088 887654321' auch fehlen).
-.br
-Wenn \fB²DPROG²\fR beim nächsten Mal automatisch aufgerufen wird (standardmäßig alle 2 Minuten), wird die o.g. Beispieldatei zunächst kopiert und umbenannt in 
-.br
-"\fBArztbericht zu Franz Krank an Dr. Gesund an Fax 099 987654321.doc\fR" und 
-.br
-"\fBArztbericht zu Franz Krank an Franz Krank an Fax 088 887654321.doc\fR" und in die PDF-Dateien 
-.br
-"\fBArztbericht zu Franz Krank an Dr. Gesund an Fax 099 987654321.pdf\fR" und 
-.br
-"\fBArztbericht zu Franz Krank an Franz Krank an Fax 088 887654321.pdf\fR" umgewandelt.
-.br
-Diese werden dann automatisch an \fBhylafax\fR oder \fBCapisuite\fR weitergeleitet und von dort aus verschickt.
-.br
-Gleichzeitig werden sie aus '\fBzufaxen\fR' in das Warteverzeichnis, z.B. '\fBwarteauffax\fR' verschoben und in die Spooltabelle \fBspooltab\fR eingetragen.
-.br
-Gibt es in '\fBzufaxenfR' Unterverzeichnisse, deren Namen aus einem Datum oder Uhrzeit bestehen (z.B. '\fB20180101 0800\fR' oder '\fB2200\fR'), so werden darin enthaltene Faxe erst nach diesem Zeitpunkt verarbeitet und im ersteren Fall das Unterverzeichnis nach Leerung geloescht.
-.br
-Bei jedem Aufruf überprüft ²DPROG² den Status von \fBhylafax\fR und/oder \fBCapisuite\fR. Der Abschluss eines Faxvorgangs dort hat zur Folge, dass ²DPROG² die Quelldateien (also hier die o.g. .doc- und .pdf-Dateien) aus dem Warteverzeichnis in ein oder mehrere alternative Archivverzeichnisse oder ein Verzeichnis für gescheiteterte Faxe ablegt und den Datenbankeintrag von '\fBspooltab\fR' in die Archivtabelle '\fBouta\fR' verschiebt.
-.br
-Weiterhin werden über \fBhylafax\fR oder \fBCapisuite\fR angekommene Faxe in ein Empfangsverzeichnis kopiert und ggf. nach dem Sender benannt. Hierzu werden, falls angegeben, konfigurierbare SQL-Befehle verwendet, die in frei festlegbarer Zahl der Reihe nach so lange aufgerufen werden, bis einer einen Datensatz zu der Faxnummer findet.
-.br
-Der Benutzer könnte also je nach Betriebssystem, Zugriffsmöglichkeit und Präferenz in den genannten Verzeichnissen, in den Datenbanktabellen oder durch Aufruf von z.B. '\fB²DPROG²\fB', '\fB²DPROG² -lista\fR', '\fB²DPROG² -listf\fR' oder '\fB²DPROG² -listi\fR' den Stand des Faxens überprüfen. 
-
 .SH OPTIONEN 
  '\fB²DPROG² -?\fR' oder '\fB²DPROG² -h\fR' zeigt die wichtigen Befehlszeilenoptionen und '\fB²DPROG² -lh\fR' alle. Einige Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten aus der Faxnummer) können nicht über die Befehlszeile, sondern nur über die Konfigurationsdatei eingegeben werden, die wiederum über '\fB²DPROG² -vi\fR' direkt editiert oder auch über '\fB²DPROG² -rf\fR' interaktiv gepflegt werden kann.
 .SH FUNKTIONSWEISE
