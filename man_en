@@ -4,13 +4,13 @@
 .pc
 .TH man 1 "25.09.22" "Version 0.47247" "\fB²DPROG²\fR man page"
 .SH NAME
-\fB²DPROG² \- Fax server functionality\fR: induces automatic fax transmission of files, naming of received faxes and logging of all of them in a database
+\fB²DPROG² \- Installation of a new linux server\fR: Allows the installation of a new linux server for a diabetologic practice in Dachau, after the operation system installation by the vendor's programme. 
 .br
 (manpage-Hilfe in deutsch verfügbar: 'man ²DPROG²' oder 'man -Lde ²DPROG²')
 .SH SYNOPSIS
 \fB²DPROG² [-<shortopt>|--<longopt> [<supplement>]] ...\fR
 .SH SHORT DESCRIPTION 
-\fB²DPROG²\fR offers quasi the functionality of a fax server, which can be useful for some also behind a fast data line.
+Contains the necessary scripts for setup and operation (especially data backup on backup server). After the scripts have been downloaded, los.sh is called in the installation directory. With 'make git install' the scripts are transferred to the operating directories, with 'make' any further developments there are transferred back to the installation directory.
 .br
 \fB²DPROG²\fR is a command line program to remit files of a certain directory automatically to \fBhylafax\fR (in case a linux-compatible modem is installed) and/or \fBcapisuite\fR (in case a fritzcard 2.0 or 2.1 is installed), if the fax number is integrated in the file name as requested.
 Furthermore, ²DPROG² holds the posted faxes in a mariadb database.

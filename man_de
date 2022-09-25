@@ -4,13 +4,13 @@
 .pc
 .TH man 1 "25.09.22" "Version 0.47247" "Manual-Seite für ²DPROG²"
 .SH NAME
-\fB²DPROG² \- Einrichtung eines neuen Linuxservers\fR: enthält die notwendigen Programme zur Einrichtung eines neuen Linuxservers und erlaubt dessen Einrichtung 
+\fB²DPROG² \- Einrichtung eines neuen Linuxservers\fR: enthält die notwendigen Programme zur Einrichtung eines neuen Linuxservers für eine diabetologische Schwerpunktpraxis in Dachau, nach Installation des Betriebssystems 
 .br
 (manpage available in english: 'man ²DPROG²' or 'man -Len ²DPROG²')
 .SH SYNOPSIS
 \fB²DPROG² [-<kurzopt>|--<langopt> [<ergänzung>]] ...\fR
 .SH KURZBESCHREIBUNG
-\fB²DPROG²\fR bietet quasi die Funktionalität eines Faxservers, welcher für manche auch hinter einer schnellen Datenleitung sinnvoll sein kann.
+\fB²DPROG²\fR Enthält die notwendigen Scripte für Einrichtung und Betrieb (insbesondere Datensicherung auf Sicherungsserver). Nach dem Herunterladen der Scripte wird im Installationsverzeichnis los.sh aufgerufen. Mit 'make git install' werden die Scripte in die Betriebsverzeichnisse übertragen, mit 'make' werden evtuelle dortige Weiterentwicklungen wieder in das Installationsverzeichnis zurückübertragen.
 .br
 \fB²DPROG²\fR ist ein Befehlszeilenprogramm, mit dem Dateien in einem bestimmten Verzeichnis automatisch an \fBhylafax\fR (falls ein linux-kompatibles Fax-Modem angeschlossen ist) und/oder \fBcapisuite\fR (falls eine Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet werden, wenn die Faxnummer im Dateinamen wie vorgesehen eingetragen ist,
 und das weiterhin die versandten Faxe in einer MariaDB-Datenbank abspeichert. 
