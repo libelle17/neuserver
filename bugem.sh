@@ -166,10 +166,25 @@ kopiermt() { # mit test
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
     [ "$Lfw" ]||Lfw=$buhost" (hier) ";
-    if echo $zute|grep '^/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
+    if echo $zute|grep '^/mnt/' >/dev/null; then # wenn offenbar zu mountendes Laufwerk drin
       ok=;
       zuteh=${zute%/}; # ohne letzten slash
       testz="$zuteh";
+      gpc=${zute#/mnt/}; gpc=${gpc##/*}; # virtwinx
+      [ "$gpc" ]&&{
+        if ping -c1 -W1 $gpc >/dev/null 2>&1; then ok=1; else
+          ok=;
+          printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
+          nr=${gpc#virtwin};
+          [ $nr/ = / ]&& wirt=linux1||wirt=linux$nr;
+          pruefpc $wirt;
+          ausf "$tush VBoxManage startvm Win10 --type headless";      
+          for iru in $(seq 1 1 120); do 
+            if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
+          done;
+          [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
+        fi; 
+      }
       while :; do # rausfinden, ob nicht ein linker Teil des Verzeichnispfades schon gemountet ist
         [ "$testz" ]||break;
         findmnt "$testz" >/dev/null&&{ ok=1;break;}
