@@ -56,23 +56,7 @@ downloaded, los.sh is called in the installation directory.
 With &rsquo;make git install&rsquo; the scripts are
 transferred to the operating directories, with
 &rsquo;make&rsquo; any further developments there are
-transferred back to the installation directory. <b><br>
-neuserver</b> is a command line program to remit files of a
-certain directory automatically to <b>hylafax</b> (in case a
-linux-compatible modem is installed) and/or <b>capisuite</b>
-(in case a fritzcard 2.0 or 2.1 is installed), if the fax
-number is integrated in the file name as requested.
-Furthermore, neuserver holds the posted faxes in a mariadb
-database. <br>
-Additionally, received faxes from
-<b>hylafax</b>/<b>capisuite</b> can be named automatically
-with the sender&rsquo;s name, according to his fax number,
-and stored. <br>
-The usability within a network (may also be a windows
-network with only one linux machine) is being accomplished
-by automatic integration of all relevant directories into a
-samba server. It could be complemented by a frontend for the
-mariadb database.</p>
+transferred back to the installation directory.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>
@@ -89,15 +73,8 @@ N=neuserver;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
-neuserver</b> <br>
-and answer some questions of the program. <br>
-The first execution and the first processing of a
-sent/received fax with each of hylafax and/or capisuite may
-take some time and need some additional input, respectively.
-<b><br>
-neuserver -again</b> for each of then. Hereby the necessary
-program installations for future fax receiving will
-simultaneously be completed.</p>
+los.sh</b> <br>
+and answer some questions of the program.</p>
 
 <h2>USAGE
 <a name="USAGE_D"></a>
@@ -713,25 +690,7 @@ im Installationsverzeichnis los.sh aufgerufen. Mit
 Betriebsverzeichnisse &uuml;bertragen, mit
 &rsquo;make&rsquo; werden evtuelle dortige
 Weiterentwicklungen wieder in das Installationsverzeichnis
-zur&uuml;ck&uuml;bertragen. <b><br>
-neuserver</b> ist ein Befehlszeilenprogramm, mit dem Dateien
-in einem bestimmten Verzeichnis automatisch an
-<b>hylafax</b> (falls ein linux-kompatibles Fax-Modem
-angeschlossen ist) und/oder <b>capisuite</b> (falls eine
-Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet
-werden, wenn die Faxnummer im Dateinamen wie vorgesehen
-eingetragen ist, und das weiterhin die versandten Faxe in
-einer MariaDB-Datenbank abspeichert. <br>
-Au&szlig;erdem k&ouml;nnen von
-<b>hylafax</b>/<b>capisuite</b> empfangene Faxe automatisch
-nach dem Sender anhand dessen Faxnummer benannt und
-abgespeichert werden. <br>
-Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk
-mit nur einem Linuxrechner) geschieht durch automatischen
-Eintrag der f&uuml;r neuserver relevanten Verzeichnisse
-in einen Samba-Server. Sie k&ouml;nnte erg&auml;nzt
-werden durch eine Maske f&uuml;r die
-mariadb-Datenbank.</p>
+zur&uuml;ck&uuml;bertragen.</p>
 
 <h2>INSTALLATION
 <a name="INSTALLATION_D"></a>
@@ -752,16 +711,8 @@ N=neuserver;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
-neuserver</b> <br>
-und beantworten einige Rueckfragen des Programms. <br>
-Der erste Programmaufruf und die erste Faxverarbeitung eines
-gesandten/empfangenen Faxes mit Hylafax/Capsiuite
-k&ouml;nnen jeweils etwas dauern und ein paar
-zus&auml;tzliche Eingaben erfordern. <br>
-neuserver -erneut f&uuml;r jedes von Ihnen. Hierdurch
-wird gleichzeitig die notwendige Programminstallation
-f&uuml;r k&uuml;nftige Faxe
-vervollst&auml;ndigt.</p>
+los.sh</b> <br>
+und beantworten einige Rueckfragen des Programms.</p>
 
 <h2>GEBRAUCH
 <a name="GEBRAUCH_D"></a>

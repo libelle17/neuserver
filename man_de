@@ -11,13 +11,6 @@
 \fB²DPROG² [-<kurzopt>|--<langopt> [<ergänzung>]] ...\fR
 .SH KURZBESCHREIBUNG
 \fB²DPROG²\fR Enthält die notwendigen Scripte für Einrichtung und Betrieb (insbesondere Datensicherung auf Sicherungsserver). Nach dem Herunterladen der Scripte wird im Installationsverzeichnis los.sh aufgerufen. Mit 'make git install' werden die Scripte in die Betriebsverzeichnisse übertragen, mit 'make' werden evtuelle dortige Weiterentwicklungen wieder in das Installationsverzeichnis zurückübertragen.
-.br
-\fB²DPROG²\fR ist ein Befehlszeilenprogramm, mit dem Dateien in einem bestimmten Verzeichnis automatisch an \fBhylafax\fR (falls ein linux-kompatibles Fax-Modem angeschlossen ist) und/oder \fBcapisuite\fR (falls eine Fritzcard 2.0 oder 2.1 angeschlossen ist) weiterleitet werden, wenn die Faxnummer im Dateinamen wie vorgesehen eingetragen ist,
-und das weiterhin die versandten Faxe in einer MariaDB-Datenbank abspeichert. 
-.br
-Außerdem können von \fBhylafax\fR/\fBcapisuite\fR empfangene Faxe automatisch nach dem Sender anhand dessen Faxnummer benannt und abgespeichert werden.
-.br
-Die Netzwerkintegration (z.B. auch in ein Windows-Netzwerk mit nur einem Linuxrechner) geschieht durch automatischen Eintrag der für ²DPROG² relevanten Verzeichnisse in einen Samba-Server. Sie könnte ergänzt werden durch eine Maske für die mariadb-Datenbank.
 .SH INSTALLATION
 .br
 Zunächst lesen Sie bitte die untenstehenden Kapitel 'Funktionsweise','Voraussetzungen','Automatisch installierte Programmpakete' und 'Auswirkungen des Programmablaufs'.
@@ -28,13 +21,10 @@ Anschließend verbinden Sie den Rechner falls nötig mit dem Internet und rufen 
 .br
 Zuletzt rufen Sie auf:
 .br
- \fB²DPROG²\fR
+ \fBlos.sh\fR
 .br
 und beantworten einige Rueckfragen des Programms.
 .br
-Der erste Programmaufruf und die erste Faxverarbeitung eines gesandten/empfangenen Faxes mit Hylafax/Capsiuite können jeweils etwas dauern und ein paar zusätzliche Eingaben erfordern.
-.br
-\fR²DPROG² -erneut\fR für jedes von Ihnen. Hierdurch wird gleichzeitig die notwendige Programminstallation für künftige Faxe vervollständigt.
 .SH GEBRAUCH
 Im Idealfall sollte sich das Programm nach dem/n erstem/n Aufruf/en (s.o.) und Beantworten einmaliger Rückfragen so eingerichtet haben, dass es von selbst weiter läuft.
 .br
