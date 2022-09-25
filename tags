@@ -1,29 +1,149 @@
-bufexplorer	bufexplorer.txt	/*bufexplorer*
-bufexplorer-changelog	bufexplorer.txt	/*bufexplorer-changelog*
-bufexplorer-copyright	bufexplorer.txt	/*bufexplorer-copyright*
-bufexplorer-credits	bufexplorer.txt	/*bufexplorer-credits*
-bufexplorer-customization	bufexplorer.txt	/*bufexplorer-customization*
-bufexplorer-installation	bufexplorer.txt	/*bufexplorer-installation*
-bufexplorer-todo	bufexplorer.txt	/*bufexplorer-todo*
-bufexplorer-usage	bufexplorer.txt	/*bufexplorer-usage*
-bufexplorer-windowlayout	bufexplorer.txt	/*bufexplorer-windowlayout*
-bufexplorer.txt	bufexplorer.txt	/*bufexplorer.txt*
-buffer-explorer	bufexplorer.txt	/*buffer-explorer*
-g:bufExplorerChgWin	bufexplorer.txt	/*g:bufExplorerChgWin*
-g:bufExplorerDefaultHelp	bufexplorer.txt	/*g:bufExplorerDefaultHelp*
-g:bufExplorerDetailedHelp	bufexplorer.txt	/*g:bufExplorerDetailedHelp*
-g:bufExplorerDisableDefaultKeyMapping	bufexplorer.txt	/*g:bufExplorerDisableDefaultKeyMapping*
-g:bufExplorerFindActive	bufexplorer.txt	/*g:bufExplorerFindActive*
-g:bufExplorerFuncRef	bufexplorer.txt	/*g:bufExplorerFuncRef*
-g:bufExplorerReverseSort	bufexplorer.txt	/*g:bufExplorerReverseSort*
-g:bufExplorerShowDirectories	bufexplorer.txt	/*g:bufExplorerShowDirectories*
-g:bufExplorerShowNoName	bufexplorer.txt	/*g:bufExplorerShowNoName*
-g:bufExplorerShowRelativePath	bufexplorer.txt	/*g:bufExplorerShowRelativePath*
-g:bufExplorerShowTabBuffer	bufexplorer.txt	/*g:bufExplorerShowTabBuffer*
-g:bufExplorerShowUnlisted	bufexplorer.txt	/*g:bufExplorerShowUnlisted*
-g:bufExplorerSortBy	bufexplorer.txt	/*g:bufExplorerSortBy*
-g:bufExplorerSplitBelow	bufexplorer.txt	/*g:bufExplorerSplitBelow*
-g:bufExplorerSplitHorzSize	bufexplorer.txt	/*g:bufExplorerSplitHorzSize*
-g:bufExplorerSplitOutPathName	bufexplorer.txt	/*g:bufExplorerSplitOutPathName*
-g:bufExplorerSplitRight	bufexplorer.txt	/*g:bufExplorerSplitRight*
-g:bufExplorerSplitVertSize	bufexplorer.txt	/*g:bufExplorerSplitVertSize*
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	Development	//
+-output	./Makefile	/^	-@df --output=ipcent \/ |tail -n1|grep - && $(SUDC)pkill postdrop;:$/;"	m
+DEBUG	./Makefile	/^debug debugnew debugneu: DEBUG=-g3 -O0 $/;"	m
+DEPFLAGS	./Makefile	/^DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)\/$*.Td -DGLIB_COMPILATION$/;"	m
+FERTIG	./Makefile	/^FERTIG=$(error transfer finished\/ Fertig mit Transfer!)$/;"	m
+Kopiere	./gsbutm.sh	/^Kopiere () {$/;"	f
+Rueckkopiere	./gsbutm.sh	/^Rueckkopiere () {$/;"	f
+ausf	./bugem.sh	/^ausf() {$/;"	f
+ausf	./jpgumw.sh	/^ausf() {$/;"	f
+ausf	./los.sh	/^ausf() {$/;"	f
+ausf	./mountvirt.sh	/^ausf() {$/;"	f
+ausf	./pdfumw.sh	/^ausf() {$/;"	f
+ausf	./tifumw.sh	/^ausf() {$/;"	f
+ausf	./zeigpan.sh	/^ausf() {$/;"	f
+ausf	./zupdf.sh	/^ausf() {$/;"	f
+ausfd	./bugem.sh	/^ausfd() {$/;"	f
+ausfd	./los.sh	/^ausfd() {$/;"	f
+ausricht	./configure	/^ausricht() {$/;"	f
+authorize	./weckalle.sh	/^authorize() {$/;"	f
+backup	./los.sh	/^backup() {$/;"	f
+bildschirm	./los.sh	/^bildschirm() {$/;"	f
+blue_msg	./jpgumw.sh	/^blue_msg() { echo -e $BLAU_"\\\\033[34;1m${@}\\033[0m\\c"; }$/;"	f
+blue_msg	./pdfumw.sh	/^blue_msg() { echo -e "\\\\033[34;1m${@}\\033[0m\\c"; }$/;"	f
+blue_msg	./tifumw.sh	/^blue_msg() { echo -e "\\\\033[34;1m${@}\\033[0m\\c"; }$/;"	f
+blue_msg	./zupdf.sh	/^blue_msg() { echo -e $BLAU_"\\\\033[34;1m${@}\\033[0m\\c"; }$/;"	f
+commandlhier	./zeigpan.sh	/^commandlhier() {$/;"	f
+commandline	./briefautor.sh	/^commandline() {$/;"	f
+commandline	./bugem.sh	/^commandline() {$/;"	f
+commandline	./instutz.sh	/^commandline() {$/;"	f
+commandline	./los.sh	/^commandline() {$/;"	f
+commandline	./mountvirt.sh	/^commandline() {$/;"	f
+commandline	./weckalle.sh	/^commandline() {$/;"	f
+cron	./los.sh	/^cron() {$/;"	f
+datakopier	./copyseagg.sh	/^datakopier() {$/;"	f
+datakopier	./copytosh.sh	/^datakopier() {$/;"	f
+datakopier	./incopy.sh	/^datakopier() {$/;"	f
+dbinhalt	./los.sh	/^dbinhalt() {$/;"	f
+ddiff	./instutz.sh	/^ddiff() {$/;"	f
+doinst	./los.sh	/^doinst() {$/;"	f
+doumw	./jpgumw.sh	/^doumw() {$/;"	f
+doumw	./pdfumw.sh	/^doumw() {$/;"	f
+doumw	./tifumw.sh	/^doumw() {$/;"	f
+doumw	./zupdf.sh	/^doumw() {$/;"	f
+druckNaZeile	./awksmb.sh	/^function druckNaZeile(i,Pfad,j) {$/;"	f
+drucke	./los.sh	/^    function drucke(s1,s2,avail) {$/;"	f
+einricht	./configure	/^einricht() {$/;"	f
+ermittledatum	./stutze.sh	/^ermittledatum() {$/;"	f
+ermittledatum	./stutzeDBBack.sh	/^ermittledatum() {$/;"	f
+ermittledatum	./stutzeTMBack.sh	/^ermittledatum() {$/;"	f
+ermittledatum	./stutzeTMExport.sh	/^ermittledatum() {$/;"	f
+ersetzeprog	./los.sh	/^ersetzeprog() {$/;"	f
+exportvars	./configure	/^exportvars() {$/;"	f
+firebird	./los.sh	/^firebird() {$/;"	f
+firewall	./los.sh	/^firewall() {$/;"	f
+fragab	./weckalle.sh	/^fragab() {$/;"	f
+fragmpwd	./los.sh	/^fragmpwd() {$/;"	f
+fragmusr	./los.sh	/^fragmusr() {$/;"	f
+fritzbox	./los.sh	/^fritzbox() {$/;"	f
+geraeteliste	./weckalle.sh	/^geraeteliste() {$/;"	f
+getIPR	./configure	/^getIPR() {$/;"	f
+getOS	./configure	/^getOS() {$/;"	f
+github	./los.sh	/^github() {$/;"	f
+gtrim	./weckalle.sh	/^          function gtrim(s) {  # loesche Leerzeichen am Schluss und ersetze mehrere in der Mitte durch eines $/;"	f
+hdir	./dirsum.sh	/^hdir () {$/;"	f
+hol3	./los.sh	/^hol3() {$/;"	f
+instmaria	./los.sh	/^instmaria() {$/;"	f
+kf	./configure	/^kf() {$/;"	f
+kopier	./bulinux3.sh	/^function kopier {$/;"	f
+kopier	./dorsync.sh	/^kopier () {$/;"	f
+kopieretc	./bugem.sh	/^kopieretc() {$/;"	f
+kopieretc	./bulinux3.sh	/^function kopieretc {$/;"	f
+kopiermt	./bugem.sh	/^kopiermt() { # mit test$/;"	f
+kopieros	./bugem.sh	/^kopieros() {$/;"	f
+kopieros	./bulinux3.sh	/^function kopieros {$/;"	f
+l_aend_object_dat	./gsbutm.sh	/^l_aend_object_dat () {$/;"	f
+leise	./configure	/^leise() {$/;"	f
+letzte_aend	./gsbackup.sh	/^letzte_aend () {$/;"	f
+liesein	./awkcron.sh	/^function liesein(var,datei) {$/;"	f
+liesein	./weckalle.sh	/^          function liesein(var,datei) { # liest die bisherigen Datensätze (aus $gesausdt) abzgl. doppelter\/abschließender Leerzeichen ein$/;"	f
+ltrim	./awksmb.sh	/^function ltrim(s) { sub(\/^[[:space:]]+\/,"",s);return s}$/;"	f
+ltrim	./awktv.sh	/^function ltrim(s) { sub(\/^[[:space:]]+\/,"",s);return s}$/;"	f
+mFERTIG	./Makefile	/^mFERTIG=$(error $(MAKECMDGOALS) finished\/ Fertig mit $(MAKECMDGOALS)!)$/;"	m
+machidpub	./los.sh	/^machidpub() {$/;"	f
+machssh	./bugem.sh	/^machssh() {$/;"	f
+machvers	./Makefile	/^define machvers	 $/;"	m
+manges	./Makefile	/^define manges$/;"	m
+mountlaufwerke	./los.sh	/^mountlaufwerke() {$/;"	f
+musterserver	./los.sh	/^musterserver() {$/;"	f
+nFERTIG	./Makefile	/^nFERTIG=$(error newproj finished\/ Fertig mit neuproj!)$/;"	m
+oA	./awktv.sh	/^function oA(s) {if (s~"\\".*\\""||s~"'.*'") return substr(s,2,length(s)-2);else return s}$/;"	f
+obalt	./bugem.sh	/^obalt() {$/;"	f
+obinfstab	./los.sh	/^obinfstab() {$/;"	f
+obprogda	./los.sh	/^obprogda() {$/;"	f
+postfix	./los.sh	/^postfix() {$/;"	f
+priv_html	./Makefile	/^define priv_html$/;"	m
+proginst	./los.sh	/^proginst() {$/;"	f
+pruefgruppe	./los.sh	/^pruefgruppe() {$/;"	f
+pruefmroot	./los.sh	/^pruefmroot() {$/;"	f
+pruefpc	./bugem.sh	/^pruefpc() {$/;"	f
+pruefuser	./los.sh	/^pruefuser() {$/;"	f
+pruefzeile	./awktv.sh	/^function pruefzeile(zeile) {$/;"	f
+richtmariadbein	./los.sh	/^richtmariadbein() {$/;"	f
+rtrim	./awksmb.sh	/^function rtrim(s) { sub(\/[ \\t\\r\\n]+$\/,"",s);return s}$/;"	f
+rtrim	./awktv.sh	/^function rtrim(s) { sub(\/[ \\t\\r\\n]+$\/,"",s);return s}$/;"	f
+sambaconf	./los.sh	/^sambaconf() {$/;"	f
+setz_gitv	./Makefile	/^define setz_gitv$/;"	m
+setzbenutzer	./los.sh	/^setzbenutzer() {$/;"	f
+setzhost	./los.sh	/^setzhost() {$/;"	f
+setzinstprog	./los.sh	/^setzinstprog() {$/;"	f
+setzpfad	./los.sh	/^setzpfad() {$/;"	f
+setzprompt	./los.sh	/^setzprompt() {$/;"	f
+sortorder	./weckalle.sh	/^          function sortorder(i1,v1,i2,v2,li,re) { # Sortierfunktion für asort() kurz vor der Ausgabe$/;"	f
+speichern	./los.sh	/^speichern() {$/;"	f
+still	./configure	/^still() {$/;"	f
+teamviewer10	./los.sh	/^teamviewer10() {$/;"	f
+teamviewer15	./los.sh	/^teamviewer15() {$/;"	f
+trim	./awksmb.sh	/^function trim(s) { return rtrim(ltrim(s));}$/;"	f
+trim	./awktv.sh	/^function trim(s) { return oA(rtrim(ltrim(s)));}$/;"	f
+tu_turbomed	./los.sh	/^tu_turbomed() {$/;"	f
+tufirewall	./los.sh	/^tufirewall() {$/;"	f
+tufrag	./weckalle.sh	/^tufrag() {$/;"	f
+tukopier	./copyseagg.sh	/^tukopier() {$/;"	f
+tukopier	./copytosh.sh	/^tukopier() {$/;"	f
+tukopier	./incopy.sh	/^tukopier() {$/;"	f
+tukopierol	./copyseagg.sh	/^tukopierol() {$/;"	f
+tukopierol	./copytosh.sh	/^tukopierol() {$/;"	f
+tukopierol	./incopy.sh	/^tukopierol() {$/;"	f
+turbomed	./los.sh	/^turbomed() {$/;"	f
+tvversion	./los.sh	/^tvversion() {$/;"	f
+umben	./gsbutm.sh	/^umben () {$/;"	f
+umwandel	./zeich.sh	/^umwandel() {$/;"	f
+variablen	./los.sh	/^variablen() {$/;"	f
+vgbstarr	./instutz.sh	/^vgbstarr() {$/;"	f
+vorgaben	./stutze.sh	/^vorgaben() {$/;"	f
+vorgaben	./stutzeDBBack.sh	/^vorgaben() {$/;"	f
+vorgaben	./stutzeTMBack.sh	/^vorgaben() {$/;"	f
+vorgaben	./stutzeTMExport.sh	/^vorgaben() {$/;"	f
+vorgaben	./weckalle.sh	/^vorgaben() {$/;"	f
+wecken	./weckalle.sh	/^wecken() {$/;"	f
+yell	./jpgumw.sh	/^yell() { echo -e "\\033[33m"; }$/;"	f
+yell	./pdfumw.sh	/^yell() { echo -e "\\033[33m"; }$/;"	f
+yell	./tifumw.sh	/^yell() { echo -e "\\033[33m"; }$/;"	f
+yell	./zupdf.sh	/^yell() { echo -e "\\033[33m"; }$/;"	f
+zeit	./instutz.sh	/^zeit() {$/;"	f

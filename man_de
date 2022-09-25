@@ -10,7 +10,7 @@
 .SH SYNOPSIS
 \fB²DPROG² [-<kurzopt>|--<langopt> [<ergänzung>]] ...\fR
 .SH KURZBESCHREIBUNG
-\fB²DPROG²\fR Enthält die notwendigen Scripte für Einrichtung und Betrieb (insbesondere Datensicherung auf Sicherungsserver). Nach dem Herunterladen der Scripte wird im Installationsverzeichnis los.sh aufgerufen. Mit 'make git install' werden die Scripte in die Betriebsverzeichnisse übertragen, mit 'make' werden evtuelle dortige Weiterentwicklungen wieder in das Installationsverzeichnis zurückübertragen.
+\fB²DPROG²\fR Enthält die notwendigen Scripte für Einrichtung und Betrieb (insbesondere Datensicherung auf Sicherungsserver). Nach dem Herunterladen der Scripte wird im Installationsverzeichnis ./los.sh aufgerufen. Mit 'make git install' werden die Scripte in die Betriebsverzeichnisse übertragen, mit 'make' werden evtuelle dortige Weiterentwicklungen wieder in das Installationsverzeichnis zurückübertragen.
 .SH INSTALLATION
 .br
 Zunächst lesen Sie bitte die untenstehenden Kapitel 'Funktionsweise','Voraussetzungen','Automatisch installierte Programmpakete' und 'Auswirkungen des Programmablaufs'.
@@ -21,17 +21,19 @@ Anschließend verbinden Sie den Rechner falls nötig mit dem Internet und rufen 
 .br
 Zuletzt rufen Sie auf:
 .br
- \fBlos.sh\fR
+ \fB./los.sh\fR
 .br
 und beantworten einige Rueckfragen des Programms.
 .br
 .SH GEBRAUCH
 Im Idealfall sollte sich das Programm nach dem/n erstem/n Aufruf/en (s.o.) und Beantworten einmaliger Rückfragen so eingerichtet haben, dass es von selbst weiter läuft.
 .br
+Mit \fBsh viall\fR lassen sich Skripte editieren.
+.br
 Wenn schon ein anderer fertig eingerichteter Linuxserver läuft, der bei einer Rückfrage benannt werden kann, dann geht es einfacher.
 .br
 .SH OPTIONEN 
- '\fB²DPROG² -?\fR' oder '\fB²DPROG² -h\fR' zeigt die wichtigen Befehlszeilenoptionen und '\fB²DPROG² -lh\fR' alle. Einige Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten aus der Faxnummer) können nicht über die Befehlszeile, sondern nur über die Konfigurationsdatei eingegeben werden, die wiederum über '\fB²DPROG² -vi\fR' direkt editiert oder auch über '\fB²DPROG² -rf\fR' interaktiv gepflegt werden kann.
+ '\fB./los.sh -h\fR' zeigt die Befehlszeilenoptionen. Einige Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten aus der Faxnummer) können nicht über die Befehlszeile, sondern nur über die Konfigurationsdatei eingegeben werden, die wiederum über '\fB²DPROG² -vi\fR' direkt editiert oder auch über '\fB²DPROG² -rf\fR' interaktiv gepflegt werden kann.
 .SH FUNKTIONSWEISE
 .LP
 Beim Aufruf von '\fB²DPROG²\fR' geschieht folgendes:

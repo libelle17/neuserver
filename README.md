@@ -52,9 +52,9 @@ neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 <p style="margin-left:11%; margin-top: 1em">Contains the
 necessary scripts for setup and operation (especially data
 backup on backup server). After the scripts have been
-downloaded, los.sh is called in the installation directory.
-With &rsquo;make git install&rsquo; the scripts are
-transferred to the operating directories, with
+downloaded, ./los.sh is called in the installation
+directory. With &rsquo;make git install&rsquo; the scripts
+are transferred to the operating directories, with
 &rsquo;make&rsquo; any further developments there are
 transferred back to the installation directory.</p>
 
@@ -73,7 +73,7 @@ N=neuserver;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
-los.sh</b> <br>
+./los.sh</b> <br>
 and answer some questions of the program.</p>
 
 <h2>USAGE
@@ -86,7 +86,8 @@ program should have installed itsself after the first
 call(s) (see above) and one-time answering of some questions
 in a self-running way. <br>
 If another fully configured Linux server is already running,
-which can be named when prompted, then it is easier.</p>
+which can be named when prompted, then it is easier. <br>
+With <b>sh viallscripts can be edited.</b></p>
 
 <h2>OPTIONS
 <a name="OPTIONS_D"></a>
@@ -628,7 +629,7 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 Enth&auml;lt die notwendigen Scripte f&uuml;r
 Einrichtung und Betrieb (insbesondere Datensicherung auf
 Sicherungsserver). Nach dem Herunterladen der Scripte wird
-im Installationsverzeichnis los.sh aufgerufen. Mit
+im Installationsverzeichnis ./los.sh aufgerufen. Mit
 &rsquo;make git install&rsquo; werden die Scripte in die
 Betriebsverzeichnisse &uuml;bertragen, mit
 &rsquo;make&rsquo; werden evtuelle dortige
@@ -654,7 +655,7 @@ N=neuserver;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
-los.sh</b> <br>
+./los.sh</b> <br>
 und beantworten einige Rueckfragen des Programms.</p>
 
 <h2>GEBRAUCH
@@ -667,6 +668,7 @@ sollte sich das Programm nach dem/n erstem/n Aufruf/en
 (s.o.) und Beantworten einmaliger R&uuml;ckfragen so
 eingerichtet haben, dass es von selbst weiter
 l&auml;uft. <br>
+Mit <b>sh viall</b> lassen sich Skripte editieren. <br>
 Wenn schon ein anderer fertig eingerichteter Linuxserver
 l&auml;uft, der bei einer R&uuml;ckfrage benannt
 werden kann, dann geht es einfacher.</p>
@@ -677,17 +679,15 @@ werden kann, dann geht es einfacher.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>neuserver
--?</b>&rsquo; oder &rsquo;<b>neuserver -h</b>&rsquo; zeigt
-die wichtigen Befehlszeilenoptionen und &rsquo;<b>neuserver
--lh</b>&rsquo; alle. Einige Optionen (z.B. die SQL-Befehle
-zur Suche eines Adressaten aus der Faxnummer)
-k&ouml;nnen nicht &uuml;ber die Befehlszeile,
-sondern nur &uuml;ber die Konfigurationsdatei eingegeben
-werden, die wiederum &uuml;ber &rsquo;<b>neuserver
--vi</b>&rsquo; direkt editiert oder auch &uuml;ber
-&rsquo;<b>neuserver -rf</b>&rsquo; interaktiv gepflegt
-werden kann.</p>
+<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>./los.sh
+-h</b>&rsquo; zeigt die Befehlszeilenoptionen. Einige
+Optionen (z.B. die SQL-Befehle zur Suche eines Adressaten
+aus der Faxnummer) k&ouml;nnen nicht &uuml;ber die
+Befehlszeile, sondern nur &uuml;ber die
+Konfigurationsdatei eingegeben werden, die wiederum
+&uuml;ber &rsquo;<b>neuserver -vi</b>&rsquo; direkt
+editiert oder auch &uuml;ber &rsquo;<b>neuserver
+-rf</b>&rsquo; interaktiv gepflegt werden kann.</p>
 
 <h2>FUNKTIONSWEISE
 <a name="FUNKTIONSWEISE_D"></a>

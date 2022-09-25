@@ -71,6 +71,30 @@ commandline() {
 		case $para in
 			neu|new) obneu=1;obschreiben=1;;
 			v|-verbose) verb=1;;
+			h|-h|-hilfe|-help|?|-?)
+        printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
+        printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
+				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-v ][-h ]$reset\n";
+				printf "  $blau-bs$reset: richtet den Bildschirm ein\n";
+        printf "  $blau-host$reset: richtet den Hostnahmen im LAN ein\n";
+        printf "  $blau-prompt$reset: richtet die Eingabeaufforderung ein\n";
+        printf "  $blau-mt$reset: konfiguriert /etc/fstab zum Mounten der Laufwerke\n";
+        printf "  $blau-prog$reset: lädt notwendige Programme aus dem Repository und von github\n";
+        printf "  $blau-turbomed$reset: richtet Turbomed ein\n";
+        printf "  $blau-maria$reset: richtet mariadb ein und lädt ggf. den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
+        printf "  $blau-marianeu$reset: richtet mariadb ein und lädt den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
+        printf "  $blau-mariai$reset: lädt den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
+        printf "  $blau-smb$reset: richtet Samba ein\n";
+        printf "  $blau-must$reset: kopiert vom Musterserver\n";
+        printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
+        printf "  $blau-firebird$reset: richtet firebird ein\n";
+        printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
+        printf "  $blau-vi$reset: lädt dieses Programm in vi(m).\n";
+        printf "  $blau-v$reset: wird gesprächiger\n";
+        printf "  $blau-h$reset: zeigt diese Hilfe an\n";
+        exit;;
+      vi) vi $0 -pNu .exrc;
+        exit;;
 			*) obteil=1;
 				case $para in
           bs) obbs=1;;
@@ -80,10 +104,10 @@ commandline() {
           prog) obprog=1;;
           turbomed) obtm=1;;
 					maria|mariadb|mysql) obmysql=1;;
+					marianeu|mysqlneu) mysqlneu=1;;
           mariai|mysqli) obmysqli=1;;
           smb) obsmb=1;;
           must) obmust=1;;
-					mysqlneu) mysqlneu=1;;
           fritz) obfritz=1;;
           firebird) obfb=1;;
           teamviewer) obtv=1;;

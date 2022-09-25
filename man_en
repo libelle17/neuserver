@@ -10,7 +10,7 @@
 .SH SYNOPSIS
 \fB²DPROG² [-<shortopt>|--<longopt> [<supplement>]] ...\fR
 .SH SHORT DESCRIPTION 
-Contains the necessary scripts for setup and operation (especially data backup on backup server). After the scripts have been downloaded, los.sh is called in the installation directory. With 'make git install' the scripts are transferred to the operating directories, with 'make' any further developments there are transferred back to the installation directory.
+Contains the necessary scripts for setup and operation (especially data backup on backup server). After the scripts have been downloaded, ./los.sh is called in the installation directory. With 'make git install' the scripts are transferred to the operating directories, with 'make' any further developments there are transferred back to the installation directory.
 .br
 .SH INSTALLATION
 .br
@@ -20,13 +20,15 @@ First, please read the chapters 'functionality', 'preconditions','automatically 
 .br
 At last, call:
 .br
- \fBlos.sh\fR
+ \fB./los.sh\fR
 .br
 and answer some questions of the program.
 .SH USAGE
 Ideally, the program should have installed itsself after the first call(s) (see above) and one-time answering of some questions in a self-running way.
 .br
 If another fully configured Linux server is already running, which can be named when prompted, then it is easier.
+.br
+With \fBsh viall\f scripts can be edited.
 .SH OPTIONS 
  '\fB²DPROG² -?\fR' or '\fB²DPROG² -h\fR' shows the important command line options and '\fB²DPROG² -lh\fR' all of them. Some options (e.g. the sql commands for finding an addressee from the fax number) cannot be set via the command line, but only via the configuration file, which can be edited directly by '\fB²DPROG² -vi\fR' or interactively by '\fB²DPROG² -rf\fR'.
 .SH FUNCTIONALITY
