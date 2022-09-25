@@ -170,7 +170,7 @@ kopiermt() { # mit test
       ok=;
       zuteh=${zute%/}; # ohne letzten slash
       testz="$zuteh";
-      gpc=${zute#/mnt/}; gpc=${gpc##/*}; # virtwinx
+      gpc=${zute#/mnt/}; gpc=${gpc%%/*}; # virtwinx
       [ "$gpc" ]&&{
         if ping -c1 -W1 $gpc >/dev/null 2>&1; then ok=1; else
           ok=;

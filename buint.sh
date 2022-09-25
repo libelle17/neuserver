@@ -100,7 +100,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     if pruefpc $QL; then
       [ $verb ]&&printf " fiel positiv aus.\n";
       wirt=$QL;
-      . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+. ${MUPR%/*}/virtnamen.sh; # legt aus $wirt fest: $gpc, $gast, $tush
       # case $wirt in *0*) gpc=virtwin0; gast=Win10;;
       #               *1*) gpc=virtwin;  gast=Win10;;
       #               *3*) gpc=virtwin3; gast=Win10;;
@@ -119,7 +119,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
            if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
          done;
          [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
-        fi;
+        fi; #         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
         if [ ! "$ok" ]; then
          printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
         else
