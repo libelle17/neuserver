@@ -91,7 +91,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     done;
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
-  printf "$rot"geweckt: $geweckt$reset\n";
+  printf "$rotgeweckt: $geweckt$reset\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -118,7 +118,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
          for iru in $(seq 1 1 120); do 
            if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
          done;
-         [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
+         [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe\n";
         fi; #         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
         if [ ! "$ok" ]; then
          printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
