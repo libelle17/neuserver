@@ -62,7 +62,7 @@ for nr in 1 0 3 7; do
 # esac;
 # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
   HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
-  [ linux$nr = $HOST ]&&tush="sh -c "||tush="ssh $wirt ";
+  [ linux$nr = $HOST ]&&tush=||tush="ssh $wirt ";
   if ! ping -c1 -W1 $wirt >/dev/null 2>&1; then
     printf "$blau$wirt$reset nicht anpingbar, lasse $blau$gpc$reset aus.\n";
   else
@@ -70,7 +70,7 @@ for nr in 1 0 3 7; do
      if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
       ok=;
       printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
-      ausf "$tush VBoxManage startvm $gast --type headless";      
+      ausf "${tush}VBoxManage startvm $gast --type headless";      
       for iru in $(seq 1 1 120); do 
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
       done;

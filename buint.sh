@@ -9,6 +9,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+# nurdrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 ./virtnamen.sh
@@ -79,23 +80,24 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
   printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
   if ! [ "$nurdrei" ]; then
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
-  for ziel in $ziele; do
-    if [ "$obecht" ]; then
-      echo butm.sh linux$ziel -nv -e;
-      butm.sh linux$ziel -nv -e;
-    else
-      echo butm.sh linux$ziel -nv;
-      butm.sh linux$ziel -nv;
-    fi;
-  done;
-  fi;
+    for ziel in $ziele; do
+      if [ "$obecht" ]; then
+        echo butm.sh linux$ziel -nv -e;
+        butm.sh linux$ziel -nv -e;
+      else
+        echo butm.sh linux$ziel -nv;
+        butm.sh linux$ziel -nv;
+      fi;
+    done;
+  fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
+  printf "$rot"geweckt: $geweckt$reset\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
     QL=linux$nr;
     [ $verb ]&&printf "\nPrüfe PC ${blau}$QL$reset ...";
-    if pruefpc $QL kurz; then
+    if pruefpc $QL; then
       [ $verb ]&&printf " fiel positiv aus.\n";
       wirt=$QL;
       . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -106,14 +108,41 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       #               *8*) gpc=virtwin8; gast=Win10;;
       # esac;
       # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
-      [ "$gpc" ]&&{ 
-        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then 
-          [ "$verb" ]&&printf "$blau$gpc$reset anpingbar.\n"; 
+      if [ "$gpc" ]; then
+        HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
+        [ linux$nr = $HOST ]&&tush=||tush="ssh $QL ";
+        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
+         ok=;
+         printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
+         ausf "${tush}VBoxManage startvm $gast --type headless";      
+         for iru in $(seq 1 1 120); do 
+           if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
+         done;
+         [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
+        fi;
+        if [ ! "$ok" ]; then
+         printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
+        else
+          cifs=/mnt/$gpc/turbomed;
+          printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
+          for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+            if ! mountpoint -q $cifs; then
+              printf "\n";
+              ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
+              printf "\n";
+            else
+       #       printf " ${blau}$cifs$reset gemountet!\n"
+              break;
+            fi;
+          done;
+        fi; # ping
+        if mountpoint -q $cifs; then
+          [ "$verb" ]&&printf "$blau$cifs$reset gemountet.\n"; 
         else 
-          printf "$blau$gpc$rot nicht anpingbar, verlasse Funktion$reset\n"; 
+          printf "$blau$cifs$rot nicht anpingbar, verlasse Schleife$reset\n"; 
           continue;
         fi;
-      }; 
+      fi; # if [ "$gpc" ]; then
       for Vz in $VzLk; do
         [ $verb ]&&printf "Bearbeite Verzeichnis: $blau$Vz$reset.\n";
         [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
@@ -132,7 +161,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         fi;
       done; # Vz in $VzLk; do
     else
-      [ $verb ]&&printf" fiel negativ aus.\n";
+      [ $verb ]&&printf " fiel negativ aus.\n";
     fi; # pruefpc $QL kurz; then
   done; # QL in $ziele; do
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
