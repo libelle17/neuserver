@@ -157,7 +157,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
           # kopiert auf QL von dort auf das dortige cifs-Laufwerk
-          ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz \$zl' ";
+          ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
         fi;
       done; # Vz in $VzLk; do
     else
