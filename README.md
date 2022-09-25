@@ -87,7 +87,7 @@ call(s) (see above) and one-time answering of some questions
 in a self-running way. <br>
 If another fully configured Linux server is already running,
 which can be named when prompted, then it is easier. <br>
-With <b>sh viallscripts can be edited.</b></p>
+With <b>sh viall</b> scripts can be edited.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS_D"></a>
