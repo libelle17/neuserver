@@ -2,7 +2,6 @@
 # fährt die genannten PCs runter
 for pc in \
   anmmo \
-  anmmw \
   anmoo \
   anmww \
   bzw2 \
