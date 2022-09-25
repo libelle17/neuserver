@@ -164,5 +164,8 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       [ $verb ]&&printf " fiel negativ aus.\n";
     fi; # pruefpc $QL kurz; then
   done; # QL in $ziele; do
+  [ "$geweckt" ]&&for pc in $geweckt; do
+   ssh $pc shutdown now;
+  done;
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 EXFEST=$altEXFEST;
