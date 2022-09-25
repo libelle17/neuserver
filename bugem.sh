@@ -144,10 +144,11 @@ kopiermt() { # mit test
 	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # $7 = ob ohne Platzprüfung
+  # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
 
   QVofs=$(echo ${1#/}|sed 's/\([^\\]\) /\1\\ /g'); # Quellverzeichnis ohne führenden slash, mit "\ " statt " "
-  QVos=${QVofs%/};
+  QVos=${QVofs%/}; # letzten Slash entfernen
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
   machssh;
   [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";}; # obdat=1 heisst, /$QVos ist eine Datei
@@ -164,10 +165,10 @@ kopiermt() { # mit test
   [ "$ZL" ]&&{ if ping -c1 -W1 "$ZL">/dev/null 2>&1; then printf "$blau$ZL$reset anpingbar.\n"; else printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;}; 
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
-      [ "$Lfw" ]||Lfw=$buhost" (hier) ";
-    if echo $zute|grep '/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
+    [ "$Lfw" ]||Lfw=$buhost" (hier) ";
+    if echo $zute|grep '^/mnt/' >/dev/null; then # wenn offenbar ein gemountetes Laufwerk drin
       ok=;
-      zuteh=${zute%/};
+      zuteh=${zute%/}; # ohne letzten slash
       testz="$zuteh";
       while :; do # rausfinden, ob nicht ein linker Teil des Verzeichnispfades schon gemountet ist
         [ "$testz" ]||break;
@@ -182,11 +183,11 @@ kopiermt() { # mit test
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
            if ! $hsh "mountpoint -q \"$zuteh\""; then
              # das Leerzeichen nach &1 schützt vor ambiguous redirect-Fehler
-             ausf "$hsh \"mount '$zuteh' $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+             ausf "$hsh \"mount '$zuteh' -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              # das würde gehen:
-#            ausf "$hsh \"mount $zuteh $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+#            ausf "$hsh \"mount $zuteh -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              # hier geht gar nix:
-#             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+#             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              echo "";
            else
       #       printf " ${blau}$cifs$reset gemountet!\n"

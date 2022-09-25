@@ -68,6 +68,7 @@ if [ "$offen" ]; then
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
   if ! [ "$nurdrei" ]; then
+    # hier sind immer $QL und $ZL leer
     kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
   fi;
  done;
@@ -89,7 +90,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
   done;
   fi;
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
-# 3. wenn mehr, dann von hier den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
+  # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
     QL=linux$nr;
@@ -123,8 +124,10 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         hin=mnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         if [ $dreieck ]; then
+          # QL ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
+          # kopiert auf QL von dort auf das dortige cifs-Laufwerk
           ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz \$zl' ";
         fi;
       done; # Vz in $VzLk; do

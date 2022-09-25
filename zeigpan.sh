@@ -51,21 +51,47 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 for nr in 1 0 3 7; do
   wirt=linux$nr;
-  if ping -c1 -W1 $wirt >/dev/null 2>&1; then
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+# ./virtnamen.sh;
+## for wirt in "$auswahl"; do
+# case $wirt in *0*) gpc=virtwin0; gast=Win10;;
+#               *1*) gpc=virtwin;  gast=Win10;;
+#               *3*) gpc=virtwin3;  gast=Win10;;
+#               *7*) gpc=virtwin7; gast=Win10;;
+#               *8*) gpc=virtwin8; gast=Win10;;
+# esac;
+# case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
+  HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
+  [ linux$nr = $HOST ]&&tush="sh -c "||tush="ssh $wirt ";
+  if ! ping -c1 -W1 $wirt >/dev/null 2>&1; then
+    printf "$blau$wirt$reset nicht anpingbar, lasse $blau$gpc$reset aus.\n";
+  else
    if [ "$gpc" ]; then
-     cifs=/mnt/$gpc/turbomed;
-     printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
-     for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-       if ! mountpoint -q $cifs; then
-         printf "\n";
-         ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials" $blau
-         printf "\n";
-       else
-  #       printf " ${blau}$cifs$reset gemountet!\n"
-         break;
-       fi;
-     done;
+     if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
+      ok=;
+      printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
+      ausf "$tush VBoxManage startvm $gast --type headless";      
+      for iru in $(seq 1 1 120); do 
+        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
+      done;
+      [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
+     fi;
+     if [ ! "$ok" ]; then
+      printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
+     else
+       cifs=/mnt/$gpc/turbomed;
+       printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
+       for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+         if ! mountpoint -q $cifs; then
+           printf "\n";
+           ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
+           printf "\n";
+         else
+    #       printf " ${blau}$cifs$reset gemountet!\n"
+           break;
+         fi;
+       done;
+     fi; # ping
      if mountpoint -q $cifs; then
        altverb=$verb;
        verb=1;
