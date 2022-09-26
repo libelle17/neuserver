@@ -7,6 +7,7 @@ for nr in $nr; do
   ZL=linux$nr;
   pruefpc $ZL;
   ausf "ssh $ZL dbauspacken.sh" $blau;
-  [ "$geweckt" ]&&ssh $ZL shutdown now;
-  geweckt=;
+  [ "$geweckt" ]&&for pc in $geweckt; do
+   ssh $pc shutdown now;
+  done;
 done;

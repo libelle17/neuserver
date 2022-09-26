@@ -92,6 +92,8 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
   printf "$rotgeweckt: $geweckt$reset\n";
+  gesgew=$gesgew" "$geweckt;
+  printf "$rotgesgew: $gegesgew$reset\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -164,7 +166,8 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       [ $verb ]&&printf " fiel negativ aus.\n";
     fi; # pruefpc $QL kurz; then
   done; # QL in $ziele; do
-  [ "$geweckt" ]&&for pc in $geweckt; do
+  printf "$rotgesgew: $gegesgew$reset\n";
+  [ "$gesgew" ]&&for pc in $gesgew; do
    ssh $pc shutdown now;
   done;
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
