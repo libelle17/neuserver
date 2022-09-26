@@ -88,6 +88,12 @@ if [ "$ret"/ = 0/ ]; then
 else
  printf $rot$Dt$reset kein Mountpoint, hier nichts kopiert!
 fi;
-[ ! "$obnv" -a "$geweckt" ]&&for pc in $geweckt; do
- ssh $pc shutdown now;
-done;
+if [ "$geweckt" ]; then
+  if [ "$obnv" ]; then
+    echo "$geweckt"; # Rückgabe von $geweckt ans aufrufende Programm
+  else
+    for pc in $geweckt; do
+     ssh $pc shutdown now;
+    done;
+  fi;
+fi;

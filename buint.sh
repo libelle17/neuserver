@@ -83,10 +83,10 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     for ziel in $ziele; do
       if [ "$obecht" ]; then
         echo butm.sh linux$ziel -nv -e;
-        butm.sh linux$ziel -nv -e;
+        geweckt=$geweckt" "$(butm.sh linux$ziel -nv -e);
       else
         echo butm.sh linux$ziel -nv;
-        butm.sh linux$ziel -nv;
+        geweckt=$geweckt" "$(butm.sh linux$ziel -nv);
       fi;
     done;
   fi; # nurdrei

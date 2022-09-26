@@ -387,7 +387,7 @@ pruefpc() {
      return 1;
     fi;
   done;
-}
+} # pruefpc
 
 machssh() {
 [ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";
