@@ -80,13 +80,10 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
   if ! [ "$nurdrei" ]; then
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
     for ziel in $ziele; do
-      if [ "$obecht" ]; then
-        echo butm.sh linux$ziel -nv -e;
-        ${MUPR%/*}/butm.sh linux$ziel -nv -e;
-      else
-        echo butm.sh linux$ziel -nv;
-        ${MUPR%/*}/butm.sh linux$ziel -nv;
-      fi;
+      [ "$obecht" ]&&echtpar=" -e"||echtpar=;
+      [ "$obverb" ]&&verbpar=" -v"||verbpar=;
+      echo butm.sh linux$ziel -nv$echtpar$verbpar;
+      ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
     done;
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
