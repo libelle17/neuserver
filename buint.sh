@@ -91,9 +91,9 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     done;
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
-  printf "$rotgeweckt: $geweckt$reset\n";
+  printf "${rot}geweckt: $geweckt$reset\n";
   gesgew=$gesgew" "$geweckt;
-  printf "$rotgesgew: $gegesgew$reset\n";
+  printf "${rot}gesgew: $gegesgew$reset\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -141,7 +141,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         if mountpoint -q $cifs; then
           [ "$verb" ]&&printf "$blau$cifs$reset gemountet.\n"; 
         else 
-          printf "$blau$cifs$rot nicht anpingbar, verlasse Schleife$reset\n"; 
+          printf "$blau$cifs${rot} nicht anpingbar, verlasse Schleife$reset\n"; 
           continue;
         fi;
       fi; # if [ "$gpc" ]; then
@@ -162,13 +162,17 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
         fi;
       done; # Vz in $VzLk; do
+      [ "$verb" ]&&printf "\n${rot}Nach der Schleife Bearbeite Verzeichnis$reset\n";
     else
       [ $verb ]&&printf " fiel negativ aus.\n";
     fi; # pruefpc $QL kurz; then
-  done; # QL in $ziele; do
-  printf "$rotgesgew: $gegesgew$reset\n";
+    [ "$verb" ]&&printf "\n${rot}Nach pruefpc $QL$reset\n";
+  done; # nr in $ziele; do
+  [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
+  printf "${rot}gesgew: $gegesgew$reset\n";
   [ "$gesgew" ]&&for pc in $gesgew; do
    ssh $pc shutdown now;
   done;
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+[ "$verb" ]&&printf "\n${rot} ziemlich am Schluss$reset\n";
 EXFEST=$altEXFEST;
