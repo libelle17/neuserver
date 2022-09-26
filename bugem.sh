@@ -376,18 +376,34 @@ pruefpc() {
     fi;
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
-      [ $iru = 1 ]&&{ echo $geweckt|grep -q "$1"||geweckt=$geweckt" "$1;}
+      if [ $iru = 1]; then
+       if [ -f "${MUPR%/*}/geweckt" ]; then 
+         cat ${MUPR%/*}/geweckt|grep -q "$1"||printf "$1 " >>${MUPR%/*}/geweckt;
+       else
+         printf "$1 " >${MUPR%/*}/geweckt;
+       fi;
+      fi;
       for ii in $(seq 1 1 1000); do
         ping -c1 -W10 "$1" >/dev/null 2>&1&&break;
       done;
       sleep 10;
-      printf "$rot geweckt:$lila$geweckt$reset\n";
+      [ "$verb" ]&&printf "${lila}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
     else
      printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
      return 1;
     fi;
   done;
 } # pruefpc
+
+gutenacht() {
+  if [ -f ${MUPR%/*}/geweckt ]; then 
+    [ "$verb" ]&&printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
+    for pc in $(cat ${MUPR%/*}/geweckt);do  
+     ssh $pc shutdown now;
+    done;
+    rm ${MUPR%/*}/geweckt;
+  fi;
+}
 
 machssh() {
 [ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";

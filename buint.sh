@@ -12,7 +12,6 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 # nurdrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
-./virtnamen.sh
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
@@ -83,17 +82,15 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     for ziel in $ziele; do
       if [ "$obecht" ]; then
         echo butm.sh linux$ziel -nv -e;
-        geweckt=$geweckt" "$(butm.sh linux$ziel -nv -e);
+        ${MUPR%/*}/butm.sh linux$ziel -nv -e;
       else
         echo butm.sh linux$ziel -nv;
-        geweckt=$geweckt" "$(butm.sh linux$ziel -nv);
+        ${MUPR%/*}/butm.sh linux$ziel -nv;
       fi;
     done;
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
-  printf "${rot}geweckt: $geweckt$reset\n";
-  gesgew=$gesgew" "$geweckt;
-  printf "${rot}gesgew: $gegesgew$reset\n";
+  printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -169,10 +166,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     [ "$verb" ]&&printf "\n${rot}Nach pruefpc $QL$reset\n";
   done; # nr in $ziele; do
   [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
-  printf "${rot}gesgew: $gegesgew$reset\n";
-  [ "$gesgew" ]&&for pc in $gesgew; do
-   ssh $pc shutdown now;
-  done;
+  gutenacht;
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 [ "$verb" ]&&printf "\n${rot} ziemlich am Schluss$reset\n";
 EXFEST=$altEXFEST;
