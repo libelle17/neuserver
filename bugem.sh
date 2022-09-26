@@ -376,15 +376,15 @@ pruefpc() {
     fi;
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
-      if [ $iru = 1 ]; then
-       if [ -f "${MUPR%/*}/geweckt" ]; then 
-         cat ${MUPR%/*}/geweckt|grep -q "$1"||printf "$1 " >>${MUPR%/*}/geweckt;
-       else
-         printf "$1 " >${MUPR%/*}/geweckt;
-       fi;
-      fi;
       for ii in $(seq 1 1 1000); do
-        ping -c1 -W10 "$1" >/dev/null 2>&1&&break;
+        ping -c1 -W10 "$1" >/dev/null 2>&1&&{
+         if [ -f "${MUPR%/*}/geweckt" ]; then 
+           cat ${MUPR%/*}/geweckt|grep -q "$1"||printf "$1 " >>${MUPR%/*}/geweckt;
+         else
+           printf "$1 " >${MUPR%/*}/geweckt;
+         fi;
+         break;
+        }
       done;
       sleep 10;
       [ "$verb" ]&&printf "${lila}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
