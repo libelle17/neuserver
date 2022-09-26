@@ -933,6 +933,7 @@ proginst() {
 # PS1="${GRUEN}\u@\h: \w${RESET}>"
 
 # fehlt: /etc/environment festlegen
+# für die Windows-Rechner: public keys an authorized_keys anhängen, diese auf %userprofile%\.ssh\ verteilen, dann noch in c:\programdata\ssh\sshd_config die letzten beiden Zeilen (Match Group Administrators AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys) auskommentieren 
 
   D=/var/log/journal;[ -d $D ]||mkdir -p $D;
 	case $OSNR in

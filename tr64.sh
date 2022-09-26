@@ -1,7 +1,9 @@
 #!/bin/bash
 _BOXURL="http://fritz.box"
-_USERNAME="libelle17"
-_PASSWORD="bach17raga"
+. ~/.fbcredentials
+_USERNAME="$username";
+_PASSWORD="$password";
+
 if false; then
 _REQUESTPAGE="/fon_num/foncalls_list.lua"
 _OUTPUTFILE="output.html"
