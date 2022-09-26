@@ -81,7 +81,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
     for ziel in $ziele; do
       [ "$obecht" ]&&echtpar=" -e"||echtpar=;
-      [ "$obverb" ]&&verbpar=" -v"||verbpar=;
+      [ "$verb" ]&&verbpar=" -v"||verbpar=;
       echo butm.sh linux$ziel -nv$echtpar$verbpar;
       ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
     done;
