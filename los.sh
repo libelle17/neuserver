@@ -215,6 +215,22 @@ setzhost() {
       hostnamectl; 
   };
   esac;
+  # wake on lan erlauben
+  mac=$(ip a|sed -n '/^.: eth/{n;s/^ *[^ ]* \([^ ]*\) .*$/\1/;p}');
+  [ "$verb" ]&&printf "${blau}mac: ${reset}$mac\n";
+  if [ "$mac" ]; then
+    dat="/etc/systemd/network/50-wired.link";
+    [ "$verb" ]&&printf "${blau}dat: ${reset}$dat\n";
+    li=101; for i in $(seq $((li-1)) -1 1); do if [ -f ${dat}_$i ]; then mv ${dat}_$i ${dat}_$li; fi; li=$i; done;
+    [ -f $dat ]&&mv $dat ${dat}_1;
+    echo "[Match]" >"$dat";
+    echo "MACAddress=$mac" >>"$dat";
+    echo "" >>"$dat";
+    echo "[Link]" >>"$dat";
+    echo "NamePolicy=kernel database onboard slot path" >>"$dat";
+    echo "MACAddressPolicy=persistent" >>"$dat";
+    echo "WakeOnLan=magic" >>"$dat";
+  fi;
 } # setzhost
 
 setzbenutzer() {
@@ -1199,8 +1215,8 @@ tufirewall() {
 		if which firewall-cmd >/dev/null 2>&1; then
 			ausf "systemctl 2>/dev/null|grep firewalld.service";
 			fwstatus="$resu";
-			[ $verb ]&& echo firewalld.service gefunden.
-			[ $verb ]&& echo Parameter 4: "$4", ret: "$ret";
+			[ "$verb" ]&& echo firewalld.service gefunden.
+			[ "$verb" ]&& echo Parameter 4: "$4", ret: "$ret";
 		#		echo $fwstatus;
 			if [ $ret -eq 0 ]; then
 				ausf "firewall-cmd --list-services 2>/dev/null";
@@ -1237,7 +1253,7 @@ tufirewall() {
 	# 4) SuSEFirewall2
 	ausf "systemctl list-units --full -all|grep SuSEfirewall2.service";
 	susestatus="$resu";
-	[ $verb ]&& echo susestatus: $susestatus, ret: $ret;
+	[ "$verb" ]&& echo susestatus: $susestatus, ret: $ret;
 	if [ $ret -eq 0 ]; then
 	 # das folgende abgewandelt aus kons.cpp
    susefw="/etc/sysconfig/SuSEfirewall2";
@@ -1653,7 +1669,7 @@ tu_turbomed() {
 	case $OSNR in 1|2|3)endg=".deb";; 4|5|6|7)endg=".rpm";;esac;
 	for D in $archive/*$endg; do $psuch $(basename $D $endg) >/dev/null||$insg $D; done;
   cd ${TMsetup%/*};
-  [ $verb = 0 ]||echo Setupverzeichnis: ${TMsetup%/*}
+  [ "$verb" = 0 ]||echo Setupverzeichnis: ${TMsetup%/*}
   sh TM_setup $1
   ret=$?
   echo $ret;
@@ -1692,7 +1708,7 @@ turbomed() {
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
 	tmsuch="CGM_TURBOMED*LINUX.zip";
 	datei=$(find $q0 -name "$tmsuch" -printf "%f\1%p\n" 2>/dev/null|sort|tail -n1|cut -d $(printf '\001') -f2-);
-  [ $verb = 1 ]&&echo "Datei: $datei"
+  [ "$verb" = 1 ]&&echo "Datei: $datei"
 	if test -z "$datei"; then echo keine Datei \"$tmsuch\" in \"$q0\" gefunden; return; fi;
 	# 19.1.1.3969
   stamm=$(basename "$datei");
