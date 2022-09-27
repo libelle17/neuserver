@@ -145,6 +145,8 @@ variablen() {
  done;
  HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
  loscred="$HOME/.loscred"; # ~  # $HOME
+ mypwd="$HOME/.mysqlpwd";
+ phppwd="/srv/www/phppwd.php";
  test -f "$loscred"&&. "$loscred";
  srv0=; # zur Sicherheit
 } # variablen
@@ -158,6 +160,15 @@ speichern() {
 	  printf "mrpwd=$mrpwd\n" >>"$loscred";
 	  printf "arbgr=$arbgr\n" >>"$loscred";
 	  printf "srv0=$srv0\n"   >>"$loscred";
+
+    printf "[client]\n" >"$mypwd";
+    printf "user=$musr\n" >"$mypwd";
+    printf "password=$musr\n" >"$mypwd";
+
+    printf "<?php " >"$phppwd";
+    printf " $user=$musr\n" >>"$phppwd";
+    printf " $pwt=$mpwd\n" >>"$phppwd";
+    printf "?>" >"$phppwd";
 	fi;
 } # speichern
 
@@ -811,7 +822,6 @@ richtmariadbein() {
           ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
           ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
       fi;
-      printf "<?php \n $user="praxis";\n $pwt="sonne";\n?>" >/srv/www/phppwd.php;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
     fi;
