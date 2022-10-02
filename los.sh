@@ -1338,6 +1338,7 @@ musterserver() {
 	 test -f "$KS"||touch "$KS";
 	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
 	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
+   for dt in .fbcredentials .loscred .mysqlpwd .mysqlrpwd .tr64cred; do scp -p $srv0:/root/$dt /root/; done;
  else
    printf "Soll von einem Verzeichnis mit /root kopiert werden (jyJYnN)? ";read obpl;
    case $obpl in 
@@ -1370,7 +1371,7 @@ musterserver() {
      W=;
      ;;
    esac;
- fi;
+ fi; # [ "$srv0" ]
  if [ "$srv0" ]; then
    muwrz="$srv0:$HOME";
  fi;
