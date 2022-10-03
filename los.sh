@@ -1756,9 +1756,11 @@ dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset()\n";
 #  pruefmroot;
-  echo obschreiben: $obschreiben, loscred: $loscred;
+  pd=$instvz/sqlprot.txt;
+  [ "$verb" ]&&printf "obschreiben: $blau$obschreiben$reset, loscred: $blau$loscred$reset, Vergleichsdatei: $blau$pd$reset\n";
   datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);
-  [ "$verb" ]&&echo datadir: $datadir;
+#  for dt in $(VZ=/DATA/sql;for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do ls $VZ/$db--*.sql -t|head -n1; done); do scp -p $dt linux8:/DATA/sql/; done
+  [ "$verb" ]&&printf "datadir: $blau$datadir$reset\n";
   [ "$datadir" ]&& chown mysql:mysql -R "$datadir";
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
@@ -1773,7 +1775,6 @@ dbinhalt() {
       Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f $instvz/awkfdatei.sh);
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g'); # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n");
-      pd=$instvz/sqlprot.txt;
       [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
 #      test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
 #      mysql -u"$mroot" -p"$mrpwd" -hlocalhost -e"SET session innodb_strict_mode=Off";
