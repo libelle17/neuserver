@@ -56,12 +56,13 @@ commandline() {
   obmt=0; # nur Laufwerke sollen gemountet werden
   obprog=0; # nur Programme sollen installiert werden
   obtm=0; # ob turbomed installiert werden soll
-	obmysql=0; # nur mysql soll eingerichtet werden
+	obmyuser=0; # nur mysql und Benutzer sollen eingerichtet werden
+	obmysql=0; # nur mysql soll eingerichtet werden und ggf. letzte Daten laden
+	obmysqlneu=0; # nur mysql mit Neuübertragung der Daten
 	obmysqli=0; # nur mysql soll eingerichtet werden, jede Datenbank geprüft
   obsmb=0; # nur smbconf soll aufgerufen werden
   obmust=0; # ob von musterserver kopiert werden soll
   obfritz=0; # ob fritzbox eingehaengt werden soll
-	mysqlneu=0; # mysql mit Neuübertragung der Daten
   obfb=0; # Firebird
   obtv=0; # Teamviewer
   gespar="$@"
@@ -74,13 +75,14 @@ commandline() {
 			h|-h|-hilfe|-help|?|-?)
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
-				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-v ][-h ]$reset\n";
 				printf "  $blau-bs$reset: richtet den Bildschirm ein\n";
         printf "  $blau-host$reset: richtet den Hostnahmen im LAN ein\n";
         printf "  $blau-prompt$reset: richtet die Eingabeaufforderung ein\n";
         printf "  $blau-mt$reset: konfiguriert /etc/fstab zum Mounten der Laufwerke\n";
         printf "  $blau-prog$reset: lädt notwendige Programme aus dem Repository und von github\n";
         printf "  $blau-turbomed$reset: richtet Turbomed ein\n";
+        printf "  $blau-mariau$reset: richtet mariadb ein\n";
         printf "  $blau-maria$reset: richtet mariadb ein und lädt ggf. den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
         printf "  $blau-marianeu$reset: richtet mariadb ein und lädt den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
         printf "  $blau-mariai$reset: lädt den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
@@ -103,8 +105,9 @@ commandline() {
           mt) obmt=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
+          mariau) obmyuser=1;;
 					maria|mariadb|mysql) obmysql=1;;
-					marianeu|mysqlneu) mysqlneu=1;;
+					marianeu|mysqlneu) obmysqlneu=1;;
           mariai|mysqli) obmysqli=1;;
           smb) obsmb=1;;
           must) obmust=1;;
@@ -125,12 +128,13 @@ commandline() {
 		[ "$obprompt" = 1 ]&& printf "obprompt: ${blau}1$reset\n"
 		[ "$obmt" = 1 ]&& printf "obmt: ${blau}1$reset\n"
 		[ "$obprog" = 1 ]&& printf "obprog: ${blau}1$reset\n"
+		[ "$obmyuser" = 1 ]&& printf "obmyuser: ${blau}1$reset\n"
 		[ "$obmysql" = 1 ]&& printf "obmysql: ${blau}1$reset\n"
 		[ "$obmysqli" = 1 ]&& printf "obmysqli: ${blau}1$reset\n"
+		[ "$obmysqlneu" = 1 ]&& printf "obmysqlneu: ${blau}1$reset\n"
 		[ "$obsmb" = 1 ]&& printf "obsmb: ${blau}1$reset\n"
 		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
 		[ "$obfritz" = 1 ]&& printf "obfritz: ${blau}1$reset\n"
-		[ "$mysqlneu" = 1 ]&& printf "mysqlneu: ${blau}1$reset\n"
 	fi;
 } # commandline
 
@@ -747,7 +751,6 @@ richtmariadbein() {
 		1|2|3)
 			db_systemctl_name="mysql";;
 		4|5|6|7)
-			db_systemctl_name="mariadb";;
 	esac;
 	for iru in 1 2; do
 		systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
@@ -1834,7 +1837,7 @@ variablen;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
 	setzinstprog;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
- [ $obteil = 0 -o $obmysql = 1 -o $mysqlneu = 1 ]&&richtmariadbein;
+ [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
@@ -1842,7 +1845,7 @@ variablen;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
- [ $obteil = 0 -o $obmysql = 1 -o $obmysqli = 1 -o $mysqlneu = 1 ]&&{ [ $obmysqli = 1 -o $mysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
+ [ $obteil = 0 -o $obmysql = 1 -o $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ [ $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
  [                $obfb = 1 ]&&firebird;
 printf "${dblau}Ende von $0$reset\n";
