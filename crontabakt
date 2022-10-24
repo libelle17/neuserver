@@ -317,6 +317,8 @@ ELG=/var/log/cronf.log
 * * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/mountvirt.sh -a >/dev/null 2>&1
 # ersetzt problmatische Zeichen bei Dateien in p: :
 */10 * * * * zuutf.sh
+# ggf. Platz herstellen
+*/2 * * * * platz.sh
 # Starten einer zusätzlichen Gui: VBoxSDL --startvm Win10 --separate
 # Starten einer zusätzlichen Gui: VBoxManage startvm Win10 --type separate
 # Beenden dieser Gui: Ctrl+C, pkill VBoxSVC -9
