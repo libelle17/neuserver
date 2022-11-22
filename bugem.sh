@@ -67,6 +67,8 @@ commandline() {
    esac;
    shift;
 	done;
+  QmD=$QL:;QmD=${QmD#:};
+  ZmD=$ZL:;ZmD=${ZmD#:};
 	if [ "$verb" ]; then
     printf "Parameter: $blau-v$reset => gesprächig\n";
 		printf "obecht: $blau$obecht$reset\n";
@@ -299,9 +301,9 @@ kopiermt() { # mit test
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if test $rest -gt 0; then
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du \"/$ZVos\" -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'"; schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'"; schonda=${resu:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du \"/$QVos\" -d0;'|awk '{print \$1*1}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       rest=$(expr $rest - $zukop + $schonda);
       [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
@@ -310,8 +312,8 @@ kopiermt() { # mit test
          echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ 
          [ "$verb" ]&&printf "E: $blau$E$reset\n";
          [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-         ausf "$zssh 'test -d \"$zZ\" && du \"$zZ\" -d0'|awk '{print \$1*1}'"; papz=${resu:-0};
-         ausf "$qssh 'test -d \"$zQ\" && du \"$zQ\" -d0'|awk '{print \$1*1}'"; papq=${resu:-0};
+         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print \$1*1}'"; papz=${resu:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print \$1*1}'"; papq=${resu:-0};
          rest=$(expr $rest - $papz + $papq);
       done;
       echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
@@ -325,9 +327,7 @@ kopiermt() { # mit test
 			echo "Fertig mit Stoppen von mysql";;
 	  esac;
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
-    [ "$QL" -o "$ZL" ]&&ergae="--rsync-path=\"$kopbef\""||ergae=;
-    QmD=$QL:;QmD=${QmD#:};
-    ZmD=$ZL:;ZmD=${ZmD#:};
+    [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
     Quelle=$QmD/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
     altverb=$verb;
     verb=1;
