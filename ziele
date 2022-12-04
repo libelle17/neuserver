@@ -57,6 +57,7 @@ lwwarn.sh
 mountvirt.sh
 nampruef.sh
 obft.sh
+pdfumw.sh
 permissselten.sh
 platz.sh
 rett.sh
@@ -82,6 +83,7 @@ tr64.sh
 treesize.sh
 ungera_PraxisDB.sh
 vbm
+vboxmanage
 vdurch.sh
 verhdop.sh
 vgl12.sh

@@ -65,8 +65,10 @@ fi
 IFS=$'|';
 [ $ZSH_VERSION ]&& setopt sh_word_split;
 OCRANH="_ocr"
+# echo 1: $1
 if test -d "$1"; then
  FLS=$(find "$1" -maxdepth 1 -type f -name "*.pdf" -printf "%p|" 2>/dev/null); 
+# echo FLS: $FLS
  case "$FLS" in "");; *) 
    for FL in $FLS; do 
 #    if ! [[ "$FL" = *$OCRANH.pdf || "$FL/" = "/" ]]; then doumw "$FL" "$2"; fi;
