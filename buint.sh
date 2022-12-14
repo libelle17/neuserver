@@ -104,6 +104,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       #               *8*) gpc=virtwin8; gast=Win10;;
       # esac;
       # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
+      [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
       if [ "$gpc" ]; then
         HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
         [ linux$nr = $HOST ]&&tush=||tush="ssh $QL ";
