@@ -1,0 +1,2 @@
+anmmwex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://anmmw/TMExport
+anmhex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://anmh/TMExport

@@ -116,6 +116,11 @@ bufexplorer.txt
 [/etc/apache2]
 httpd.conf.local
 [/etc]
+auto.cifs
+auto.master
+auto.wurzel
+[/etc/auto.master.d]
+gs.autofs
 [/]
 srv/www/htdocs/fdatei.php
 srv/www/htdocs/index.php
