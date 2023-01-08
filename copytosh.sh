@@ -1,7 +1,7 @@
 #!/bin/zsh
 PNAME=tosh
 logf=/var/log/$PNAME.log
-Z=/mnt/$PNAME
+Z=/amnt/$PNAME
 Q=""
 
 tukopier() {

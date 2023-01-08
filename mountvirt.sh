@@ -62,7 +62,7 @@ else
 #   esac;
 # case $wirt in $LINEINS)tush="sh -c";;*)tush="ssh $wirt";;esac
      [ "$verb" ]&&echo iru: $iru, gpc: $gpc, wirt: $wirt, tush: $tush, gast: $gast
-     cifs=/mnt/$gpc/turbomed;
+     cifs=/amnt/$gpc/turbomed;
      if [ "$iru" = 1 ]; then
        grep -q /$gpc/ $ftb||{ 
          [ "$ergae" ]&&ergae=$ergae\\n;

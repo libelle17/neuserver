@@ -1,6 +1,6 @@
 #!/bin/zsh
 PNAME=MyPassport
-Z=/mnt/$PNAME
+Z=/amnt/$PNAME
 . incopy.sh;
 datakopier "turbomed"
 datakopier "rett/ungera"

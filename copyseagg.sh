@@ -1,9 +1,9 @@
 #!/bin/dash
 USB=Seagate\ Expansion\ Drive
 logf=/var/log/$USB.log
-#ZoD=/mnt/seag
+#ZoD=/amnt/seag
 ZL=;
-Ziel=/mnt/SeagateBackupPlusDrive
+Ziel=/amnt/SeagateBackupPlusDrive
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 mountpoint -q "$Ziel" || mount "$Ziel"

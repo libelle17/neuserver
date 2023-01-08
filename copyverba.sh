@@ -1,9 +1,9 @@
 #!/bin/dash
 USB=verbatim
 logf=/var/log/$USB.log
-#ZoD=/mnt/seag
+#ZoD=/amnt/seag
 ZL=;
-Ziel=/mnt/verbatim
+Ziel=/amnt/verbatim
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bugem.sh
 mountpoint -q "$Ziel" || mount "$Ziel"

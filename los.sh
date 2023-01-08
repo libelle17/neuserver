@@ -1,5 +1,5 @@
 #!/bin/sh
-# fehlt: /home/schade/.wincredentials, /mnt/virtwin..., mysql daten auf die Reserveserver
+# fehlt: /home/schade/.wincredentials, /amnt/virtwin..., mysql daten auf die Reserveserver
 # blau="\e[1;34m";
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

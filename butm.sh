@@ -1,7 +1,7 @@
 #!/bin/bash
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /mnt/virtwin/turbomed
+# wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /amnt/virtwin/turbomed
 # wird auch aus butint.sh mit -nv aufgerufen, wenn dieses mit -m ("mehr") aufgerufen wird
 # das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed/PraxisDB gibt
 # mountvirt.sh -a
@@ -44,8 +44,8 @@ for iru in 1 2; do # interne Runde
   else  # iru = 2
     [ "$obvirt" ]||break;
     Pr=PraxisDB;
-    ur=mnt/$l1gpc/turbomed; # kopiere das gesamte /mnt/virtwin/turbomed
-    hin=mnt/$rgpc/turbomed;
+    ur=amnt/$l1gpc/turbomed; # kopiere das gesamte /amnt/virtwin/turbomed
+    hin=amnt/$rgpc/turbomed;
     uQL=$QL;
     QL=;
     uZL=$ZL;

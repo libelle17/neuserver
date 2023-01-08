@@ -2,7 +2,7 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /mnt/virtwin/turbomed
+# wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /amnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
@@ -13,6 +13,7 @@ QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+# gpc= z.B. virtwin, virtwin0, virtwin3, virtwin7, virtwin8, gast= Win10
 ot=opt/turbomed;
 otP=/$ot/PraxisDB;
 resD=PraxisDB-res;
@@ -23,7 +24,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
   VzL="$VzLg";
   ur=$ot # opt/turbomed
-  hin=mnt/$gpc/turbomed;
+  hin=amnt/$gpc/turbomed;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
@@ -31,7 +32,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
 else 
   obvirt=1; 
   VzL="$VzLk";
-  ur=mnt/$gpc/turbomed; 
+  ur=amnt/$gpc/turbomed; 
   hin=$ot;
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
@@ -120,7 +121,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         if [ ! "$ok" ]; then
          printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
         else
-          cifs=/mnt/$gpc/turbomed;
+          cifs=/amnt/$gpc/turbomed;
           printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
             if ! mountpoint -q $cifs; then
@@ -147,7 +148,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
         [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
-        hin=mnt/$gpc/turbomed;
+        hin=amnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         if [ $dreieck ]; then
           # QL ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert

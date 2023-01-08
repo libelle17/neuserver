@@ -168,11 +168,13 @@ kopiermt() { # mit test
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
     [ "$Lfw" ]||Lfw=$buhost" (hier) ";
-    if echo $zute|grep '^/mnt/' >/dev/null; then # wenn offenbar zu mountendes Laufwerk drin
+    echo $zute|grep '^/amnt/' >/dev/null && isamnt=1||isamnt=;
+    echo $zute|grep '^/mnt/' >/dev/null && ismnt=1||ismnt=;
+    if [ "$isamnt" -o "$ismnt" ]; then # wenn offenbar zu mountendes Laufwerk drin
       ok=;
       zuteh=${zute%/}; # ohne letzten slash
       testz="$zuteh";
-      gpc=${zute#/mnt/}; gpc=${gpc%%/*}; # virtwinx
+      gpc=${zute#/mnt/}; gpc=${zute#/amnt/}; gpc=${gpc%%/*}; # virtwinx
       [ "$gpc" ]&&{
         if ping -c1 -W1 $gpc >/dev/null 2>&1; then ok=1; else
           ok=;
@@ -189,10 +191,10 @@ kopiermt() { # mit test
       }
       while :; do # rausfinden, ob nicht ein linker Teil des Verzeichnispfades schon gemountet ist
         [ "$testz" ]||break;
-        findmnt "$testz" >/dev/null&&{ ok=1;break;}
+        findmnt "$testz" -n >/dev/null&&{ ok=1;break;}
         testz=${testz%/*};
       done;
-      [ $ok ]||while :; do # wenn nicht, dann schauen, was zu mounten ist
+      [ $ismnt -a ! $ok ]&&while :; do # wenn nicht, dann schauen, was zu mounten ist
         [ "$zuteh" -a "$zuteh" != /mnt ]||break;
         if [ -d "$zuteh" ]; then # das sollte dann ein schon bestehendes Verzeichnis sein
           echo "$hsh 'mountpoint -q \"$zuteh\"'"
@@ -216,7 +218,7 @@ kopiermt() { # mit test
         zuteh=${zuteh%/*}; # die Unterverzeichnisse raufhangeln
       done;
       [ "$ok" ]||{
-        printf "Laufwerk $blau$zute$reset auf $blau$Lfw$reset nicht gemountet, breche ab!\n";
+        printf "Laufwerk $blau$zute$reset auf $blau$Lfw$reset weder gemountet noch zumounten, breche ab!\n";
         return 7;
       }
     fi;

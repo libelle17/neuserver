@@ -8,11 +8,11 @@ if [ $# -gt 0 ]; then
 else
   Q=/opt/turbomed/Formulare/Patientenmenue
   Q=/opt/turbomed
-  Q=/mnt/virtwin/turbomed/Formulare/Patientenmenue
-  Q=/mnt/virtwin/turbomed
+  Q=/amnt/virtwin/turbomed/Formulare/Patientenmenue
+  Q=/amnt/virtwin/turbomed
   for runde in 1 2 3 4 5 6 7 8 9; do
   # for W in virtwin0 virtwin7 virtwin; do
-  #   Q=/mnt/$W/turbomed;
+  #   Q=/amnt/$W/turbomed;
     for Q in /opt/turbomed; do
       echo runde: $runde, Q: $Q
       umwandel $Q;

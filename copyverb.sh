@@ -1,6 +1,6 @@
 #!/bin/zsh
 PNAME=verbatim
-Z=/mnt/$PNAME
+Z=/amnt/$PNAME
 . incopy.sh;
 datakopier "eigene Dateien/DM"
 datakopier "shome/gerald/Schade/sz"

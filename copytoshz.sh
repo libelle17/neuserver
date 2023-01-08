@@ -1,6 +1,6 @@
 #!/bin/zsh
 PNAME=toshz
-Z=/mnt/$PNAME
+Z=/amnt/$PNAME
 . incopy.sh;
 datakopier "shome/gerald/Schade/sz"
 datakopier "eigene Dateien/Angiologie"

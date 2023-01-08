@@ -1,6 +1,6 @@
 #!/bin/zsh
 PNAME=Seagate\ Expansion\ Drive
-Z=/mnt/SeagateExpansionDrive
+Z=/amnt/SeagateExpansionDrive
 . incopy.sh
 datakopier "shome/gerald/Schade/sz"
 datakopier "turbomed"
