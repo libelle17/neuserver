@@ -119,6 +119,7 @@ httpd.conf.local
 auto.cifs
 auto.master
 auto.wurzel
+autofs.conf
 [/etc/auto.master.d]
 gs.autofs
 [/]

@@ -1,8 +1,8 @@
 # /amnt    /etc/auto.cifs --timeout=1 --ghost
-/amnt    /etc/auto.wurzel --timeout=1 --ghost
-/amnt/virtwin    /etc/virtwin.cifs --timeout=1 --ghost
-/amnt/virtwin0    /etc/virtwin0.cifs --timeout=1 --ghost
-/amnt/virtwin3    /etc/virtwin3.cifs --timeout=1 --ghost
-/amnt/virtwin7    /etc/virtwin7.cifs --timeout=1 --ghost
-/amnt/virtwin8    /etc/virtwin8.cifs --timeout=1 --ghost
+/amnt    /etc/auto.wurzel
+/amnt/virtwin    /etc/virtwin.cifs
+/amnt/virtwin0    /etc/virtwin0.cifs
+/amnt/virtwin3    /etc/virtwin3.cifs
+/amnt/virtwin7    /etc/virtwin7.cifs
+/amnt/virtwin8    /etc/virtwin8.cifs
 
