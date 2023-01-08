@@ -118,8 +118,13 @@ httpd.conf.local
 [/etc]
 auto.cifs
 auto.master
-auto.wurzel
+autogs.rest
 autofs.conf
+autovw0gs.cifs
+autovw1gs.cifs
+autovw3gs.cifs
+autovw7gs.cifs
+autovw8gs.cifs
 [/etc/auto.master.d]
 gs.autofs
 [/]
