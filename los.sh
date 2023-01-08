@@ -331,12 +331,12 @@ fstabteil=$resu;
 nochmal=1;
 while test "$nochmal"; do # wenn eine Partition neu erstellt werden musste
   unset nochmal;
-ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,PARTTYPE,PTTYPE -bidnspPx SIZE|tac";
-fstabteil=$resu;
+  ausf "lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,PARTTYPE,PTTYPE -bidnspPx SIZE|tac";
+  fstabteil=$resu;
 # echo fstabteil: "$fstabteil";
-[ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
-[ "$fstabteil" ]||return;
-ges=" ";
+  [ "$verb" ]&&printf "fstab-Teil:\n$blau$fstabteil$reset\n";
+  [ "$fstabteil" ]||return;
+  ges=" ";
 while read -r zeile; do
 #	echo "Hier: " $zeile;
 	dev=$(echo $zeile|cut -d\" -f2);
@@ -470,7 +470,7 @@ done; # nochmal
 
 pruefgruppe() {
     [ "$1" ]&&{ grep -q "^$1:" /etc/group||groupadd $1;}||echo Aufruf pruefgruppe ohne Gruppe!
-}
+} # pruefgruppe
 
 pruefuser() {
 	printf "${dblau}pruefuser$reset($1)\n";
@@ -493,7 +493,7 @@ pruefuser() {
 				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
 				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
 		} fi;
-}
+} # pruefuser
 
 obinfstab() {
 	printf "${dblau}obinfstab$reset($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
@@ -516,7 +516,7 @@ obinfstab() {
 $fstb
 EOF
 #[ $istinfstab -eq 0 ]&&printf "(echo (echo 1..: $rot$(echo $(echo $1)|sed 's/ //g')$reset\n";
-}
+} # obinfstab
 
 obprogda() {
  printf "${dblau}obprogda$reset(${blau}$1$reset)\n";
@@ -528,7 +528,7 @@ obprogda() {
  prog=$(which "$1" 2>/dev/null);
  if test -f "$prog"; then return 0; fi;
  return 1;
-}
+} # obprogda
 
 setzinstprog() {
  printf "${dblau}setzinstprog$reset(), OSNR: $OSNR\n"
@@ -704,7 +704,7 @@ instmaria() {
     [ -f "$datei" ]&& sed -i.bak 's/^\(bind-address.*\)/# \1/;/^sql_mode=/a innodb_strict_mode=OFF' "$datei";
   done;
   systemctl restart mysql;
-}
+} # instmaria
 
 pruefmroot() {
 	printf "${dblau}pruefmroot$reset()\n";
@@ -732,7 +732,7 @@ fragmusr() {
     printf "Mariadb Standardbenutzer: ";[ $obbash -eq 1 ]&&read -rei "$gruppe" musr||read musr;
     obschreiben=1;
   done;
-}
+} # fragmusr
 
 fragmpwd() {
   while true; do
@@ -742,7 +742,7 @@ fragmpwd() {
     [ "$mpwd/" = "$mpwd2/" ]|| unset mpwd;
     obschreiben=1;
   done;
-}
+} # fragmpwd
 
 richtmariadbein() {
 	printf "${blau}richtmariadbein$reset()\n"
@@ -1036,7 +1036,7 @@ postfix() {
 # systemctl restart postfix
 # mail schicken mit: echo "Inhalt"|mail -s "Titel" an.wen@provider.com
  echo postfix muss noch geschrieben werden;
-}
+} # postfix
 
 bildschirm() {
 	printf "${dblau}bildschirm$reset()\n"
@@ -1121,8 +1121,29 @@ sambaconf() {
        }
      }
      END{
-      printf "};\n";
+# Folgendes entwickelt in chr.awk:
+     cmd="find /etc/auto.master.d -type f";
+     while ((cmd|getline d1)>0) {
+       while ((getline d2 < d1)>0) {
+         if (d2 !~ /^#.*/){
+           if (split(d2,arr," ")>1) {
+             vors=arr[1];
+             gsub(".*/","",vors);
+             gsub("^amnt","",vors);
+             while ((getline d3 < arr[2])>0) {
+               if (d3 !~ /^#.*/) {
+                 gsub("\\s.*","",d3);
+                 drucke(vors d3,arr[1]"/"d3,0);
+               }
+             }
+           }
+         }
+       }
+       close(d1);
      }
+     close(cmd);
+     printf "};\n";
+    }
    ' $ftb >$S2;
 	AWKPATH="$instvz";awk -f $instvz/awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
 	firewall samba;
@@ -1166,7 +1187,7 @@ firewall() {
 		tufirewall $p1 $p2 $p3 $p4 $p5 $p6 $p7;
 		shift;
 	done;
-}
+} # firewall
 
 # $1 = ufw allow .., $2 $3 = setsebol -P ..=1, $4 = firewall-cmd --permanent --add-service=.., $5 $6 $7 = /etc/sysconfig/SuSEfirewall2
 tufirewall() {
@@ -1446,7 +1467,7 @@ tvversion() {
 	 tversion=$(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}');
 	 [ "$tversion" ]||tversion=0;
 	 printf "Installierte Teamviewer-Version: $blau$tversion$reset\n";
-}
+} # tvversion
 # teamviewer15: in /usr/share/applications/org.kde.kdeconnect_open.desktop : -MimeType=*/*; +MimeType=application/octet-stream;
 
 teamviewer15() {
