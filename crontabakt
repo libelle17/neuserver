@@ -43,9 +43,9 @@ ELG=/var/log/cronf.log
 # @reboot mount /res2 >>$NLG 2>>$ELG
 # @reboot mount /linres >>$NLG 2>>$ELG
 # weitere Laufwerke mounten:
-@reboot for P in /DATA /DAT3 /DAT2 /mnt/diabfb /mnt/gmx /mnt/usb /mnt/toshz /mnt/toshz /mnt/seag /mnt/SeagateExpansionDrive /mnt/verbatim /mnt/wd /mnt/MyPassport /mnt/szon1/tmexport /mnt/szoo1/tmexport /mnt/anmmw/tmexport /mnt/anmh/tmexport /mnt/amd/tmexport /Wiederherstellung /wrz /boot/efi /win;do sed -n '/^#/d;s/ \+/ /g;s/[^ ]\+ \([^ ]\+\).*/\1/;/^[^/]/d;/\/$/d;/^'$(echo $P|sed s:/:\\\\\/:g)'$/q1' /etc/fstab||{ mountpoint -q $P||mount $P >>$NLG 2>>$ELG;};done
-# @reboot mount /mnt/sam >>$NLG 2>>$ELG
-# @reboot P=/mnt/verbatim; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
+@reboot for P in /DATA /DAT3 /DAT2 /mnt/diabfb /mnt/gmx /amnt/usb /amnt/toshz /amnt/toshz /amnt/seag /amnt/SeagateBackupPlusDrive /amnt/SeagateExpansionDrive /amnt/verbatim /amnt/wd /amnt/MyPassport /amnt/szon1ex /amnt/szoo1ex /amnt/anmmwex /amnt/anmhex /amnt/amdex /Wiederherstellung /wrz /boot/efi /win;do sed -n '/^#/d;s/ \+/ /g;s/[^ ]\+ \([^ ]\+\).*/\1/;/^[^/]/d;/\/$/d;/^'$(echo $P|sed s:/:\\\\\/:g)'$/q1' /etc/fstab||{ mountpoint -q $P||mount $P >>$NLG 2>>$ELG;};done
+# @reboot mount /amnt/sam >>$NLG 2>>$ELG
+# @reboot P=/amnt/verbatim; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
 # @reboot systemctl start cifs >>$NLG 2>>$ELG
 # inaktiviert 2.11.21:
 # @reboot systemctl start capisuite >>$NLG 2>>$ELG
@@ -84,9 +84,9 @@ ELG=/var/log/cronf.log
 #-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
 # Daten jeden Freitag nach szn1 sichern:
-#-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
+#-0 22 * * 5 pgrep -c -f "dorsync.* /amnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/amnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /amnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
 # Daten einmal taeglich nach anmeldl sichern:
-#-27 19 * * * pgrep -c -f "dorsync.* /mnt/anmeldl/daten" || mountpoint -q /DATA && mountpoint -q "/mnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /mnt/anmeldl/daten 
+#-27 19 * * * pgrep -c -f "dorsync.* /amnt/anmeldl/daten" || mountpoint -q /DATA && mountpoint -q "/amnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /amnt/anmeldl/daten 
 #-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q /DATA && mountpoint -q "/DAT2" && /root/bin/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1 
 # Kontrolldatei für Laufen des Turbomed-Servers erstellen:
 -*/2 * * * * mountpoint -q /DATA && ps h opid,time,cmd -C ptserver > /DATA/poet_aktiv.txt 2>>$VL/poet_aktiv-Auruf.log
@@ -101,11 +101,9 @@ ELG=/var/log/cronf.log
 # >>$VL/dorsync-Aufruf-gerade.log 2>&1
 #-57 0 * * * dorsync.sh --delete /opt/turbomed/PraxisDB/ /mnt/diabfb/ADATA-USBFlashDrive-01/PraxisDB # >>$VL/dorsync-Aufruf-flash.log 2>&1
 # Datensicherung auf USB-Stick:
--55 0,14 * * * P=/mnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
+-55 0,14 * * * P=/amnt/verbatim; mountpoint -q $P||mount $P&&ionice -c3 /root/bin/verhdop.sh /root/bin/copyusb.sh  >>$NLG 2>>$ELG
 # -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux0:/DATA/ /DATA/ >>$VL/rsync.log 2>>$VL/rsyncf.log
 # Telefondaten (Funktionsfähigkeit muss noch überprüft werden)
-# -30 8 * * * mount -t cifs -o iocharset=iso8859-1,uid=sturm,username=sturm,password=...,users,auto,gid=users //192.168.178.26/MicroBX/data /mnt/bzo/microbxdata  >>$NLG 2>>$ELG
-# -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q /DATA && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
 # die Turbomed-Datenbank einmal taeglich komprimieren und in /DATA/TMBack sichern:
 -40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA &&{ TB=/DATA/TMBack;test -d $TB||mkdir $TB;ot=/opt/turbomed;ionice -c3 /usr/bin/7z a "$TB/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" $ot/StammDB $ot/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG;}
@@ -114,10 +112,8 @@ ELG=/var/log/cronf.log
 # -0 * * * * mountpoint -q /DATA && chown firebird:praxis /DATA/firebird >>$VL/chown-Aufruf.log 2>&1
 
 # muss noch ueberprueft werden
-# -30 */2 * * * mountpoint -q "/mnt/mitte/turbomed" && /root/bin/gsbutm.sh "/mnt/mitte/turbomed" "/opt/turbomed" "/mnt/mitte/turbomed" >>$NLG 2>>$ELG
 
 # fast ganz /DATA 
-# -0 1 * * 6,7 mountpoint -q /DATA && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
 # Tabelle forminhfeld bereinigen:
@@ -217,12 +213,12 @@ ELG=/var/log/cronf.log
 -1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
 # ehemals Sicherungskopie auf toshz:
-# -15 2 * * * mountpoint -q /mnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
+# -15 2 * * * mountpoint -q /amnt/toshz && ionice -c3 /root/bin/copytoshz.sh >>$NLG 2>>$ELG
 # -45 1 * * * ionice -c3 /root/bin/copywd.sh >>$NLG 2>>$ELG
-# -15 3 * * * mountpoint -q /mnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
+# -15 3 * * * mountpoint -q /amnt/verbatim && ionice -c3 /root/bin/copyverb.sh >>$NLG 2>>$ELG
 # ehemals Sicherungskopie auf seag:
-# -0 1 * * * mountpoint -q /mnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
-# -40 21 * * 5 mountpoint -q /mnt/seag && ionice -c3 /root/bin/copyseag.sh
+# -0 1 * * * mountpoint -q /amnt/seag && timeout 6h ionice -c3 /root/bin/copyseag.sh
+# -40 21 * * 5 mountpoint -q /amnt/seag && ionice -c3 /root/bin/copyseag.sh
 # Sicherungskopien auf DBBack:
 -15 3 * * * ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
 # ggf. Änderungen aus /srv/www/htdocs/php/datalist.html in /srv/www/htdocs/php/anzeig.php eintragen:
@@ -247,8 +243,8 @@ ELG=/var/log/cronf.log
 */2 * * * * ionice -c3 find /DATA/Patientendokumente -maxdepth 1 -type f -mtime +10000 -exec touch {} \;
 # /opt/turbomed/labor/backup in /DATA/Patientendokumente/Labor sichern:
 0 8 * * * mountpoint -q /DATA && ionice -c3 rsync -avu /opt/turbomed/labor/backup/ /DATA/Patientendokumente/Labor/ >/dev/null
-# /opt/turbomed/labor in /mnt/virtwin/turbomed/labor sichern:
-0 9 * * * mountpoint -q /mnt/virtwin/turbomed && /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 rsync -avu /opt/turbomed/labor /mnt/virtwin/turbomed/
+# /opt/turbomed/labor in /amnt/virtwin/turbomed/labor sichern:
+0 9 * * * mountpoint -q /amnt/virtwin/turbomed && /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 rsync -avu /opt/turbomed/labor /amnt/virtwin/turbomed/
 # /custo in /DATA/Patientendokumente/Datenbanken/custo sichern:
 */10 * * * * mountpoint -q /DATA && test -d /custo && ionice -c3 rsync -avu /custo/ /DATA/Patientendokumente/Datenbanken >/dev/null
 # /gerade nach /mnt/gmx sichern, falls es das gibt:
@@ -294,7 +290,7 @@ ELG=/var/log/cronf.log
 # hat von Reserveservern aus von linux1 mysql auf dort mysql_1 gesichert, ist durch Auslesen aus /DATA/sql (s.u.) veraltet:
 # -5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
 # holt BDT-Export-Dateien von Windows-Rechnern auf u:\TMExport und passt den Eintrag in eintragszahlen dafuer an:
-10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh;do if ping -qc1 -W1 $V; then gV="/mnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
+10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh amd;do if ping -qc1 -W1 $V; then gV="/amnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
 # bei knapper Laufwerksbelegung Email schicken:
 0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 # Telefonanrufe in die Datenbank eintragen:
