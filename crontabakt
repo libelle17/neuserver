@@ -176,21 +176,22 @@ ELG=/var/log/cronf.log
 -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 # falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1, dann auf die Reserveserver, dann Aufruf von butm.sh s.o.:
-# passager ausgestellt 19.10.22
--55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+# passager ausgestellt 19.10.22, 10.1.23
+# -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # ... das Ganze nach Ausschalten von Turbomed unbedingt:
 # kurz pausiert 16.2.22 wg. Frau Müller
 # passager ausgestellt 19.10.22
--45 14,23 * * 0,2,3,4,5,6 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
+# -45 14,23 * * 0,2,3,4,5,6 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44, 10.1.23
 # ... und am Montag früher:
 # passager ausgestellt 19.10.22
--25 14,23 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44
+# -25 14,23 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44, 10.1.23
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k
 # -36 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux7 -e -k
 # falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1:
 # passager ausgestellt 19.10.22
--15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e >/dev/null
+# ausgesetzt 10.1.23:
+# -15 * * * * ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e >/dev/null
 
 #ein Abbild des Servers linux1 auf linux0 erstellen:
 # passager ausgestellt 19.10.22
