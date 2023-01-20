@@ -10,4 +10,5 @@ anmhex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentia
 anmhtm -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://anmh/turbomed
 anmhex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://anmh/TMExport
 amdex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://amd/TMExport
+amdtm -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://amd/turbomed
 szn4ex -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,vers=3.0,credentials=/home/schade/.wincredentials ://szn4/TMExport

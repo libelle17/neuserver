@@ -194,7 +194,7 @@ kopiermt() { # mit test
         findmnt "$testz" -n >/dev/null&&{ ok=1;break;}
         testz=${testz%/*};
       done;
-      [ $ismnt -a ! $ok ]&&while :; do # wenn nicht, dann schauen, was zu mounten ist
+      [[ $ismnt && ! $ok ]]&&while :; do # wenn nicht, dann schauen, was zu mounten ist # [ $ismnt -a ! $ok ] => !: binary operator expected
         [ "$zuteh" -a "$zuteh" != /mnt ]||break;
         if [ -d "$zuteh" ]; then # das sollte dann ein schon bestehendes Verzeichnis sein
           echo "$hsh 'mountpoint -q \"$zuteh\"'"
