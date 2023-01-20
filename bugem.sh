@@ -380,6 +380,9 @@ pruefpc() {
       weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
       for ii in $(seq 1 1 1000); do
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
+        printf "${blau}MUPR/geweckt: ${rot}${MUPR%/*}/geweckt$reset\n";
+        printf "füge $1 hinzu\n";
+        cat ${MUPR%/*}/geweckt
          if [ -f "${MUPR%/*}/geweckt" ]; then 
            cat ${MUPR%/*}/geweckt|grep -q "$1"||printf "$1 " >>${MUPR%/*}/geweckt;
          else
@@ -400,6 +403,8 @@ pruefpc() {
 gutenacht() {
   if [ -f ${MUPR%/*}/geweckt ]; then 
     [ "$verb" ]&&printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
+    printf "${blau}MUPR/geweckt: ${rot}${MUPR%/*}/geweckt$reset\n";
+    cat ${MUPR%/*}/geweckt
     for pc in $(cat ${MUPR%/*}/geweckt);do  
      printf "$rot$Fahre PC $blau$pc$rot herunter!$reset\n";
      ssh $pc shutdown now;
