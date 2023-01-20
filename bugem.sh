@@ -401,6 +401,7 @@ gutenacht() {
   if [ -f ${MUPR%/*}/geweckt ]; then 
     [ "$verb" ]&&printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
     for pc in $(cat ${MUPR%/*}/geweckt);do  
+     printf "$rot$Fahre PC $blau$pc$rot herunter!$reset\n";
      ssh $pc shutdown now;
     done;
     rm ${MUPR%/*}/geweckt;

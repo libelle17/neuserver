@@ -70,6 +70,16 @@ for nr in 1 0 3 7; do
      if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
       ok=;
       printf "$blau$wirt$reset zwar anpingbar, $blau$gpc$reset aber nicht, versuche ihn zu starten\n";
+      ausf "${tush}mountpoint -q /DATA"
+      [ $ret != 0 ]&&{ 
+        ausf "${tush}mount /DATA"
+        [ $ret != 0 ]&&{ 
+          ausf "${tush}pkill -9 fsck"
+          ausf "${tush}mount /DATA"
+        }
+      }
+      # ausf "ssh linux3 VBoxManage list vms|grep -q \"Win10\""
+      # echo $ret
       ausf "${tush}VBoxManage startvm $gast --type headless";      
       for iru in $(seq 1 1 120); do 
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
