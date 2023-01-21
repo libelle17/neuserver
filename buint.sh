@@ -88,7 +88,6 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     done;
   fi; # nurdrei
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
-  printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -165,7 +164,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     [ "$verb" ]&&printf "\n${rot}Nach pruefpc $QL$reset\n";
   done; # nr in $ziele; do
   [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
-  gutenacht;
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
-[ "$verb" ]&&printf "\n${rot} ziemlich am Schluss$reset\n";
+gutenacht;
+[ "$verb" ]&&printf "\n${rot} ziemlich am Schluss von $MUPR$reset\n";
 EXFEST=$altEXFEST;

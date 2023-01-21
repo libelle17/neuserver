@@ -380,19 +380,20 @@ pruefpc() {
       weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
       for ii in $(seq 1 1 1000); do
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
-        printf "${blau}MUPR/geweckt: ${rot}${MUPR%/*}/geweckt$reset\n";
+        [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$((1 + $RANDOM % 100000))
+        printf "${blau}gewdat: ${rot}$gewdat$reset\n";
         printf "füge $1 hinzu\n";
-        cat ${MUPR%/*}/geweckt
-         if [ -f "${MUPR%/*}/geweckt" ]; then 
-           cat ${MUPR%/*}/geweckt|grep -q "$1"||printf "$1 " >>${MUPR%/*}/geweckt;
+        cat $gewdat
+         if [ -f "$gewdat" ]; then 
+           cat $gewdat|grep -q "$1"||printf "$1 " >>$gewdat;
          else
-           printf "$1 " >${MUPR%/*}/geweckt;
+           printf "$1 " >$gewdat;
          fi;
          break;
         }
       done;
       sleep 10;
-      [ "$verb" ]&&printf "${lila}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
+      [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
     else
      printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
      return 1;
@@ -401,17 +402,15 @@ pruefpc() {
 } # pruefpc
 
 gutenacht() {
-  if [ -f ${MUPR%/*}/geweckt ]; then 
-    [ "$verb" ]&&printf "${rot}geweckt: ${blau}%s$reset\n" "$(cat ${MUPR%/*}/geweckt)";
-    printf "${blau}MUPR/geweckt: ${rot}${MUPR%/*}/geweckt$reset\n";
-    cat ${MUPR%/*}/geweckt
-    for pc in $(cat ${MUPR%/*}/geweckt);do  
+  if [ "$gewdat" -a -f "$gewdat" ]; then 
+    [ "$verb" ]&&printf "${rot}gewdat: ${blau}%s$reset\n ${blau}%s$reset\n" "$gewdat" "$(cat "$gewdat")";
+    for pc in $(cat "$gewdat");do  
      printf "$rot$Fahre PC $blau$pc$rot herunter!$reset\n";
      ssh $pc shutdown now;
     done;
-    rm ${MUPR%/*}/geweckt;
+    rm "$gewdat";
   fi;
-}
+} # gutenacht
 
 machssh() {
 [ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";
