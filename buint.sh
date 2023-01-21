@@ -28,7 +28,7 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
-  text="von linux1 nach virtwin"
+  text="von $buhost nach $gpc"
 else 
   obvirt=1; 
   VzL="$VzLk";
@@ -37,7 +37,7 @@ else
   if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
-  text="von virtwin nach linux1"
+  text="von $gpc nach $buhost"
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
