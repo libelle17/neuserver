@@ -7,7 +7,7 @@
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
-QL=;ZL=; # dann werden die cifs-Laufwerke verwendet
+ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 # nurdrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
@@ -69,7 +69,7 @@ if [ "$offen" ]; then
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
   if ! [ "$nurdrei" ]; then
-    # hier sind immer $QL und $ZL leer
+    # hier sind immer $wirt und $ZL leer
     kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
   fi;
  done;
@@ -91,11 +91,10 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
-    QL=linux$nr;
-    [ $verb ]&&printf "\nPrüfe PC ${blau}$QL$reset ...";
-    if pruefpc $QL; then
+    wirt=linux$nr;
+    [ $verb ]&&printf "\nPrüfe PC ${blau}$wirt$reset ...";
+    if pruefpc $wirt; then
       [ $verb ]&&printf " fiel positiv aus.\n";
-      wirt=$QL;
 . ${MUPR%/*}/virtnamen.sh; # legt aus $wirt fest: $gpc, $gast, $tush
       # case $wirt in *0*) gpc=virtwin0; gast=Win10;;
       #               *1*) gpc=virtwin;  gast=Win10;;
@@ -107,15 +106,25 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
       if [ "$gpc" ]; then
         HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
-        [ linux$nr = $HOST ]&&tush=||tush="ssh $QL ";
+        [ $wirt = $HOST ]&&tush=||tush="ssh $wirt ";
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
          ok=;
-         printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
+         printf "$blau$wirt$reset zwar anpingbar, $blau$gpc$reset aber nicht, versuche ihn zu starten\n";
+         ausf "${tush}mountpoint -q /DATA"
+         [ $ret != 0 ]&&{ 
+          ausf "${tush}mount /DATA"
+          [ $ret != 0 ]&&{ 
+            ausf "${tush}pkill -9 fsck"
+            ausf "${tush}mount /DATA"
+          }
+         }
+         # ausf "ssh linux3 VBoxManage list vms|grep -q \"Win10\""
+         # echo $ret
          ausf "${tush}VBoxManage startvm $gast --type headless";      
          for iru in $(seq 1 1 120); do 
-           if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
+          if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
          done;
-         [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe\n";
+         [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
         fi; #         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
         if [ ! "$ok" ]; then
          printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
@@ -132,7 +141,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
               break;
             fi;
           done;
-        fi; # ping
+        fi; # [ ! "$ok" ]; then else
         if mountpoint -q $cifs; then
           [ "$verb" ]&&printf "$blau$cifs$reset gemountet.\n"; 
         else 
@@ -150,18 +159,18 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         hin=amnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         if [ $dreieck ]; then
-          # QL ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert
+          # wirt ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
-          # kopiert auf QL von dort auf das dortige cifs-Laufwerk
-          ausf "ssh $QL 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
+          # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
+          ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
         fi;
       done; # Vz in $VzLk; do
       [ "$verb" ]&&printf "\n${rot}Nach der Schleife Bearbeite Verzeichnis$reset\n";
     else
       [ $verb ]&&printf " fiel negativ aus.\n";
-    fi; # pruefpc $QL kurz; then
-    [ "$verb" ]&&printf "\n${rot}Nach pruefpc $QL$reset\n";
+    fi; # pruefpc $wirt kurz; then
+    [ "$verb" ]&&printf "\n${rot}Nach pruefpc $wirt$reset\n";
   done; # nr in $ziele; do
   [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then

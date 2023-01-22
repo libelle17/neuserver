@@ -49,8 +49,12 @@ pr=PraxisDB;
 echo "Virtuelle Windows-Server:"
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
-for nr in 1 0 3 7; do
-  wirt=linux$nr;
+ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw.
+for nr in 1 $ziele; do
+ wirt=linux$nr;
+ [ $verb ]&&printf "\nPrüfe PC ${blau}$wirt$reset ...";
+ if pruefpc $wirt kurz; then
+  [ $verb ]&&printf " fiel positiv aus.\n";
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 # ./virtnamen.sh;
 ## for wirt in "$auswahl"; do
@@ -61,12 +65,13 @@ for nr in 1 0 3 7; do
 #               *8*) gpc=virtwin8; gast=Win10;;
 # esac;
 # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
-  HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
-  [ linux$nr = $HOST ]&&tush=||tush="ssh $wirt ";
-  if ! ping -c1 -W1 $wirt >/dev/null 2>&1; then
-    printf "$blau$wirt$reset nicht anpingbar, lasse $blau$gpc$reset aus.\n";
-  else
+  [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
+#  if ! ping -c1 -W1 $wirt >/dev/null 2>&1; then
+#    printf "$blau$wirt$reset nicht anpingbar, lasse $blau$gpc$reset aus.\n";
+#  else
    if [ "$gpc" ]; then
+     HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
+     [ $wirt = $HOST ]&&tush=||tush="ssh $wirt ";
      if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
       ok=;
       printf "$blau$wirt$reset zwar anpingbar, $blau$gpc$reset aber nicht, versuche ihn zu starten\n";
@@ -101,7 +106,7 @@ for nr in 1 0 3 7; do
            break;
          fi;
        done;
-     fi; # ping
+     fi; # [ ! "$ok" ]; then else
      if mountpoint -q $cifs; then
        altverb=$verb;
        verb=1;
@@ -118,14 +123,14 @@ for nr in 1 0 3 7; do
     # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
      verb=$altverb;
    fi; # if [ "$gpc" ]; then
- fi;
+ fi; # pruefpc 
 done;
 
 printf "\nLinux-Server:\n"
 ot=/opt/turbomed;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 [ $verb ]&&printf "hosthier: $blau$hosthier$reset\n";
-for nr in 1 0 3 7 8; do
+for nr in 1 $ziele; do
   printf "${lila}linux$nr$reset: ";
   if ping -c1 -W1 linux$nr >/dev/null; then
     case $hosthier in *$nr*)tsh="sh -c";;*)tsh="ssh linux$nr";;esac;
@@ -141,7 +146,7 @@ for nr in 1 0 3 7 8; do
   fi;
 done;
 printf "\n${blau}Mysql:$reset\n";
-for nr in 1 0 3 7 8; do
+for nr in 1 $ziele; do
   printf "Mysql auf ${blau}linux$nr$reset:\n"
   ssh linux$nr "mysql --defaults-extra-file=~/.mysqlpwd quelle -e\"select (select count(0) from namen) PatZahl, (select max(zeitpunkt) from eintraege) zuletzt\""
 done;

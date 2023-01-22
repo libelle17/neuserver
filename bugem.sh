@@ -160,7 +160,7 @@ kopiermt() { # mit test
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
   ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
-  echo ""
+  echo "";
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
   [ "$QL" ]&&{ if ping -c1 -W1 "$QL">/dev/null 2>&1; then printf "$blau$QL$reset anpingbar.\n"; else printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;}; 
@@ -373,9 +373,7 @@ pruefpc() {
   [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\"\n";
   [ "$1" ]||break;
   for iru in 1 2; do
-    if [ $verb ]; then if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
-    else if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
-    fi;
+    if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
       weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
       for ii in $(seq 1 1 1000); do
@@ -383,7 +381,7 @@ pruefpc() {
         [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$((1 + $RANDOM % 100000))
         printf "${blau}gewdat: ${rot}$gewdat$reset\n";
         printf "füge $1 hinzu\n";
-        cat $gewdat
+        cat $gewdat;
          if [ -f "$gewdat" ]; then 
            cat $gewdat|grep -q "$1"||printf "$1 " >>$gewdat;
          else
@@ -395,7 +393,7 @@ pruefpc() {
       sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
     else
-     printf "$1 nicht erreichbar und nicht weckbar. Breche ab!\n";
+     printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
      return 1;
     fi;
   done;
