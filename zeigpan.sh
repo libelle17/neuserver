@@ -50,6 +50,7 @@ echo "Virtuelle Windows-Server:"
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+. bugem.sh
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw.
 for nr in 1 $ziele; do
  wirt=linux$nr;

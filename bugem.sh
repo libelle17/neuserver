@@ -26,7 +26,7 @@ ausf() {
   ret=$?;
   if [ "$verb" ]; then
     printf " -> ret: $blau$ret$reset";
-    if [ "$3" ]; then printf '\n'; else printf ", resu: $blau"; echo $resu|sed -e '$a\'; printf " $reset"; fi;
+    if [ "$3" ]; then printf '\n'; else printf ", Ergebgem: $blau"; echo $resu|sed -e '$a\'; printf " $reset"; fi;
   elif [ "$2" ]; then
     printf "\n";
   fi;
