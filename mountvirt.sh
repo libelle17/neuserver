@@ -38,7 +38,7 @@ ausf() {
   ret=$?;
   [ "$verb" ]&&{
     printf "ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
+    [ "$3" ]||printf ", Ergebmntvirt: \"$blau$resu$reset\"";
     printf "\n";
   }
 } # ausf

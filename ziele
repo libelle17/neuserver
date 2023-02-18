@@ -42,6 +42,7 @@ foff.sh
 fon.sh
 fpstatus.sh
 fpstatusmb.sh
+fzst.sh
 gerade_PraxisDB.sh
 getmail_alle.sh
 getmail_gmx7.sh
