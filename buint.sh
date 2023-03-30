@@ -166,13 +166,13 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
           ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
         fi;
-      done; # Vz in $VzLk; do
+      done; # Vz in $VzLk
       [ "$verb" ]&&printf "\n${rot}Nach der Schleife Bearbeite Verzeichnis$reset\n";
     else
       [ $verb ]&&printf " fiel negativ aus.\n";
     fi; # pruefpc $wirt kurz; then
     [ "$verb" ]&&printf "\n${rot}Nach pruefpc $wirt$reset\n";
-  done; # nr in $ziele; do
+  done; # nr in $ziele
   [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 gutenacht;
