@@ -300,7 +300,7 @@ ELG=/var/log/cronf.log
 # Nachtfaxe losschicken:
 0 3 * * * G=/DATA/Patientendokumente/zufaxen;D=$G/2145; find $D -type f -exec sh -c 'mv "$@" '$G/ find-sh {} +
 # wieder aktiviert 5.4.23
-0 0 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/briefautor.sh
+# 0 0 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/briefautor.sh
 # */5 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath
 # pathologische Laborwerte in Tabelle eintragen:
 */10 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labpath -stu -noia -cf /root/.config/labpath.conf >/dev/null 2>&1
