@@ -38,9 +38,10 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
 "pfad LIKE '%\.pdf' AND ("\
 "(name LIKE 'CGM BMP gedruckt%') OR "\
 "(name RLIKE '^[^,]*(Uew|Ü[Ww]) *.{0,12}$') OR "\
-"(name RLIKE '_2[0-9]\{3\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
+"(name RLIKE '[ _-]20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
 "(name RLIKE '20[0-9]\{12\}[^0-9]') OR "\
-"false)"); do
+"(name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
+"(true AND (quelldatum <19840601)))"); do
 # for D in "128072<$>/DATA/turbomed/Dokumente/Sonstiges/202106/Strasser19370517-54583-8FFF40CC-DB1F-48a0-BBFD-F323A6AC5DC9.pdf"; do
     arr=(${D//<$>/ }); # 0: id, 1: Pfad, 2: quelldatum, 3: Name
     arr[1]=${arr[1]//°³²°/ };
@@ -58,18 +59,22 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
           [ $verb -ge 2 ]&&printf "$lila${erga[1]} ${erga[0]}$reset\n";
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"${erga[0]}\",quelldatum=STR_TO_DATE(\"${erga[1]}\",\"%d.%c.%Y %H:%i:%S\") WHERE id=${arr[0]}";
   #        mysql --defaults-file=~/.mysqlpwd -B -e"SELECT id,autor,quelldatum FROM quelle.briefe WHERE id=${arr[0]}";
-        elif echo ${arr[3]}|egrep -q "^[^,]*(Uew|Ü[Ww])[ -]*.{0,12}$"; then
+        elif echo ${arr[3]}|egrep -iq "^[^,]*(Uew|ÜW)[ -]*.{0,12}$"; then
           [ $verb -ge 2 ]&&printf "%4s(2): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
-          printf "$lila$(echo ${arr[3]}|sed 's/.*Üw[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')$reset\n";
-          mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""$(echo ${arr[3]}|sed 's/.*Üw[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')"\",\"%d.%c.%Y\") WHERE id=${arr[0]}";
-        elif echo ${arr[3]}|egrep -q "_2[0-9]{3}[-_][0-9]{2}[-_][0-9]{2}.*\.pdf$"; then
-          erga=$(echo ${arr[3]}|sed -n "s/^.*_\(2[0-9]\{3\}[-_][0-9]\{2\}[-_][0-9]\{2\}\).*$/\1/;s/_/-/g;1p");
+          printf "$lila$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')$reset\n";
+          mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')"\",\"%d.%c.%Y\") WHERE id=${arr[0]}";
+        elif echo ${arr[3]}|egrep -iq "[ _-]20[0-9]{2}[-_][0-9]{2}[-_][0-9]{2}.*\.pdf$"; then
+          erga=$(echo ${arr[3]}|sed -n "s/^.*[ _-]\(20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}\).*$/\1/;s/_/-/g;1p");
           [ $verb -ge 2 ]&&printf "%4s(3): ${arr[2]} $blau%60s$reset ${arr[0]} => $lila${erga}$reset\n" $nr "${arr[3]}";
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""${erga}\"",\"%Y-%c-%d\") WHERE id=${arr[0]}";
         elif echo ${arr[3]}|egrep -q "20[0-9]{12}[^0-9]"; then
           erga=$(echo ${arr[3]}|sed -n "s/^.*\(20[0-9]\{12\}\)[^0-9].*$/\1/;1p");
           [ $verb -ge 2 ]&&printf "%4s(4): ${arr[2]} $blau%60s$reset ${arr[0]} => $lila${erga}$reset\n" $nr "${arr[3]}";
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""${erga}\"",\"%Y%c%d%H%i%S\") WHERE id=${arr[0]}";
+        elif echo ${arr[3]}|egrep -iq "[ _-][0-9]{2}[- ][0-9]{2}[- ]20[0-9]{2}.*\.pdf$"; then
+          erga=$(echo ${arr[3]}|sed -n "s/^.*[ _-]\([0-9]\{2\}[-_][0-9]\{2\}[-_]20[0-9]\{2\}\).*$/\1/;s/_/-/g;1p");
+          [ $verb -ge 2 ]&&printf "%4s(5): ${arr[2]} $blau%60s$reset ${arr[0]} => $lila${erga}$reset\n" $nr "${arr[3]}";
+          mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""${erga}\"",\"%d-%c-%Y\") WHERE id=${arr[0]}";
         else
           [ $verb -ge 2 ]&&printf "$nr: ${arr[0]} ${arr[2]} $lila${arr[3]}$reset ${arr[1]}\n";
         fi;
