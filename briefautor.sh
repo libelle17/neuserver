@@ -34,32 +34,32 @@ nr=0;
 
 for jahr in $(seq 2004 1 $(date +%Y)); do
   #
-# "(b.name RLIKE '^[^,]*(Uew|Ü[Ww]) *.{0,12}$') OR "\
 # "(b.name RLIKE '[ _-]20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
 # "(b.name RLIKE '20[0-9]\{12\}[^0-9]') OR "\
 # "(b.name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
 # "(b.name LIKE 'GDT Import Datei%') OR "\
-# "(b.name LIKE '%ertifikat%') OR "\
 
   [ $verb -gt 0 ]&&printf "${rot}Jahr: $blau$jahr$reset\n";
   sql="SELECT  CONCAT(b.ID,'<$>',REPLACE(REPLACE(REPLACE(REPLACE(b.pfad,'\$','/DATA'),'\\\\TurboMed\\\\','/turbomed/'),'\\\\','/'),' ','°³²°'),'<$>',DATE(b.quelldatum),'<$>',REPLACE(b.name,' ','°³²°'),'<$>',COALESCE(bq.id,0)) '' "\
 "FROM quelle.briefe b "\
 "LEFT JOIN quelle.briefe bq ON bq.pat_id=b.pat_id AND bq.name IN (REPLACE(b.name,'.pdf','.doc'),REPLACE(b.name,'.pdf','.docx')) "\
-"WHERE (true OR b.autor='') AND (true OR b.quelldatum<19840601) AND (false OR b.dokgroe<>-1) AND "\
+"WHERE (true OR b.autor='') AND (false OR b.quelldatum<19840601) AND (false OR b.dokgroe<>-1) AND "\
 "(($jahr=2004 AND YEAR(b.quelldatum)<$jahr) OR YEAR(b.quelldatum)=$jahr OR (YEAR(b.quelldatum)>$jahr AND $jahr=\"$(date +%Y)\")) AND "\
 "b.pfad LIKE '%\.pdf' AND ("\
 "(b.name LIKE 'CGM BMP gedruckt%') OR "\
-"(false AND (false OR b.quelldatum <19840601)))";
+"(LCASE(b.name) RLIKE '^[^,]*(uew|üw) *.{0,12}$') OR "\
+"(b.name RLIKE '^COVID-19 (Impf|Genesenen)zertifikat') OR "\
+"(true AND (false OR b.quelldatum <19840601)))";
   [ $verb -ge 3 ]&&printf "$blau$(echo $sql|sed 's/\\/\\\\/g;s/%/%%/g')$reset\n";
 
   mysql --defaults-file=~/.mysqlpwd -B -e"$sql"|while read D; do
    if [ "$D" ]; then
-    [ $verb -ge 3 ]&&printf "${rot}D (${#D})$reset: $D\n";
+    [ $verb -ge 4 ]&&printf "${rot}D (${#D})$reset: $D\n";
 # for D in "128072<$>/DATA/turbomed/Dokumente/Sonstiges/202106/Strasser19370517-54583-8FFF40CC-DB1F-48a0-BBFD-F323A6AC5DC9.pdf"; do
     arr=(${D//<$>/ }); # 0: id, 1: Pfad, 2: quelldatum, 3: Name 4: bq.id
     arr[1]=${arr[1]//°³²°/ };
     arr[3]=${arr[3]//°³²°/ };
-    [ $verb -ge 3 ]&&printf "$nr: $blau$D$reset\n";
+    [ $verb -ge 4 ]&&printf "$nr: $blau$D$reset\n";
     nr=$((nr+1));
     if true; then
       if stat "${arr[1]}" >/dev/null 2>&1; then
@@ -71,7 +71,11 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
           IFS=$' ';
           [ $verb -ge 2 ]&&printf "$lila${erga[1]} ${erga[0]}$reset\n";
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"${erga[0]}\",quelldatum=STR_TO_DATE(\"${erga[1]}\",\"%d.%c.%Y %H:%i:%S\") WHERE id=${arr[0]}";
-  #        mysql --defaults-file=~/.mysqlpwd -B -e"SELECT id,autor,quelldatum FROM quelle.briefe WHERE id=${arr[0]}";
+        elif echo ${arr[3]}|egrep -q "^COVID-19 (Impf|Genesenen)zertifikat"; then
+          [ $verb -ge 2 ]&&printf "%4s(1): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
+          erga=$(pdftotext ${arr[1]} - 2>/dev/null|sed '/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}$/{x;/1/be;s/^$/1/;x;d;:e;x;q};d');
+          [ $verb -ge 2 ]&&printf "$lila${erga}$reset\n";
+          [ "$erga" ]&&mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\"${erga}\",\"%Y-%c-%d\") WHERE id=${arr[0]}";
         elif echo ${arr[3]}|egrep -iq "^[^,]*(Uew|ÜW)[ -]*.{0,12}$"; then
           [ $verb -ge 2 ]&&printf "%4s(2): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
           printf "$lila$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')$reset\n";
