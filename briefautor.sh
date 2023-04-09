@@ -34,10 +34,6 @@ nr=0;
 
 for jahr in $(seq 2004 1 $(date +%Y)); do
   #
-# "(b.name RLIKE '[ _-]20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
-# "(b.name RLIKE '20[0-9]\{12\}[^0-9]') OR "\
-# "(b.name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
-# "(b.name LIKE 'GDT Import Datei%') OR "\
 
   [ $verb -gt 0 ]&&printf "${rot}Jahr: $blau$jahr$reset\n";
   sql="SELECT  CONCAT(b.ID,'<$>',REPLACE(REPLACE(REPLACE(REPLACE(b.pfad,'\$','/DATA'),'\\\\TurboMed\\\\','/turbomed/'),'\\\\','/'),' ','°³²°'),'<$>',DATE(b.quelldatum),'<$>',REPLACE(b.name,' ','°³²°'),'<$>',COALESCE(bq.id,0)) '' "\
@@ -48,6 +44,10 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
 "b.pfad LIKE '%\.pdf' AND ("\
 "(b.name LIKE 'CGM BMP gedruckt%') OR "\
 "(LCASE(b.name) RLIKE '^[^,]*(uew|üw) *.{0,12}$') OR "\
+"(b.name RLIKE '[ _-]20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
+"(b.name RLIKE '20[0-9]\{12\}[^0-9]') OR "\
+"(b.name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
+"(b.name LIKE 'GDT Import Datei%') OR "\
 "(b.name RLIKE '^COVID-19 (Impf|Genesenen)zertifikat') OR "\
 "(true AND (false OR b.quelldatum <19840601)))";
   [ $verb -ge 3 ]&&printf "$blau$(echo $sql|sed 's/\\/\\\\/g;s/%/%%/g')$reset\n";
@@ -77,8 +77,10 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
           [ $verb -ge 2 ]&&printf "$lila${erga}$reset\n";
           [ "$erga" ]&&mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\"${erga}\",\"%Y-%c-%d\") WHERE id=${arr[0]}";
         elif echo ${arr[3]}|egrep -iq "^[^,]*(Uew|ÜW)[ -]*.{0,12}$"; then
-          [ $verb -ge 2 ]&&printf "%4s(2): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
-          printf "$lila$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')$reset\n";
+          [ $verb -ge 2 ]&&{
+            printf "%4s(2): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
+            printf "$lila$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')$reset\n";
+          }
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\""$(echo ${arr[3]}|sed 's/.*ÜW[ -]*//gi;s/\(^[0-9-]*\).*/\1/;s/^1/01.01./;s/^2/01.04./;s/^3/01.07./;s/^4/01.10./;s/-//')"\",\"%d.%c.%Y\") WHERE id=${arr[0]}";
         elif echo ${arr[3]}|egrep -iq "[ _-]20[0-9]{2}[-_][0-9]{2}[-_][0-9]{2}.*\.pdf$"; then
           erga=$(echo ${arr[3]}|sed -n "s/^.*[ _-]\(20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}\).*$/\1/;s/_/-/g;1p");
