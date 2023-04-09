@@ -53,12 +53,13 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
   [ $verb -ge 3 ]&&printf "$blau$(echo $sql|sed 's/\\/\\\\/g;s/%/%%/g')$reset\n";
 
   mysql --defaults-file=~/.mysqlpwd -B -e"$sql"|while read D; do
+   if [ "$D" ]; then
     [ $verb -ge 3 ]&&printf "${rot}D (${#D})$reset: $D\n";
 # for D in "128072<$>/DATA/turbomed/Dokumente/Sonstiges/202106/Strasser19370517-54583-8FFF40CC-DB1F-48a0-BBFD-F323A6AC5DC9.pdf"; do
     arr=(${D//<$>/ }); # 0: id, 1: Pfad, 2: quelldatum, 3: Name 4: bq.id
     arr[1]=${arr[1]//°³²°/ };
     arr[3]=${arr[3]//°³²°/ };
-#    [ $verb -gt 0 ]&&printf "$nr: $blau$D$reset\n";
+    [ $verb -ge 3 ]&&printf "$nr: $blau$D$reset\n";
     nr=$((nr+1));
     if true; then
       if stat "${arr[1]}" >/dev/null 2>&1; then
@@ -98,7 +99,7 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
           [ $verb -ge 2 ]&&printf "$nr: ${arr[0]} ${arr[2]} $lila${arr[3]}$reset ${arr[1]}\n";
         fi;
       else
-        printf "${arr[0]} $blau${arr[3]}$reset ${arr[1]} ${rot}nicht gefunden!$reset\n";
+        printf "${arr[0]} $blau${arr[3]}$reset ${arr[1]} ${lila}nicht gefunden!$reset\n";
         mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET dokgroe=-1 WHERE id=${arr[0]}";
       fi;
     else
@@ -122,6 +123,7 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
       fi;
       mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"$autor\" WHERE id=${arr[0]}";
     fi;
+   fi; # if [ "$D" ]
   done; # for D in
 done; # for jahr in 
 echo Schluss
