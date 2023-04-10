@@ -32,14 +32,14 @@ commandline "$@"; # alle Befehlszeilenparameter übergeben
 nr=0;
 # "b.pfad rlike 'Burghardt19500327-62789-771CE407-6166-441b-96DD-E03F473E29EC' and "\
 
-for jahr in $(seq 2017 1 $(date +%Y)); do
+for jahr in $(seq 2004 1 $(date +%Y)); do
   #
 
   [ $verb -gt 0 ]&&printf "${rot}Jahr: $blau$jahr$reset\n";
   sql="SELECT  CONCAT(b.ID,'<$>',REPLACE(REPLACE(REPLACE(REPLACE(b.pfad,'\$','/DATA'),'\\\\TurboMed\\\\','/turbomed/'),'\\\\','/'),' ','°³²°'),'<$>',DATE(b.quelldatum),'<$>',REPLACE(b.name,' ','°³²°'),'<$>',COALESCE(bq.id,0),'<$>',b.autor,'<$>',b.dokgroe) '' "\
 "FROM quelle.briefe b "\
 "LEFT JOIN quelle.briefe bq ON bq.pat_id=b.pat_id AND bq.name IN (REPLACE(b.name,'.pdf','.doc'),REPLACE(b.name,'.pdf','.docx')) "\
-"WHERE (true OR b.autor='') AND (true OR b.quelldatum<19840601) AND (false OR b.dokgroe<>-1) AND "\
+"WHERE (true OR b.autor='') AND (true OR b.quelldatum<19840601) AND (true OR b.dokgroe<>-1) AND "\
 "(($jahr=2004 AND YEAR(b.quelldatum)<$jahr) OR YEAR(b.quelldatum)=$jahr OR (YEAR(b.quelldatum)>$jahr AND $jahr=\"$(date +%Y)\")) AND "\
 "b.pfad LIKE '%\.pdf' AND ("\
 "(bq.name IS NOT NULL) OR "\
@@ -50,6 +50,7 @@ for jahr in $(seq 2017 1 $(date +%Y)); do
 "(b.name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
 "(b.name LIKE 'GDT Import Datei%') OR "\
 "(b.name RLIKE '^COVID-19 (Impf|Genesenen)zertifikat') OR "\
+"(true) OR "\
 "(false AND (b.autor='' OR b.quelldatum <19840601)))";
   [ $verb -ge 3 ]&&printf "$blau$(echo $sql|sed 's/\\/\\\\/g;s/%/%%/g')$reset\n";
 
@@ -101,6 +102,7 @@ for jahr in $(seq 2017 1 $(date +%Y)); do
             IFS=$' ';
             if [ "${erga[0]}" ]; then # wenn autor oder quelldatum enthalten
               [ "${erga[1]}" ]||case "${erga[0]}" in [0-9]*)erga[1]="-";; *)erga[1]=${erga[0]};erga[0]="30.12.1899";; esac;
+              erga[0]=$(echo ${erga[0]}|sed 's:^[^/]*/::');
               if [ "$(date -d"${arr[2]}" +%d.%m.%Y)" != "${erga[0]}" -o ${arr[5]} != ${erga[1]} ]; then
                 [ $verb -ge 2 ]&&{
                   printf "%4s(8): $blau%3s$reset ${arr[2]} $blau%60s$reset ${arr[0]} => $lila${erga[0]} ${erga[1]}$reset\n" $nr "${arr[5]}" "${arr[3]}";
