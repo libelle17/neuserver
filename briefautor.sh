@@ -39,9 +39,10 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
   sql="SELECT  CONCAT(b.ID,'<$>',REPLACE(REPLACE(REPLACE(REPLACE(b.pfad,'\$','/DATA'),'\\\\TurboMed\\\\','/turbomed/'),'\\\\','/'),' ','°³²°'),'<$>',DATE(b.quelldatum),'<$>',REPLACE(b.name,' ','°³²°'),'<$>',COALESCE(bq.id,0)) '' "\
 "FROM quelle.briefe b "\
 "LEFT JOIN quelle.briefe bq ON bq.pat_id=b.pat_id AND bq.name IN (REPLACE(b.name,'.pdf','.doc'),REPLACE(b.name,'.pdf','.docx')) "\
-"WHERE (true OR b.autor='') AND (false OR b.quelldatum<19840601) AND (false OR b.dokgroe<>-1) AND "\
+"WHERE (true OR b.autor='') AND (true OR b.quelldatum<19840601) AND (false OR b.dokgroe<>-1) AND "\
 "(($jahr=2004 AND YEAR(b.quelldatum)<$jahr) OR YEAR(b.quelldatum)=$jahr OR (YEAR(b.quelldatum)>$jahr AND $jahr=\"$(date +%Y)\")) AND "\
 "b.pfad LIKE '%\.pdf' AND ("\
+"(bq.name IS NOT NULL) OR "\
 "(b.name LIKE 'CGM BMP gedruckt%') OR "\
 "(LCASE(b.name) RLIKE '^[^,]*(uew|üw) *.{0,12}$') OR "\
 "(b.name RLIKE '[ _-]20[0-9]\{2\}[-_][0-9]\{2\}[-_][0-9]\{2\}.*\.pdf$') OR "\
@@ -49,7 +50,7 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
 "(b.name RLIKE '[ _-][0-9]\{2\}[- ][0-9]\{2\}[- ]20[0-9]\{2\}.*\.pdf$') OR "\
 "(b.name LIKE 'GDT Import Datei%') OR "\
 "(b.name RLIKE '^COVID-19 (Impf|Genesenen)zertifikat') OR "\
-"(true AND (false OR b.quelldatum <19840601)))";
+"(true AND (autor='' OR b.quelldatum <19840601)))";
   [ $verb -ge 3 ]&&printf "$blau$(echo $sql|sed 's/\\/\\\\/g;s/%/%%/g')$reset\n";
 
   mysql --defaults-file=~/.mysqlpwd -B -e"$sql"|while read D; do
@@ -101,6 +102,19 @@ for jahr in $(seq 2004 1 $(date +%Y)); do
           erga=$(pdftotext "${arr[1]}" - |sed -n '/^Datum:/{s/^Datum: *//;p;q}');
           [ $verb -ge 2 ]&&printf "$lila${erga}$reset\n";
           mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"-\",quelldatum=STR_TO_DATE(\"$erga\",\"%d.%c.%Y %H:%i\") WHERE id=${arr[0]}";
+        elif [ ${arr[4]} -ne 0 ]; then
+          IFS=$'\n' erga=($(pdftotext "${arr[1]}" -|sed -n '/^__/{n;/^[0-9]\{1,2\}\./p};5,${/^Dr.*Kothny/{s/^.*$/tk/;ba};/^G.*Schade/{s/^.*$/gs/;ba};/^Dr.*D.*Wagner/{s/^.*$/wd/;ba};/^Dr.*A.*Hammerschmidt/{s/^.*$/ah/;ba};d;:a;p;q}'));
+          IFS=$' ';
+          [ $verb -ge 2 ]&&{
+            printf "%4s(6): ${arr[2]} $blau%60s$reset ${arr[0]} => " $nr "${arr[3]}";
+            printf "$lila${erga[0]} ${erga[1]}$reset\n";
+            [ $verb -ge 4 ]&&printf "${arr[1]}\n";
+          }
+          if [ "${erga[0]}" ]; then
+          [ "${erga[1]}" ]||case "${erga[0]}" in [0-9]*)erga[1]="-";; *)erga[1]=${erga[0]};erga[0]="30.12.1899";; esac;
+          printf "$lila UPDATE quelle.briefe SET autor=\"${erga[1]}\",quelldatum=STR_TO_DATE(\"${erga[0]}\",\"%%d.%%c.%%Y\") WHERE id=${arr[0]}$reset\n";
+          mysql --defaults-file=~/.mysqlpwd -B -e"UPDATE quelle.briefe SET autor=\"${erga[1]}\",quelldatum=STR_TO_DATE(\"${erga[0]}\",\"%d.%c.%Y\") WHERE id=${arr[0]}";
+          fi;
         else
           [ $verb -ge 2 ]&&printf "$nr: ${arr[0]} ${arr[2]} $lila${arr[3]}$reset ${arr[1]}\n";
         fi;
