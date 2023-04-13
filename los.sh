@@ -1688,6 +1688,7 @@ cron() {
 } # cron
 
 tu_turbomed() {
+# auch: GDT.ini nach c:\turbomed\Formulare\Karteikarte kopieren
 	printf "${dblau}tu_turbomed$reset($1 $2)\n";
 	echo Installations-Verzeichnis: $outDir;
 	mkdir -p $POET_LICENSE_PATH;
