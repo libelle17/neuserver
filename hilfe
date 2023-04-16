@@ -1,0 +1,3 @@
+# invalid environment block error:
+# grub2-editenv create
+# (https://gist.github.com/tsmx/ee344e5a310908fab60f27c3911d2506?permalink_comment_id=4306028#gistcomment-4306028)
