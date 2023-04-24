@@ -117,7 +117,7 @@ ELG=/var/log/cronf.log
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
 # Tabelle forminhfeld bereinigen:
--0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE not exists (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
+-0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE NOT EXISTS (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
 # Dateien in u:\tmexport komprieren und ausmisten
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG
@@ -291,7 +291,8 @@ ELG=/var/log/cronf.log
 # hat von Reserveservern aus von linux1 mysql auf dort mysql_1 gesichert, ist durch Auslesen aus /DATA/sql (s.u.) veraltet:
 # -5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
 # holt BDT-Export-Dateien von Windows-Rechnern auf u:\TMExport und passt den Eintrag in eintragszahlen dafuer an:
-10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh amd;do if ping -qc1 -W1 $V; then gV="/amnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"update eintragszahlen set datei=replace(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') where datei like 'C:\\\\\\\%TMExport\%'"
+10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh amd;do if ping -qc1 -W1 $V; then gV="/amnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mysql --defaults-extra-file=~/.mysqlpwd quelle -e"UPDATE eintragszahlen SET datei=REPLACE(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') WHERE datei LIKE 'C:\\\\\\\%TMExport\%'"
+30 1,13 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"UPDATE briefe SET quelldatum=quelldat(NAME,dokaend);"
 # bei knapper Laufwerksbelegung Email schicken:
 0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 # Telefonanrufe in die Datenbank eintragen:
