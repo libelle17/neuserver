@@ -178,6 +178,7 @@ ELG=/var/log/cronf.log
 # falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1, dann auf die Reserveserver, dann Aufruf von butm.sh s.o.:
 # passager ausgestellt 19.10.22, 10.1.23
 # -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+-55 13,1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # ... das Ganze nach Ausschalten von Turbomed unbedingt:
 # kurz pausiert 16.2.22 wg. Frau Müller
 # passager ausgestellt 19.10.22
