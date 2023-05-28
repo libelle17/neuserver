@@ -4,6 +4,7 @@
 /amnt/virtwin0    /etc/autovw0gs.cifs
 /amnt/virtwin3    /etc/autovw3gs.cifs
 /amnt/virtwin7    /etc/autovw7gs.cifs
+/amnt/linux7   /etc/autovwlinux7gs.cifs
 /amnt/virtwin8    /etc/autovw8gs.cifs
 /amnt/szn4 /etc/automailgs.cifs
 /amnt/anmh /etc/autoanmh.cifs

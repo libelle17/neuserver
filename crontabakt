@@ -118,6 +118,8 @@ ELG=/var/log/cronf.log
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
 # Tabelle forminhfeld bereinigen:
 -0 1 * * * mysql --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE NOT EXISTS (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
+# Dateien nach u:\tmexport holen
+-30 0 * * 1 rsync -avu /amnt/anmh/tmexport/ /DATA/eigene\ Dateien/TMExport/
 # Dateien in u:\tmexport komprieren und ausmisten
 -0 23 * * * ionice -c3 /root/bin/BDTkompr.sh >>$NLG 2>>$ELG
 # -30 */3 * * * /etc/init.d/cifs start >>$NLG 2>>$ELG

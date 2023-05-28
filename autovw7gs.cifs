@@ -1,2 +1,3 @@
 turbomed    -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,credentials=/home/schade/.wincredentials    ://virtwin7/turbomed
 tmexport    -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,credentials=/home/schade/.wincredentials    ://virtwin7/tmexport
+
