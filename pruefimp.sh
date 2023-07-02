@@ -5,16 +5,19 @@ dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 lila="\033[1;35m";
 reset="\033[0m";
-Jahr=2023
+# Jahr=2023
 D=/DATA/Patientendokumente/eingelesen/$Jahr
+liste=/DATA/Patientendokumente/eingelesen/dateiliste.txt
 Z=/DATA/turbomed/Dokumente
 Zl=/DATA/Patientendokumente/ohneImportNachweis
 AD="/DATA/Patientendokumente/Nicht_gefundene_Importe_$Jahr_"$(date +%y%m%d_%H%M%S)".txt"
-echo $AD
 nr=0
 fnr=0
 verb=
-find $D -mindepth 1 -maxdepth 1 -name "P*"|sort|while read -r file; do
+printf "suche ..."
+find $D -mindepth 1 -maxdepth 3 -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name 'P*'|sort > "$liste"
+printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
+while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
     nr=$(expr $nr + 1);            #    let nr=$nr+1 (geht nur in bash)
 #    [ $nr = 21 ]&&exit;
@@ -55,6 +58,7 @@ find $D -mindepth 1 -maxdepth 1 -name "P*"|sort|while read -r file; do
     [ $gefu ]||{ 
       fnr=$(expr $fnr + 1);  
       [ $fnr = 1 ]&&{ 
+        printf "Liste der in den Karteikarten fehlenden Dokumente: $blau$AD\nnicht gefunden:$reset\n"
         printf "Nicht in den Turbomed-Karteikarten gefundene Dokumente aus $D:\n" >> $AD; 
         mkdir -p "$Zl"
         for d in "$AD" "$Zl"; do 
@@ -62,10 +66,10 @@ find $D -mindepth 1 -maxdepth 1 -name "P*"|sort|while read -r file; do
           chmod 774 "$d"
         done;
       }
-      printf "$DBBef\n";
-      printf "$TBef\n";
-      printf "${blau}%5b: nicht gefunden: $rot$file$reset\n" $fnr; 
-      printf "%5b: %s\n" $fnr "$(basename "$file")" >> $AD;
+      printf "%4b: %s\n" $fnr "$(basename "$file")" >> $AD;
+      printf "${blau}%4b: $rot$file$reset\n" $fnr; 
+      printf "     $DBBef\n";
+      printf "     $TBef\n";
       cp -a "$file" "$Zl";
     }
-done;
+done < "$liste";
