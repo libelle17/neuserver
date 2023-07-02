@@ -4,7 +4,6 @@ blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 lila="\033[1;35m";
-# reset="\e[0m";
 reset="\033[0m";
 Jahr=2023
 D=/DATA/Patientendokumente/eingelesen/$Jahr
@@ -40,21 +39,19 @@ find $D -mindepth 1 -maxdepth 1 -name "P*"|sort|while read -r file; do
       MTpt=$(expr $MT + 86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #      echo $init, $sz, $MTme, $MTpt
       TBef="find $Z -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -name '"$init"*'"
-      printf "${lila}TBef: $rot$TBef$reset\n";
-#      TName=$(find $Z -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -name "${Name}*" -printf "%p\n")
+      [ $verb ]&&printf "${lila}TBef: $rot$TBef$reset\n";
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
       TName=$(eval $TBef|tr ' \n' '| ')
       if [ "$TName" ];then 
        for zeile in $TName; do # while read -r zeile; do
          zeile=$(echo "$zeile"|tr '|' ' ')
-         printf " nach Größe+Datum: $lila$zeile$reset\n"
+         [ $verb ]&&printf " nach Größe+Datum: $lila$zeile$reset\n"
     DName=$(mysql --defaults-extra-file=~/.mysqlpwd quelle -s -e"SELECT Name FROM briefe WHERE Pfad=REPLACE(REPLACE('$zeile','/DATA/turbomed','$/TurboMed'),'/','\\\\') GROUP BY Pfad")
-         printf " DName: $blau$DName$reset\n";
+         [ $verb ]&&printf " DName: $blau$DName$reset\n";
          [ "$DName" ]&&{ gefu=ja;} # break
        done # < <(echo "$TName");
       fi;
     fi;
-#    echo gefu: $gefu
     [ $gefu ]||{ 
       fnr=$(expr $fnr + 1);  
       [ $fnr = 1 ]&&{ 
@@ -67,7 +64,8 @@ find $D -mindepth 1 -maxdepth 1 -name "P*"|sort|while read -r file; do
       }
       printf "$DBBef\n";
       printf "$TBef\n";
-      printf "${blau}nicht gefunden: $rot$file$reset\n"; printf "%3b: %s\n" $fnr "$(basename "$file")" >> $AD;
-      cp -ai "$file" "$Zl";
+      printf "${blau}%5b: nicht gefunden: $rot$file$reset\n" $fnr; 
+      printf "%5b: %s\n" $fnr "$(basename "$file")" >> $AD;
+      cp -a "$file" "$Zl";
     }
 done;
