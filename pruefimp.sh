@@ -15,14 +15,14 @@ nr=0
 fnr=0
 verb=
 printf "suche ..."
-find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*\(azubi\|anforderung\|bei geräten\|dmp-daten\|diabetestag\|dokumentation.*htm\|fortbildung\|hausärzteverb\|schweigepflichts+entbindung\|vhk an\)[^/]*$\|.*\.wav\|.*/pict.*jpg\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|dmp-wieder\|avp\|axa\|blahusch\|easd\|filelist\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
+find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*\(azubi\|anforderung\|bei geräten\|dmp-daten\|diabetestag\|dokumentation.*htm\|einladung\|fortbildung\|hausärzteverb\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*/\(pict\|img\).*jpg\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
 printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
     nr=$(expr $nr + 1);            #    let nr=$nr+1 (geht nur in bash)
 #    [ $nr = 21 ]&&exit;
     [ $verb ]&&printf "$nr: $blau$file$reset\n"
-    DBBef="mysql --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT REPLACE(REPLACE(Pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed') FROM briefe WHERE name='$(basename "$file"|tr "'" "\\'")' GROUP BY Pfad\""
+    DBBef="mysql --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT REPLACE(REPLACE(Pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed') FROM briefe WHERE name='$(basename "$file"|sed "s/'/\\\\'/g")' GROUP BY Pfad\""
     TName=$(eval "$DBBef")
     if [ "$TName" ];then 
 #    mysql --defaults-extra-file=~/.mysqlpwd -s quelle -e"select pfad from briefe where pfad like '%|%'" => 0 Ergebnisse
@@ -66,7 +66,7 @@ while read -r file; do
           chmod 774 "$d"
         done;
       }
-      printf "%4b: %s\n" $fnr "$(basename "$file"|tr "'" "\\'")" >> $AD;
+      printf "%4b: %s\n" $fnr "$(basename "$file"|sed "s/'/\\\\'/g")" >> $AD;
       printf "${blau}%4b: $rot$file$reset\n" $fnr; 
       printf "     $DBBef\n";
       printf "     $TBef\n";
