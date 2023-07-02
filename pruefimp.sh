@@ -15,7 +15,7 @@ nr=0
 fnr=0
 verb=
 printf "suche ..."
-find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html\|.*/predictive.*\|.*wav\|.*/pict.*jpg\|plan .*\|.*/programme.*\|.*/prüfung.*\|.*/pumpengutachten.*\|.*/patient[^/]*\|.*/motivat.*\|.*/unbekannt.*\|.*/[0-9. ()].\(tif\|jpg\)' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
+find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html\|.*/predictive.*\|.*wav\|.*/pict.*jpg\|plan .*\|.*/programme.*\|.*/prüfung.*\|.*/pumpengutachten.*\|.*/patient[^/]*$\|.*/motivat.*\|.*/unbekannt.*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/blahusch.*\|.*/easd.*\|.*/schulungss.*\|.*/patmit.*\|.*/sidebar.*\|.*/filelist.*\|.*/dmp-wieder.*' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
 printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
@@ -41,7 +41,7 @@ while read -r file; do
       MTme=$(expr $MT - 1);
       MTpt=$(expr $MT + 86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #      echo $init, $sz, $MTme, $MTpt
-      TBef="find $Z -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -name '"$init"*'"
+      TBef="find $Z -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname '"$init"*'"
       [ $verb ]&&printf "${lila}TBef: $rot$TBef$reset\n";
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
       TName=$(eval $TBef|tr ' \n' '| ')
