@@ -15,7 +15,7 @@ nr=0
 fnr=0
 verb=
 printf "suche ..."
-find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html\|.*/predictive.*\|.*wav\|.*/pict.*jpg\|plan .*\|.*/programme.*\|.*/prüfung.*\|.*/pumpengutachten.*\|.*/patient[^/]*$\|.*/motivat.*\|.*/unbekannt.*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/blahusch.*\|.*/easd.*\|.*/schulungss.*\|.*/patmit.*\|.*fortbildung.*\|.*azubi.*\|.*/ada[^/]*$\|.*/\(adipositas\|akak\|aok liste\|dmp-wieder\|avp\|axa\|filelist\|sidebar\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
+find $D -mindepth 1 -maxdepth 3 -newermt 20091231 -type f -not -iregex '.*\(azubi\|anforderung\|dmp-daten\|diabetestag\|dokumentation.*htm\|fortbildung\|schweigepflichts+entbindung\|vhk an\)[^/]*$\|.*\.wav\|.*/pict.*jpg\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akak\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|dmp-wieder\|avp\|axa\|blahusch\|easd\|filelist\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste"
 printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
