@@ -15,7 +15,7 @@ nr=0
 fnr=0
 verb=
 printf "suche ..."
-find $D -mindepth 1 -maxdepth 3 -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name 'P*'|sort > "$liste"
+find $D -mindepth 1 -maxdepth 3 -not -iregex '.*dmp-daten.*\|.*anforderung.*\|.*schweigepflichts+entbindung.*\|.*vhk an.*\|.*dokumentation.*html\|predictive.*\|.*wav\|pict.*jpg\|plan .*\|programme.*\|prüfung.*\|pumpengutachten.*\|patienten.*' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name 'P*'|sort > "$liste"
 printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
