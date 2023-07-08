@@ -44,7 +44,7 @@ while read -r file; do
       MTme=$(expr $MT - 1);
       MTpt=$(expr $MT + 86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #      echo $init, $sz, $MTme, $MTpt
-      TBef="find $Z -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
+      TBef="find $Z -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
       [ $verb ]&&printf "${lila}TBef: $rot$TBef$reset\n";
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
       TName=$(eval $TBef|tr ' \n' '| ')
