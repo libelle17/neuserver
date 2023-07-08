@@ -10,8 +10,8 @@ EG=/DATA/Patientendokumente/eingelesen;
 Jahr=2007;
 for Jahr in $(seq 2004 1 $(date +%Y)); do
 #for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1||date +%Y) 1 $(date +%Y));do 
- DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '$Jahr' AND NOT pfad RLIKE '^[pq]:' \"";# LIMIT 20\"";
- echo DBBef: $DBBef;
+ DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '\\\\\\\\\\\\\\\\$Jahr' AND NOT pfad RLIKE '^[pq]:' \"";# LIMIT 20\"";
+ printf "${blau}DBBef: $lila$DBBef$reset\n";
  TName=$(eval "$DBBef")
  nr=0;
  if [ "$TName" ];then 
@@ -32,14 +32,15 @@ for Jahr in $(seq 2004 1 $(date +%Y)); do
         2) JAHR="$w";;
         3) PFAD="$w";;
         4) NAME="$w";
-           RNAME=$(printf '%s\n' "$NAME" | sed 's/\$/\\$/'); #           RNAME=${NAME//$/\\$};
+           RNAME=$(printf '%s\n' "$NAME"|sed 's/\$/\\$/g'); #           RNAME=${NAME//$/\\$};
           ;;
         5) DOKGROE="$w";;
         6) DOKAEND="$w";;
       esac;
     done;
     IFS=$RIFS;
-    if test -f "$PFAD"; then
+    case "$NAME" in */*);;*)
+     if test -f "$PFAD"; then
       obkop=;
       kop=$(find $EG/$JAHR -name "$NAME");
       if test "$kop"; then
@@ -77,21 +78,22 @@ for Jahr in $(seq 2004 1 $(date +%Y)); do
           obkop=1;
         fi;
         if test $obkop; then
-          KBef="cp -ai \"$PFAD\" \"$EG/$JAHR/$NAME\""
-          echo $KBef;
+          KBef="cp -ai \"$PFAD\" \"$EG/$JAHR/$RNAME\""
+          printf "$blau $KBef$reset\n";
           eval "$KBef";
         fi;
         #        Kontr=$(date -d@$EP +"%Y%m%d %H%M%S")
 #        printf "DOKAEND: $DOKAEND $EP $Kontr\n";
       fi;
-    else
+     else
       printf "$rot$PFAD$reset fehlt!\n";
       bn=$(basename "$PFAD");
       UBef="find /DATA/Papierkorb/turbomed/Dokumente /DATA/turbomed/Dokumente -iname \"$bn*\" -ls";
       printf " $blau$UBef$reset\n";
       erg=$(eval "$Ubef")
       printf " ${blau}erg:$lila $erg$reset\n";
-    fi;
+     fi;
+    ;; esac;
     if test $wnr != 6; then printf "$rot Fehler: wnr=$wnr $reset\n"; exit; fi;
   done;
 #  echo $TName;
