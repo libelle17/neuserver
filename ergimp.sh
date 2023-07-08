@@ -7,12 +7,14 @@ lila="\033[1;35m";
 reset="\033[0m";
 EG=/DATA/Patientendokumente/eingelesen;
 # DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT('\\\"',CONCAT_WS('\\\" \\\"',pfad,name,dokgroe,dokaend),'\\\"') z FROM briefe LIMIT 10\""; # LIMIt 10;\""
-DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '2007' AND NOT pfad RLIKE '^[pq]:' LIMIT 10000\"";# LIMIT 20\"";
-echo DBBef: $DBBef;
-TName=$(eval "$DBBef")
-
-nr=0;
-if [ "$TName" ];then 
+Jahr=2007;
+for Jahr in $(seq 2004 1 $(date +%Y)); do
+#for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1||date +%Y) 1 $(date +%Y));do 
+ DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '$Jahr' AND NOT pfad RLIKE '^[pq]:' \"";# LIMIT 20\"";
+ echo DBBef: $DBBef;
+ TName=$(eval "$DBBef")
+ nr=0;
+ if [ "$TName" ];then 
   echo "$TName"|while read -r z; do
     nr=$(expr $nr + 1);            #    let nr=$nr+1 (geht nur in bash)
     case $nr in *00) 
@@ -93,4 +95,5 @@ if [ "$TName" ];then
     if test $wnr != 6; then printf "$rot Fehler: wnr=$wnr $reset\n"; exit; fi;
   done;
 #  echo $TName;
-fi;
+ fi;
+done;
