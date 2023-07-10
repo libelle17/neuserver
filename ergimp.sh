@@ -8,8 +8,8 @@ reset="\033[0m";
 EG=/DATA/Patientendokumente/eingelesen;
 # DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT('\\\"',CONCAT_WS('\\\" \\\"',pfad,name,dokgroe,dokaend),'\\\"') z FROM briefe LIMIT 10\""; # LIMIt 10;\""
 Jahr=2007;
-for Jahr in $(seq 2004 1 $(date +%Y)); do
-#for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1||date +%Y) 1 $(date +%Y));do 
+# for Jahr in $(seq 2018 1 $(date +%Y)); do
+for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1||date +%Y) 1 $(date +%Y));do 
  DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '\\\\\\\\\\\\\\\\$Jahr' AND NOT pfad RLIKE '^[pq]:' \"";# LIMIT 20\"";
  printf "${blau}DBBef: $lila$DBBef$reset\n";
  TName=$(eval "$DBBef")
