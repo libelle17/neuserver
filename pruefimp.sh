@@ -1,4 +1,5 @@
 #!/bin/dash
+# sucht in p:\eingelesene, aber nicht in die Karteikarten importierte Dokumente und kopiert sie in p:\ohneImportNachweis
 gruen="\033[0;32m"
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

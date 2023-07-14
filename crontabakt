@@ -74,7 +74,8 @@ ELG=/var/log/cronf.log
 -0 0 * * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%d`.txt" 2>&1
 -0 0 1 * * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%B`.txt" 2>&1
 -0 0 1 1 * mountpoint -q /DATA && ionice -c3 /root/bin/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
-
+# Dokumente nach p:\eingelesen kopieren
+-10 3 * * * ergimp.sh
 # mariadb-Datenbanken sichern:
 #-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 # mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern (dumpen):

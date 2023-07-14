@@ -1,4 +1,5 @@
 #!/bin/dash
+# kopiert in p:\eingelesen\... fehlende Dokumente aus /DATA/turbomed/Dokumente und benennt differierend benannte um
 gruen="\033[0;32m"
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
