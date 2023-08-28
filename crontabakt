@@ -204,7 +204,8 @@ ELG=/var/log/cronf.log
 -0 9 * * * HOST=$(hostname);[ $(HOST\%\%.*)/ = linux1/ ]||rm $(find /DATA -mindepth 1 -maxdepth 1 -type d -name '*loe' -printf '\%p/* ')
 #ein Abbild wichtiger Verzeichnisse des Servers linux1 auf linux7 erstellen:
 # passager ausgestellt 19.10.22
--56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
+-39 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
+-56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux8 -e
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
