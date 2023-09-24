@@ -130,6 +130,7 @@ autovw1gs.cifs
 autovw3gs.cifs
 autovw7gs.cifs
 autovw8gs.cifs
+my.cnf
 [/etc/auto.master.d]
 gs.autofs
 [/]

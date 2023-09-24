@@ -46,7 +46,6 @@
  $_SESSION['obCarotis']=0;
  $_SESSION['obCar alle']=0;
  $_SESSION['obImpf']=0;
- $_SESSION['obImpfCovid']=0;
  $_SESSION['obColo']=0;
  $_SESSION['obPros']=0;
  $_SESSION['obGyn']=0;

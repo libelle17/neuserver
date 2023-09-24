@@ -45,7 +45,6 @@
  $_SESSION['Carotis']=1;
  $_SESSION['Car alle']=1;
  $_SESSION['Impf']=1;
- $_SESSION['ImpfCovid']=1;
  $_SESSION['Colo']=1;
  $_SESSION['Pros']=1;
  $_SESSION['Gyn']=1;

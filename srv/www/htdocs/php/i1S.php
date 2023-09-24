@@ -505,17 +505,6 @@
       $text=$text."Impf";
       echo "<button class='".$stil."' name='Impf'>".$text."</button>";
     }
-    IF ($_SESSION['obImpfCovid']) {
-      IF ($_SESSION['ImpfCovid']) {
-        $stil=cave;
-        $text = "&Oslash ";
-      } ELSE {
-        $stil=unauff;
-        $text="";
-      }
-      $text=$text."ImpfCovid";
-      echo "<button class='".$stil."' name='ImpfCovid'>".$text."</button>";
-    }
     IF ($_SESSION['obColo']) {
       IF ($_SESSION['Colo']) {
         $stil=cave;
