@@ -900,6 +900,7 @@ proginst() {
   doinst libcapi20-2;
   doinst libcapi20-3;
   doinst capi4linux-devel;
+  doinst curlftfs; # fuer autofax
 
 # fuer fbfax:
 # zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
