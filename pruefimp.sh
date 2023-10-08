@@ -7,7 +7,9 @@ rot="\033[1;31m";
 lila="\033[1;35m";
 reset="\033[0m";
 # ab=20091231;
+# nur Dateien ab diesem Datum werden berücksichtigt
 ab=20230703;
+# falls Jahr angegeben, wird nur dieses Unterverzeichnis von p:\eingelesen berücksichtigt
 # Jahr=2023
 D=/DATA/Patientendokumente/eingelesen/$Jahr
 liste=/DATA/Patientendokumente/eingelesen/dateiliste.txt
