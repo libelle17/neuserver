@@ -11,17 +11,23 @@ reset="\033[0m";
 ab=20230703;
 # falls Jahr angegeben, wird nur dieses Unterverzeichnis von p:\eingelesen berücksichtigt
 # Jahr=2023
-D=/DATA/Patientendokumente/eingelesen/$Jahr
-liste=/DATA/Patientendokumente/eingelesen/dateiliste.txt
-Z=/DATA/turbomed/Dokumente
-Zl=/DATA/Patientendokumente/ohneImportNachweis
-AD="/DATA/Patientendokumente/Nicht_gefundene_Importe_$Jahr_"$(date +%y%m%d_%H%M%S)".txt"
+# Verzeichnis zum Durchsuchen nach vielleicht nicht gefundenen Importen:
+VzNG=/DATA/Patientendokumente/eingelesen/$Jahr
+# Liste mit allen zu pruefenden Dateien
+liste=/DATA/Patientendokumente/eingelesen/dateiliste_$(date +%Y%d%m_%H%M%S).txt
+# Verzeichnis zum Suchen
+VzZS=/DATA/turbomed/Dokumente
+# Verzeichnis für Kopien der nicht Gefundenen
+VzKp=/DATA/Patientendokumente/ohneImportNachweis
+# Protokolldatei der nicht Gefundenen
+PrtDt="/DATA/Patientendokumente/Nicht_gefundene_Importe_$Jahr_"$(date +%y%m%d_%H%M%S)".txt"
 nr=0
 fnr=0
 verb=1
-printf "suche ..."
-find $D -mindepth 1 -maxdepth 3 -newermt $ab -type f -not -iregex '.*\(abrechnungssem\|azubi\|anforderung\|bei geräten\|blankoform\|dmp-daten\|diabetes\(tag\|mittel\)\|dokumentation.*htm\|einladung\|experten forum\|fortbildung\|haus\(ärzteverb\|arztvertr\)\|patientenbefrag\|pipettieren\|qualitätskrit\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*/\(pict\|img\).*jpg\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|brmitschnitt\|canon\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste" 
-printf "\r$blau%d$reset zu untersuchende Dateien in $blau$D$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
+printf "suche in $blaut$VzNG$reset:"
+find $VzNG -mindepth 1 -maxdepth 3 -newermt $ab -type f -not -iregex '.*\(abrechnungssem\|azubi\|anforderung\|bei geräten\|blankoform\|dmp-daten\|diabetes\(tag\|mittel\)\|dokumentation.*htm\|einladung\|experten forum\|fortbildung\|haus\(ärzteverb\|arztvertr\)\|patientenbefrag\|pipettieren\|qualitätskrit\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*/\(pict\|img\).*jpg\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|brmitschnitt\|canon\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste" 
+printf "\r$blau%d$reset zu untersuchende Dateien gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
+# lese die $liste
 while read -r file; do
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
     TBef=;
@@ -32,6 +38,7 @@ while read -r file; do
     DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT REPLACE(REPLACE(Pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed') FROM briefe WHERE name like '$(basename "$file"|sed 's/`/%%/g'|sed "s/'/\\\\'/g")' GROUP BY Pfad\""
     TName=$(eval "$DBBef")
     if [ "$TName" ];then 
+#    falls gleichnamige Datei in Datenbank gefunden ...      
 #    mariadb --defaults-extra-file=~/.mysqlpwd -s quelle -e"select pfad from briefe where pfad like '%|%'" => 0 Ergebnisse
      TName=$(echo "$TName"|tr ' \n' '| ')
 #     echo "$TName"|hexdump -C
@@ -41,19 +48,23 @@ while read -r file; do
       [ -f "$zeile" ]&&{ [ $verb ]&&printf "$reset\n";gefu=ja;}||{ [ $verb ]&&printf "$rot nicht$reset\n";}
      done;          #   done < <(echo "$TName");
     else
+#    falls gleichnamige Datei in Datenbank nicht gefunden ...      
      init=$(basename "$file"|cut -d' ' -f1|sed "s/[-,.;_:]*$//;s/^\(.\{3\}\).*/\1/"|tr '`' "?")
      [ $verb ]&&echo init: $init
 #      stat "$file";
 #      sz=$(stat -c%s "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
+#     Größe der Datei
       sz=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%s {} \;);
 #      MT=$(stat -c%Y "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
+#     Änderungsdatum der Datei
       MT=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%Y {} \;);
       MTme=$(expr $MT - 1);
       MTpt=$(expr $MT + 86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #      echo $init, $sz, $MTme, $MTpt
-      TBef="find $Z -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
+#     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
+      TBef="find $VzZS -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
       [ $verb ]&&printf "${lila}TBef: $rot$TBef$reset\n";
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
       TName=$(eval $TBef|tr ' \n' '| ')
@@ -70,19 +81,19 @@ while read -r file; do
     [ $gefu ]||{ 
       fnr=$(expr $fnr + 1);  
       [ $fnr = 1 ]&&{ 
-        printf "Liste der in den Karteikarten fehlenden Dokumente: $blau$AD\nnicht gefunden:$reset\n"
-        printf "Nicht in den Turbomed-Karteikarten gefundene Dokumente aus $D:\n" >> $AD; 
-        mkdir -p "$Zl"
-        for d in "$AD" "$Zl"; do 
+        printf "Liste der in den Karteikarten fehlenden Dokumente: $blau$PrtDt\nnicht gefunden:$reset\n"
+        printf "Nicht in den Turbomed-Karteikarten gefundene Dokumente aus $VzNG:\n" >> $PrtDt; 
+        mkdir -p "$VzKp"
+        for d in "$PrtDt" "$VzKp"; do 
           chown sturm:praxis "$d"
           chmod 774 "$d"
         done;
       }
-      printf "%4b: %s\n" $fnr "$(basename "$file"|sed "s/'/\\\\'/g")" >> $AD;
+      printf "%4b: %s\n" $fnr "$(basename "$file"|sed "s/'/\\\\'/g")" >> $PrtDt;
       printf "${blau}%4b: $rot$file$reset\n" $fnr; 
       printf "     DBBef: $DBBef\n";
       printf "     TBef : $TBef\n";
       printf "     DNBef: $DNBef\n";
-      cp -a "$file" "$Zl";
-    }
+      cp -a "$file" "$VzKp";
+    } # [ $gefu ]
 done < "$liste";
