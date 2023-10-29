@@ -1,5 +1,11 @@
 #!/bin/dash
 # prüfe die Dateien nochmal nach
+gruen="\033[0;32m"
+blau="\033[1;34m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
+lila="\033[1;35m";
+reset="\033[0m";
 # Verzeichnis für Kopien der nicht Gefundenen
 VzKp=/DATA/Patientendokumente/ohneImportNachweis
 # Liste mit allen zu pruefenden Dateien
@@ -10,7 +16,7 @@ VzZS=/DATA/turbomed/Dokumente
 PrtDt="/DATA/Patientendokumente/Doch_gefundene_Importe_$Jahr_"$(date +%y%m%d_%H%M%S)".txt"
 nr=0
 fnr=0
-verb=1
+verb=0
 find $VzKp -type f > "$liste"
 printf "\r$blau%d$reset zu untersuchende Dateien gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 # lese die $liste
@@ -24,8 +30,8 @@ while read -r file; do
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
     MT=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%Y {} \;);
-    MTme=$(expr $MT - 2*86400);
-    MTpt=$(expr $MT + 2*86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
+    MTme=$(expr $MT - 172800);
+    MTpt=$(expr $MT + 172800);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
     TBef="find $VzZS -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
     [ $verb ]&&printf "${lila}TBef: $rot$TBef$reset\n";

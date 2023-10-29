@@ -61,8 +61,8 @@ mountvirt.sh
 nampruef.sh
 obft.sh
 pdfumw.sh
-pdfftotxt.sh
-pdfftotxte.sh
+pdftotxt.sh
+pdftotxte.sh
 permissselten.sh
 ping.sh
 platz.sh
