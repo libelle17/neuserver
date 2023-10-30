@@ -25,10 +25,12 @@ while read -r file; do
     [ $verb ]&&printf "$nr: $blau$file$reset\n"
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Größe der Datei
-    sz=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%s {} \;);
+    bn=$(basename "$file");
+    dn=$(dirname "$file");
+    sz=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%s {} \;)
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
-    MT=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%Y {} \;);
+    MT=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%Y {} \;)
     MTme=$(expr $MT - 172800);
     MTpt=$(expr $MT + 172800);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
@@ -50,6 +52,7 @@ while read -r file; do
         printf "%4b: %s\n" $fnr "$(basename "$file"|sed "s/'/\\\\'/g")" >> $PrtDt;
         printf "${blau}%4b: $rot$file$reset\n" $fnr; 
         printf "     DName: $DName\n";
+        printf "     zeile: $zeile\n";
         [ $verb ]&&printf "     TBef : $TBef\n";
         [ $verb ]&&printf "     DNBef: $DNBef\n";
        } # break
