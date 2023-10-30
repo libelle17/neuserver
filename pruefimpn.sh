@@ -55,6 +55,7 @@ while read -r file; do
         printf "     zeile: $zeile\n";
         [ $verb ]&&printf "     TBef : $TBef\n";
         [ $verb ]&&printf "     DNBef: $DNBef\n";
+        rm "$file";
        } # break
      done # < <(echo "$TName");
     fi;
