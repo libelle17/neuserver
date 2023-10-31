@@ -8,7 +8,7 @@ lila="\033[1;35m";
 reset="\033[0m";
 # ab=20091231;
 # nur Dateien ab diesem Datum werden berücksichtigt
-ab=20230703;
+ab=20230821;
 # falls Jahr angegeben, wird nur dieses Unterverzeichnis von p:\eingelesen berücksichtigt
 # Jahr=2023
 # Verzeichnis zum Durchsuchen nach vielleicht nicht gefundenen Importen:
@@ -53,15 +53,17 @@ while read -r file; do
      [ $verb ]&&echo init: $init
 #      stat "$file";
 #      sz=$(stat -c%s "$file")
+      dn=$(dirname "$file");
+      bn=$(basename "$file");
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Größe der Datei
-      sz=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%s {} \;);
+      sz=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%s {} \;);
 #      MT=$(stat -c%Y "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
-      MT=$(find $(dirname "$file") -name "$(basename "$file")*" -exec stat -c%Y {} \;);
-      MTme=$(expr $MT - 1);
-      MTpt=$(expr $MT + 86400);       #      let MTme=$MT-1 MTpt=$MT+86400;
+      MT=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%Y {} \;)
+      MTme=$(expr $MT - 172800);
+      MTpt=$(expr $MT + 172800);       #      let MTme=$MT-1 MTpt=$MT+86400;
 #      echo $init, $sz, $MTme, $MTpt
 #     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
       TBef="find $VzZS -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
