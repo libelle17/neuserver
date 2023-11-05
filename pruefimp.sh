@@ -56,7 +56,7 @@ commandline() {
 	done;
   # Verzeichnis zum Durchsuchen nach vielleicht nicht gefundenen Importen:
   VzNG=$VzNG$Jahr;
-  awk "BEGIN{if($Jahr ~ /^[0-9]{2}$/) exit 0;exit 1;}"&&Jahr=20$Jahr;
+  [ $Jahr ]&&{ awk "BEGIN{if($Jahr ~ /^[0-9]{2}$/) exit 0;exit 1;}"&&Jahr=20$Jahr;};
   awk "BEGIN{if($ab ~ /^[0-3][0-9](0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$/) exit 0;exit 1;}"&&ab=20$ab;
 	if [ "$verb" -gt 0 ]; then
 		printf "ab: $blau\"$ab\"$reset\n";
@@ -64,7 +64,7 @@ commandline() {
 		printf "VzNG: $blau\"$VzNG\"$reset\n";
 		printf "verb: $blau\"$verb\"$reset\n";
 	fi;
-  awk "BEGIN{if($Jahr ~ /^[0-9]{4}$/) exit 0;exit 1;}"||{ printf "Jahr $blau$Jahr$reset nicht wohlgeformt. Breche ab.\n"; exit 1;};
+  [ $Jahr ]&&{ awk "BEGIN{if($Jahr ~ /^[0-9]{4}$/) exit 0;exit 1;}"||{ printf "Jahr $blau$Jahr$reset nicht wohlgeformt. Breche ab.\n"; exit 1;};};
   awk "BEGIN{if($ab ~ /^20[0-3][0-9](0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$/) exit 0;exit 1;}"||{ printf "ab $blau$ab$reset nicht wohlgeformt. Breche ab.\n"; exit 1;};
 } # commandline
 
@@ -72,7 +72,7 @@ commandline() {
 vorgaben;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 printf "suche in $blaut$VzNG$reset:"
-find $VzNG -mindepth 1 -maxdepth 3 -newermt $ab -type f -not -iregex '.*\(abrechnungssem\|azubi\|anforderung\|bei geräten\|blankoform\|dmp-daten\|diabetes\(tag\|mittel\)\|dokumentation.*htm\|einladung\|experten forum\|fortbildung\|haus\(ärzteverb\|arztvertr\)\|patientenbefrag\|pipettieren\|qualitätskrit\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*/\(pict\|img\).*jpg\|.*/befund_.*\.pdf|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|brmitschnitt\|canon\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste" 
+find $VzNG -mindepth 1 -maxdepth 3 -newermt $ab -type f -not -iregex '.*\(abrechnungssem\|azubi\|anforderung\|bei geräten\|blankoform\|dmp-daten\|diabetes\(tag\|mittel\)\|dokumentation.*htm\|einladung\|experten forum\|fortbildung\|haus\(ärzteverb\|arztvertr\)\|patientenbefrag\|pipettieren\|qualitätskrit\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*/\(pict\|img\).*jpg\|.*/befund_.*\.pdf\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|brmitschnitt\|canon\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste" 
 printf "\r$blau%d$reset zu untersuchende Dateien gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 # lese die $liste
 while read -r file; do
