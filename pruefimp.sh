@@ -128,32 +128,53 @@ while read -r file; do
       echo file: $file;
       echo dn: $dn;
     fi;
-    sz=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%s {} \;);
-    if [ -z "$sz" ]; then
+    sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%s {} \; -quit"; # der * wird in " &1 umgewandelt
+    [ $verb -gt 1 ]&&echo $sBef;
+    sz=$(eval $sBef);
+    if [ $? != 0 ]; then
+      echo nr: $nr, file: $file
+      printf "bn: $blau$bn$reset\n";
       echo sz: $sz;
-      echo "find \"$dn\" -regextype sed -regex \".*/$bn *\" -exec stat -c%s {} \;"
+      echo sBef: $sBef;
       exit;
     fi;
 #      MT=$(stat -c%Y "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
-    MT=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%Y {} \; -quit)
+    sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%Y {} \; -quit"; # der * wird in " &1 umgewandelt
+    [ $verb -gt 1 ]&&echo $sBef;
+    MT=$(eval $sBef);
+    if [ $? != 0 ]; then
+      echo nr: $nr, file: $file
+      echo sBef: $sBef;
+      exit;
+    fi;
 #    MT=$(echo "$MT"|cut -d' ' -f1); # 1697093139 1697093139
     MTme=$(expr $MT - 86400);  # 1 Tag
     if [ $? != 0 ]; then
+      echo nr: $nr, file: $file
       echo MT: $MT;
       exit;
     fi;
     MTpt=$(expr $MT + 518400); # 5 Tage      #      let MTme=$MT-1 MTpt=$MT+86400;
     if [ $? != 0 ]; then
+      echo nr: $nr, file: $file
       echo MT: $MT;
       exit;
     fi;
 #      echo $init, $sz, $MTme, $MTpt
 #     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
     TBef="find \"$VzZS\" -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
+    [ $verb -gt 1 ]&&echo TBef: $TBef;
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
     TName=$(eval $TBef|tr ' \n' '| ')
+    if [ $? != 0 ]; then
+      echo nr: $nr, file: $file
+      echo TBef: $TBef;
+      echo TName: $TName;
+      exit;
+    fi;
+
 #    fi;
     # TName auswerten
     gefu=; # deshalb dürfen nachfolgend keine subshells verwendet werden
@@ -201,7 +222,7 @@ while read -r file; do
       fi;
       if [ $verb -gt 0 ]; then
         if [ "$DName" ]; then
-          printf " nach Größe+Datum: $lila$zeile$reset\n DNBef: $blau$DNBef$reset\n DName: $blau$DName$reset\n";
+          printf "     nach Größe+Datum: $lila$zeile$reset\n DNBef: $blau$DNBef$reset\n";
         else
           printf "     ${lila}DNBef$reset: $DNBef\n";
         fi;
