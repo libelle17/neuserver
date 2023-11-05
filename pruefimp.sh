@@ -28,7 +28,6 @@ vorgaben() {
 # Befehlszeilenparameter auswerten
 commandline() {
   # verbose
-  verb=0;
   # nur Dateien ab diesem Datum werden berücksichtigt
   ab=$(find "$listeV" -maxdepth 1 -type f -iname "$dl*" -printf '%TY%Tm%Td\n' |sort -r|head -n1)
   # ab=20230821;
@@ -36,6 +35,7 @@ commandline() {
   # falls Jahr angegeben, wird nur dieses Unterverzeichnis von p:\eingelesen berücksichtigt
   # Jahr=2023
   Jahr=;
+  verb=0;
   for para in "$@"; do
     para=$(echo "$para"|sed 's;^/;-;');
     case $para in
@@ -129,12 +129,26 @@ while read -r file; do
       echo dn: $dn;
     fi;
     sz=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%s {} \;);
+    if [ -z "$sz" ]; then
+      echo sz: $sz;
+      echo "find \"$dn\" -regextype sed -regex \".*/$bn *\" -exec stat -c%s {} \;"
+      exit;
+    fi;
 #      MT=$(stat -c%Y "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
-    MT=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%Y {} \;)
+    MT=$(find "$dn" -regextype sed -regex ".*/$bn *" -exec stat -c%Y {} \; -quit)
+#    MT=$(echo "$MT"|cut -d' ' -f1); # 1697093139 1697093139
     MTme=$(expr $MT - 86400);  # 1 Tag
+    if [ $? != 0 ]; then
+      echo MT: $MT;
+      exit;
+    fi;
     MTpt=$(expr $MT + 518400); # 5 Tage      #      let MTme=$MT-1 MTpt=$MT+86400;
+    if [ $? != 0 ]; then
+      echo MT: $MT;
+      exit;
+    fi;
 #      echo $init, $sz, $MTme, $MTpt
 #     Dateien mit dieser Größe und ungefähr diesem Änderungdatum finden
     TBef="find \"$VzZS\" -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
