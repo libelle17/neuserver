@@ -122,6 +122,7 @@ while read -r file; do
 #      sz=$(stat -c%s "$file")
     dn=$(dirname "$file");
     bn=$(basename "$file");
+    bn="${bn/\`/\\\`}"
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Größe der Datei
     if [ -z "$dn" ]; then
@@ -130,7 +131,7 @@ while read -r file; do
     fi;
     sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%s {} \; -quit"; # der * wird in " &1 umgewandelt
     [ $verb -gt 1 ]&&echo $sBef;
-    sz=$(eval $sBef);
+    sz=$(eval "$sBef");
     if [ $? != 0 ]; then
       echo nr: $nr, file: $file
       printf "bn: $blau$bn$reset\n";
@@ -143,11 +144,13 @@ while read -r file; do
 #     Änderungsdatum der Datei
     sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%Y {} \; -quit"; # der * wird in " &1 umgewandelt
     [ $verb -gt 1 ]&&echo $sBef;
-    MT=$(eval $sBef);
+    MT=$(eval "$sBef");
     if [ $? != 0 ]; then
       echo nr: $nr, file: $file
       echo sBef: $sBef;
       exit;
+    elif [ -z "$MT" ]; then
+      echo sBef: $sBef;
     fi;
 #    MT=$(echo "$MT"|cut -d' ' -f1); # 1697093139 1697093139
     MTme=$(expr $MT - 86400);  # 1 Tag
@@ -167,7 +170,7 @@ while read -r file; do
     TBef="find \"$VzZS\" -type f -size ${sz}c -newermt @$MTme -not -newermt @$MTpt -iname \""$init"*\""
     [ $verb -gt 1 ]&&echo TBef: $TBef;
 #     find /DATA/turbomed/Dokumente -name '*|*' => 0 Ergebnisse
-    TName=$(eval $TBef|tr ' \n' '| ')
+    TName=$(eval "$TBef"|tr ' \n' '| ')
     if [ $? != 0 ]; then
       echo nr: $nr, file: $file
       echo TBef: $TBef;
@@ -199,7 +202,7 @@ while read -r file; do
     fi;
     if [ $gefu ]; then
       DNBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT Name FROM briefe WHERE Pfad=REPLACE(REPLACE('"$zeile"','/DATA/turbomed','$/TurboMed'),'/','\\\\\\\\') GROUP BY Pfad\""
-      DName=$(eval $DNBef);
+      DName=$(eval "$DNBef");
       if [ "$dzeile" -a "$DName" ]; then
         if [ $verb -gt 0 ]; then
           printf "Datei $lila$nr$reset: $blau$file$reset gefunden und in DB\n"
