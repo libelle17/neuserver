@@ -130,7 +130,7 @@ while read -r file; do
       echo file: $file;
       echo dn: $dn;
     fi;
-    sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%s {} \; -quit"; # der * wird in " &1 umgewandelt
+    sBef="find \"$dn\" -regextype sed -regex \".*/ *$bn \{0,\}\" -exec stat -c%s {} \; -quit"; # Leerzeichen am Anfang oder Ende möglich
     [ $verb -gt 1 ]&&echo $sBef;
     sz=$(eval "$sBef");
     if [ $? != 0 ]; then
@@ -143,7 +143,7 @@ while read -r file; do
 #      MT=$(stat -c%Y "$file")
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Änderungsdatum der Datei
-    sBef="find \"$dn\" -regextype sed -regex \".*/$bn \{0,\}\" -exec stat -c%Y {} \; -quit"; # der * wird in " &1 umgewandelt
+    sBef="find \"$dn\" -regextype sed -regex \".*/ *$bn \{0,\}\" -exec stat -c%Y {} \; -quit"; # Leerzeichen am Anfang oder Ende möglich
     [ $verb -gt 1 ]&&echo $sBef;
     MT=$(eval "$sBef");
     if [ $? != 0 ]; then
@@ -151,6 +151,7 @@ while read -r file; do
       echo sBef: $sBef;
       exit;
     elif [ -z "$MT" ]; then
+      echo nr: $nr, file: $file
       echo sBef: $sBef;
     fi;
 #    MT=$(echo "$MT"|cut -d' ' -f1); # 1697093139 1697093139
