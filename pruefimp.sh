@@ -254,3 +254,4 @@ while read -r file; do
       fi;
     fi;
 done < "$liste";
+printf "Fertig mit $blau%d$reset zu untersuchenden Dateien ab $blau$ab$reset\n"
