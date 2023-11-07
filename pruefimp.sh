@@ -123,7 +123,7 @@ while read -r file; do
     dn=$(dirname "$file");
     bn=$(basename "$file");
 #    bn="${bn/\`/\\\`}";
-    bn=$(echo $bn|sed 's/`/\\`/g;s/ / \*/g'); # zwei Leerzeichen wurden zu einem
+    bn=$(echo $bn|sed 's/\([`$]\)/\\\1/g;s/ / \*/g'); # zwei Leerzeichen wurden zu einem
 # falls Dateiname ein Leerzeichen am Schluss enthält
 #     Größe der Datei
     if [ -z "$dn" ]; then
