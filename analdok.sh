@@ -99,3 +99,4 @@ done;
 indb;
 vortest;
 haupttest;
+echo Fertig!
