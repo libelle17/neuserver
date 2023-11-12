@@ -9,14 +9,19 @@ VglVz=/DATA/turbomed/Dokumente
 testVz=/DATA/Patientendokumente/ohneImportNachweis
 
 mar() {
-  echo $1;
-  mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"$1";
+  args="$@"
+  mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"$args";
+  if [ $? -ne 0 ]; then
+    printf "${rot}args$reset: $lila$args$reset\n";
+    exit;
+  fi;
 }
 
 indb() {
 mar "DROP TABLE IF EXISTS dokfiles";
 mar "CREATE TABLE dokfiles(id INT(10) AUTO_INCREMENT PRIMARY KEY,pfad VARCHAR(256) DEFAULT '\'\'',name VARCHAR(256) DEFAULT '\'\'',groe INT(10) DEFAULT 0,laend DATETIME DEFAULT 0,KEY pfad(pfad,name),KEY groe(groe),KEY laend(laend))"
 mar "SHOW CREATE TABLE dokfiles"
+ru=0;
 find $VglVz -type f -printf '%TY%Tm%Td%TH%TM%.2TS %s %p\0'|while IFS= read -r -d '' zeile; do 
  arr=($zeile);
  rest=${arr[2]};
@@ -25,7 +30,8 @@ find $VglVz -type f -printf '%TY%Tm%Td%TH%TM%.2TS %s %p\0'|while IFS= read -r -d
  done;
  dn=$(dirname "$rest");
  bn=$(basename "$rest");
- printf "$blau${arr[0]} $lila%10s $blau$dn $lina$bn\n" ${arr[1]};
+ printf "$ru: $blau${arr[0]} $lila%10s $blau$dn $lila$bn\n" ${arr[1]};
+ ru=$(awk "BEGIN{print "$ru"+1}");
  mar "INSERT INTO dokfiles(laend,groe,pfad,name) VALUES(\""${arr[0]}"\",\""${arr[1]}"\",\""$dn"\",\""$bn"\")";
 done;
 }
