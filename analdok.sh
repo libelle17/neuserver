@@ -69,6 +69,7 @@ find "$testVz" -maxdepth 1 -type f -printf '%TY%Tm%Td%TH%TM%.2TS|%s|%p\0'|while 
 #      printf "${rot}Runde: ${blau}$ru$reset\n";
       printf "${rot}gefunden: $dn/$bn$reset\n$zeile\n";
       mv -n "$dn/$bn" "$dn/schonda/";
+      break;
 #      printf "$dblau${arr[2]}$reset\n";
 #      printf "$lila${ari[0]}$reset\n";
 #      printf "$lila${ari[1]}$reset\n";
