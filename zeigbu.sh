@@ -1,2 +1,2 @@
 #!/bin/bash
-ps -Alf|egrep 'bu[^gs]'|grep -v grep
+ps -Alf|egrep 'bu[^gs]'|grep -v "grep\|zeigbu"
