@@ -177,12 +177,15 @@ ELG=/var/log/cronf.log
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 #-10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh
 # Kopieren der Turbomed-Datenbanken, der Dateien in /DATA/Patientendokumenten/turbomed und in p:\eingelesen auf Reserveserver:
--50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
--50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
+# -50 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
+-50 4,21,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
+# -50 1-23/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
+-50 4,21,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh -e
 # falls turbomed nicht läuft Kopieren der Turbomed-Datenbanken von virtwin auf linux1, dann auf die Reserveserver, dann Aufruf von butm.sh s.o.:
 # passager ausgestellt 19.10.22, 10.1.23
 # -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
--55 13,1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+# -55 13,1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
+-55 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # ... das Ganze nach Ausschalten von Turbomed unbedingt:
 # kurz pausiert 16.2.22 wg. Frau Müller
 # passager ausgestellt 19.10.22
@@ -200,13 +203,16 @@ ELG=/var/log/cronf.log
 
 #ein Abbild des Servers linux1 auf linux0 erstellen:
 # passager ausgestellt 19.10.22
--40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
+# -40 13,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
+-45 21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux0 -e
 #die auf den Zielrechnern dort erstellten Eintraege in den Löschverzeichnissen DBBackloe, TMBackloe, sqlloe und TMExportloe löschen:
 -0 9 * * * HOST=$(hostname);[ $(HOST\%\%.*)/ = linux1/ ]||rm $(find /DATA -mindepth 1 -maxdepth 1 -type d -name '*loe' -printf '\%p/* ')
 #ein Abbild wichtiger Verzeichnisse des Servers linux1 auf linux7 erstellen:
 # passager ausgestellt 19.10.22
--39 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
--56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux8 -e
+# -39 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
+-46 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux7 -e
+# -56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux8 -e
+-56 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux8 -e
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
