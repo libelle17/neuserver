@@ -86,6 +86,7 @@ for nr in 1 $ziele; do
       }
       # ausf "ssh linux3 VBoxManage list vms|grep -q \"Win10\""
       # echo $ret
+      ausf "${tush}VBoxManage controlvm $gast poweroff";      
       ausf "${tush}VBoxManage startvm $gast --type headless";      
       for iru in $(seq 1 1 120); do 
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
