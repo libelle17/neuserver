@@ -99,12 +99,21 @@ for nr in 1 $ziele; do
        cifs=/amnt/$gpc/turbomed;
        printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
        for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-         if ! mountpoint -q $cifs; then
+         printf "cifs: $cifs\n";
+         domount=;
+         printf "domount: $domount, cifs: $cifs\n";
+         if ! test -d $cifs; then domount=ja; fi;
+         printf "domount: $domount\n";
+         if ! test $domount; then if ! test -d $cifs; then domount=ja; fi; fi;
+         printf "domount: $domount\n";
+         if test $domount; then
+           printf "domount: $domount\n";
            printf "\n";
+           printf "vers: $vers, verb: $verb\n";
            ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
            printf "\n";
          else
-    #       printf " ${blau}$cifs$reset gemountet!\n"
+           printf " ${blau}$cifs$reset gemountet!\n"
            break;
          fi;
        done;
