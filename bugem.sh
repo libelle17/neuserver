@@ -165,12 +165,12 @@ kopiermt() { # mit test
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
   [ "$QL" ]&&{ 
     echo Überprüfe $QL
-    ping -c1 -W1 "$QL">/dev/null 2>&1 && QL=192.168.178.2${QL#linux};
+#    ping -c1 -W1 "$QL">/dev/null 2>&1 && QL=192.168.178.2${QL#linux};
     if ping -c1 -W1 "$QL">/dev/null 2>&1; then printf "$blau$QL$reset anpingbar.\n"; else printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
   }; 
   [ "$ZL" ]&&{ 
     echo Überprüfe $ZL
-    ping -c1 -W1 "$ZL">/dev/null 2>&1 && ZL=192.168.178.2${ZL#linux};
+#    ping -c1 -W1 "$ZL">/dev/null 2>&1 && ZL=192.168.178.2${ZL#linux};
     if ping -c1 -W1 "$ZL">/dev/null 2>&1; then printf "$blau$ZL$reset anpingbar.\n"; else printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
   }; 
   for zute in "/$QVos" "/$ZVos"; do # zutesten
