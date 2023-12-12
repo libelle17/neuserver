@@ -146,7 +146,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         if mountpoint -q $cifs; then
           [ "$verb" ]&&printf "$blau$cifs$reset gemountet.\n"; 
         else 
-          printf "$blau$cifs${rot} nicht anpingbar, verlasse Schleife$reset\n"; 
+          printf "$blau$cifs${rot} kein mountpoint, verlasse Schleife$reset\n"; 
           continue;
         fi;
       fi; # if [ "$gpc" ]; then

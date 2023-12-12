@@ -163,8 +163,14 @@ kopiermt() { # mit test
   echo "";
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
-  [ "$QL" ]&&{ if ping -c1 -W1 "$QL">/dev/null 2>&1; then printf "$blau$QL$reset anpingbar.\n"; else printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;}; 
-  [ "$ZL" ]&&{ if ping -c1 -W1 "$ZL">/dev/null 2>&1; then printf "$blau$ZL$reset anpingbar.\n"; else printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;}; 
+  [ "$QL" ]&&{ 
+    ping -c1 -W1 "$QL">/dev/null 2>&1 && QL=192.168.178.2${QL#linux};
+    if ping -c1 -W1 "$QL">/dev/null 2>&1; then printf "$blau$QL$reset anpingbar.\n"; else printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
+  }; 
+  [ "$ZL" ]&&{ 
+    ping -c1 -W1 "$ZL">/dev/null 2>&1 && ZL=192.168.178.2${ZL#linux};
+    if ping -c1 -W1 "$ZL">/dev/null 2>&1; then printf "$blau$ZL$reset anpingbar.\n"; else printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
+  }; 
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
     [ "$Lfw" ]||Lfw=$buhost" (hier) ";
@@ -176,7 +182,7 @@ kopiermt() { # mit test
       testz="$zuteh";
       gpc=${zute#/mnt/}; gpc=${zute#/amnt/}; gpc=${gpc%%/*}; # virtwinx
       [ "$gpc" ]&&{
-        if ping -c1 -W1 $gpc >/dev/null 2>&1; then ok=1; else
+        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
           ok=;
           printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
           nr=${gpc#virtwin};
@@ -280,7 +286,7 @@ kopiermt() { # mit test
       PZiel=;
       diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
     fi;
-    AND=$QL;[ "$AND" ]||AND=$ZL;
+    AND="$QL";[ "$AND" ]||AND=$ZL;
     [ "$PZiel" ]&&if ! ping -c1 -W100 "$AND" >/dev/null 2>&1; then 
       printf "$rot$AND$reset nicht anpingbar! Kehre zurueck!\n";
       return 1;
