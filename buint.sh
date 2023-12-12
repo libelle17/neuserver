@@ -45,7 +45,7 @@ fi;
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 printf "${lila}1. intern $text kopieren${reset}";
 for iru in 1 2 3; do
-  [ "$verb" ]&&printf "Prüfe die Überschreibbarkeit von c:\\turbomed\\StammDB\\objects.idx auf $blau$gpc$reset\n";
+  [ "$verb" ]&&printf "\nPrüfe die Überschreibbarkeit von c\:\\turbomed\\StammDB\\objects.idx auf $blau$gpc$reset\n";
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
   if [ "$offen" ]; then
