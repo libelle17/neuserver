@@ -166,6 +166,12 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
           ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
+          # für die Client-Zertifikate, könnte aber nicht gehen
+#          rsync -avu /amnt/virtwin/turbomed/Programm/communicator /opt/turbomed/Programm/
+#          rsync -avu /amnt/virtwin/turbomed/Daten/Var/aWinS /opt/turbomed/Daten/Var/
+#          rsync -avu /amnt/virtwin/turbomed/Daten/Var/Konnektor /opt/turbomed/Daten/Var/
+#          rsync -avu /amnt/virtwin/turbomed/Daten/Var/Passwort /opt/turbomed/Daten/Var/
+#          rsync -avu /amnt/virtwin/turbomed/Daten/Var/UX /opt/turbomed/Daten/Var/
         fi;
       done; # Vz in $VzLk
       [ "$verb" ]&&printf "\n${rot}Nach der Schleife Bearbeite Verzeichnis$reset\n";
