@@ -165,7 +165,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
-          ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
+          ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu --progress /$ot/$uz/ \$zl/$uq/' ";
         fi;
       done; # Vz in $VzLk
       [ "$verb" ]&&printf "\n${rot}Nach der Schleife Bearbeite Verzeichnis$reset\n";
