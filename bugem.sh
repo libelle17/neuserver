@@ -348,7 +348,7 @@ kopiermt() { # mit test
 #    obdat 1: obsub und /Pfad/zum/qv = Datei
 #    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
-    [ $obaltgepr ]&&attr="av --progress"||attr="avu --progress";
+    [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
       ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL" $dblau;
     else
