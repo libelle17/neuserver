@@ -28,12 +28,14 @@ ausf() {
 
 # Befehlszeilenparameter auswerten
 commandlhier() {
+  nurli=;
   verb=;
 	while [ $# -gt 0 ]; do
    case "$1" in 
      -*|/*)
       para=${1#[-/]};
       case $para in
+        nl|-nurlinux) nurli=1;;
         v|-verbose) verb=1;;
       esac;;
    esac;
@@ -46,16 +48,17 @@ commandlhier() {
 
 commandlhier "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 pr=PraxisDB;
-echo "Virtuelle Windows-Server:"
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw.
-for nr in 1 $ziele; do
- wirt=linux$nr;
- [ $verb ]&&printf "\nPrüfe PC ${blau}$wirt$reset ...";
- if pruefpc $wirt kurz; then
-  [ $verb ]&&printf " fiel positiv aus.\n";
+if ! test $nurli; then 
+ echo "Virtuelle Windows-Server:"
+ for nr in 1 $ziele; do
+  wirt=linux$nr;
+  [ $verb ]&&printf "\nPrüfe PC ${blau}$wirt$reset ...";
+  if pruefpc $wirt kurz; then
+   [ $verb ]&&printf " fiel positiv aus.\n";
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 # ./virtnamen.sh;
 ## for wirt in "$auswahl"; do
@@ -66,78 +69,80 @@ for nr in 1 $ziele; do
 #               *8*) gpc=virtwin8; gast=Win10;;
 # esac;
 # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
-  [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
+   [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
 #  if ! ping -c1 -W1 $wirt >/dev/null 2>&1; then
 #    printf "$blau$wirt$reset nicht anpingbar, lasse $blau$gpc$reset aus.\n";
 #  else
-   if [ "$gpc" ]; then
-     HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
-     [ $wirt = $HOST ]&&tush=||tush="ssh $wirt ";
-     if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
-      ok=;
-      printf "$blau$wirt$reset zwar anpingbar, $blau$gpc$reset aber nicht, versuche ihn zu starten\n";
-      ausf "${tush}mountpoint -q /DATA"
-      [ $ret != 0 ]&&{ 
-        ausf "${tush}mount /DATA"
-        [ $ret != 0 ]&&{ 
-          ausf "${tush}pkill -9 fsck"
-          ausf "${tush}mount /DATA"
-        }
-      }
+    if [ "$gpc" ]; then
+      HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
+      [ $wirt = $HOST ]&&tush=||tush="ssh $wirt ";
+      if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
+       ok=;
+       printf "$blau$wirt$reset zwar anpingbar, $blau$gpc$reset aber nicht, versuche ihn zu starten\n";
+       ausf "${tush}mountpoint -q /DATA"
+       [ $ret != 0 ]&&{ 
+         ausf "${tush}mount /DATA"
+         [ $ret != 0 ]&&{ 
+           ausf "${tush}pkill -9 fsck"
+           ausf "${tush}mount /DATA"
+         }
+       }
       # ausf "ssh linux3 VBoxManage list vms|grep -q \"Win10\""
       # echo $ret
-      ausf "${tush}VBoxManage controlvm $gast poweroff";      
-      ausf "${tush}VBoxManage startvm $gast --type headless";      
-      for iru in $(seq 1 1 120); do 
-        if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
-      done;
-      [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
-     fi;
-     if [ ! "$ok" ]; then
-      printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
-     else
-       cifs=/amnt/$gpc/turbomed;
-       printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
-       for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-         printf "cifs: $cifs\n";
-         domount=;
-         printf "domount: $domount, cifs: $cifs\n";
-         if ! test -d $cifs; then domount=ja; fi;
-         printf "domount: $domount\n";
-         if ! test $domount; then if ! test -d $cifs; then domount=ja; fi; fi;
-         printf "domount: $domount\n";
-         if test $domount; then
-           printf "domount: $domount\n";
-           printf "\n";
-           printf "vers: $vers, verb: $verb\n";
-           ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
-           printf "\n";
-         else
-           printf " ${blau}$cifs$reset gemountet!\n"
-           break;
-         fi;
+       ausf "${tush}VBoxManage controlvm $gast poweroff";      
+       ausf "${tush}VBoxManage startvm $gast --type headless";      
+       for iru in $(seq 1 1 120); do 
+         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
        done;
-     fi; # [ ! "$ok" ]; then else
-     if mountpoint -q $cifs; then
+       [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
+      fi;
+      if [ ! "$ok" ]; then
+       printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
+      else
+        cifs=/amnt/$gpc/turbomed;
+        printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
+        for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+          printf "cifs: $cifs\n";
+          domount=;
+          printf "domount: $domount, cifs: $cifs\n";
+          if ! test -d $cifs; then domount=ja; fi;
+          printf "domount: $domount\n";
+          if ! test $domount; then if ! test -d $cifs; then domount=ja; fi; fi;
+          printf "domount: $domount\n";
+          if test $domount; then
+            printf "domount: $domount\n";
+            printf "\n";
+            printf "vers: $vers, verb: $verb\n";
+            ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
+            printf "\n";
+          else
+            printf " ${blau}$cifs$reset gemountet!\n"
+            break;
+          fi;
+        done;
+      fi; # [ ! "$ok" ]; then else
+      if mountpoint -q $cifs; then
        altverb=$verb;
        verb=1;
        ausf "ls -l $cifs/$pr/objects.*" $dblau;
        verb=$altverb;
-     else
-      printf "kein Mountpoint\n";
-     fi;
-     [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
-     altverb=$verb;
-     verb=1;
-     printf " ";
-     ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $schwarz;
+      else
+       printf "kein Mountpoint\n";
+      fi;
+      [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
+      altverb=$verb;
+      verb=1;
+      printf " ";
+      ausf "ssh administrator@$gpc dir 'c:\\Turbomed\\PraxisDB\\objects.*|findstr objects'" $schwarz;
     # ssh administrator@$gpc dir 'c:\Turbomed\PraxisDB';
-     verb=$altverb;
-   fi; # if [ "$gpc" ]; then
- fi; # pruefpc 
-done;
+      verb=$altverb;
+    fi; # if [ "$gpc" ]; then
+  fi; # pruefpc 
+ done;
+ printf "\n";
+fi; # ! test $nurli
 
-printf "\nLinux-Server:\n"
+printf "${blau}Linux-Server${reset}:\n"
 ot=/opt/turbomed;
 hosthier=$(hostname); hosthier=${hosthier%%.*};
 [ $verb ]&&printf "hosthier: $blau$hosthier$reset\n";
