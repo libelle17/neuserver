@@ -388,7 +388,7 @@ pruefpc() {
       transverb=; [ $verb ]&&transverb=-v;
       weckalle.sh "$1" -grue $transverb; # muss noch klären, warum er ohne grue linux8 nicht weckt
       [ $verb ]&&printf "Nach weckalle.sh\n";
-      for ii in $(seq 1 1 10); do
+      for ii in $(seq 1 1 2); do # 100
         [ $verb ]&&printf "ii: $ii, vor ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
         [ $verb ]&&printf "nach erfolgreichem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
@@ -405,6 +405,7 @@ pruefpc() {
         }
         [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
+      [ $verb ]&&printf "nach for ii\n";
       sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
     else
