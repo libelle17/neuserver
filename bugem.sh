@@ -405,14 +405,15 @@ pruefpc() {
         }
         [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
-      [ $verb ]&&printf "nach for ii in $(seq 1 1 2)\n";
-      [ $verb ]&&printf "nach for ii in $(seq 1 1 2)\n";
+      [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
+      [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
 #      sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
      return 1;
     fi;
+    [ $verb ]&&printf "nach if \[ \$iru\n";
   done;
   [ $verb ]&&printf "Ende ${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\"\n";
 } # pruefpc
