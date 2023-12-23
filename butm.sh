@@ -88,5 +88,5 @@ if [ "$ret"/ = 0/ ]; then
 else
  printf $rot$Dt$reset kein Mountpoint, hier nichts kopiert!
 fi;
-# gutenacht;
+gutenacht;
 [ "$verb" ]&&printf "\n${rot} ziemlich am Schluss von $MUPR$reset\n";

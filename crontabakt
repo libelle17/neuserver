@@ -185,13 +185,13 @@ ELG=/var/log/cronf.log
 # passager ausgestellt 19.10.22, 10.1.23
 # -55 */2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # -55 13,1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
--55 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m
 # ... das Ganze nach Ausschalten von Turbomed unbedingt:
 # kurz pausiert 16.2.22 wg. Frau Müller
 # passager ausgestellt 19.10.22
 # -45 14,23 * * 0,2,3,4,5,6 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44, 10.1.23
 # ... und am Montag früher:
 # passager ausgestellt 19.10.22
+-55 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;}
 # -25 14,23 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ pkill buint.sh; ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/buint.sh -e -m -k;} # ausgesetzt 3.6.22 14:44, 10.1.23
 # folgende beiden vorübergehend ausgesetzt 11.11.21:
 # -35 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh linux0 -e -k

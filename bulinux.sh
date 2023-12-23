@@ -129,5 +129,5 @@ echo Fertig;
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
 # rsync $QL:/etc/samba $QL:/etc/hosts $QL:/etc/vsftpd*.conf $QL:/etc/my.cnf $QL:/etc/fstab $ZL/etc/ -avuz # keine Anführungszeichen um den Stern!
-gutenacht
+gutenacht;
 [ "$verb" ]&&printf "\n${rot} ziemlich am Schluss von $MUPR$reset\n";

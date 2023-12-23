@@ -408,6 +408,7 @@ pruefpc() {
 } # pruefpc
 
 gutenacht() {
+  [ $verb ]&&printf "${blau}gutenacht()$reset\n";
   if [ "$gewdat" -a -f "$gewdat" ]; then 
     [ "$verb" ]&&printf "${rot}gewdat: ${blau}%s$reset\n ${blau}%s$reset\n" "$gewdat" "$(cat "$gewdat")";
     for pc in $(cat "$gewdat");do  
