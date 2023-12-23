@@ -408,7 +408,7 @@ pruefpc() {
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
 #      sleep 10;
-      [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat;
+      [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
     else
