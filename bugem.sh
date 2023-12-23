@@ -409,7 +409,7 @@ pruefpc() {
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
 #      sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
+      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat $gedat)"; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
