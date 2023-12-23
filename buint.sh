@@ -79,6 +79,7 @@ fi;
 [ ! "$offen" -o ! "$verb" ]&&echo "";
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+
   printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
   if ! [ "$nurdrei" ]; then
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
@@ -89,6 +90,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
       ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
     done;
   fi; # nurdrei
+
   printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;

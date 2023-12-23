@@ -72,17 +72,17 @@ commandline() {
 	if [ "$verb" ]; then
     printf "Parameter: $blau-v$reset => gesprächig\n";
 		printf "obecht: $blau$obecht$reset\n";
-		printf "obdel: $blau$obdel$reset\n";
-		printf "obforce: $blau$obforce$reset\n";
-    printf "obkill: $blau$obkill$reset\n";
-    printf "obmehr: $blau$obmehr$reset\n";
-    printf "obnv: $blau$obnv$reset\n";
-		printf "sdneu: $blau$sdneu$reset\n";
+		[ $obdel ]&&printf "obdel: $blau$obdel$reset => in butm.sh rsync mit --delete aufrufen\n";
+		[ $obforce ]&&printf "obforce: $blau$obforce$reset => in butm.sh und buint.sh kopiermt ohne Altersprüfung aufrufen\n";
+    [ $obkill ]&&printf "obkill: $blau$obkill$reset => in butm.sh und buint.sh ggf. Turboed-Verbindungen zu Windows-Server killen zum Kopieren\n";
+    [ $obmehr ]&&printf "obmehr: $blau$obmehr$reset => in buint.sh auch 2. auf linux{$ziele} und dort auf virtuelle Windows-Server kopieren\n";
+    [ $obnv ]&&printf "obnv: $blau$obnv$reset => in butm.sh nicht auf virtuellen Windows-Server weiter kopieren\n"; 
+		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
 		printf "ZL: $blau$ZL$reset\n";
 		printf "nichtvirt: $blau$obnv$reset\n";
-		printf "nurdrei: $blau$nurdrei$reset\n";
+		[ $nurdrei ]&&printf "nurdrei: $blau$nurdrei$reset => in buint.sh nur auf Zielrechnern zwischen virt.Windows und Linux kopieren\n";
 	fi;
 } # commandline
 
@@ -189,7 +189,7 @@ kopiermt() { # mit test
           printf "$blau$gpc$reset nicht anpingbar, versuche ihn zu starten\n";
           nr=${gpc#virtwin};
           [ $nr/ = / ]&& wirt=linux1||wirt=linux$nr;
-          pruefpc $wirt;
+          pruefpc $wirt kopiermt;
           ausf "$tush VBoxManage startvm Win10 --type headless";      
           for iru in $(seq 1 1 120); do 
             if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
@@ -378,12 +378,15 @@ kopieretc() {
 }
 
 pruefpc() {
-  [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\"\n";
+  [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\"\n";
   [ "$1" ]||break;
   for iru in 1 2; do
+    [ $verb ]&&printf "iru: $iru, vor ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
     if ping -c1 -W10 "$1" >/dev/null 2>&1; then break; fi;
+    [ $verb ]&&printf "iru: $iru, nach ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
-      weckalle.sh "$1" -grue; # muss noch klären, warum er ohne grue linux8 nicht weckt
+      transverb=; [ $verb ]&&transverb=-v;
+      weckalle.sh "$1" -grue $transverb; # muss noch klären, warum er ohne grue linux8 nicht weckt
       for ii in $(seq 1 1 1000); do
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
         [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$((1 + $RANDOM % 100000))
@@ -405,6 +408,7 @@ pruefpc() {
      return 1;
     fi;
   done;
+  [ $verb ]&&printf "Ende ${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\"\n";
 } # pruefpc
 
 gutenacht() {
@@ -420,8 +424,8 @@ gutenacht() {
 } # gutenacht
 
 machssh() {
-[ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL";:;}||qssh="sh -c";
-[ "$ZL" ]&&{ zssh="ssh $ZL";pruefpc "$ZL";:;}||zssh="sh -c";
+[ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL" "machssh";:;}||qssh="sh -c";
+[ "$ZL" ]&&{ zssh="ssh $ZL";pruefpc "$ZL" "machssh";:;}||zssh="sh -c";
 # [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 # [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
