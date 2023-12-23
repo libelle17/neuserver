@@ -387,8 +387,11 @@ pruefpc() {
     if [ $iru = 1 -a ! $2/ = kurz/ ]; then
       transverb=; [ $verb ]&&transverb=-v;
       weckalle.sh "$1" -grue $transverb; # muss noch klären, warum er ohne grue linux8 nicht weckt
+      [ $verb ]&&printf "Nach weckalle.sh\n";
       for ii in $(seq 1 1 1000); do
+        [ $verb ]&&printf "ii: &ii, vor ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
+        [ $verb ]&&printf "nach erfolgreichem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
         [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$((1 + $RANDOM % 100000))
         printf "${blau}gewdat: ${rot}$gewdat$reset\n";
         printf "füge $1 hinzu\n";
@@ -400,6 +403,7 @@ pruefpc() {
          fi;
          break;
         }
+        [ $verb ]&&printf "ii: &ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
       sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$(cat $gewdat)";
