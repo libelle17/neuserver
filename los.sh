@@ -1522,7 +1522,7 @@ teamviewer10() {
 				4) # opensuse
 #					 printf "${blau}zypper --no-gpg-checks in -l $Dw/$trpm$reset\n";
 					 printf "${blau}zypper --gpg-auto-import-keys in -l $Dw/$trpm$reset\n";
-					 zypper --gpg-auto-import-keys in -G -l $Dw/$trpm;
+					 zypper --gpg-auto-import-keys in -y -l $Dw/$trpm;
 					;;
 				5) # fedora,
 					 printf "${blau}dnf --nogpgcheck install $Dw/$trpm$reset\n";
@@ -1854,6 +1854,8 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
+echo osnr: $ONR;
+exit;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
