@@ -548,6 +548,7 @@ pruefsql() {
   [ $sda = 1 ]&&{
     sqlite3 "$sdb" "CREATE TABLE IF NOT EXISTS ips(id INTEGER PRIMARY KEY AUTOINCREMENT, mac TEXT KEY, ip TEXT KEY, name TEXT KEY, verbi TEXT KEY, zp NUMERIC KEY, UNIQUE(mac,ip,name) ON CONFLICT REPLACE)";
       sqlite3 "$sdb" "CREATE TABLE IF NOT EXISTS mac(mac TEXT, UNIQUE(mac) ON CONFLICT IGNORE)";
+#      sqlite3 "$sdb" vacuum;
   }
 }
 
