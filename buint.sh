@@ -11,7 +11,7 @@ ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwand
 ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 # nurdrei=1;
-nurzweidrei=1;
+# nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -52,7 +52,7 @@ for iru in 1 2 3; do
   if [ "$offen" ]; then
     break;
   else
-    echo "";
+    echo "neue Zeile 1";
     [ "$obkill" ]&&{
       if [ "$iru" = 1 ]; then
         ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
@@ -77,7 +77,7 @@ if [ "$offen" ]; then
   fi;
  done;
 fi;
-[ ! "$offen" -o ! "$verb" ]&&echo "";
+[ ! "$offen" -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 
@@ -99,6 +99,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     wirt=linux$nr;
     [ $verb ]&&printf "\nPrüfe PC ${blau}$wirt$reset ...";
     if pruefpc $wirt; then
+      echo "Nach Pruefpc, zur zum Finden der freien Zeile"
       [ $verb ]&&printf " fiel positiv aus.\n";
 . ${MUPR%/*}/virtnamen.sh; # legt aus $wirt fest: $gpc, $gast, $tush
       # case $wirt in *0*) gpc=virtwin0; gast=Win10;;
@@ -168,6 +169,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
+#          echo "vor ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
           ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
           # für die Client-Zertifikate, könnte aber nicht gehen
 #          rsync -avu /amnt/virtwin/turbomed/Programm/communicator /opt/turbomed/Programm/

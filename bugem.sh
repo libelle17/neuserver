@@ -8,28 +8,48 @@ lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
+kopbef="ionice -c3 nice -n19 rsync";
+SD="Schutzdatei_bitte_belassen.doc"
+LINEINS=linux1;
+maxz=;
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
-  if test "$3"/ = direkt/; then
+  gz=;
+  anzeige=$(echo "$2${1%\n}$reset"|sed 's/%/%%/');
+	[ "$verb" -o "$2" ]&&{ gz=1;printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+  if test "$3" = direkt; then
     "$1";
   elif test "$3"; then 
-    echo erstens: eval "$1";
     eval "$1"; 
   else 
 #    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
 #    printf "$rot$ne$reset";
-    resu=$(eval "$1"); 
+    resu=$(eval "$1" 2>&1); 
   fi;
   ret=$?;
-  if [ "$verb" ]; then
-    printf " -> ret: $blau$ret$reset";
-    if [ "$3" ]; then printf '\n'; else printf ", resu:\n$blau"; echo "$resu"|sed -e '$ a\'; printf "$reset"; fi;
-  elif [ "$2" ]; then
-    printf "\n";
+  resgedr=;
+  [ $verb ]&& printf " -> ret: $blau$ret$reset";
+  if [ "$3" ]; then 
+    printf '${rot}neue Zeile 5$reset\n'; 
+  else
+    [ "$ret" -ne 0 -a "$resu" ]&&tuanz=1||tuanz=;
+    [ "$verb" -o "$tuanz" ]&&{ 
+      [ "$gz" ]||printf "$anzeige";
+      [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
+      printf "${reset}, resu:\n$farbe"; 
+      resgedr=1;
+      if [ ! "$maxz" -o "$maxz" = 0 ]; then
+        echo "$resu"|sed -e '$ a\';
+      else
+        echo "$resu"|tail -n$maxz|sed -e '$ a\';
+      fi;
+      printf "$reset";
+    }
   fi;
+  [ "$gz" -a -z "$resgedr" ]&&printf "\n";
+#  [ $resgedr ]||printf "\n";
 } # ausf
 
 ausfd() {
@@ -57,9 +77,12 @@ commandline() {
         m|-mehr) obmehr=1;;
         nv|-nichtvirt) obnv=1;;
         nd|-nurdrei) nurdrei=1;;
+        nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
         z|-ziele) shift; ziele="$1";
                   echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };;
+        mz|-maxz) shift; maxz="$1";
+                  echo "$maxz"|egrep -q "^[0-9 ]*$"||{ printf "Kann maximale Zeilenzahl: $blau$maxz$reset nicht auflösen. Breche ab.\n"; exit; };;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -83,6 +106,9 @@ commandline() {
 		printf "ZL: $blau$ZL$reset\n";
 		printf "nichtvirt: $blau$obnv$reset\n";
 		[ $nurdrei ]&&printf "nurdrei: $blau$nurdrei$reset => in buint.sh nur auf Zielrechnern zwischen virt.Windows und Linux kopieren\n";
+		[ $nurzweidrei ]&&printf "nurzweidrei: $blau$nurzweidrei$reset => in buint.sh nur von linux1 auf Zielrechner und dort nach virtwin{$ziele} kopieren\n";
+    printf "ziele: $blau$ziele$reset\n";
+    printf "maximale Zeilenzahl: $blau$maxz$reset\n";
 	fi;
 } # commandline
 
@@ -160,19 +186,21 @@ kopiermt() { # mit test
   ZVos=${ZVofs%/}; ZVofs=$ZVos/; [ "$obsub" ]&&ZVos=$ZVos/${QVofs##*/};
   ZVos=${ZVos#/}; ZVofs=${ZVofs#/}; # bei QVofs ohne / noch nötig
   [ "$obdat" ]&&ZVofs=$ZVofs${QVofs##*/};
-  echo "";
+#  echo "neue Zeile 3";
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
-  [ "$QL" ]&&{ 
-    echo Überprüfe $QL
-#    ping -c1 -W1 "$QL">/dev/null 2>&1 && QL=192.168.178.2${QL#linux};
-    if ping -c1 -W1 "$QL">/dev/null 2>&1; then printf "$blau$QL$reset anpingbar.\n"; else printf "$blau$QL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
-  }; 
-  [ "$ZL" ]&&{ 
-    echo Überprüfe $ZL
-#    ping -c1 -W1 "$ZL">/dev/null 2>&1 && ZL=192.168.178.2${ZL#linux};
-    if ping -c1 -W1 "$ZL">/dev/null 2>&1; then printf "$blau$ZL$reset anpingbar.\n"; else printf "$blau$ZL$rot nicht anpingbar, verlasse Funktion$reset\n"; return;fi;
-  }; 
+  for pc in "$QL" "$ZL"; do
+    [ "$pc" ]&&{ 
+      printf "Überprüfe $blau$pc$reset:"
+  #    ping -c1 -W1 "$QL">/dev/null 2>&1 && QL=192.168.178.2${QL#linux};
+      if ping -c1 -W1 "$pc">/dev/null 2>&1; then 
+        printf "$reset anpingbar.\n"; 
+      else 
+        printf "$rot nicht anpingbar, verlasse Funktion$reset\n"; 
+        return;
+      fi;
+    }; 
+  done;
   for zute in "/$QVos" "/$ZVos"; do # zutesten
     if test "$zute/" = "/$QVos/"; then hsh="$qssh"; Lfw=$QL; else hsh="$zssh"; Lfw=$ZL; fi;
     [ "$Lfw" ]||Lfw=$buhost" (hier) ";
@@ -215,7 +243,7 @@ kopiermt() { # mit test
 #            ausf "$hsh \"mount $zuteh -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              # hier geht gar nix:
 #             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
-             echo "";
+             echo "neue Zeile 4";
            else
       #       printf " ${blau}$cifs$reset gemountet!\n"
              break;
@@ -349,10 +377,11 @@ kopiermt() { # mit test
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
       ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL" $dblau;
+#      echo "nach ausf mit dblau, nur zum Debuggen"
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
-		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret/ = 0/ ]&&EXGES=${EXGES},/$QVos/;
+		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
@@ -389,31 +418,37 @@ pruefpc() {
       for ii in $(seq 1 1 $seqmax); do # 100
         [ $verb ]&&printf "ii: $ii, vor ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
-        [ $verb ]&&printf "nach erfolgreichem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
-        [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$(date +%s); #  $((1 + $RANDOM % 100000))
-        printf "${blau}gewdat: ${rot}$gewdat$reset\n";
-        printf "füge $1 hinzu\n";
+         [ $verb ]&&printf "nach erfolgreichem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
+         [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$(date +%s); #  $((1 + $RANDOM % 100000))
+         [ $verb ]&&printf "${blau}gewdat: ${lila}$gewdat$reset\n";
+         [ $verb ]&&printf "füge $1 hinzu\n";
          if [ -f "$gewdat" ]; then  # geweckten PC zusätzlich in $gewdat eintragen, falls noch nicht enthalten
            cat $gewdat|grep -q "$1"||printf "$1 " >>$gewdat;
          else
            printf "$1 " >$gewdat;
          fi;
+         [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${gdi%.}; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
          break;
-        }
-        [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
+        } #         ping -c1 -W10 "$1" >/dev/null 2>&1&&
+       [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
-      ausf "sleep 40";
-      ausf "ssh "$1" ls";
-      [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${gdi%.}; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 $seqmax)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
      return 1;
     fi;
-    [ $verb ]&&printf "nach if \[ \$iru\n";
   done;
-  [ $verb ]&&printf "Ende ${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\"\n";
+  printrueck=;
+  for iru in $(seq 1 1 60); do
+   if ssh "$1" echo '' >/dev/null 2>&1; then printf "\r"; break; fi;
+   printrueck=1;
+   sleep 1;
+   printf ".";
+  done;
+  [ $printrueck ]&&printf "\r";
+  ssh "$1" echo '' >/dev/null 2>&1 &&retu=0||retu=1;
+  [ $verb ]&&printf "Ende ${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\", retu: $retu\n";
+  return $retu;
 } # pruefpc
 
 gutenacht() {
@@ -421,7 +456,7 @@ gutenacht() {
   if [ "$gewdat" -a -f "$gewdat" ]; then 
     [ "$verb" ]&&printf "${rot}gewdat: ${blau}%s$reset\n ${blau}%s$reset\n" "$gewdat" "$(cat "$gewdat")";
     for pc in $(cat "$gewdat");do  
-     printf "$rot$Fahre PC $blau$pc$rot herunter!$reset\n";
+     printf "${lila}Fahre PC $blau$pc$lila herunter!$reset\n";
      ssh $pc shutdown now;
     done;
     rm "$gewdat";
@@ -437,13 +472,6 @@ machssh() {
 }
 
 # hier geht's los
-blau="\033[1;34m";
-dblau="\033[0;34;1;47m";
-rot="\033[1;31m";
-reset="\033[0m";
-kopbef="ionice -c3 nice -n19 rsync";
-SD="Schutzdatei_bitte_belassen.doc"
-LINEINS=linux1;
 verb=;
 obecht=;
 obdel=;
@@ -454,6 +482,7 @@ obnv=;
 obhilfe=;
 sdneu=;
 nurdrei=;
+nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
 if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
