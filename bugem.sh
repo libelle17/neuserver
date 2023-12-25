@@ -407,7 +407,7 @@ pruefpc() {
       done;
 #      sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat $gedat)"; printf "${lila}gewdat: ${blau}$gdi$reset\n";printf "Zeile fertig\n";};
+      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat $gedat)"; printf "${lila}gewdat: ${blau}%s$reset\n" "Testaussage";printf "Zeile fertig\n";};
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 $seqmax)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
