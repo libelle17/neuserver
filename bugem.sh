@@ -339,8 +339,6 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
     Quelle=$QmD/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
-    altverb=$verb;
-    verb=1;
     [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
 #    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
 #    QVofs=/ Pfad/zum/qv[/]
@@ -354,7 +352,6 @@ kopiermt() { # mit test
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
-    verb=$altverb;
 		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ $ret/ = 0/ ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
@@ -405,10 +402,10 @@ pruefpc() {
         }
         [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
-      sleep 10;
+      ausf "sleep 40";
+      ausf "ssh "$1" ls";
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${gdi%.}; 
-                     printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
+      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${gdi%.}; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 $seqmax)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
@@ -420,8 +417,6 @@ pruefpc() {
 } # pruefpc
 
 gutenacht() {
-  altverb=$verb;
-  verb=1;
   [ $verb ]&&printf "${blau}gutenacht()$reset\n";
   if [ "$gewdat" -a -f "$gewdat" ]; then 
     [ "$verb" ]&&printf "${rot}gewdat: ${blau}%s$reset\n ${blau}%s$reset\n" "$gewdat" "$(cat "$gewdat")";
@@ -431,7 +426,6 @@ gutenacht() {
     done;
     rm "$gewdat";
   fi;
-  verb=$altverb;
 } # gutenacht
 
 machssh() {

@@ -87,7 +87,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     for ziel in $ziele; do
       [ "$obecht" ]&&echtpar=" -e"||echtpar=;
       [ "$verb" ]&&verbpar=" -v"||verbpar=;
-      echo butm.sh linux$ziel -nv$echtpar$verbpar;
+      echo ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
       ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
     done;
   fi; # nurdrei
