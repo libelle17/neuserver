@@ -11,6 +11,7 @@ ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwand
 ZL=; # dann werden die cifs-Laufwerke verwendet
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 # nurdrei=1;
+nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -70,7 +71,7 @@ if [ "$offen" ]; then
   uq=$Vz;
   [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
-  if ! [ "$nurdrei" ]; then
+  if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
     # hier sind immer $wirt und $ZL leer
     kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
   fi;
