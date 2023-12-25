@@ -44,22 +44,21 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-printf "${lila}1. intern $text kopieren${reset}";
+printf "${lila}1. intern $text kopieren\n${reset}";
 for iru in 1 2 3; do
-  [ "$verb" ]&&printf "\nPrüfe die Überschreibbarkeit von c\:\\turbomed\\StammDB\\objects.idx auf $blau$gpc$reset\n";
+  [ "$verb" ]&&printf "Prüfe die Überschreibbarkeit von c\:\\turbomed\\StammDB\\objects.idx auf $blau$gpc$reset\n";
   if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
   [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
   if [ "$offen" ]; then
     break;
   else
-    echo "neue Zeile 1";
     [ "$obkill" ]&&{
       if [ "$iru" = 1 ]; then
         ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
       else
         VBoxManage controlvm Win10 poweroff; VBoxManage startvm Win10 --type headless;
       fi;
-    }
+    } #  [ "$obkill" ]
   fi;
   [ "$obkill" ]||break;
 done;

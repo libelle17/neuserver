@@ -11,7 +11,7 @@ reset="\033[0m";
 kopbef="ionice -c3 nice -n19 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
-maxz=;
+maxz=0;
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
@@ -34,17 +34,13 @@ ausf() {
   if [ "$3" ]; then 
     printf '${rot}neue Zeile 5$reset\n'; 
   else
-    [ "$ret" -ne 0 -a "$resu" ]&&tuanz=1||tuanz=;
-    [ "$verb" -o "$tuanz" ]&&{ 
+    [ "$verb" -o \( "$ret" -ne 0 -a "$resu" \) ]&&{ 
       [ "$gz" ]||printf "$anzeige";
       [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
       printf "${reset}, resu:\n$farbe"; 
       resgedr=1;
-      if [ ! "$maxz" -o "$maxz" = 0 ]; then
-        echo "$resu"|sed -e '$ a\';
-      else
-        echo "$resu"|tail -n$maxz|sed -e '$ a\';
-      fi;
+      [ "$maxz" -a "$maxz" -ne 0 -a $(echo "$resu"|wc -l) > "$maxz" ]&&resz="...\n"$(echo "$resu"|tail -n$maxz)||resz="$resu";
+      printf "$resz"|sed -e '$ a\';
       printf "$reset";
     }
   fi;
@@ -72,17 +68,18 @@ commandline() {
         d|-del) obdel=1;;
         e|-echt) obecht=1;;
         f|-force) obforce=1;;
-        h|-h|-help|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
+        h|?|-h|-?|/?|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
+        -help) obhilfe=e;; # englische Hilfe
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
+        mz|-maxz) shift; maxz="$1";
+                  echo "$maxz"|egrep -q "^[0-9 ]*$"||{ printf "Kann maximale Zeilenzahl: $blau$maxz$reset nicht auflösen. Breche ab.\n";exit;};;
         nv|-nichtvirt) obnv=1;;
         nd|-nurdrei) nurdrei=1;;
         nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
         z|-ziele) shift; ziele="$1";
-                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n"; exit; };;
-        mz|-maxz) shift; maxz="$1";
-                  echo "$maxz"|egrep -q "^[0-9 ]*$"||{ printf "Kann maximale Zeilenzahl: $blau$maxz$reset nicht auflösen. Breche ab.\n"; exit; };;
+                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -97,7 +94,7 @@ commandline() {
 		printf "obecht: $blau$obecht$reset\n";
 		[ $obdel ]&&printf "obdel: $blau$obdel$reset => in butm.sh rsync mit --delete aufrufen\n";
 		[ $obforce ]&&printf "obforce: $blau$obforce$reset => in butm.sh und buint.sh kopiermt ohne Altersprüfung aufrufen\n";
-    [ $obkill ]&&printf "obkill: $blau$obkill$reset => in butm.sh und buint.sh ggf. Turboed-Verbindungen zu Windows-Server killen zum Kopieren\n";
+    [ $obkill ]&&printf "obkill: $blau$obkill$reset => in butm.sh und buint.sh ggf. Turbomed-Verbindungen zu Windows-Server killen zum Kopieren\n";
     [ $obmehr ]&&printf "obmehr: $blau$obmehr$reset => in buint.sh auch 2. auf linux{$ziele} und dort auf virtuelle Windows-Server kopieren\n";
     [ $obnv ]&&printf "obnv: $blau$obnv$reset => in butm.sh nicht auf virtuellen Windows-Server weiter kopieren\n"; 
 		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
@@ -485,23 +482,35 @@ nurdrei=;
 nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
-if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
-  printf "%b\n" \
-  "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-f/-k/-m/-nv/-z\"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
-  " ${blau}-d$reset bewirkt auf dem Zielrechner Loeschen der auf dem Quellrechner nicht vorhandenen Dateien" \
-  " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren jener Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
-  " ${blau}-e${reset} bewirkt echten Lauf" \
-  " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist" \
-  " ${blau}-h${reset} bewirkt das Anzeigen dieser Hilfe" \
-  " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt";
-    if [ $(basename $0) == buint.sh ]; then
-  printf "%b\n" \
-  " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
-  " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden." \
-  " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7";
-    fi;
-  printf "%b\n" \
-  " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
+if [ \( "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
+  if [ "${0##*/}" = buint.sh ]; then
+    printf "%b\n" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" <-e/-f/-k/-m/-mz <zahl>/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
+    " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren jener Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
+    " ${blau}-e${reset} bewirkt echten Lauf" \
+    " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist" \
+    " ${blau}-h${reset} bewirkt das Anzeigen dieser Hilfe" \
+    " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
+    " ${blau}-m${reset} bewirkt, dass noch mehr getan wird (Dateien auf ${blau}/opt${reset} auf andere Server kopiert und von dort aus auf die virtuallen Windowsserver)" \
+    " ${blau}-mz${reset} maximale Zeilenzahl für Ergebnisausgaben" \
+    " ${blau}-nz${reset} bewirkt, dass nur der 2. + 3. Teil (auf Zielrechner und dort virt.Wind.<->linux kopieren) ausgeführt wird." \
+    " ${blau}-nd${reset} bewirkt, dass nur der 3. Teil (auf Zielrechnern virt.Wind.<->linux kopieren) ausgeführt wird." \
+    " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
+    " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
+  elif [ "${0##*/}" = butm.sh ]; then
+    printf "%b\n" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-f/-k/-m/-mz <zahl>/-nv/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
+    " ${blau}-d$reset bewirkt auf dem Zielrechner Loeschen der auf dem Quellrechner nicht vorhandenen Dateien" \
+    " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren jener Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
+    " ${blau}-e${reset} bewirkt echten Lauf" \
+    " ${blau}-f${reset} bewirkt, dass auch kopiert wird, wenn die Testdatei ${blau}objects.dat${reset} nicht aelter ist" \
+    " ${blau}-h${reset} bewirkt das Anzeigen dieser Hilfe" \
+    " ${blau}-k${reset} bewirkt, dass ggf. die virtuellen Windows-Server neu gestartet werden, wenn gesperrt" \
+    " ${blau}-mz${reset} maximale Zeilenzahl für Ergebnisausgaben" \
+    " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden." \
+    " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
+    " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
+  fi;
   exit;
 fi;;
 esac;
