@@ -405,10 +405,10 @@ pruefpc() {
         }
         [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
-#      sleep 10;
+      sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${x%.}; 
-                     printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";printf "Zeile fertig\n";};
+      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat "$gewdat" && echo .)"; gdi=${gdi%.}; 
+                     printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
       [ $verb ]&&printf "nach for ii in \$(seq 1 1 $seqmax)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
@@ -420,6 +420,8 @@ pruefpc() {
 } # pruefpc
 
 gutenacht() {
+  altverb=$verb;
+  verb=1;
   [ $verb ]&&printf "${blau}gutenacht()$reset\n";
   if [ "$gewdat" -a -f "$gewdat" ]; then 
     [ "$verb" ]&&printf "${rot}gewdat: ${blau}%s$reset\n ${blau}%s$reset\n" "$gewdat" "$(cat "$gewdat")";
@@ -429,6 +431,7 @@ gutenacht() {
     done;
     rm "$gewdat";
   fi;
+  verb=$altverb;
 } # gutenacht
 
 machssh() {
