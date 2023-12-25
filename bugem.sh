@@ -388,15 +388,15 @@ pruefpc() {
       transverb=; [ $verb ]&&transverb=-v;
       weckalle.sh "$1" -grue $transverb; # muss noch klären, warum er ohne grue linux8 nicht weckt
       [ $verb ]&&printf "Nach weckalle.sh\n";
-      for ii in $(seq 1 1 100); do # 100
+      seqmax=100;
+      for ii in $(seq 1 1 $seqmax); do # 100
         [ $verb ]&&printf "ii: $ii, vor ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
         ping -c1 -W10 "$1" >/dev/null 2>&1&&{
         [ $verb ]&&printf "nach erfolgreichem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
-        [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$((1 + $RANDOM % 100000))
+        [ $gewdat ]||gewdat=${MUPR%/*}/geweckt$(date +%s); #  $((1 + $RANDOM % 100000))
         printf "${blau}gewdat: ${rot}$gewdat$reset\n";
         printf "füge $1 hinzu\n";
-        cat $gewdat;
-         if [ -f "$gewdat" ]; then 
+         if [ -f "$gewdat" ]; then  # geweckten PC zusätzlich in $gewdat eintragen, falls noch nicht enthalten
            cat $gewdat|grep -q "$1"||printf "$1 " >>$gewdat;
          else
            printf "$1 " >$gewdat;
@@ -405,12 +405,10 @@ pruefpc() {
         }
         [ $verb ]&&printf "ii: $ii, nach erfolglosem ping -c1 -W10 \"$1\" \>/dev/null 2\>\&1\n"
       done;
-      [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
-      [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
 #      sleep 10;
       [ "$verb" ]&&printf "${lila}gewdat: ${blau}%s$reset\n" "$gewdat";
-      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat $gedat)"; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";};
-      [ $verb ]&&printf "nach for ii in \$(seq 1 1 2)\n";
+      [ "$verb" ]&&{ gdi=;[ $gewdat ]&&gdi="$(cat $gedat)"; printf "${lila}gewdat: ${blau}%s$reset\n" "$gdi";printf "Zeile fertig\n";};
+      [ $verb ]&&printf "nach for ii in \$(seq 1 1 $seqmax)\n";
     else
      printf "$1 nicht erreichbar";[ ! $2/ = kurz/ ]&&printf "und nicht weckbar.";printf " Lasse ihn aus.\n";
      return 1;
