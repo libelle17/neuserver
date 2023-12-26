@@ -78,7 +78,8 @@ if [ "$offen" ]; then
 fi;
 [ ! "$offen" -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
-if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
+
+if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
 
   printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
   if ! [ "$nurdrei" ]; then
@@ -86,12 +87,12 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
     for ziel in $ziele; do
       [ "$obecht" ]&&echtpar=" -e"||echtpar=;
       [ "$verb" ]&&verbpar=" -v"||verbpar=;
-      echo ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
-      ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
+#      echo ${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar;
+      ausf "${MUPR%/*}/butm.sh linux$ziel -nv$echtpar$verbpar -mz $maxz" "" direkt;
     done;
   fi; # nurdrei
 
-  printf "${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
+  printf "\n${lila}3. intern von linux{$ziele} nach virtwin{$ziele} kopieren${reset}\n";
   # 3. wenn mehr, dann (von hier aus über ssh) den anderen nicht-virtuellen auf die anderen virtuellen Server kopieren
   ZL=;
   for nr in $ziele; do
@@ -135,12 +136,10 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
          printf "$blau$gpc$reset immer noch nicht anpingbar, überspringe ihn\n";
         else
           cifs=/amnt/$gpc/turbomed;
-          printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
+          printf "$lila$gpc$reset, wirt: $lila$wirt$reset:\n" # , cifs: $lila$cifs$reset:\n";
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
             if ! mountpoint -q $cifs; then
-              printf "\n";
               ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
-              printf "\n";
             else
        #       printf " ${blau}$cifs$reset gemountet!\n"
               break;
@@ -148,7 +147,7 @@ if [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
           done;
         fi; # [ ! "$ok" ]; then else
         if mountpoint -q $cifs; then
-          [ "$verb" ]&&printf "$blau$cifs$reset gemountet.\n"; 
+          printf "$blau$cifs$reset gemountet.\n"; 
         else 
           printf "$blau$cifs${rot} kein mountpoint, verlasse Schleife$reset\n"; 
           continue;

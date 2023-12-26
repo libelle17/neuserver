@@ -20,7 +20,7 @@ ausf() {
   anzeige=$(echo "$2${1%\n}$reset"|sed 's/%/%%/');
 	[ "$verb" -o "$2" ]&&{ gz=1;printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
   if test "$3" = direkt; then
-    "$1";
+    $1;
   elif test "$3"; then 
     eval "$1"; 
   else 
@@ -31,9 +31,7 @@ ausf() {
   ret=$?;
   resgedr=;
   [ $verb ]&& printf " -> ret: $blau$ret$reset";
-  if [ "$3" ]; then 
-    printf '${rot}neue Zeile 5$reset\n'; 
-  else
+  if [ -z "$3" ]; then 
     [ "$verb" -o \( "$ret" -ne 0 -a "$resu" \) ]&&{ 
       [ "$gz" ]||printf "$anzeige";
       [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
@@ -68,7 +66,7 @@ commandline() {
         d|-del) obdel=1;;
         e|-echt) obecht=1;;
         f|-force) obforce=1;;
-        h|?|-h|-?|/?|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
+        h|'?'|-h|'-?'|/?|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
         -help) obhilfe=e;; # englische Hilfe
         k|-kill) obkill=1;;
         m|-mehr) obmehr=1;;
@@ -482,7 +480,7 @@ nurdrei=;
 nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in bu*)
-if [ \( "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
+if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   if [ "${0##*/}" = buint.sh ]; then
     printf "%b\n" \
     "$blau$0$reset, Syntax: $blau"$(basename $0)" <-e/-f/-k/-m/-mz <zahl>/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
