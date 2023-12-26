@@ -28,6 +28,7 @@ ausf() {
 
 # Befehlszeilenparameter auswerten
 commandlhier() {
+  nurhier=;
   nurli=;
   verb=;
 	while [ $# -gt 0 ]; do
@@ -35,6 +36,7 @@ commandlhier() {
      -*|/*)
       para=${1#[-/]};
       case $para in
+        nh|-nurhier) nurhier=1;;
         nl|-nurlinux) nurli=1;;
         v|-verbose) verb=1;;
       esac;;
@@ -52,6 +54,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw.
+[ $nurhier ]&&ziele=;
 if ! test $nurli; then 
  echo "Virtuelle Windows-Server:"
  for nr in 1 $ziele; do
