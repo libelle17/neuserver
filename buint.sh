@@ -45,24 +45,27 @@ fi;
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 printf "${lila}1. intern $text kopieren\n${reset}";
+mudat="c:\\\turbomed\\StammDB\\objects.idx";
 for iru in 1 2 3; do
-  [ "$verb" ]&&printf "Prüfe die Überschreibbarkeit von c\:\\turbomed\\StammDB\\objects.idx auf $blau$gpc$reset\n";
-  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=1; else offen=; fi;
-  [ "$verb" ]&&{ printf "\niru: $iru; offen: $offen\n"; };
-  if [ "$offen" ]; then
+  [ "$verb" ]&&printf "Prüfe die Offenheit von $mudat auf $blau$gpc$reset\n";
+  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=ja; else offen=nein; fi;
+  [ "$verb" ]&&{ printf "iru: $iru; offen: $blau$offen$reset\n"; };
+  if [ "$offen" = ja ]; then
     break;
   else
-    [ "$obkill" ]&&{
+    if [ "$obkill" ]; then
       if [ "$iru" = 1 ]; then
         ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
       else
         VBoxManage controlvm Win10 poweroff; VBoxManage startvm Win10 --type headless;
       fi;
-    } #  [ "$obkill" ]
+    else
+      printf "$blau$mudat$reset gesperrt. $blau-k$reset nicht angegeben. Kann nicht kopieren.\n";
+      break;
+    fi; #  [ "$obkill" ]
   fi;
-  [ "$obkill" ]||break;
 done;
-if [ "$offen" ]; then
+if [ "$offen" = ja ]; then
  for Vz in $VzL; do
   [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
@@ -76,7 +79,7 @@ if [ "$offen" ]; then
   fi;
  done;
 fi;
-[ ! "$offen" -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
+# [ "$offen" = nein -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
 [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 
 if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
@@ -186,5 +189,5 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
   [ "$verb" ]&&printf "\n${rot}Nach nr in $ziele$reset\n";
 fi; # [ "$obmehr" -a "$buhost"/ = "$LINEINS"/ ]; then
 gutenacht;
-[ "$verb" ]&&printf "\n${rot} ziemlich am Schluss von $MUPR$reset\n";
+[ "$verb" ]&&printf "am Schluss von $blau$MUPR$reset\n";
 EXFEST=$altEXFEST;
