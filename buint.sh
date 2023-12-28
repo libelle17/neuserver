@@ -16,14 +16,11 @@ ZL=; # dann werden die cifs-Laufwerke verwendet
 wirt=$buhost;
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 # gpc= z.B. virtwin, virtwin0, virtwin3, virtwin7, virtwin8, gast= Win10
-ot=opt/turbomed;
-otP=/$ot/PraxisDB;
-resD=PraxisDB-res;
-otr=/$ot/$resD;
 VzLg="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber"; # VzL groß
 VzLk="PraxisDB StammDB DruckDB Dictionary"; # VzL klein
-if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
-  obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
+
+testobvirt;
+if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
   VzL="$VzLg";
   ur=$ot # opt/turbomed
   hin=amnt/$gpc/turbomed;
@@ -32,7 +29,6 @@ if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB
   fi;
   text="von $buhost nach $gpc"
 else 
-  obvirt=1; 
   VzL="$VzLk";
   ur=amnt/$gpc/turbomed; 
   hin=$ot;
@@ -71,7 +67,7 @@ if [ "$offen" = ja ]; then
   case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
     # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
   uq=$Vz;
-  [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
+  [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
   ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
   if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
     # hier sind immer $wirt und $ZL leer
@@ -162,7 +158,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
-        [ "$obvirt" -a $Vz = PraxisDB ]&&uz=$resD||uz=$Vz;
+        [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
         hin=amnt/$gpc/turbomed;
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         if [ $dreieck ]; then

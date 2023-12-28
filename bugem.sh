@@ -464,7 +464,35 @@ machssh() {
 # [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 # [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
-}
+} # machssh
+
+testobvirt() {
+  ot=opt/turbomed;
+  otP=/$ot/PraxisDB;
+  resD=PraxisDB-res;
+  otr=/$ot/$resD;
+  obvirt=;
+  if eval "$tush 'test -d $otr'"; then
+    if eval "$tush 'test -d $otP'"; then # beide gibt's
+      if eval "$tush 'find $otP -maxdepth 1 -size -9M -iname objects.dat|grep .' >/dev/null" &&
+        eval "$tush 'find $otr -maxdepth 1 -size +10G -iname objects.dat|grep .' >/dev/null"; then
+        obvirt=1;
+      fi; 
+    else # nur PraxisDB-res gibt's
+      obvirt=1;
+    fi;
+  else
+    if eval "$tush 'test -d $otP'"; then # nur PraxisDB gibt's
+      obvirt=0;
+  #  else # keines gibt's
+    fi;
+  fi;
+  if [ -z "$obvirt" ]; then
+    printf "${rot}Nicht ermittelbar, ob virtueller Betrieb oder nicht, breche ab.$reset\n";
+    exit;
+  fi;
+} # testobvirt
+
 
 # hier geht's los
 verb=;

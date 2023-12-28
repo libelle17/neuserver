@@ -31,15 +31,11 @@ case $buhost in
 esac
 
 if [ $wach ]; then
-  ot=opt/turbomed;
-  otP=/$ot/PraxisDB;
-  otr=/$ot/PraxisDB-res;
-  if eval "$tush 'test -d $otP'"; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
-      obvirt=;                                   # also nicht die virtuelle Installation verwendet wird
+  testobvirt;
+  if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
       Pr=PraxisDB;
       ausf "$zish '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt
   else
-      obvirt=1; 
       Pr=PraxisDB-res;
       ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
   fi;
@@ -49,7 +45,7 @@ if [ $wach ]; then
       hin=$ot;
       offen=1;
     else  # iru = 2
-      [ "$obvirt" ]||break;
+      [ "$obvirt" = 1 ]||break;
       Pr=PraxisDB;
       ur=amnt/$l1gpc/turbomed; # kopiere das gesamte /amnt/virtwin/turbomed
       hin=amnt/$rgpc/turbomed;
@@ -83,7 +79,7 @@ if [ $wach ]; then
     [ "$obnv" ]&&break; # dann keine iru 2
     [ "$gpc" ]||break; # auf linux3 gibts keinen virtuellen Server
   done;
-  [ "$obkill" -a "$obvirt" ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
+  [ "$obkill" -a "$obvirt" = 1 ]&&{ mv /$ot/lau /$ot/lauf||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
   Dt=DATA; 
   Pt=Patientendokumente;
   for zug in "$tush" "$zish"; do
