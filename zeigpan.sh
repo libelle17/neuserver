@@ -123,15 +123,15 @@ if ! test $nurli; then
             break;
           fi;
         done;
+        if mountpoint -q $cifs; then
+         altverb=$verb;
+         verb=1;
+         ausf "ls -l $cifs/$pr/objects.*" $dblau;
+         verb=$altverb;
+        else
+         printf "kein Mountpoint\n";
+        fi;
       fi; # [ ! "$ok" ]; then else
-      if mountpoint -q $cifs; then
-       altverb=$verb;
-       verb=1;
-       ausf "ls -l $cifs/$pr/objects.*" $dblau;
-       verb=$altverb;
-      else
-       printf "kein Mountpoint\n";
-      fi;
       [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
       altverb=$verb;
       verb=1;
