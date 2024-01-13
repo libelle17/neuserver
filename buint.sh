@@ -160,6 +160,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         uq=$Vz;
         [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
         hin=amnt/$gpc/turbomed;
+        hres=amnt/${gpc/virtwin/vw}/turbomed; # vw0
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
         if [ $dreieck ]; then
           # wirt ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert
@@ -167,7 +168,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
 #          echo "vor ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
-          ausf "ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
+          ausf "ssh $wirt 'for sv in $hin $hres; do zl=/$sv;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&{ rsync -avu /$ot/$uz/ \$zl/$uq/;break;}; done;' ";
           # für die Client-Zertifikate, könnte aber nicht gehen
 #          rsync -avu /amnt/virtwin/turbomed/Programm/communicator /opt/turbomed/Programm/
 #          rsync -avu /amnt/virtwin/turbomed/Daten/Var/aWinS /opt/turbomed/Daten/Var/
