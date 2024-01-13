@@ -965,7 +965,25 @@ proginst() {
 # PS1="${GRUEN}\u@\h: \w${RESET}>"
 
 # fehlt: /etc/environment festlegen
-# für die Windows-Rechner: public keys an authorized_keys anhängen, diese auf %userprofile%\.ssh\ verteilen, dann noch in c:\programdata\ssh\sshd_config die letzten beiden Zeilen (Match Group Administrators AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys) auskommentieren 
+# für Windows-Rechner:
+# in Windows 10:
+# Systemeinstellungen -> App & Features -> Optionale Features 
+# in Windows-Server 2019:
+# in Einstellungen -> Apps & Features -> Optionale Features wird OpenSSH-Server installiert, in services.msc auf automatisch gestellt und gestartet
+# oder: Get-Service -Name sshd | Set-Service -StartupType Automatic und Start-Service sshd
+# in c:\programdata\ssh\sshd_config die letzten beiden Zeilen (Match Group Administrators AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys) auskommentieren (dann wird .ssh durch Verwendung angelegt )
+# "ssh-keygen -t ed25519" ohne passphrase
+# dann von der Powershell aus:
+# "$ak=Get-Content -Path $env:USERPROFILE\.ssh\id_ed25519.pub"
+# wenn der Benutzer auf dem Server "schade" ist:
+# "$vz="c:\users\sturm\.ssh";$rps="powershell New-Item -Force -ItemType Directory -Path $vz;Add-Content -Force -Path $vz\authorized_keys -Value '$ak'""
+# "ssh sturm@szn4 $rPs"
+# (dann erfolgt vom eigenen PC aus "ssh sturm@szn4" ohne Passwortabfrage)
+# Benutzer wechseln mit "runas /user:sturm cmd"
+# Kopieren auf fremden Windows-Rechne:
+# scp .ssh\authorized_keys administrator@szn4:c:/users/sturm/.ssh/
+
+# public keys an authorized_keys anhängen, diese auf %userprofile%\.ssh\ verteilen, dann noch  
 
   D=/var/log/journal;[ -d $D ]||mkdir -p $D;
 	case $OSNR in
