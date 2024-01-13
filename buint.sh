@@ -40,48 +40,49 @@ fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
-printf "${lila}1. intern $text kopieren\n${reset}";
-mudat="c:\\\turbomed\\StammDB\\objects.idx";
-for iru in 1 2 3; do
-  [ "$verb" ]&&printf "Prüfe die Offenheit von $mudat auf $blau$gpc$reset\n";
-  if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=ja; else offen=nein; fi;
-  [ "$verb" ]&&{ printf "iru: $iru; offen: $blau$offen$reset\n"; };
-  if [ "$offen" = ja ]; then
-    break;
-  else
-    if [ "$obkill" ]; then
-      if [ "$iru" = 1 ]; then
-        ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
-      else
-        VBoxManage controlvm Win10 poweroff; VBoxManage startvm Win10 --type headless;
-      fi;
-    else
-      printf "$blau$mudat$reset gesperrt. $blau-k$reset nicht angegeben. Kann nicht kopieren.\n";
+if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
+  printf "${lila}1. intern $text kopieren\n${reset}";
+  mudat="c:\\\turbomed\\StammDB\\objects.idx";
+  for iru in 1 2 3; do
+    [ "$verb" ]&&printf "Prüfe die Offenheit von $mudat auf $blau$gpc$reset\n";
+    if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=ja; else offen=nein; fi;
+    [ "$verb" ]&&{ printf "iru: $iru; offen: $blau$offen$reset\n"; };
+    if [ "$offen" = ja ]; then
       break;
-    fi; #  [ "$obkill" ]
+    else
+      if [ "$obkill" ]; then
+        if [ "$iru" = 1 ]; then
+          ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
+        else
+          VBoxManage controlvm Win10 poweroff; VBoxManage startvm Win10 --type headless;
+        fi;
+      else
+        printf "$blau$mudat$reset gesperrt. $blau-k$reset nicht angegeben. Kann nicht kopieren.\n";
+        break;
+      fi; #  [ "$obkill" ]
+    fi;
+  done;
+  if [ "$offen" = ja ]; then
+   for Vz in $VzL; do
+    [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+    case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
+      # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
+    uq=$Vz;
+    [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
+    ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
+    if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
+      # hier sind immer $wirt und $ZL leer
+      kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+    fi;
+   done;
   fi;
-done;
-if [ "$offen" = ja ]; then
- for Vz in $VzL; do
-  [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
-  case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
-    # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-  uq=$Vz;
-  [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
-  ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
-  if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
-    # hier sind immer $wirt und $ZL leer
-    kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
-  fi;
- done;
+  # [ "$offen" = nein -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
+  [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 fi;
-# [ "$offen" = nein -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
-[ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 
 if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
-
-  printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
   if ! [ "$nurdrei" ]; then
+    printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
     for ziel in $ziele; do
       [ "$obecht" ]&&echtpar=" -e"||echtpar=;
@@ -168,7 +169,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
 #          echo "vor ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
-          ausf "ssh $wirt 'for sv in $hin $hres; do zl=/$sv;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&{ rsync -avu /$ot/$uz/ \$zl/$uq/;break;}; done;' ";
+          ausf "ssh $wirt 'for sv in \"$hin\" \"$hres\"; do zl=/\$sv;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&{ rsync -avu /$ot/$uz/ \$zl/$uq/;break;}; done;'" $blau;
           # für die Client-Zertifikate, könnte aber nicht gehen
 #          rsync -avu /amnt/virtwin/turbomed/Programm/communicator /opt/turbomed/Programm/
 #          rsync -avu /amnt/virtwin/turbomed/Daten/Var/aWinS /opt/turbomed/Daten/Var/

@@ -507,9 +507,10 @@ sdneu=;
 nurdrei=;
 nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-case $0 in bu*)
+echo obhilfe: $obhilfe
+case $0 in *bu*)
 if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
-  if [ "${0##*/}" = buint.sh ]; then
+  case "${0##*/}" in *buint.sh)
     printf "%b\n" \
     "$blau$0$reset, Syntax: $blau"$(basename $0)" <-e/-f/-k/-m/-mz <zahl>/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
     " ${blau}SD[=/Pfad/zur/Schutzdatei]${reset} bewirkt Kopieren jener Datei auf alle Quellen und Ziele und anschließenden Vergleich dieser Dateien vor jedem Kopiervorgang" \
@@ -523,7 +524,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LIN
     " ${blau}-nd${reset} bewirkt, dass nur der 3. Teil (auf Zielrechnern virt.Wind.<->linux kopieren) ausgeführt wird." \
     " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
-  elif [ "${0##*/}" = butm.sh ]; then
+    ;; *butm.sh)
     printf "%b\n" \
     "$blau$0$reset, Syntax: $blau"$(basename $0)" <-d/-e/-f/-k/-m/-mz <zahl>/-nv/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \
     " ${blau}-d$reset bewirkt auf dem Zielrechner Loeschen der auf dem Quellrechner nicht vorhandenen Dateien" \
@@ -536,7 +537,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LIN
     " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden." \
     " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
-  fi;
+  ;; esac; 
   exit;
 fi;;
 esac;
