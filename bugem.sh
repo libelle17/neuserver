@@ -13,41 +13,43 @@ SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
 maxz=0;
 
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...") $4=obimmer (auch wenn nicht echt)
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
   gz=;
-  anzeige=$(echo "$2${1%\n}$reset"|sed 's/%/%%/');
+  anzeige=$(echo "$2${1%\n}"|sed 's/%/%%/;s/\\/\\\\\\\\/g')$reset;
 	[ "$verb" -o "$2" ]&&{ gz=1;printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
-  if test "$3" = direkt; then
-    $1;
-  elif test "$3"; then 
-    eval "$1"; 
-  else 
-#    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
-#    printf "$rot$ne$reset";
-    resu=$(eval "$1" 2>&1); 
-  fi;
-  ret=$?;
-  resgedr=;
-  [ $verb ]&& printf " -> ret: $blau$ret$reset";
-  if [ -z "$3" ]; then 
-    [ "$verb" -o \( "$ret" -ne 0 -a "$resu" \) ]&&{ 
-      [ "$gz" ]||printf "$anzeige";
-      [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
-      printf "${reset}, resu:\n$farbe"; 
-      resgedr=1;
-      [ "$maxz" -a "$maxz" -ne 0 -a $(echo "$resu"|wc -l) > "$maxz" ]&&resz="...\n"$(echo "$resu"|tail -n$maxz)||resz="$resu";
-      printf -- "$resz"|sed -e '$ a\'; # Zeilenenden als solche ausgeben
-      printf "$reset";
-    }
-  fi;
+  if [ "$obecht" -o "$4" ]; then
+    if test "$3" = direkt; then
+      $1;
+    elif test "$3"; then 
+      eval "$1"; 
+    else 
+  #    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
+  #    printf "$rot$ne$reset";
+      resu=$(eval "$1" 2>&1); 
+    fi;
+    ret=$?;
+    resgedr=;
+    [ $verb ]&& printf " -> ret: $blau$ret$reset";
+    if [ -z "$3" ]; then 
+      [ "$verb" -o \( "$ret" -ne 0 -a "$resu" \) ]&&{ 
+        [ "$gz" ]||printf "$anzeige";
+        [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
+        printf "${reset}, resu:\n$farbe"; 
+        resgedr=1;
+        [ "$maxz" -a "$maxz" -ne 0 -a $(echo "$resu"|wc -l) > "$maxz" ]&&resz="...\n"$(echo "$resu"|tail -n$maxz)||resz="$resu";
+        printf -- "$resz"|sed -e '$ a\' || echo -2: $resz; # Zeilenenden als solche ausgeben
+        printf "$reset";
+      }
+    fi; # if [ -z "$3" ]; then 
+  fi; # obecht
   [ "$gz" -a -z "$resgedr" ]&&printf "\n";
 #  [ $resgedr ]||printf "\n";
 } # ausf
 
 ausfd() {
-  ausf "$1" "$2" direkt;
+  ausf "$1" "$2" direkt "$4";
 } # ausfd
 
 # Befehlszeilenparameter auswerten
@@ -144,9 +146,9 @@ obalt() {
 	ret=; # <> "" = Datei fehlt auf Ziel
   eval "$zssh 'stat \"$DaZ\" >/dev/null 2>&1 '||{ ret=0; printf \"${blau}$DaZ ${rot}fehlt auf Ziel$reset\n\"; }"
   if [ -z "$ret" ]; then
-    ausf "$qssh 'date +%s -r \"$DaQ\"'"; geaenq=$resu;
+    ausf "$qssh 'date +%s -r \"$DaQ\"'" "" "" 1; geaenq=$resu;
     awk 'BEGIN{printf strftime("geändert Quelle: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenq');}';
-    ausf "$zssh 'date +%s -r \"$DaZ\"'"; geaenz=$resu;
+    ausf "$zssh 'date +%s -r \"$DaZ\"'" "" "" 1; geaenz=$resu;
     awk 'BEGIN{printf strftime("geändert   Ziel: '$blau'%15s'$reset' s ('$blau'%d.%m.%Y %T'$reset' %z)\n", '$geaenz');}';
   #	geaenq=$(expr $geaenq + 2000);
     diff=$(awk "BEGIN{print $geaenq-$geaenz+0}");
@@ -213,7 +215,7 @@ kopiermt() { # mit test
           nr=${gpc#virtwin};
           [ $nr/ = / ]&& wirt=linux1||wirt=linux$nr;
           pruefpc $wirt kopiermt;
-          ausf "$tush VBoxManage startvm Win10 --type headless";      
+          ausf "$tush VBoxManage startvm Win10 --type headless" "" "" 1;      
           for iru in $(seq 1 1 120); do 
             if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; break; fi;
           done;
@@ -233,7 +235,7 @@ kopiermt() { # mit test
           for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
            if ! $hsh "mountpoint -q \"$zuteh\""; then
              # das Leerzeichen nach &1 schützt vor ambiguous redirect-Fehler
-             ausf "$hsh \"mount '$zuteh' -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
+             ausf "$hsh \"mount '$zuteh' -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau "" 1;
              # das würde gehen:
 #            ausf "$hsh \"mount $zuteh -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              # hier geht gar nix:
@@ -317,7 +319,7 @@ kopiermt() { # mit test
       return 1;
     fi;
 #    printf "${blau}$diffbef$reset\n"
-    ausf "$diffbef";
+    ausf "$diffbef" "" "" 1;
     if [ $ret/ != 0/ ]; then
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
@@ -330,13 +332,13 @@ kopiermt() { # mit test
   else
     # Platz ausrechnen:
 #    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'"; rest=${resu:-0}; # *1024 => Bytes
+    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'" "" "" 1; rest=${resu:-0}; # *1024 => Bytes
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if test $rest -gt 0; then
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'"; schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'"; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       rest=$(expr $rest - $zukop + $schonda);
       [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
@@ -345,8 +347,8 @@ kopiermt() { # mit test
          echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ 
          [ "$verb" ]&&printf "E: $blau$E$reset\n";
          [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print \$1*1}'"; papz=${resu:-0};
-         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print \$1*1}'"; papq=${resu:-0};
+         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print \$1*1}'" "" "" 1; papz=${resu:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print \$1*1}'" "" "" 1; papq=${resu:-0};
          rest=$(expr $rest - $papz + $papq);
       done;
       echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
@@ -376,7 +378,7 @@ kopiermt() { # mit test
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
-		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'";[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
+		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'" "" "" 1;[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
@@ -471,8 +473,10 @@ testobvirt() {
   otP=/$ot/PraxisDB;
   resD=PraxisDB-res;
   otr=/$ot/$resD;
+  wserD=PraxisDB-wser;
+  otw=/$ot/$wserD;
   obvirt=;
-  if eval "$tush 'test -d $otr'"; then
+  if eval "$tush 'test -d $otr'"; then # -res gibts
     if eval "$tush 'test -d $otP'"; then # beide gibt's
       if eval "$tush 'find $otP -maxdepth 1 -size -9M -iname objects.dat|grep .' >/dev/null" &&
         eval "$tush 'find $otr -maxdepth 1 -size +10G -iname objects.dat|grep .' >/dev/null"; then
@@ -480,6 +484,15 @@ testobvirt() {
       fi; 
     else # nur PraxisDB-res gibt's
       obvirt=1;
+    fi;
+  elif eval "$tush 'test -d $otw'"; then # -wser gibts
+    if eval "$tush 'test -d $otP'"; then # beide gibt's
+      if eval "$tush 'find $otP -maxdepth 1 -size -9M -iname objects.dat|grep .' >/dev/null" &&
+        eval "$tush 'find $otw -maxdepth 1 -size +10G -iname objects.dat|grep .' >/dev/null"; then
+        obvirt=2;
+      fi; 
+    else # nur PraxisDB-wser gibt's
+      obvirt=2;
     fi;
   else
     if eval "$tush 'test -d $otP'"; then # nur PraxisDB gibt's
@@ -507,7 +520,6 @@ sdneu=;
 nurdrei=;
 nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
-echo obhilfe: $obhilfe
 case $0 in *bu*)
 if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   case "${0##*/}" in *buint.sh)

@@ -19,8 +19,62 @@ wirt=$buhost;
 VzLg="PraxisDB StammDB DruckDB Dictionary Vorlagen Formulare KVDT Dokumente Daten labor LaborStaber"; # VzL groß
 VzLk="PraxisDB StammDB DruckDB Dictionary"; # VzL klein
 
+kopierwser() {
+  if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
+    diensttot=;
+    for iru in 1 2 3; do
+      [ "$verb" ]&&printf "Prüfe die Offenheit von $mudat auf $blau$gpc$reset\n";
+      if ssh administrator@wser cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=ja; else offen=nein; fi;
+      [ "$verb" ]&&{ printf "iru: $iru; offen: $blau$offen$reset\n"; };
+      if [ "$offen" = ja ]; then
+        break;
+      else
+        if [ "$obkill" ]; then
+          if [ "$iru" = 1 ]; then
+            ausf "$tush 'mv /$ot/lauf /$ot/lau  2>/dev/null||touch /$ot/lau'&&sleep 80s";
+          else
+            diensttot=1;
+            ssh administrator@wser taskkill /im FastObjectsServer64.exe /f
+          fi;
+        else
+          printf "$blau$mudat$reset gesperrt. $blau-k$reset nicht angegeben. Kann nicht kopieren.\n";
+          break;
+        fi; #  [ "$obkill" ]
+      fi;
+    done;
+    if [ "$offen" = ja ]; then
+     for Vz in $VzLk; do # kleine Liste
+      [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
+      case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
+        # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
+      if [ "$Vz" = PraxisDB ]; then
+        case $obvirt in 0) uq=$Vz;; 1) uq=$resD;; 2) uq=$wserD;; esac;
+      else
+        uq="$Vz";
+      fi;
+      uz=$Vz;
+
+      if [ $obvirt = 2 ]; then
+        ausf "ssh sturm@wser del c:\\turbomed\\$uz\\.objects* 2>nul"; # Reste alter Kopierversuche löschen
+        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' sturm@wser:/mnt/c/turbomed/$uz/ /opt/turbomed/$uq/ $obOBDEL"; # -P hat keinen Sinn
+      else # $obvirt = 0 -o $obvirt = 1
+        ausf "rm -rf /opt/turbomed/$uq/.objects*"; # Reste alter Kopierversuche löschen
+        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' /opt/turbomed/$uq/ sturm@wser:/mnt/c/turbomed/$uz/ $obOBDEL"; # -P hat keinen Sinn
+      fi; # obvirt = 2 else
+
+        # hier sind immer $wirt und $ZL leer
+#          kopiermt "$ur/$uq/" "$hin/$uz" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
+     done;
+    fi;
+    if [ "$diensttot" ]; then
+     ssh administrator@wser sc start "Fastobjects server (x64) 12.0"
+    fi;
+  fi;
+} # kopierwser
+
+
 testobvirt;
-if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+if [ $obvirt = 0 -o $obvirt = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
   VzL="$VzLg";
   ur=$ot # opt/turbomed
   hin=amnt/$gpc/turbomed;
@@ -28,7 +82,12 @@ if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt,
     ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
   fi;
   text="von $buhost nach $gpc"
-else 
+  if [ $obvirt = 0 ]; then
+    tex2="von $buhost nach wser";
+  else # $obvirt = 2
+    tex2="von wser nach $buhost";
+  fi;
+else  # $obvirt = 1
   VzL="$VzLk";
   ur=amnt/$gpc/turbomed; 
   hin=$ot;
@@ -36,13 +95,22 @@ else
     ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
   fi;
   text="von $gpc nach $buhost"
+  tex2="von $buhost nach wser";
 fi;
 [ "$verb" ]&&printf "obsh: ${blau}$obsh$reset\n";
 [ "$verb" ]&&printf "obvirt: ${blau}$obvirt$reset\n";
+mudat="c:\\\turbomed\\StammDB\\objects.idx";
 altEXFEST=$EXFEST;EXFEST=; # keine festen Ausnahmen in kompiermt
 if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
+  if [ $obvirt = 0 -o $obvirt = 2 ]; then
+    printf "${lila}0. $tex2 kopieren\n${reset}";
+    kopierwser;
+  fi;
   printf "${lila}1. intern $text kopieren\n${reset}";
-  mudat="c:\\\turbomed\\StammDB\\objects.idx";
+# Kopieren ohne cifs würde gehen mit:
+# rsync -avPu -e ssh  --rsync-path='wsl rsync' sturm@amd:/mnt/c/turbomed/StammDB ./StammDB_2
+# auf windows server 2019:
+# https://github.com/yosukes-dev/FedoraWSL
   for iru in 1 2 3; do
     [ "$verb" ]&&printf "Prüfe die Offenheit von $mudat auf $blau$gpc$reset\n";
     if ssh administrator@$gpc cmd /c "(>>c:\turbomed\StammDB\objects.idx (call ) )&&exit||exit /b 1" 2>/dev/nul; then offen=ja; else offen=nein; fi;
@@ -68,7 +136,7 @@ if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
     case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
       # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
     uq=$Vz;
-    [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
+    [ $obvirt = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
     ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
     if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
       # hier sind immer $wirt und $ZL leer
@@ -77,6 +145,10 @@ if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
    done;
   fi;
   # [ "$offen" = nein -o ! "$verb" ]&&echo ""; # echo "neue Zeile 2";
+  if [ $obvirt = 1 ]; then
+    printf "${lila}1.5. $tex2 kopieren\n${reset}";
+    kopierwser;
+  fi;
   [ "$obkill" ]&&{ mv /$ot/lau /$ot/lauf 2>/dev/null||touch /$ot/lauf;} # zurückbenennen, damit Turbomed wieder starten kann
 fi;
 
@@ -159,7 +231,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
-        [ "$obvirt" = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
+        [ $obvirt = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
         hin=amnt/$gpc/turbomed;
         hres=amnt/${gpc/virtwin/vw}/turbomed; # vw0
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen

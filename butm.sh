@@ -32,7 +32,7 @@ esac
 
 if [ $wach ]; then
   testobvirt;
-  if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt, 
+  if [ "$obvirt" = 0 -o "$obvirt" = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
       Pr=PraxisDB;
       ausf "$zish '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt
   else
