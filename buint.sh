@@ -62,7 +62,8 @@ kopierwser() {
      done;
     fi;
     if [ "$diensttot" ]; then
-     ssh administrator@wser sc start "Fastobjects server (x64) 12.0"
+#     ssh administrator@wser sc start "Fastobjects server (x64) 12.0" # ging nicht
+     ssh administrator@wser powershell start-service -name "FastObjects*"
     fi;
   fi;
 } # kopierwser
