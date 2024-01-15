@@ -73,21 +73,36 @@ if [ $obvirt = 0 -o $obvirt = 2 ]; then # wenn es auf linux1 /opt/turbomed/Praxi
   VzL="$VzLg";
   ur=$ot # opt/turbomed
   hin=amnt/$gpc/turbomed;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otr" -a ! -d "$otP" ]; then
-    ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
-  fi;
   text="von $buhost nach $gpc"
   if [ $obvirt = 0 ]; then
+    if [ "$buhost"/ != "$LINEINS"/ -a ! -d "$otP" ]; then
+      if [ -d "$otr" ]; then
+        ausf "mv $otr $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
+      elif [ -d "$otw" ]; then
+        ausf "mv $otw $otP" $blau; # # dann ggf. die linux-Datenbank umbenennen
+      fi;
+    fi;
     tex2="von $buhost nach wser";
   else # $obvirt = 2
+    if [ "$buhost"/ != "$LINEINS"/ -a ! -d "$otw" ]; then
+      if [ -d "$otr" ]; then
+        ausf "mv $otr $otw" $blau; # # dann ggf. die linux-Datenbank umbenennen
+      elif [ -d "$otP" ]; then
+        ausf "mv $otP $otw" $blau; # # dann ggf. die linux-Datenbank umbenennen
+      fi;
+    fi;
     tex2="von wser nach $buhost";
   fi;
 else  # $obvirt = 1
   VzL="$VzLk";
   ur=amnt/$gpc/turbomed; 
   hin=$ot;
-  if [ "$buhost"/ != "$LINEINS"/ -a -d "$otP" -a ! -d "$otr" ]; then
-    ausf "mv $otP $otr" $blau; # dann ggf. die linux-Datenbank umbenennen
+  if [ "$buhost"/ != "$LINEINS"/ -a ! -d "$otr" ]; then
+    if [ -d "$otP" ]; then
+      ausf "mv $otP $otr" $blau; # # dann ggf. die linux-Datenbank umbenennen
+    elif [ -d "$otw" ]; then
+      ausf "mv $otw $otr" $blau; # # dann ggf. die linux-Datenbank umbenennen
+    fi;
   fi;
   text="von $gpc nach $buhost"
   tex2="von $buhost nach wser";
@@ -130,8 +145,8 @@ if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
     [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
     case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
       # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-    uq=$Vz;
-    uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;};
+    uq=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 2) uq=$wserD;; esac;};
+    uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; esac;};
     ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
     if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
       # hier sind immer $wirt und $ZL leer
@@ -226,11 +241,11 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
-        uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;};
+        uz=$Vz; # [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;}; # auskommentiert 15.1.23
         hin=amnt/$gpc/turbomed;
         hres=amnt/${gpc/virtwin/vw}/turbomed; # vw0
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
-        if [ $dreieck ]; then
+        if [ $dreieck ]; then # kommt sonst nirgends vor
           # wirt ist linux$nr, ZL ist leer, würde hierher auf das cifs-Laufwerk kopiert
           kopiermt "$ot/$uz/" "$hin/$uq" "" "$obOBDEL" "$testdt" "1800" 1; # ohne --iconv
         else
