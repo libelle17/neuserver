@@ -38,8 +38,8 @@ if [ $wach ]; then
       ausf "$zish '[ -d $otw -a ! -d $otP ]&& mv $otw $otP'" $blau; # umgekehrt
   elif [ "$obvirt" = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
       Pr=$wserD; # PraxisDB-wser
-      ausf "$zish '[ -d $otP -a ! -d $otw ]&& mv $otr $otw'" $blau; # umgekehrt
-      ausf "$zish '[ -d $otr -a ! -d $otw ]&& mv $otP $otw'" $blau; # umgekehrt
+      ausf "$zish '[ -d $otP -a ! -d $otw ]&& mv $otP $otw'" $blau; # umgekehrt
+      ausf "$zish '[ -d $otr -a ! -d $otw ]&& mv $otr $otw'" $blau; # umgekehrt
   else
       Pr=$resD; # PraxisDB-res;
       ausf "$zish '[ -d $otw -a ! -d $otr ]&& mv $otw $otr'" $blau; # umgekehrt
