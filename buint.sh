@@ -47,19 +47,14 @@ kopierwser() {
       [ "$obforce" ]&&testdt=||case $Vz in PraxisDB|StammDB|DruckDB)testdt="objects.dat";;Dictionary)testdt="_objects.dat";;*)testdt=;;esac;
       case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
         # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
-      if [ "$Vz" = PraxisDB ]; then
-        case $obvirt in 0) uq=$Vz;; 1) uq=$resD;; 2) uq=$wserD;; esac;
-      else
-        uq="$Vz";
-      fi;
-      uz=$Vz;
-
+      uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;};
+      uq=$Vz;
       if [ $obvirt = 2 ]; then
-        ausf "ssh sturm@wser del c:\\turbomed\\$uz\\.objects* 2>nul"; # Reste alter Kopierversuche löschen
-        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' sturm@wser:/mnt/c/turbomed/$uz/ /opt/turbomed/$uq/ $obOBDEL"; # -P hat keinen Sinn
+        ausf "ssh sturm@wser del c:\\turbomed\\$uq\\.objects* 2>nul"; # Reste alter Kopierversuche löschen
+        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' sturm@wser:/mnt/c/turbomed/$uq/ /opt/turbomed/$uz/ $obOBDEL"; # -P hat keinen Sinn
       else # $obvirt = 0 -o $obvirt = 1
-        ausf "rm -rf /opt/turbomed/$uq/.objects*"; # Reste alter Kopierversuche löschen
-        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' /opt/turbomed/$uq/ sturm@wser:/mnt/c/turbomed/$uz/ $obOBDEL"; # -P hat keinen Sinn
+        ausf "rm -rf /opt/turbomed/$uz/.objects*"; # Reste alter Kopierversuche löschen
+        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' /opt/turbomed/$uz/ sturm@wser:/mnt/c/turbomed/$uq/ $obOBDEL"; # -P hat keinen Sinn
       fi; # obvirt = 2 else
 
         # hier sind immer $wirt und $ZL leer
@@ -136,7 +131,7 @@ if [ -z "$nurdrei" -a -z "$nurzweidrei" ]; then
     case $Vz in Vorlagen|Formulare|KVDT|Dokumente|Daten|labor|LaborStaber)obOBDEL=;;*)obOBDEL="--delete";;esac; 
       # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
     uq=$Vz;
-    [ $obvirt = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
+    uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;};
     ausf "rm -rf /$hin/$uz/.objects*"; # Reste alter Kopierversuche löschen
     if [ ! "$nurdrei" -a ! "$nurzweidrei" ]; then
       # hier sind immer $wirt und $ZL leer
@@ -231,7 +226,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         obOBDEL=;
           # obOBDEL=$OBDEL, wenn Benutzer es einstellen können soll
         uq=$Vz;
-        [ $obvirt = 1 -a "$Vz" = PraxisDB ]&&uz=$resD||uz=$Vz;
+        uz=$Vz; [ "$Vz" = PraxisDB ]&&{ case $obvirt in 1) uz=$resD;; 2) uz=$wserD;; esac;};
         hin=amnt/$gpc/turbomed;
         hres=amnt/${gpc/virtwin/vw}/turbomed; # vw0
         ausf "rm -rf /$hin/$uq/.objects*"; # Reste alter Kopierversuche löschen
