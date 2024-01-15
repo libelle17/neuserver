@@ -17,8 +17,8 @@ maxz=0;
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
   gz=;
-  anzeige=$(echo "$2${1%\n}"|sed 's/%/%%/;s/\\/\\\\\\\\/g')$reset;
-	[ "$verb" -o "$2" ]&&{ gz=1;printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+  anzeige=$(echo "${1%\n}"|sed 's/%/%%/;s/\\/\\\\\\\\/g')$reset;
+	[ "$verb" -o "$2" ]&&{ gz=1;printf "$2$anzeige";}; # escape für %, soll kein printf-specifier sein
   if [ "$obecht" -o "$4" ]; then
     if test "$3" = direkt; then
       $1;
@@ -34,7 +34,7 @@ ausf() {
     [ $verb ]&& printf " -> ret: $blau$ret$reset";
     if [ -z "$3" ]; then 
       [ "$verb" -o \( "$ret" -ne 0 -a "$resu" \) ]&&{ 
-        [ "$gz" ]||printf "$anzeige";
+        [ "$gz" ]||printf "$2$anzeige";
         [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
         printf "${reset}, resu:\n$farbe"; 
         resgedr=1;

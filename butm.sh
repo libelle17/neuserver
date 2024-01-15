@@ -2,7 +2,7 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
 # wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /amnt/virtwin/turbomed
-# wird auch aus butint.sh mit -nv aufgerufen, wenn dieses mit -m ("mehr") aufgerufen wird
+# wird auch aus butint.sh mit -nv aufgerufen (-> obnv), wenn dieses mit -m ("mehr") aufgerufen wird
 # das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed/PraxisDB gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
@@ -18,7 +18,7 @@ l1gpc=$gpc; # Gast-PC von Linux1, also /virtwin
 wirt=${ZL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
 rgpc=$gpc; # Gast-PC des Reserveservers
-# hier wir tush nicht nicht wirt festgelegt, wie in virtnamen.sh, sondern nach buhost:
+# hier wird tush nicht nicht wirt festgelegt, wie in virtnamen.sh, sondern nach buhost:
 [ "$verb" ]&&{ printf "ZL: ${blau}$ZL$reset\n"; sleep 1;};
 wach=;
 case $buhost in 
@@ -32,11 +32,17 @@ esac
 
 if [ $wach ]; then
   testobvirt;
-  if [ "$obvirt" = 0 -o "$obvirt" = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
+  if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
       Pr=PraxisDB;
       ausf "$zish '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt
+      ausf "$zish '[ -d $otw -a ! -d $otP ]&& mv $otw $otP'" $blau; # umgekehrt
+  elif [ "$obvirt" = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
+      Pr=$wserD; # PraxisDB-wser
+      ausf "$zish '[ -d $otP -a ! -d $otw ]&& mv $otr $otw'" $blau; # umgekehrt
+      ausf "$zish '[ -d $otr -a ! -d $otw ]&& mv $otP $otw'" $blau; # umgekehrt
   else
-      Pr=PraxisDB-res;
+      Pr=$resD; # PraxisDB-res;
+      ausf "$zish '[ -d $otw -a ! -d $otr ]&& mv $otw $otr'" $blau; # umgekehrt
       ausf "$zish '[ -d $otP -a ! -d $otr ]&& mv $otP $otr'" $blau; # dann ggf. auf dem Zielrechner die linux-Datenbank umbenennen
   fi;
   for iru in 1 2; do # interne Runde
