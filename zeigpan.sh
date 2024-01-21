@@ -7,24 +7,8 @@ rot="\033[1;31m";
 lila="\033[1;35m";
 reset="\033[0m";
 
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ..."), $4=obstumm
+# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...") $4=obimmer (auch wenn nicht echt)
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
-ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
-  if test "$3"/ = direkt/; then
-    "$1";
-  elif test "$3"; then 
-    eval "$1"; 
-  else 
-    resu=$(eval "$1"); 
-  fi;
-  ret=$?;
-  [ "$verb" ]&&{
-    printf " -> ret: $blau$ret$reset"
-    [ "$3" ]||printf ", resu: \n$blau$resu$reset";
-    printf "\n";
-  }
-} # ausf
 
 # Befehlszeilenparameter auswerten
 commandlhier() {
@@ -53,8 +37,51 @@ pr=PraxisDB;
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+obecht=1;
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw.
 [ $nurhier ]&&ziele=;
+
+ot=/opt/turbomed;
+hosthier=$(hostname); hosthier=${hosthier%%.*};
+loesche="\r                                                                                                  \r";
+
+for nr in wser 1 $ziele; do
+  wirt=linux$nr;
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+  [ "$gpc" ]||gpc=$nr;
+  printf "${blau}$gpc$reset:\n"; # echter Server
+  if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then
+    ausf "ssh administrator@$gpc 'dir c:\\Turbomed\\PraxisDB\\objects.* /ON /Q /R|findstr objects'" $schwarz;
+    printf "$resu\n";
+  fi;
+  [ "$gpc" = "$nr" ]&&printf "\n"; # nach echten Servern Leerzeile
+done;
+printf "\n";
+
+printf "${blau}Linux-Server${reset}:\n"
+for nr in 1 $ziele; do
+  wirt=linux$nr;
+. ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
+#  [ $wirt = $hosthier ]&&tush=eval||tush="ssh $wirt ";
+  for vz in "" -res -wser; do
+    uvz=$ot/PraxisDB$vz;
+    bef="ping -c1 -W1 \"$wirt\" >/dev/null 2>&1&&$tush \"if test -d \\\"$uvz\\\"; then find $uvz -maxdepth 1 -name \\\"objects*\\\" -printf \\\"%p %TF %Tk:%Tm %15s\\\n\\\"|sort; fi;\" 2>/dev/null;";
+#    echo "$bef";
+    printf "\rbearbeite $blau$uvz$reset auf $blau$wirt$reset ...";
+    ausg=$(eval "$bef")
+    [ "$ausg" ]&&{
+      printf "$loesche";
+      printf "$blau$wirt: $uvz${reset}:\n";
+      printf "$ausg\n";
+    }||{
+      printf "$loesche";
+    }
+  done;
+done;
+exit;
+
+
+
 if ! test $nurli; then 
  echo "Virtuelle Windows-Server:"
  for nr in 1 $ziele; do
@@ -105,31 +132,33 @@ if ! test $nurli; then
         cifs=/amnt/$gpc/turbomed;
         printf "$lila$gpc$reset, wirt: $lila$wirt$reset: " # , cifs: $lila$cifs$reset:\n";
         for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
-          printf "cifs: $cifs\n";
-          domount=;
-          printf "domount: $domount, cifs: $cifs\n";
-          if ! test -d $cifs; then domount=ja; fi;
-          printf "domount: $domount\n";
-          if ! test $domount; then if ! test -d $cifs; then domount=ja; fi; fi;
-          printf "domount: $domount\n";
-          if test $domount; then
-            printf "domount: $domount\n";
-            printf "\n";
-            printf "vers: $vers, verb: $verb\n";
-            ausf "mount //$gpc/Turbomed $cifs -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
-            printf "\n";
-          else
-            printf " ${blau}$cifs$reset gemountet!\n"
-            break;
-          fi;
+          for acif in $cifs $cifs-res $cifs-wser; do
+#            printf "acif: $acif\n";
+            domount=;
+#            printf "domount: $domount, acif: $acif\n";
+            if ! test -d $acif; then domount=ja; fi;
+#            printf "domount: $domount\n";
+            if ! test $domount; then if ! test -d $acif; then domount=ja; fi; fi;
+#            printf "domount: $domount\n";
+            if test $domount; then
+#              printf "domount: $domount\n";
+#              printf "\n";
+#              printf "vers: $vers, verb: $verb\n";
+              ausf "mount //$gpc/Turbomed $acif -t acif -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 " $blau
+#              printf "\n";
+            else
+              printf " ${blau}$acif$reset gemountet!\n"
+              break;
+            fi;
+          done;
         done;
-        if mountpoint -q $cifs; then
+        if mountpoint -q $acif; then
          altverb=$verb;
          verb=1;
-         ausf "ls -l $cifs/$pr/objects.*" $dblau;
+         ausf "ls -l $acif/$pr/objects.*" $dblau;
          verb=$altverb;
         else
-         printf "kein Mountpoint\n";
+         printf "$blau$acif$reset kein Mountpoint\n";
         fi;
       fi; # [ ! "$ok" ]; then else
       [ $verb ]&&printf "tush: $blau$tush$reset, gpc: $blau$gpc$reset, gast: $blau$gast$reset\n";
@@ -155,6 +184,7 @@ for nr in 1 $ziele; do
     case $hosthier in *$nr*)tsh="sh -c";;*)tsh="ssh linux$nr";;esac;
     v=$ot/$pr; 
     ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$v-res; 
+    ausf "$tsh '[ -d $v ]'" "" ja; [ $ret/ != 0/ ]&&v=$ot/$pr-wser; 
     [ $verb ]&&printf "=> Verzeichnis: $blau$v$reset\n"
     altverb=$verb;
     verb=1;

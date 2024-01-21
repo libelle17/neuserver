@@ -23,6 +23,7 @@ ausf() {
     if test "$3" = direkt; then
       $1;
     elif test "$3"; then 
+      [ "$verb" ]&&echo "$1";
       eval "$1"; 
     else 
   #    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
