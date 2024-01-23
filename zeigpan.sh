@@ -65,7 +65,7 @@ for nr in 1 $ziele; do
 #  [ $wirt = $hosthier ]&&tush=eval||tush="ssh $wirt ";
   for vz in "" -res -wser; do
     uvz=$ot/PraxisDB$vz;
-    bef="ping -c1 -W1 \"$wirt\" >/dev/null 2>&1&&$tush \"if test -d \\\"$uvz\\\"; then find $uvz -maxdepth 1 -name \\\"objects*\\\" -printf \\\"%p %TF %Tk:%Tm %15s\\\n\\\"|sort; fi;\" 2>/dev/null;";
+    bef="ping -c1 -W1 \"$wirt\" >/dev/null 2>&1&&$tush \"if test -d \\\"$uvz\\\"; then find $uvz -maxdepth 1 -name \\\"objects*\\\" -printf \\\"%p %TF %Tk:%TM %15s\\\n\\\"|sort; fi;\" 2>/dev/null;";
 #    echo "$bef";
     printf "\rbearbeite $blau$uvz$reset auf $blau$wirt$reset ...";
     ausg=$(eval "$bef")
