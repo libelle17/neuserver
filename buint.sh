@@ -252,7 +252,8 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
         else
           # kopiert auf wirt von dort auf das dortige cifs-Laufwerk
 #          echo "vor ssh $wirt 'zl=/$hin;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&rsync -avu /$ot/$uz/ \$zl/$uq/' ";
-          ausf "ssh $wirt 'for sv in \"$hin\" \"$hres\"; do zl=/\$sv;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&{ rsync -avu /$ot/$uz/ \$zl/$uq/;break;}; done;'" $blau;
+#          ausf "ssh $wirt 'for sv in \"$hin\" \"$hres\"; do zl=/\$sv;mkdir -p \$zl;mountpoint -q \$zl||mount \$zl; mountpoint -q \$zl&&{ rsync -avu /$ot/$uz/ \$zl/$uq/;break;}; done;'" $blau;
+          ausf "ssh $wirt 'buint.sh -e'" $blau;
           # für die Client-Zertifikate, könnte aber nicht gehen
 #          rsync -avu /amnt/virtwin/turbomed/Programm/communicator /opt/turbomed/Programm/
 #          rsync -avu /amnt/virtwin/turbomed/Daten/Var/aWinS /opt/turbomed/Daten/Var/
