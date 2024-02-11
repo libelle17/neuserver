@@ -77,12 +77,12 @@ ELG=/var/log/cronf.log
 # Dokumente nach p:\eingelesen kopieren
 -10 3 * * * ergimp.sh
 # mariadb-Datenbanken sichern:
-#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-0 13,21  * * * mountpoint -q /DATA && /usr/bin/mariadb-dump --defaults-extra-file=~/.mariadbpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mariadb-dump-Aufruf.log
 # mariadb-Datenbanken als *.sql-Dateien in /DATA/sql sichern (dumpen):
--26 14,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in $(mariadb --defaults-extra-file=~/.mysqlpwd -BNe 'show databases'|grep -vE '^mysql$|^(performance|information)_schema$'); do mountpoint -q /DATA && ionice -c3 nice -n19 mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mysqldump-Aufruf.log; done;
+-26 14,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&for D in $(mariadb --defaults-extra-file=~/.mariadbpwd -BNe 'show databases'|grep -vE '^mysql$|^(performance|information)_schema$'); do mountpoint -q /DATA && ionice -c3 nice -n19 mariadb-dump --defaults-extra-file=~/.mariadbpwd --default-character-set=utf8mb4 --complete-insert --compress --disable-keys --routines --events --triggers --databases $D >/DATA/sql/$D--$(date +\%F-\%H.\%M.\%S).sql 2>>$VL/mariadb-dump-Aufruf.log; done;
 # fehlerhafte sql-Dumps auflisten:
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed"|sed "s/^/rm /">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
-#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mysqldump --defaults-extra-file=~/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-25 20 */10 * * mountpoint -q /DATA && /usr/bin/mariadb-dump --defaults-extra-file=~/.mariadbpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mariadb-dump-Aufruf.log
 
 # Daten jeden Freitag nach szn1 sichern:
 #-0 22 * * 5 pgrep -c -f "dorsync.* /amnt/szn1/daten" || mountpoint -q /DATA && mountpoint -q "/amnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /amnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
@@ -118,8 +118,8 @@ ELG=/var/log/cronf.log
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
 # Tabelle forminhfeld bereinigen:
--0 1 * * * mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"DELETE FROM forminhfeld WHERE NOT EXISTS (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
--0 5 * * * mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"CALL fuellThaP(0);"
+-0 1 * * * mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM forminhfeld WHERE NOT EXISTS (SELECT foid FROM forminhkopf WHERE foid = forminhfeld.foid)"
+-0 5 * * * mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"CALL fuellThaP(0);"
 # Dateien nach u:\tmexport holen
 -30 0 * * 1 rsync -avu /amnt/anmh/tmexport/ /DATA/eigene\ Dateien/TMExport/
 # Dateien in u:\tmexport komprieren und ausmisten
@@ -303,8 +303,8 @@ ELG=/var/log/cronf.log
 # hat von Reserveservern aus von linux1 mysql auf dort mysql_1 gesichert, ist durch Auslesen aus /DATA/sql (s.u.) veraltet:
 # -5,35 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ping -c1 ${HOST\%\%.*} >/dev/null 2>&1&&{ for D in var/lib/mysql; do ionice -c3 nice -n19 rsync -avu --delete --rsync-path="ionice -c3 nice -n19 rsync" linux1:/$D/ /${D}_1/;done;};
 # holt BDT-Export-Dateien von Windows-Rechnern auf u:\TMExport und passt den Eintrag in eintragszahlen dafuer an:
-10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh amd;do if ping -qc1 -W1 $V; then gV="/amnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"UPDATE eintragszahlen SET datei=REPLACE(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') WHERE datei LIKE 'C:\\\\\\\%TMExport\%'"
-30 1,13 * * * mariadb --defaults-extra-file=~/.mysqlpwd quelle -e"UPDATE briefe SET quelldatum=quelldat(NAME,dokaend);"
+10 5,12 * * * Z=/DATA/eigene\ Dateien/TMExport/;for V in szoo1 szon1 anmmw anmh amd;do if ping -qc1 -W1 $V; then gV="/amnt/$V/tmexport";mount "$gV" 2>&1|grep "error(16)" >/dev/null&&{ mountpoint -q /DATA&&ionice -c3 nice -n19 rsync -avu --chown=schade:praxis "$gV"/ "$Z"&&find "$gV" -type f -mtime +7 -delete; chmod 770 -R "$Z";};fi;done;mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"UPDATE eintragszahlen SET datei=REPLACE(datei,'C:','\\\\\\\\linux1\\\\\\daten\\\\\\eigene Dateien') WHERE datei LIKE 'C:\\\\\\\%TMExport\%'"
+30 1,13 * * * mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"UPDATE briefe SET quelldatum=quelldat(NAME,dokaend);"
 # bei knapper Laufwerksbelegung Email schicken:
 0 10,17 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /root/bin/lwwarn.sh
 # Telefonanrufe in die Datenbank eintragen:
@@ -320,7 +320,7 @@ ELG=/var/log/cronf.log
 # PZN-Nummern aus BDT-Dateien auslesen:
 30 1,13 * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/pznbdt >/dev/null 2>&1
 # SQL-Datenbanken auf den Reserveservern durch Auslesen aus /DATA/sql aktualisieren:
-0 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ -a mountpoint -q /DATA ]&&for db in programmstaende konten kvaerzte haerzte_neu haerzte fotosinp faxeinp depot dp quelle office; do dt=$(ls /DATA/sql/$db* -t|head -n1); mariadb --defaults-extra-file=~/.mysqlpwd < $dt; done;
+0 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ -a mountpoint -q /DATA ]&&for db in programmstaende konten kvaerzte haerzte_neu haerzte fotosinp faxeinp depot dp quelle office; do dt=$(ls /DATA/sql/$db* -t|head -n1); mariadb --defaults-extra-file=~/.mariadbpwd < $dt; done;
 # VBoxManage controlvm Win10 poweroff
 # geht irgendwie auch allein:
 # * * * * * case $(hostname) in *1*)vm=Win10;;*0*)vm=Win10;;*7*)vm=Win10;;*8*)vm=Win10;;esac;pgrep -f "VBoxHeadless.* $vm" >/dev/null||VBoxManage startvm $vm --type headless 
