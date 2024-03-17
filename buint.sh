@@ -52,6 +52,7 @@ kopierwser() {
       if [ $obvirt = 2 ]; then
         ausf "ssh sturm@wser del c:\\turbomed\\$uq\\.objects* 2>nul"; # Reste alter Kopierversuche löschen
         ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' sturm@wser:/mnt/c/turbomed/$uq/ /opt/turbomed/$uz/ $obOBDEL"; # -P hat keinen Sinn
+        ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' sturm@wser:/mnt/c/turbomed/Daten/Var/earztbrief/ /opt/turbomed/Daten/Var/earztbrief/ $obOBDEL"; # -P hat keinen Sinn
       else # $obvirt = 0 -o $obvirt = 1
         ausf "rm -rf /opt/turbomed/$uz/.objects*"; # Reste alter Kopierversuche löschen
         ausf "rsync -avu -e ssh  --rsync-path='wsl rsync' /opt/turbomed/$uz/ sturm@wser:/mnt/c/turbomed/$uq/ $obOBDEL"; # -P hat keinen Sinn
