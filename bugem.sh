@@ -39,7 +39,7 @@ ausf() {
         [ "$ret" = 0 ]&& farbe=$blau|| farbe=$rot;
         printf "${reset}, resu:\n$farbe"; 
         resgedr=1;
-        [ "$maxz" -a "$maxz" -ne 0 -a $(echo "$resu"|wc -l) > "$maxz" ]&&resz="...\n"$(echo "$resu"|tail -n$maxz)||resz="$resu";
+        [ "$resu" ]&&{ [ "$maxz" -a "$maxz" -ne 0 -a $(echo "$resu"|wc -l) > "$maxz" ]&&resz="...\n"$(echo "$resu"|tail -n$maxz)||resz="$resu";};
         printf -- "$resz"|sed -e '$ a\'; # || echo -2: $resz; # Zeilenenden als solche ausgeben
         printf "$reset";
       }

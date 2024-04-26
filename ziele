@@ -62,6 +62,7 @@ lwwarn.sh
 mountvirt.sh
 nampruef.sh
 obft.sh
+parsetif.sh
 pdfumw.sh
 pdftotxt.sh
 pdftotxte.sh
