@@ -50,9 +50,10 @@ commandline() {
         h|'?'|-h|'-?'|/?|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
         -help) obhilfe=e;; # englische Hilfe
         nsed|-nursed) obnsed=1;;
+        *) [ -f "$1" ]&&q="$1";;
       esac;;
      *)
-      q=$1;;
+      q="$1";;
    esac;
    shift;
 	done;
@@ -72,7 +73,7 @@ z=${stamm}.tif;
 rand=${stamm}i.tif;
 txt=${stamm}i;
 
-if [ ! "$obnsed" -o ! -f "$txt" ]; then
+if [ ! "$obnsed" -o ! -f "${txt}.txt" ]; then
 ausf "gs -q -dNOPAUSE -sDEVICE=tiffg4 -sOutputFile=\"$z\" \"$q\" -c quit" # -r800x800 hilft auch nichts
 [ -f "$z" ]&&{
   ausf "convert \"$z\" -bordercolor White -border 10x10 \"$rand\"";
@@ -84,12 +85,13 @@ ender="${stamm}_echt.txt";
 awkd="${stamm}_awk.txt";
 awkdk="${stamm}_awkd.txt";
 [ $verb ]&&[ -f "$txt" ]&&echo Ergebnis: "$txt";
+erstellt=;
 erstellt=$(sed -n '/erstellt am/{s/.*am \([0-9]*.[0-9]*.[0-9]*\)/\1/p;q;}' "$txt")
 [ $verb ]&&echo erstellt: $erstellt;
 case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *) arzt=so;; esac;
 [ $verb ]&&echo Arzt: $arzt;
-sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
+# sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
+# mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 
 sed '
 /41915300/!d;                          # Zwischenzeilen löschen
@@ -175,17 +177,20 @@ function trim(str) {
   gsub("31.09.","31.03.",dokudat);
   gsub("80.","30.",dokudat);
   printf("%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",nachname,trim(na[2]),gebdat,pid,trim(re[2]),trim(re[3]),trim(ar[4]),dokudat,trim(ar[6]));
-  sql="INSERT INTO dmprm(arzt,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,Quartal,Jahr,npid) VALUES('\''" arzt "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" pid "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" trim(qu[1]) "'\'','\''" trim(qu[2]) "'\'',(SELECT MIN(pat_id) FROM namen WHERE (pat_id='\''" pid "'\'' AND (nachname='\''" nachname "'\'' OR vorname='\''" vorname "'\'' OR gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))))";
+  sql="REPLACE INTO dmprm(arzt,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,Quartal,Jahr,npid) VALUES('\''" arzt "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" pid "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" trim(qu[1]) "'\'','\''" trim(qu[2]) "'\'',(SELECT MIN(pat_id) FROM namen WHERE (pat_id='\''" pid "'\'' AND (nachname='\''" nachname "'\'' OR vorname='\''" vorname "'\'' OR gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))))";
 print sql;
 system("mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"" sql "\" 2>&1");
 }
 END {
 }
 ' "${ender}" >"${awkd}";
-sed '/\(^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='\'"$q"\''";
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('\'"$q"\'',NOW())";
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('Eingelesen aus Datei ','\'"$q"\'',', erstellt am ','"$erstellt"',' für Arzt ','"$arzt"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
+sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$q'\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$q'"; # Anführungszeichen um $q führen zum Fehler!
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',NOW())\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',NOW())";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$q\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
 [ $verb ]&& {
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
@@ -211,6 +216,7 @@ CREATE TABLE IF NOT EXISTS dmprm (\
 	VNr VARCHAR(12) NOT NULL DEFAULT '' COMMENT 'Versicherungsnummer' COLLATE 'utf8mb3_unicode_ci',\
 	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
 	PRIMARY KEY (ID) USING BTREE,\
+ 	UNIQUE INDEX eind (npid, Gebdat, Dokudat, Jahr, Quartal, Dokuart, arzt) USING BTREE,\
 	INDEX erstellt (arzt,erstellt) USING BTREE,\
 	INDEX Nachname (Nachname) USING BTREE,\
 	INDEX Vorname (Vorname) USING BTREE,\
@@ -228,6 +234,7 @@ COMMENT='rückgemeldete DMP-Eintragungen von der Datenstelle'\
 COLLATE='utf8mb3_unicode_ci'\
 ENGINE=InnoDB\
 ";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 sql="\
 CREATE TABLE IF NOT EXISTS dmpeinl (\
@@ -242,6 +249,7 @@ COMMENT='Einlesungen von DMP-Rückmeldungen mit der Batch-Datei parsetif.sh'\
 COLLATE='utf8mb3_unicode_ci'\
 ENGINE=InnoDB\
 ";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 } # tabellen
 
