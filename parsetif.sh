@@ -1,5 +1,10 @@
 #/bin/bash
 qvz="/DATA/Patientendokumente/DMP";
+blau="\033[1;34m";
+lila="\033[1;35m";
+dblau="\033[0;34;1;47m";
+rot="\033[1;31m";
+reset="\033[0m";
 
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...") $4=obimmer (auch wenn nicht echt)
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
@@ -40,6 +45,8 @@ ausf() {
 # Befehlszeilenparameter auswerten
 commandline() {
   verb=;
+  obecht=1; # zur Zeit unecht hier nicht implementiert
+  einzeln=;
 	while [ $# -gt 0 ]; do
    case "$1" in 
      -*|/*)
@@ -49,8 +56,12 @@ commandline() {
         v|-verbose) verb=1;;
         h|'?'|-h|'-?'|/?|-hilfe) obhilfe=1;; # Achtung: das Fragezeichen würde expaniert
         -help) obhilfe=e;; # englische Hilfe
-        nsed|-nursed) obnsed=1;;
-        *) [ -f "$1" ]&&q="$1";;
+        nd|-neudd) neudb=1;;
+        nt|-neutif) neutif=1;;
+        *) 
+          einzeln=1;
+          [ $verb ]&&printf "commandline: werte aus: $blau$1$reset\n"
+          [ -f "$1" ]&&q="$1"||printf "Datei $blau$1$reset nicht gefunden!\n";;
       esac;;
      *)
       q="$1";;
@@ -61,19 +72,20 @@ commandline() {
   ZmD=$ZL:;ZmD=${ZmD#:};
 	if [ "$verb" ]; then
     printf "Parameter: $blau-v$reset => gesprächig\n";
-		printf "obecht: $blau$obecht$reset\n";
-    [ $obnsed ]&&printf "obnsed: $blau$obnsed$reset => vor sed wird kein tesseract aufgerufen\n"; 
+#		printf "obecht: $blau$obecht$reset\n";
+    [ $neudb ]&&printf "neudb: $blau$neudb$reset => Datenbankeinträge werden auch dann neu erstellt, wenn keine einzelne Datei angegeben\n"; 
+    [ $neutif ]&&printf "neutif: $blau$neutif$reset => tif-Dateien werden neu erstellt und geparst\n"; 
 	fi;
 } # commandline
 
 auswert() {
-[ ! -f "$q" ]&&{ echo "Datei \"$q\" nicht gefunden. Höre auf."; exit; }
+[ ! -f "$q" ]&&{ printf "Datei $blau\"$q\"$reset nicht gefunden. Höre auf.\n"; exit; }
 stamm=${q%.*};
 z=${stamm}.tif;
 rand=${stamm}i.tif;
 txt=${stamm}i;
 
-if [ ! "$obnsed" -o ! -f "${txt}.txt" ]; then
+if [ "$neutif" -o ! -f "${txt}.txt" ]; then
 ausf "gs -q -dNOPAUSE -sDEVICE=tiffg4 -sOutputFile=\"$z\" \"$q\" -c quit" # -r800x800 hilft auch nichts
 [ -f "$z" ]&&{
   ausf "convert \"$z\" -bordercolor White -border 10x10 \"$rand\"";
@@ -84,12 +96,12 @@ txt=${txt}.txt
 ender="${stamm}_echt.txt";
 awkd="${stamm}_awk.txt";
 awkdk="${stamm}_awkd.txt";
-[ $verb ]&&[ -f "$txt" ]&&echo Ergebnis: "$txt";
+[ $verb ]&&[ -f "$txt" ]&&printf "Ergebnis: $blau$txt$reset\n";
 erstellt=;
 erstellt=$(sed -n '/erstellt am/{s/.*am \([0-9]*.[0-9]*.[0-9]*\)/\1/p;q;}' "$txt")
-[ $verb ]&&echo erstellt: $erstellt;
+[ $verb ]&&printf "erstellt: $blau$erstellt$reset\n";
 case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *) arzt=so;; esac;
-[ $verb ]&&echo Arzt: $arzt;
+[ $verb ]&&printf "Arzt: $blau$arzt$reset\n";
 # sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
 # mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 
@@ -133,7 +145,9 @@ s/\(| *[0-9]\{1,\}\) *\([0-9]\{1,5\} [A-Z]\{0,1\}[0-9]\{1,\}\)/\1\2/g; # Leerzei
 s/\([0-9]\{2,5\} [A-Z]*[0-9]\{1,7\}\) \([0-9]\{1,5\}\) \{0,1\}\([0-9]\{1,5\}\)/\1\2\3/g; # Leerzeichen in der Versicherungsnummer entfernen
 s/ *| */ | /g; # Leerzeichen vor und nach | vereinheitlichen
 ' "$txt" >"${ender}";
-awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" '
+epo=$(awk 'BEGIN{srand();print -srand();}'); # $(date +%s); # -epoch als vorläufige Bezugs-ID
+[ $verb ]&&printf "epo: $blau$epo$reset\n";
+awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" -v epo="$epo" '
 function trim(str) {
        # remove whitespaces begin of str and end of str
         gsub(/^[[:blank:]]+|[[:blank:]]+$/,"", str)
@@ -177,7 +191,7 @@ function trim(str) {
   gsub("31.09.","31.03.",dokudat);
   gsub("80.","30.",dokudat);
   printf("%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",nachname,trim(na[2]),gebdat,pid,trim(re[2]),trim(re[3]),trim(ar[4]),dokudat,trim(ar[6]));
-  sql="REPLACE INTO dmprm(arzt,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,Quartal,Jahr,npid) VALUES('\''" arzt "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" pid "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" trim(qu[1]) "'\'','\''" trim(qu[2]) "'\'',(SELECT MIN(pat_id) FROM namen WHERE (pat_id='\''" pid "'\'' AND (nachname='\''" nachname "'\'' OR vorname='\''" vorname "'\'' OR gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))))";
+  sql="REPLACE INTO dmprm(einlID,arzt,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,Quartal,Jahr,npid) VALUES(" epo ",'\''" arzt "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" pid "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" trim(qu[1]) "'\'','\''" trim(qu[2]) "'\'',(SELECT MIN(pat_id) FROM namen WHERE (pat_id='\''" pid "'\'' AND (nachname='\''" nachname "'\'' OR vorname='\''" vorname "'\'' OR gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))))";
 print sql;
 system("mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"" sql "\" 2>&1");
 }
@@ -187,10 +201,18 @@ END {
 sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$q'\";"
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$q'"; # Anführungszeichen um $q führen zum Fehler!
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',NOW())\";"
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',NOW())";
+epo2=$(date +%s);
+[ $verb ]&&printf "epo2: $blau$epo2$reset\n";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"INSERT INTO dmpeinl(Datei,eingelesen) FROM_UNIXTIME('$epo2'))\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',FROM_UNIXTIME('$epo2'))";
+einlid=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT id FROM dmpeinl WHERE Datei='$q' AND eingelesen=FROM_UNIXTIME('$epo2')");
+[ $verb ]&&printf "einlid: $blau$einlid$reset\n";
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"UPDATE dmprm SET einlid='$einlid' WHERE einlid=$epo";
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$q\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
+printf "\r";
+# mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
+ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$q$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung');");
+printf "$ausgabe\n";
 [ $verb ]&& {
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
@@ -201,7 +223,8 @@ mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q'
 tabellen() {
 sql="\
 CREATE TABLE IF NOT EXISTS dmprm (\
-	ID INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
+	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
+	einlID INT(11) SIGNED COMMENT 'Bezugs-ID in dmpeinl',\
   arzt VARCHAR(2) NOT NULL DEFAULT '' COMMENT 'gs,tk oder so fuer Sonstige',\
 	erstellt DATE NULL DEFAULT NULL COMMENT 'Dateierstellungdatum',\
 	Nachname VARCHAR(30) NOT NULL DEFAULT '' COLLATE 'utf8mb3_unicode_ci',\
@@ -217,6 +240,7 @@ CREATE TABLE IF NOT EXISTS dmprm (\
 	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
 	PRIMARY KEY (ID) USING BTREE,\
  	UNIQUE INDEX eind (npid, Gebdat, Dokudat, Jahr, Quartal, Dokuart, arzt) USING BTREE,\
+ 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname) USING BTREE,\
 	INDEX erstellt (arzt,erstellt) USING BTREE,\
 	INDEX Nachname (Nachname) USING BTREE,\
 	INDEX Vorname (Vorname) USING BTREE,\
@@ -238,9 +262,9 @@ ENGINE=InnoDB\
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 sql="\
 CREATE TABLE IF NOT EXISTS dmpeinl (\
-	ID INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
+	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
 	Datei VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb3_unicode_ci',\
-	eingelesen DATE NULL DEFAULT NULL,\
+	eingelesen DATETIME NULL DEFAULT NULL,\
 	PRIMARY KEY (ID) USING BTREE,\
 	INDEX Datei (Datei) USING BTREE,\
 	INDEX eingelesen (eingelesen) USING BTREE\
@@ -254,29 +278,46 @@ mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 } # tabellen
 
 raussuch() {
-  altabnsed=$obnsed;
-  obnsed=1;
   altverb=$verb;
   verb=;
 #  find "$qvz" -maxdepth 1 \( -iname "*tk*.pdf" -o -iname "*gs*.pdf" \) -print0 |
+  ausgew=0;
+  gefund=0;
   find "$qvz" -maxdepth 1 -iregex ".*\(TK\|GS\).*.pdf" -print0 |
   while IFS= read -r -d '' datei; do
+    gefund=$(expr $gefund + 1);
+    [ $altverb ]&&printf "\rUntersuche $blau$datei$reset                                          \n";
     erg=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT 0 FROM dmpeinl WHERE datei='$datei'");
     if [ ! "$erg" ]; then
-      echo bearbeite: $datei;
+      ausgew=$(expr $ausgew + 1);
+      printf "\rbearbeite: $blau$datei$reset                                                  "; [ $verb ]&&printf "\n";
       q="$datei";
       auswert;
     fi;
+    printf "\r$blau$gefund$reset passende Dateien in \"$blau$qvz$reset\" gefunden, $blau$ausgew$reset neu ausgewertet.";
   done;
-  obnsed=$altobnsed;
+  printf "\n";
   verb=$altverb;
 } # raussuch
 
 
 commandline "$@"; # alle Befehlszeilenparameter übergeben
+if [ "$neudb" ]; then
+  if [ ! $einzeln ]; then
+    [ $verb ]&&printf "${rot}Lösche die Tabellen ${blau}dmpeinl$rot und ${blau}dmprm$rot!$reset\n";
+    mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DROP TABLE dmpeinl";
+    mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DROP TABLE dmprm";
+  fi;
+fi;
 tabellen;
-if [ "$q" ]; then
-  auswert;
+if [ $einzeln ]; then
+  if [ -f "$q" ]; then
+    [ $verb ]&&printf "${blau}q: $q$reset, rufe ${blau}auswert$reset auf\n";
+    auswert;
+  else
+    printf "$blau\"$q\"$reset nicht gefunden. Tue gar nichts.\n";
+  fi;
 else
+  [ $verb ]&&printf "${blau}q$reset nicht bestimmt, rufe ${blau}raussuch$reset auf\n";
   raussuch;
 fi;
