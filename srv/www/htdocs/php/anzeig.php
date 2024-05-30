@@ -328,7 +328,7 @@ include '../../phppwd.php';
   if (!isset($_POST['dmpp'])) {
     $sql="SELECT IF(dmpbeg=18991230,0,dmpbeg) beg, dmpbeg <qanf() alt
       , CASE WHEN dmpklass=1 THEN 'nein' WHEN dmpklass=2 THEN 'HA' WHEN dmpklass=3 THEN 'hier' WHEN dmpklass=4 THEN 'ausg' ELSE '' END dk
-      , (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vknr AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(f6010,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp 
+      , (SELECT kateg IN ('LKK','PBe','SHV') FROM faelle f LEFT JOIN kassenliste k ON f.vknr=k.vknr AND f.ik=k.ik WHERE pat_id= n.pat_id ORDER BY bhfb DESC LIMIT 1) OR COALESCE((SELECT 0 FROM diagnosen WHERE icd RLIKE '^E1[0-4]' AND diagsicherheit IN ('G',' ') AND COALESCE(Dggel,0)=0 AND pat_id=n.pat_id LIMIT 1),1) kdmp 
       FROM (
         SELECT pat_id,IF(zp>dmpbeg,dmp,dmpklass) dmpklass,IF(zp>dmpbeg,zp,dmpbeg) dmpbeg 
         FROM (
