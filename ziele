@@ -59,6 +59,7 @@ kuerze.sh
 logrotate.conf
 los.sh
 lwwarn.sh
+machtha.sh
 mountvirt.sh
 nampruef.sh
 obft.sh
