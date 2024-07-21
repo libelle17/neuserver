@@ -1,4 +1,5 @@
 #/bin/bash
+qvz="/DATA/Patientendokumente/DMPakt";
 qvz="/DATA/Patientendokumente/DMP";
 blau="\033[1;34m";
 lila="\033[1;35m";
@@ -158,7 +159,6 @@ function trim(str) {
   split($0,ar,"|");
   split(ar[1],na,",");
   split(ar[3],re," ");
-  split(ar[6],qu,"/");
   nachname=trim(na[1]);
   gsub("'\''","'\'''\''",nachname);
   vorname=trim(na[2]);
@@ -185,8 +185,14 @@ function trim(str) {
         pos=index(dokuart," ");
         if (pos) dokuart=substr(dokuart,1,pos);
     }
-    if (!length(dokuart)) # wenn Dokart ein Feld vorgerutscht ist
+    if (!length(dokuart)) { # wenn Dokart ein Feld vorgerutscht ist
       dokuart=trim(re[4]);
+      dokudat=trim(ar[4]);
+      split(ar[5],qu,"/");
+    } else {
+      split(ar[6],qu,"/");
+    }
+    if (match(dokuart,/^[,.;:]/)) dokuart=substr(dokuart,2);
   }
   gsub("31.09.","31.03.",dokudat);
   gsub("80.","30.",dokudat);
@@ -240,7 +246,7 @@ CREATE TABLE IF NOT EXISTS dmprm (\
 	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
 	PRIMARY KEY (ID) USING BTREE,\
  	UNIQUE INDEX eind (npid, Gebdat, Dokudat, Jahr, Quartal, Dokuart, arzt) USING BTREE,\
- 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname) USING BTREE,\
+ 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname,Dokuart) USING BTREE,\
 	INDEX erstellt (arzt,erstellt) USING BTREE,\
 	INDEX Nachname (Nachname) USING BTREE,\
 	INDEX Vorname (Vorname) USING BTREE,\
