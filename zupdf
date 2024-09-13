@@ -1,0 +1,4 @@
+#!/bin/bash
+Z=/DATA/Patientendokumente
+Q=$Z/zupdf/
+/root/bin/dozupdf.sh "$Q" "$Z"
