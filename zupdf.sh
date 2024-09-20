@@ -36,5 +36,5 @@ if test -d "$1"; then
 elif test -f $1; then
  doumw "$1" "$2"
 else
- echo -e $BLAU_"$1"_SCHWARZ_ "nicht gefunden!"
+ echo -e $BLAU_"$1"_$SCHWARZ_ "nicht gefunden!"
 fi
