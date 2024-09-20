@@ -15,6 +15,7 @@ for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1 - $Interv||expr 
 # for Jahr in 2023; do
  printf "${lila}Jahr: $gruen$Jahr$reset\n";
  DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '\\\\\\\\\\\\\\\\$Jahr' AND NOT pfad RLIKE '^[pq]:'\"";# LIMIT 20\"";
+ DBBef="mariadb --defaults-extra-file=~/.mysqlpwd quelle -s -e\"SELECT CONCAT_WS('|',id,MID(pfad,INSTR(pfad,'\2'),4),REPLACE(REPLACE(pfad,'\\\\\\\\','/'),'$/TurboMed','/DATA/turbomed'),name,dokgroe,dokaend) z FROM briefe WHERE pfad<>'' AND NOT pfad RLIKE '\\\\\\\\\\\\\\\\PatBrief\\\\\\\\\\\\\\\\' AND pfad RLIKE '\\\\\\\\\\\\\\\\$Jahr' AND NOT pfad RLIKE '^[pq]:'\"";# LIMIT 20\"";
  printf "${blau}DBBef: $lila$DBBef$reset\n";
  TName=$(eval "$DBBef")
  nr=0;
@@ -46,9 +47,7 @@ for Jahr in $(seq $([ $(date +%m) = 12 ]&& expr $(date +%Y) - 1 - $Interv||expr 
     case "$NAME" in */*);;*)
      if test -f "$PFAD"; then
       obkop=;
-      kop=$(find $EG/$JAHR -name "$NAME");
-      if test "$kop"; then
-#        printf "$blau$nr$reset: $kop\n";
+      if find "$EG/$JAHR" -name "$NAME"|grep . >/dev/null; then
         true;
       else
         printf "$nr: $blau$ID $lila$NAME $blau$PFAD$lila nicht gefunden!$reset\n"

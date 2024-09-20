@@ -65,6 +65,28 @@
       $text=$text."HbA1c";
       echo "<button class='".$stil."' name='HbA1c'>".$text."</button>";
     }
+    IF ($_SESSION['obUzu']) {
+      IF ($_SESSION['Uzu']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Uzu";
+      echo "<button class='".$stil."' name='Uzu'>".$text."</button>";
+    }
+    IF ($_SESSION['obHypo']) {
+      IF ($_SESSION['Hypo']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Hypo";
+      echo "<button class='".$stil."' name='Hypo'>".$text."</button>";
+    }
     IF ($_SESSION['obHyper']) {
       IF ($_SESSION['Hyper']) {
         $stil=cave;
