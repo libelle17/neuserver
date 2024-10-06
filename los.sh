@@ -1874,8 +1874,7 @@ test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau
 echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
 variablen;
-echo osnr: $ONR;
-exit;
+echo osnr: $OSNR;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
  [ $obteil = 0 ]&&setzpfad;
