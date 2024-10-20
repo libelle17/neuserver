@@ -29,7 +29,7 @@ for datei in  "${Dateien[@]}";  do
   fi
   if [ -f "$zdatei" ]; then      # wenn Datei (dann) existiert
    echo "  "$zdatei existiert.
-   ionice -c3 nice -n19 /usr/bin/7z t "$zdatei" -p$passw > /dev/null
+   ionice -c3 nice -n19 /usr/bin/7z t "$zdatei" -p$passw > /dev/null # Integrität testen
    rv=$?
    if [ $rv = 0 ]; then
      echo "  ""$zdatei" in Ordnung
