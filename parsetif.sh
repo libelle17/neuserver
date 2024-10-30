@@ -217,8 +217,10 @@ mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"UPDATE dmprm SET ein
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$q\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
 printf "\r";
 # mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
-ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$q$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung');");
+ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$q$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung:');");
+ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL'";
 printf "$ausgabe\n";
+printf "$ausg2\n";
 [ $verb ]&& {
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
