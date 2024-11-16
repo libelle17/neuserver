@@ -1494,7 +1494,10 @@ tvversion() {
 # teamviewer15: in /usr/share/applications/org.kde.kdeconnect_open.desktop : -MimeType=*/*; +MimeType=application/octet-stream;
 
 teamviewer15() {
- if [ $(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}') \< 15 ]; then
+ tuti=0;
+ which teamviewer 2>/dev/null ||tuti=1;
+ [ $tuti = 0 ]&&[ $(teamviewer --version 2>/dev/null|awk '/^.*Team/{print substr($4,1,index($4,".")-1)}') \< 15 ]&&tuti=1;
+ if test $tuti = 1; then
    sudo rpm --import  https://download.teamviewer.com/download/linux/signature/TeamViewer2017.asc;
    wget https://download.teamviewer.com/download/linux/teamviewer-suse.x86_64.rpm;
    sudo sudo zypper install teamviewer-suse.x86_64.rpm; 
