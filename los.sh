@@ -1080,6 +1080,7 @@ bildschirm() {
       fi;
     fi;
 	fi;
+  # 16.11..24
   for v in /root $(find /home -mindepth 1 -maxdepth 1); do 
       d=$v/.config/kcminputrc; 
       if test -f "$d"; then 
