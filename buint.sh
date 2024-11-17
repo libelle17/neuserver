@@ -2,10 +2,10 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
 # soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn es auf dem Hauptserver linux1 das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /amnt/virtwin/turbomed
+# wenn es auf dem Hauptserver wexp.fritz.box das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /amnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=wexp.fritz.box, buhost festlegen
 # ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux0, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 ZL=; # dann werden die cifs-Laufwerke verwendet
@@ -71,7 +71,7 @@ kopierwser() {
 
 
 testobvirt;
-if [ $obvirt = 0 -o $obvirt = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
+if [ $obvirt = 0 -o $obvirt = 2 ]; then # wenn es auf wexp.fritz.box /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
   VzL="$VzLg";
   ur=$ot # opt/turbomed
   hin=amnt/$gpc/turbomed;
@@ -166,7 +166,7 @@ fi;
 
 if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
   if ! [ "$nurdrei" ]; then
-    printf "${lila}2. butm aufrufen, um von linux1 nach linux{$ziele} zu kopieren${reset}\n";
+    printf "${lila}2. butm aufrufen, um von wexp.fritz.box nach linux{$ziele} zu kopieren${reset}\n";
 # 2. wenn mehr, dann von hier aus auf die anderen nicht-virtuellen Server kopieren
     for ziel in $ziele; do
       [ "$obecht" ]&&echtpar=" -e"||echtpar=;
@@ -195,7 +195,7 @@ if [ "$obmehr" -a "$buhost" = "$LINEINS" ]; then
       # case $wirt in $LINEINS)tush="sh -c ";;*)tush="ssh $wirt ";;esac
       [ $verb ]&&printf "${blau}gpc: $rot$gpc$reset\n";
       if [ "$gpc" ]; then
-        HOST=$(hostname);HOST=${HOST%%.*}; # linux1 usw.
+        HOST=$(hostname);HOST=${HOST%%.*}; # wexp.fritz.box usw.
         [ $wirt = $HOST ]&&tush=||tush="ssh $wirt ";
         if ping -c1 -W1 "$gpc" >/dev/null 2>&1; then ok=1; else
          ok=;
