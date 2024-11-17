@@ -1080,6 +1080,15 @@ bildschirm() {
       fi;
     fi;
 	fi;
+  for v in /root $(find /home -mindepth 1 -maxdepth 1); do 
+      d=$v/.config/kcminputrc; 
+      if test -f "$d"; then 
+        sect="\[Keyboard\]"; 
+        sed -i '/^'$sect'/{:a;n;ba;q};$a'$sect "$d"; 
+        eint="RepeatDelay";wert="=247"; 
+        sed -i '/^\('$eint'\).*/s//\1'$wert'/' "$d"; grep -q "$eint" "$d" || sed -i '/^'$sect'/s/'$sect'/'$sect\\n$eint$wert'/' "$d";
+      fi; 
+  done
   case "$WINDOWMANAGER" in /usr/bin/startkde|/usr/bin/startplasma-x11)
       DNam=kcminputrc;
       D=~/.config/$DNam;
