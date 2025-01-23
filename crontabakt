@@ -139,7 +139,8 @@ ELG=/var/log/cronf.log
 -1 1 * * * mountpoint -q /DATA && chmod 550 -R /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 -1 2 * * * mountpoint -q /DATA && chmod 774 /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 # wandelt /DATA/Patientendokumente/plz/TMFTools.pdf mit pdftotext -layout in *.txt um und trägt dessen Inhalt in die Mysql-Datenbank termine ein:
--27 5,13 * * * /usr/bin/termine >>$NLG 2>>$ELG
+# -27 5,13,19 * * * /usr/bin/termine >>$NLG 2>>$ELG
+-27 5,13,19 * * * /root/termine/term.sh >>$NLG 2>>$ELG
 # sichert Daten auf /DATA/rett:
 -15 23 * * * /root/bin/rett.sh >>$NLG 2>>$ELG
 # -15 22 * * * /root/bin/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
