@@ -57,6 +57,7 @@ instutz.sh
 kompr.sh
 komprsql.sh
 kuerze.sh
+lesbar.sh
 logrotate.conf
 los.sh
 lwwarn.sh
