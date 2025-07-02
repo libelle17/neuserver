@@ -1,4 +1,5 @@
 #!/bin/bash
+# Sicherungsprogramm für Medical Office für ransomware, Gerald Schade 2.7.25
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
@@ -19,7 +20,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   # $7 = ob ohne Platzprüfung
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
-/root/bin/mountvirt.sh
+ssh linux1 /root/bin/mountwser.sh
+# muss hier nicht aufgerufen werden, da er von linux1 aus kopiert
 for uvz in tmexport indamed; do
-	kopiermt /mnt/wser/$uvz /DATA/wser/$uvz "" "" "" "" 1
+	kopiermt /mnt/wser/$uvz /DATA/wser/ "" "" "" "" 1
 done;
