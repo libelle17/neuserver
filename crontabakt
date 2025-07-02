@@ -218,6 +218,7 @@ ELG=/var/log/cronf.log
 -56 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -d linux8 -e
 # -05 0 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
+-56 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&/root/bin/buwser.sh -e
 #-* * * * * rm $VL/messages
 #-* * * * * rm $VL/warn
 #-*/60 * * * * crontab /etc/crontab
