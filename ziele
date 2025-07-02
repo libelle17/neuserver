@@ -23,6 +23,7 @@ bugem.sh
 bupc.sh
 bulinux3.sh
 buwin10.sh
+buwser.sh
 checkmy.sh
 copydat.sh
 copyseag.sh
@@ -63,6 +64,7 @@ los.sh
 lwwarn.sh
 machtha.sh
 mountvirt.sh
+mountwser.sh
 nampruef.sh
 obft.sh
 parsetif.sh
