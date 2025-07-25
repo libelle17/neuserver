@@ -29,6 +29,7 @@ kopieros ".mysqlpwd"
 kopieros ".mysqlrpwd"
 # Passwort für cifs-Mounts
 kopiermt home/schade/.wincredentials ... "" "" "" "" 1
+kopieros ".sturm"
 # Konfigurationsdateien für postfix-Mailprogramm
 kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
@@ -52,6 +53,17 @@ ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
 # falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
+  kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /DATA/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+# kopiermt() { # mit test
+  # $1 = Verzeichnis auf Quelle
+  # $2 = Verzeichnis auf Ziel
+  # $3 = excludes
+  # $4 = Optionen 
+	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
+	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
+  # $7 = ob ohne Platzprüfung
+  # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
+
 #  ... dann Mail-Verzeichisse kopieren,
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Wagner Kothny Hammerschmidt Beraterinnen; do
