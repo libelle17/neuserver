@@ -10,6 +10,7 @@ reset="\033[0m";
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...") $4=obimmer (auch wenn nicht echt)
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
+  [ $verb ]&&printf "ausf(\"$1\" \"$2\" \"$3\" \"$4\")\n"
   gz=;
   anzeige=$(echo "${1%\n}"|sed 's/%/%%/;s/\\/\\\\\\\\/g')$reset;
 	[ $verb -o "$2" ]&&{ gz=1;printf "$2$anzeige";}; # escape für %, soll kein printf-specifier sein
@@ -17,7 +18,7 @@ ausf() {
     if test "$3" = direkt; then
       $1;
     elif test "$3"; then 
-      [ $verb ]&&echo "$1";
+      [ $verb ]&&echo "\$1: $1";
       eval "$1"; 
     else 
   #    ne=$(echo "$1"|sed 's/\([\]\)/\\\\\1/g;s/\(["]\)/\\\\\1/g'); # neues Eins, alle " und \ noch ein paar Mal escapen; funzt nicht
@@ -80,6 +81,7 @@ commandline() {
 } # commandline
 
 auswert() {
+[ $verb ]&&printf "${blau}auswert()$reset\n";
 [ ! -f "$q" ]&&{ printf "Datei $blau\"$q\"$reset nicht gefunden. Höre auf.\n"; exit; }
 stamm=${q%.*};
 z=${stamm}.tif;
@@ -105,7 +107,7 @@ case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *) arzt=so;; esac;
 [ $verb ]&&printf "Arzt: $blau$arzt$reset\n";
 # sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
 # mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
-
+[ $verb ]&&printf "sed ... $txt \> ${ender}\n";
 sed '
 /41915300/!d;                          # Zwischenzeilen löschen
 s/|}/|/g;      # eckige Klammer nach | löschen
@@ -148,6 +150,7 @@ s/ *| */ | /g; # Leerzeichen vor und nach | vereinheitlichen
 ' "$txt" >"${ender}";
 epo=$(awk 'BEGIN{srand();print -srand();}'); # $(date +%s); # -epoch als vorläufige Bezugs-ID
 [ $verb ]&&printf "epo: $blau$epo$reset\n";
+[ $verb ]&&printf "vor akw -F \n ... ${ender} \> ${awkd}\n";
 awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" -v epo="$epo" '
 function trim(str) {
        # remove whitespaces begin of str and end of str
@@ -204,6 +207,7 @@ system("mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"" sql "\" 2>&1");
 END {
 }
 ' "${ender}" >"${awkd}";
+[ $obverb ]&&printf "sed ... ${awkd} \> ${awkdk}\n";
 sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$q'\";"
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$q'"; # Anführungszeichen um $q führen zum Fehler!
@@ -286,12 +290,12 @@ mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 } # tabellen
 
 raussuch() {
-  altverb=$verb;
-  verb=;
+#  altverb=$verb;
+#  verb=;
 #  find "$qvz" -maxdepth 1 \( -iname "*tk*.pdf" -o -iname "*gs*.pdf" \) -print0 |
   ausgew=0;
   gefund=0;
-  find "$qvz" -maxdepth 1 -iregex ".*\(TK\|GS\).*.pdf" -print0 |
+  find "$qvz" -maxdepth 1 -iregex ".*/[^/]*DMP[^/]*\(TK\|GS\)[^/]*\.pdf$" -print0 |
   while IFS= read -r -d '' datei; do
     gefund=$(expr $gefund + 1);
     [ $altverb ]&&printf "\rUntersuche $blau$datei$reset                                          \n";
@@ -305,11 +309,12 @@ raussuch() {
     printf "\r$blau$gefund$reset passende Dateien in \"$blau$qvz$reset\" gefunden, $blau$ausgew$reset neu ausgewertet.";
   done;
   printf "\n";
-  verb=$altverb;
+#  verb=$altverb;
 } # raussuch
 
 
 commandline "$@"; # alle Befehlszeilenparameter übergeben
+[ $verb ]&&printf "verb gesetzt.\n";
 if [ "$neudb" ]; then
   if [ ! $einzeln ]; then
     [ $verb ]&&printf "${rot}Lösche die Tabellen ${blau}dmpeinl$rot und ${blau}dmprm$rot!$reset\n";

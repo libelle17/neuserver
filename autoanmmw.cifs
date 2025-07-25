@@ -1,0 +1,1 @@
+outlook    -fstype=cifs,rw,file_mode=0777,dir_mode=0777,vers=3.11,credentials=/root/.sturm    ://anmmw/Users
