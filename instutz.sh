@@ -64,9 +64,9 @@ zeit;
 for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
   ermittledatum;
-  [ "$verb" ]&&printf "$blau$dt$reset => $rot$datum$reset => $nanf\n"
+  [ "$verb" ]&&printf "$blau$dt$reset => Datum: $rot$datum$reset => nanf: $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
-  [ "$Ausspar" ]&&case $Ausspar in *$nanf*) continue;; esac;
+  [ "$Ausspar" ]&&case $Ausspar in *$nanf*){ [ "$verb" ]&&printf "$Ausspar in *$nanf* => continue\n";continue;};; esac;
   # datediff mit dem Alter von $datum [d] belegen
   ddiff $datum;
   # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
