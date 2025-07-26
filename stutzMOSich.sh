@@ -7,17 +7,17 @@ vorgaben() {
   # Zielverzeichnis
   Zvz=/mnt/wser/mosich/loe;
   # Musterende der interessanten Dateien
-  muende="??????????????";
+  muende="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]";
   # Grenze an Tagen zurück, ab der nur noch 1 Datei im Jahr aufgehoben werden soll
-  gr0=730;
+  gr0=365;
   # Monat im Jahr, mit dem eine Datei auf jeden Fall behalten werden soll
   beh0="-01-";
   # Grenze an Tagen zurück, ab der nur noch 1 Datei im Monat aufgehoben werden soll
-  gr1=365;
+  gr1=30;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
   # Grenze an Tagen zurück, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
-  gr2=30;
+  gr2=7;
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
@@ -31,7 +31,7 @@ ermittledatum() {
   # nanf = Namensanfang zum Vergleich mit $Ausspar, z.B. Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
   [[ $dt =~ ^[0-9]{14}$ ]]&&nanf=||nanf=nichtpruefen;
   # Variable für die Suche älterer Sicherungen des gleichen Gegenstandes für find ... -name "$gname"
-  gname="2?????????????";
+  gname=$muende;
   # datum = erste 8 Buchstaben
   datum=$(echo $dt|sed 's/^\(.\{8\}\).*$/\1/');
   # jahr = erste 4 Buchstaben

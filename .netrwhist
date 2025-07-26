@@ -1,5 +1,7 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =4
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/etc/auto.master.d'
+let g:netrw_dirhist_5='/etc'
 let g:netrw_dirhist_4='/srv/www/htdocs/Papierkorb/behand'
 let g:netrw_dirhist_3='/DATA/down/neu/ftp%3a%2f%2fcygwin.mirrors.pair.com%2f/release/getmail'
 let g:netrw_dirhist_2='/DATA/down/neu/getmail'
@@ -8,5 +10,3 @@ let g:netrw_dirhist_0='/root/test'
 let g:netrw_dirhist_9='/etc/auto.master.d'
 let g:netrw_dirhist_8='/etc/my.cnf.d'
 let g:netrw_dirhist_7='/mnt/diabfb/VERBATIM/FRITZ/faxbox'
-let g:netrw_dirhist_6='/mnt/diabfb/VERBATIM/FRITZ'
-let g:netrw_dirhist_5='/mnt/diabfb/VERBATIM'
