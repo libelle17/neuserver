@@ -70,31 +70,35 @@ for dt in $(find "$Vz" -name "*$muende" -size +$mgroe -printf '%f\n'); do
   # datediff mit dem Alter von $datum [d] belegen
   ddiff $datum;
   # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
-  for runde in 1 2; do
+  for runde in 0 1 2; do
     # Mindestalter der Datei [d], damit sie für diese Runde verwertet wird
     vgr=$(eval 'echo $gr'"$runde");
-    # Tage im Monat, mit denen die Datei in dieser Runde auf jeden Fall behalten wird
+    # Tage im Monat oder Monate im Jahr, mit denen die Datei in dieser Runde auf jeden Fall behalten wird
     vbeh=$(eval 'echo $beh'"$runde");
+    # falls kein Mindestalter oder keine Tage/Monate angegeben, diese Runde überspringen
+    [ "$vgr" -a "$vbeh" ]||continue;
 #    echo "!!!!!!!!!!! vbeh: $vbeh, Runde: $runde"
 #    echo datediff: $datediff
 #    echo vgr: $vgr
 #    echo tag: $tag
 #    echo vbeh: $vbeh
+# Variablen je nach Runde/Prüfzeitraum setzen
+    [ $runde = 0 ]&&{ tagomonat=$monat;ttit=Monat;pruefanf=$jahr-01-01;}||{ tagomonat=$tag;ttit=Tag;pruefanf=$jahr-$monat-01;}
     # wenn die Datei also älter als dieses Mindestalter ist ...
     if test $datediff -gt $vgr; then
       # wenn der Monatstag der Datei ..
       case $vbeh in 
        # $vbeh gleicht ..
-       *-$tag-*)
+       *-$tagomonat-*)
         # dann Datei behalten
-        [ "$verb" ]&&echo "$runde behalte: $dt, da $tag in $vbeh";
+        [ "$verb" ]&&echo "Runde $runde, behalte: $dt, da $ttit $tagomonat in $vbeh";
         ;;
        *)
-        [ "$verb" ]&&echo "$runde loesche vielleicht: $dt, da $tag nicht in $vbeh";
+        [ "$verb" ]&&echo "Runde $runde loesche vielleicht: $dt, da $ttit $tagomonat nicht in $vbeh";
         # ansonsten ...
 #        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$nanf--????-??-??*.sql*" -print -quit;"
-        # schauen, ob es tatsächlich im gleichen Monat schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
-        befehl="find \"$Vz\" -newermt \"$jahr-$monat-01\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
+        # schauen, ob es im gleichen Monat/Jahr schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
+        befehl="find \"$Vz\" -newermt \"$pruefanf\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
         [ "$verb" ]&&echo befehl: $befehl
         aelter=$(eval $befehl)
         # wenn also die Variable befüllt ...
@@ -116,4 +120,7 @@ for dt in $(find "$Vz" -name "*$muende" -size +$mgroe -printf '%f\n'); do
     fi;
   done;
 done;
-
+[ "$verb" ]&&{
+  MUPR=$(readlink -f $0); # Mutterprogramm
+  echo "Fertig mit $MUPR"
+}
