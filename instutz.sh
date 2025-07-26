@@ -66,7 +66,7 @@ for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '
   ermittledatum;
   [ "$verb" ]&&printf "$blau$dt$reset => Datum: $rot$datum$reset, nanf: $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
-  [ "$Ausspar" ]&&case $Ausspar in *$nanf*){ [ "$verb" ]&&printf "$Ausspar in \*$nanf\* =\> continue\n";continue};; esac;
+  [ "$Ausspar" ]&&case $Ausspar in *$nanf*)[ "$verb" ]&&printf "$Ausspar in \*$nanf\* =\> continue\n";continue;; esac;
   # datediff mit dem Alter von $datum [d] belegen
   ddiff $datum;
   # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
