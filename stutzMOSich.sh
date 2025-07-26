@@ -13,11 +13,11 @@ vorgaben() {
   # Monat im Jahr, mit dem eine Datei auf jeden Fall behalten werden soll
   beh0="-01-";
   # Grenze an Tagen zurück, ab der nur noch 1 Datei im Monat aufgehoben werden soll
-  gr1=30;
+  gr1=5;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
   # Grenze an Tagen zurück, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
-  gr2=7;
+  gr2=1;
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
