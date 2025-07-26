@@ -8,12 +8,16 @@ vorgaben() {
   Zvz=/DATA/DBBackloe;
   # Musterende der interessanten Dateien
   muende="_????????.7z";
-  # Grenze, ab der nur noch 1 Datei im Monat aufgehoben werden soll
+  # Grenze an Tagen zurück, ab der nur noch 1 Datei im Jahr aufgehoben werden soll
+  gr0=60;
+  # Monat im Jahre, mit dem eine Datei auf jeden Fall behalten werden soll
+  beh0="-01-";
+  # Grenze an Tagen zurück, ab der nur noch 1 Datei im Monat aufgehoben werden soll
   gr1=30;
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
-  # Grenze, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
-  gr2=90;
+  # Grenze an Tagen zurück, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
+  gr2=15;
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren

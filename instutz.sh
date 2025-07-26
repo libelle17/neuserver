@@ -60,10 +60,12 @@ test -d "$Zvz" ||exit
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 zeit;
 # alle Dateien mit dem Muster aus dem Quellverzeichnis raussuchen und den Namen verwenden
-[ "$verb" ]&& echo "find \"$Vz\" -name "*$muende" -size +$mgroe -printf '%f\n'"
-for dt in $(find "$Vz" -name "*$muende" -size +$mgroe -printf '%f\n'); do
+[ "$verb" ]&& echo "find \"$Vz\" -maxdepth 1 -name "*$muende" -size +$mgroe -printf '%f\n'"
+for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -size +$mgroe -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
+  echo vor Ermittledatum
   ermittledatum;
+  echo nach Ermittledatum
   [ "$verb" ]&&printf "$blau$dt$reset => $rot$datum$reset => $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
   [ "$Ausspar" ]&&case $Ausspar in *$nanf*) continue;; esac;
@@ -98,7 +100,7 @@ for dt in $(find "$Vz" -name "*$muende" -size +$mgroe -printf '%f\n'); do
         # ansonsten ...
 #        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$nanf--????-??-??*.sql*" -print -quit;"
         # schauen, ob es im gleichen Monat/Jahr schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
-        befehl="find \"$Vz\" -newermt \"$pruefanf\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
+        befehl="find \"$Vz\" -maxdepth 1 -newermt \"$pruefanf\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
         [ "$verb" ]&&echo befehl: $befehl
         aelter=$(eval $befehl)
         # wenn also die Variable befüllt ...
