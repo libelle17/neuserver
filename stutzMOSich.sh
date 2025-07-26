@@ -29,7 +29,7 @@ vorgaben() {
 # das Sicherungsdatum aus dem Dateinamen ermitteln (erfordert bestimmte Namenskonvention beim Sichern)
 ermittledatum() {
   # nanf = Namensanfang zum Vergleich mit $Ausspar, z.B. Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
-  [[ $dt =~ ^[0-9]{14}$ ]]&&nanf=||nanf=nichtpruefen;
+  [[ $dt =~ ^[0-9]{14}$ ]]&&nanf=nichtaussparen||nanf=;
   # Variable für die Suche älterer Sicherungen des gleichen Gegenstandes für find ... -name "$gname"
   gname=$muende;
   # datum = erste 8 Buchstaben
