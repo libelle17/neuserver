@@ -7,7 +7,7 @@ vgbstarr() {
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
   mgroe=0;
-}
+} # vgbstarr
 
 # Befehlszeilenparameter auswerten
 commandline() {
@@ -32,7 +32,7 @@ commandline() {
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
 		shift;
 	done;
-}
+} # commandline
 
 zeit() {
   # dieses Programm soll nicht mit vielleicht falsch eingestelltem Datum laufen => Internet-Zeit holen
@@ -42,14 +42,14 @@ zeit() {
   /sbin/hwclock --systohc 
   # jetzt in Sekunden umrechnen
   jsec=$(date +%s);
-}
+} # zeit
 
 # Zeittifferenz zwischen jetzt und der Zeit im ersten Parameter
 ddiff() {
   dsec=$(date -d "$1" +%s);
   datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 #  echo Name: $nanf, Datum: $datum, datediff: $datediff
-}
+} # ddiff
 
 vgbstarr;
 vorgaben;
@@ -60,12 +60,10 @@ test -d "$Zvz" ||exit
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 zeit;
 # alle Dateien mit dem Muster aus dem Quellverzeichnis raussuchen und den Namen verwenden
-[ "$verb" ]&& echo "find \"$Vz\" -maxdepth 1 -name "*$muende" -size +$mgroe -printf '%f\n'"
-for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -size +$mgroe -printf '%f\n'); do
+[ "$verb" ]&& echo "find \"$Vz\" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '%f\n'"
+for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '%f\n'); do
   # Sicherungsdatum ermitteln und die Variablen datum, jahr, monat, tag befüllen
-  echo vor Ermittledatum
   ermittledatum;
-  echo nach Ermittledatum
   [ "$verb" ]&&printf "$blau$dt$reset => $rot$datum$reset => $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
   [ "$Ausspar" ]&&case $Ausspar in *$nanf*) continue;; esac;

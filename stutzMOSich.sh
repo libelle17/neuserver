@@ -3,11 +3,11 @@
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis
-  Vz=/DATA/sql;
+  Vz=/mnt/wser/mosich;
   # Zielverzeichnis
-  Zvz=/DATA/sqlloe;
+  Zvz=/mnt/wser/mosich/loe;
   # Musterende der interessanten Dateien
-  muende="????-??-??*.sql*";
+  muende="??????????????";
   # Grenze an Tagen zurück, ab der nur noch 1 Datei im Jahr aufgehoben werden soll
   gr0=730;
   # Monat im Jahr, mit dem eine Datei auf jeden Fall behalten werden soll
@@ -21,30 +21,25 @@ vorgaben() {
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
-  Ausspar="-dp-" # "-dp-office-";
-  # Mindestgroesse, wenn nicht angegeben, dann 0
-  # mgroe="6M";
+  Ausspar="-loe-files-" # "-dp-office-";
+  # ob Verzeichnisse statt Dateien überprüft werden sollen
+  obvz=true;
 }
 
 # das Sicherungsdatum aus dem Dateinamen ermitteln (erfordert bestimmte Namenskonvention beim Sichern)
 ermittledatum() {
-  # nanf = Namensanfang, z.B. Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
-  nanf=${dt%--*};
+  # nanf = Namensanfang zum Vergleich mit $Ausspar, z.B. Name der gesicherten mariadb-Tabelle, alles bis zum letzten --
+  [[ $dt =~ ^[0-9]{14}$ ]]&&nanf=||nanf=nichtpruefen;
   # Variable für die Suche älterer Sicherungen des gleichen Gegenstandes für find ... -name "$gname"
-  gname=$nanf--$muende;
-  # datum = zunächst String hinter dem ersten --
-  datum=${dt#*--};
-  # jahr = in datum alles bis zum ersten -
-  jahr=${datum%%-*};
-  # datum = dann alles bis zum letzten - in datum
-  datum=${datum%-*};
-#  ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
-  # monat = zunächst alles ab dem ersten - in datum 
-  monat=${datum#*-};
-  # tag = alles ab dem ersten - in monat
-  tag=${monat#*-};
-  # monat = dann alles bis zum letzten in monat
-  monat=${monat%-*};
+  gname="2?????????????";
+  # datum = erste 8 Buchstaben
+  datum=$(echo $dt|sed 's/^\(.\{8\}\).*$/\1/');
+  # jahr = erste 4 Buchstaben
+  jahr=$(echo $dt|sed 's/^\(.\{4\}\).*$/\1/');
+  # monat = nächste 2 Buchstaben
+  monat=$(echo $dt|sed 's/^.\{4\}\(.\{2\}\).*$/\1/');
+  # tag = nächste 2 Buchstaben
+  tab=$(echo $dt|sed 's/^.\{6\}\(.\{2\}\).*$/\1/');
 }
 
 . instutz.sh
