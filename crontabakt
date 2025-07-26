@@ -92,7 +92,10 @@ ELG=/var/log/cronf.log
 # Kontrolldatei für Laufen des Turbomed-Servers erstellen:
 -*/2 * * * * mountpoint -q /DATA && ps h opid,time,cmd -C ptserver > /DATA/poet_aktiv.txt 2>>$VL/poet_aktiv-Auruf.log
 # Kontrolldatei zur Auslastung des Datenlaufwerks erstellen:
--*/12 * * * * mountpoint -q /DATA && df -l > /DATA/Auslastung_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
+-* * * * * mountpoint -q /DATA && df -l / /DATA > /DATA/Auslastung_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
+-* * * * * ssh linux0 mountpoint -q /DATA && ssh linux0 df -l / /DATA > /DATA/Auslastung_linux0_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
+-* * * * * ssh linux7 mountpoint -q /DATA && ssh linux7 df -l / /DATA > /DATA/Auslastung_linux7_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
+-* * * * * ssh linux8 mountpoint -q /DATA && ssh linux8 df -l / /DATA > /DATA/Auslastung_linux8_$(date +\%H)_Uhr.txt 2>>$VL/df-Aufruf.log
 # Patienten- und Stammdatenbanken auf /gerade und /DATA/gerade sichern:
 -14 2,8-22/2 * * * ionice -c3 /root/bin/verhdop.sh /root/bin/gerade_PraxisDB.sh >>$NLG 2>>$ELG
 # Patienten- und Stammdatenbanken auf /ungera und /DATA/ungera sichern:

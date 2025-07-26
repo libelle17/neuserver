@@ -2,13 +2,13 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
-. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+. ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen # ./bugem.sh
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
-
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
+# if false; then
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
@@ -40,19 +40,34 @@ V=/root/bin/;
 altverb=$verb;
 verb=1;
 if [ "$obecht" ]; then
-  ausf "$kopbef -$attr $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'" $dblau;
+  ausf "$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'" $dblau;
 else
-  printf "Befehl wäre: $dblau$kopbef -$attr $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
+  printf "Befehl wäre: $dblau$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
 fi;
 verb=$altverb;
+# fi;
 # kopieros "root/bin" # auskommentiert 29.7.19
 # kopieros "root/" # auskommentiert 29.7.19
 # DATA-Platte auf Quelle und Ziel mounten
 Dt=DATA; 
-ausf "$qssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
-ausf "$zssh 'mountpoint -q /$Dt||mount /$Da'" $blau;
+machssh;
+ausf "$qssh 'mountpoint -q /$Dt||mount /$Dt'" $blau;
+ausf "$zssh 'mountpoint -q /$Dt||mount /$Dt'" $blau;
 # falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
+  mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
+  mountpoint -q /mnt/wser/mosich&&{
+    mouvz=$(ls -1dt /mnt/wser/mosich/2*|head -n1);
+    mouvz=${mouvz/\/};
+    $zssh mkdir -p /DATA/MO/Sich
+    $zssh mkdir -p /DATA/MO/INDAMED
+    kopiermt "$mouvz"/ /DATA/MO/Sich/ "" "" "" 0 1 1
+    kopiermt mnt/wser/mosich/my.ini /DATA/MO/Sich/ "" "" "" 0 1 1
+    kopiermt mnt/wser/indamed/ /DATA/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1
+    kopiermt mnt/wser/indamed/dat/MOSTAT253B.gdb /DATA/MO/INDAMED/dat/ "" "" "" 0 1
+    kopiermt mnt/wser/indamed/dat/medoffDB /DATA/MO/INDAMED/dat/ "" "" "" 0 1
+    kopiermt mnt/wser/indamed/dat/files /DATA/MO/INDAMED/dat/ "" "" "" 0 1
+  }
   kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /DATA/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
 # kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
@@ -62,6 +77,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
 	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # $7 = ob ohne Platzprüfung
+  # $8 = ob ohne Schutzdateivergleich
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
 
 #  ... dann Mail-Verzeichisse kopieren,

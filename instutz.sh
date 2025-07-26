@@ -35,7 +35,7 @@ commandline() {
 }
 
 zeit() {
-  # dieses Programm soll ja nicht mit falsch eingestelltem Datum laufen => Internet-Zeit holen
+  # dieses Programm soll nicht mit vielleicht falsch eingestelltem Datum laufen => Internet-Zeit holen
   bef="ntpdate ptbtime1.ptb.de";
   [ "$verb" ]&&{ eval "$bef"||exit;:;}||{ eval "$bef" >/dev/null 2>&1||exit;};
   # auch die Bios-Uhr korrigieren

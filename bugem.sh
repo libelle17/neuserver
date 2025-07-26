@@ -170,6 +170,7 @@ kopiermt() { # mit test
 	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # $7 = ob ohne Platzprüfung
+  # $8 = ob ohne Schutzdateivergleich
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
 
@@ -303,7 +304,7 @@ kopiermt() { # mit test
     return 0;
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
-  [ "$SD" -a ! "$obdat" ]&&{
+  [ "$SD" -a ! "$obdat" -a ! "$8" ]&&{
     if [ "$QL" ]; then
       PZiel=$QL;
       diffbef="ssh $QL cat \"/$QVos/$SD\" 2>/dev/null| diff - /$ZVos/$SD 2>/dev/null";
