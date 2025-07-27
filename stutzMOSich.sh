@@ -5,7 +5,8 @@ vorgaben() {
   # Suchverzeichnis
   Vz=/mnt/wser/mosich;
   # Zielverzeichnis
-  Zvz=/mnt/wser/mosich/loe;
+  Zvz=$Vz/loe;
+  mkdir -p $Zvz;
   # Musterende der interessanten Dateien
   muende="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]";
   # Grenze an Tagen zurück, ab der nur noch 1 Datei im Jahr aufgehoben werden soll

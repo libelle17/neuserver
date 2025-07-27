@@ -63,10 +63,10 @@ commandline() {
         *) 
           einzeln=1;
           [ $verb ]&&printf "commandline: werte aus: $blau$1$reset\n"
-          [ -f "$1" ]&&q="$1"||printf "Datei $blau$1$reset nicht gefunden!\n";;
+          [ -f "$1" ]&&qd="$1"||printf "Datei $blau$1$reset nicht gefunden!\n";;
       esac;;
      *)
-      q="$1";;
+      qd="$1";;
    esac;
    shift;
 	done;
@@ -81,25 +81,26 @@ commandline() {
 } # commandline
 
 auswert() {
-[ $verb ]&&printf "${blau}auswert()$reset\n";
-[ ! -f "$q" ]&&{ printf "Datei $blau\"$q\"$reset nicht gefunden. Höre auf.\n"; exit; }
-stamm=${q%.*};
-z=${stamm}.tif;
-rand=${stamm}i.tif;
-txt=${stamm}i;
+[ $verb ]&&printf "${blau}auswert($qdd)$reset\n";
+[ ! -f "$qd" ]&&{ printf "Datei $blau\"$qd\"$reset nicht gefunden. Höre auf.\n"; exit; }
+stamm=${qd%.*};
+zd=${stamm}.tif; # 1. nach ghostscript
+rand=${stamm}i.tif; # 2. nach convert
+txt=${stamm}i;   # 3. nach tesseract
 
 if [ "$neutif" -o ! -f "${txt}.txt" ]; then
-ausf "gs -q -dNOPAUSE -sDEVICE=tiffg4 -sOutputFile=\"$z\" \"$q\" -c quit" # -r800x800 hilft auch nichts
-[ -f "$z" ]&&{
-  ausf "convert \"$z\" -bordercolor White -border 10x10 \"$rand\"";
+# Umwandlung von pdf in tif
+ausf "gs -q -dNOPAUSE -sDEVICE=tiffg4 -sOutputFile=\"$zd\" \"$qd\" -c quit" # -r800x800 hilft auch nichts
+[ -f "$zd" ]&&{
+  ausf "convert \"$zd\" -bordercolor White -border 10x10 \"$rand\"";
   [ -f "$rand" ]&&ausf "time tesseract -l deu+eng+osd \"$rand\" \"$txt\"";
 }
 fi;
 txt=${txt}.txt
-ender="${stamm}_echt.txt";
-awkd="${stamm}_awk.txt";
-awkdk="${stamm}_awkd.txt";
-[ $verb ]&&[ -f "$txt" ]&&printf "Ergebnis: $blau$txt$reset\n";
+ender="${stamm}_echt.txt"; # 4. nach sed
+awkd="${stamm}_awk.txt";   # 5. nach awk
+awkdk="${stamm}_awkd.txt"; # 6. nach 2.sed
+[ $verb ]&&[ -f "$txt" ]&&printf "nach convert und tesseract: $blau$txt$reset\n";
 erstellt=;
 erstellt=$(sed -n '/erstellt am/{s/.*am \([0-9]*.[0-9]*.[0-9]*\)/\1/p;q;}' "$txt")
 [ $verb ]&&printf "erstellt: $blau$erstellt$reset\n";
@@ -126,9 +127,10 @@ s/\([EF]\)[Do]\([12]\)/\1D\2/g; # o anstatt D in Erst- und Folgedoku korrigieren
 s/\(- |\|[4Ff1TJI ]\)\([EF]D[12Ift]\|[EF]KHK\|[EF]AB\)/|\2/g; # Erst- und Folgedoku einheitlich einleiten
 s/, *|/ |/g; # Komma nach der Krankenkasse entfernen
 s/ [|]*\([EF]D\)[Iift] / |\11 /g; # I und f in Erst- und Folgedoku in 1 ändern
-s/[147][|]*\([1-4]\)\//| \1\//g; # Fehlinterpretation | als 1, 4 oder 7 vor Quartal ausbügeln
+s/[147/][|]*\([1-4]\)\//| \1\//g; # Fehlinterpretation | als 1, 4, 7 oder / vor Quartal ausbügeln
 s/1|/|/g;                   # 1| löschen
 s/|[[:space:]]*|/|/g; # doppelte | löschen
+s/,,/,/g; # doppelte Kommas
 s/\. / /g;       # überzählige Punkte vor Leerzeichen löschen
 s/ \./ /g;       # überzählige Punkte nach Leerzeichen löschen
 s/\(\/[0-9]\{4\}\).*/\1/g;     # überflüssige Zeichen am Zeilenende löschen
@@ -136,18 +138,39 @@ s/\([0-9]\{2\}\),[.]*\([0-9]\{2\}\)/\1.\2/g; # Kommas zwischen Ziffern durch Pun
 s/\([0-9]\{2\}\),[.]*\([0-9]\{2\}\)/\1.\2/g; # Kommas zwischen Ziffern durch Punkte ersetzen, 2. notwendiger Aufruf
 s/\([0-9]\{2\}\)[ .]\([0-9]\{2\}\)[ .]\([0-9]\{4\}\)/\1.\2.\3/g; # Leerzeichen zwischen Ziffern im Datum durch Punkte ersetzen
 s/\( [0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\}\) *[147()] *\([0-9]\{2,5\} \)/\1 |\2/g; # falsche Trennzeichen nach dem Geburtsdatum in | umwandeln
-s/\(\.[0-9]\{4\} \)\([0-9]\)/\1|\2/g; # fehlendes | nach Geburtsdatum ergänzen
-s/[ ]*[^| ]\([0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\}\)/ \1/g; # überschüssige Zeichen vor Datum löschen
+s/\(\.[0-9]\{4\} \)\([A-Z]\?[0-9]\)/\1|\2/g; # fehlendes | nach Geburtsdatum ergänzen
+s/\( [0-9]\{2\}\.[0-9]\{2\}\.\)[0-9]\([0-9]\) \([0-9]\{3\} \)/ \1\2\3/g; # Leerzeichen zwischen dem Datum, Spezialfall
 s/\([^| ] *\)\([0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\}\)/\1| \2/g; # fehlendes | vor Geburts- und Dokudatum ergänzen
 s/.*41915300\( [.]*|\|\) *[|1]*//g; # Spalte BSNR mit allen Ungenauigkeiten vorher, am Anfang und danch löschen 
 s/^[-J]\([A-Z]\)/\1/g; # als | interpretiertes J und einleitendes - streichen
 s/^\([^ ]*\), \([^ ]* \)/\1,\2/g; # | im Namen Leerzeichen hinter Kommas löschen
 s/^\([^ ]*\)|\([^ ]* \)/\1-\2/g; # | im Namen durch - ersetzen
+s/^\(‚- \| *\|\/\)//; # wohl Schmutz oder Leerzeichen am Anfang entfernen
+s/^\(.[^A-ZÄÖÜ ,-]\+\) *\([A-ZÄÖÜ][^,]*|\)/\1,\2/; # fehlende Kommas zwischen Vor- und Nachnamen ergänzen
 s/[|]*A[OQ]K/AOK/g; # AOK richtig schreiben und | davor entfernen
 s/\(| *[0-9]\{1,\}\) *\([0-9]\{1,5\} [A-Z]\{0,1\}[0-9]\{1,\}\)/\1\2/g; # Leerzeichen in der Patientennummer entfernen
 s/\([0-9]\{2,5\} [A-Z]*[0-9]\{1,7\}\) \([0-9]\{1,5\}\) \{0,1\}\([0-9]\{1,5\}\)/\1\2\3/g; # Leerzeichen in der Versicherungsnummer entfernen
+s/\( [0-9]\{2\}\.[0-9]\{2\}\.[0-9]\) \([0-9]\{3\} \)/\1\2/g; # Leerzeichen zwischen dem Datum im Jahr
+s/\( [0-9]\{2\}\.[0-9]\) \([0-9]\.[0-9]\{4\} \)/\1\2/g; # Leerzeichen zwischen dem Datum im Monat
+s/ \([0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\} \)\([^|]\)/\1| \2/g; # | nach Datum ggf. ergänzen
+s/ \([0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\}\)\.\+/\1/g; # | Punkte nach Datum löschen
+s/\([^| ] *\)\([0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\}\)/\1 | \2/g; # Leerzeichen und | vor Datum
+s/\(\.[0-9]\{4\}\) *| *-* *[|(/]\? *\([0-9]\/\)/\1 | \2/; # zusätzliche Zeichen und Felder vor dem Quartal löschen
+s/^\([^|,]*,[^|,]*| *[0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\} *|[^|]*\)-* *| *\([EF]D\|BKK\)/\1 \2/; # | u.ä. vor Erst- oder Folgedoku oder Krankenkasse entfernen
 s/ *| */ | /g; # Leerzeichen vor und nach | vereinheitlichen
+s/| [_*]\? |/|/; # wohl Schmutz
+s/\(851\) \(0288\)/\1\2/; # Einzelfälle
+s/\(3\) \(T6648\)/\2/;
+s/\(1\) \(\Y8811\)/\2/;
+s/\(7\) \(\P6752\)/\2/;
+s/\(5851\) \(\0288\)/\1\2/;
 ' "$txt" >"${ender}";
+# Überprüfung und Ergänzung des o.g. sed-Befehls mit 2-3 putty-Fenstern, davon in einem:
+# 1) Aufruf von /root/neuserver/parsetif.sh "/pfad/zur/zuüberprüfenden Datei" -v
+# 2) im vi im 3. Fenster suchen:
+# /^[^|,]*,[^|,]*| *[0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\} *|[^|]*| *[0-9]\{2\}\.[0-9]\{2\}\.[0-9]\{4\} *| *[0-9]\/[0-9]\{4\}$
+# dann werden die fehlerhaften gelb
+
 epo=$(awk 'BEGIN{srand();print -srand();}'); # $(date +%s); # -epoch als vorläufige Bezugs-ID
 [ $verb ]&&printf "epo: $blau$epo$reset\n";
 [ $verb ]&&printf "vor akw -F \n ... ${ender} \> ${awkd}\n";
@@ -166,12 +189,21 @@ function trim(str) {
   gsub("'\''","'\'''\''",nachname);
   vorname=trim(na[2]);
   pid=trim(re[1]);
+  if (length(pid)>6 || pid ~ /^[^0-9]/) { # keine Patientennummer
+    vnr=pid;
+    pid=0;
+    versi=trim(re[2]);
+  } else {
+    vnr=trim(re[2]);
+    versi=trim(re[3]);
+  }
   gebdat=trim(ar[2]);
-  gsub(".14.",".11.",gebdat);
+  gsub("[.]14[.]",".11.",gebdat);
   gebdat=gensub(/.49([0-9])/,".19\\1","g",gebdat);
   gebdat=gensub(/[.]9([0-9])[.]/,".0\\1.","g",gebdat);
-  vnr=trim(re[2]);
-  versi=trim(re[3]);
+  gsub("[.]70[.]",".10.",gebdat);
+  gebdat=gensub(/4([0-9])[.]/,"1\\1.","g",gebdat);
+  gsub("97[.]","07.",gebdat);
   dokudat=trim(ar[5]);
   dokuart=trim(ar[4]);
   if (1) { # wenn nachträgliche Reparatur von Sed-Fehlern gewünscht
@@ -197,8 +229,9 @@ function trim(str) {
     }
     if (match(dokuart,/^[,.;:]/)) dokuart=substr(dokuart,2);
   }
-  gsub("31.09.","31.03.",dokudat);
-  gsub("80.","30.",dokudat);
+  gsub("31[.]09[.]","31.03.",dokudat);
+  gsub("80[.]","30.",dokudat);
+  gsub("41[.]","11.",dokudat);
   printf("%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",nachname,trim(na[2]),gebdat,pid,trim(re[2]),trim(re[3]),trim(ar[4]),dokudat,trim(ar[6]));
   sql="REPLACE INTO dmprm(einlID,arzt,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,Quartal,Jahr,npid) VALUES(" epo ",'\''" arzt "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" pid "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" trim(qu[1]) "'\'','\''" trim(qu[2]) "'\'',(SELECT MIN(pat_id) FROM namen WHERE (pat_id='\''" pid "'\'' AND (nachname='\''" nachname "'\'' OR vorname='\''" vorname "'\'' OR gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))))";
 print sql;
@@ -209,25 +242,36 @@ END {
 ' "${ender}" >"${awkd}";
 [ $obverb ]&&printf "sed ... ${awkd} \> ${awkdk}\n";
 sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$q'\";"
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$q'"; # Anführungszeichen um $q führen zum Fehler!
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$qd'\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$qd'"; # Anführungszeichen um $qd führen zum Fehler!
 epo2=$(date +%s);
 [ $verb ]&&printf "epo2: $blau$epo2$reset\n";
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"INSERT INTO dmpeinl(Datei,eingelesen) FROM_UNIXTIME('$epo2'))\";"
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$q',FROM_UNIXTIME('$epo2'))";
-einlid=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT id FROM dmpeinl WHERE Datei='$q' AND eingelesen=FROM_UNIXTIME('$epo2')");
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(Datei,eingelesen) VALUES('$qd',FROM_UNIXTIME('$epo2'))";
+einlid=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT id FROM dmpeinl WHERE Datei='$qd' AND eingelesen=FROM_UNIXTIME('$epo2')");
 [ $verb ]&&printf "einlid: $blau$einlid$reset\n";
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"UPDATE dmprm SET einlid='$einlid' WHERE einlid=$epo";
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$q\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$qd\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
 printf "\r";
-# mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$q''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
-ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$q$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung:');");
+# mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$qd''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
+ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$qd$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung:');");
 ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL')";
+
+# Folgende haben im Q2/25 für alle bis auf einen funktioniert:
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE versichertennummer=dp.vnr) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE versichertennummer=dp.vnr)=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE nachname=dp.nachname AND vorname=dp.vorname) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE nachname=dp.nachname AND vorname=dp.vorname)=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE nachname=dp.nachname and gebdat=dp.gebdat) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE nachname=dp.nachname and gebdat=dp.gebdat)=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE vorname=dp.vorname and gebdat=dp.gebdat) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE vorname=dp.vorname and gebdat=dp.gebdat)=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE left(nachname,1)=left(dp.Nachname,1) and left(vorname,1)=left(dp.vorname,1) and gebdat=dp.gebdat) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE left(nachname,1)=left(dp.Nachname,1) and left(vorname,1)=left(dp.vorname,1) and gebdat=dp.gebdat)=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE left(nachname,3)=left(dp.Nachname,3) and left(vorname,3)=left(dp.vorname,3) and year(gebdat)=year(dp.gebdat)) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE left(nachname,3)=left(dp.Nachname,3) and left(vorname,3)=left(dp.vorname,3) and year(gebdat)=year(dp.gebdat))=1 ;
+# UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE left(nachname,3)=left(dp.nachname,3) and gebdat=dp.gebdat) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE left(nachname,3)=left(dp.nachname,3) and gebdat=dp.gebdat)=1 ;
+
 printf "$ausgabe\n";
 printf "$ausg2\n";
 [ $verb ]&& {
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
+# nach 2.sed, nach awk, nach sed, nach tesseract
   vi "${awkdk}" "${awkd}" "${ender}" "${txt}" -p;
 }
 } # auswert
@@ -303,7 +347,7 @@ raussuch() {
     if [ ! "$erg" ]; then
       ausgew=$(expr $ausgew + 1);
       printf "\rbearbeite: $blau$datei$reset                                                  "; [ $verb ]&&printf "\n";
-      q="$datei";
+      qd="$datei";
       auswert;
     fi;
     printf "\r$blau$gefund$reset passende Dateien in \"$blau$qvz$reset\" gefunden, $blau$ausgew$reset neu ausgewertet.";
@@ -324,13 +368,13 @@ if [ "$neudb" ]; then
 fi;
 tabellen;
 if [ $einzeln ]; then
-  if [ -f "$q" ]; then
-    [ $verb ]&&printf "${blau}q: $q$reset, rufe ${blau}auswert$reset auf\n";
+  if [ -f "$qd" ]; then
+    [ $verb ]&&printf "${blau}qd: $qd$reset, rufe ${blau}auswert$reset auf\n";
     auswert;
   else
-    printf "$blau\"$q\"$reset nicht gefunden. Tue gar nichts.\n";
+    printf "$blau\"$qd\"$reset nicht gefunden. Tue gar nichts.\n";
   fi;
 else
-  [ $verb ]&&printf "${blau}q$reset nicht bestimmt, rufe ${blau}raussuch$reset auf\n";
+  [ $verb ]&&printf "${blau}qd$reset nicht bestimmt, rufe ${blau}raussuch$reset auf\n";
   raussuch;
 fi;
