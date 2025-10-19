@@ -543,6 +543,10 @@ include '../../phppwd.php';
         $_SESSION['ausblend']=!$_SESSION['ausblend'];
       //  if ($_SESSION['ausblend']) unset($_SESSION['aufgaben']);
       } else {
+        if (isset($_SESSION['Dateien'])) {
+          chdir("/srv/www/plz");
+          exec("start .");
+        }
         if (isset($_SESSION['arr'])) {
           for ($i=0;$i<count($_SESSION['arr']);$i++) {
             $erlknopf="erlknopf".$i;
@@ -1038,6 +1042,18 @@ $zutun = new zutun_cls();
 </datalist>
 
 <script>
+  // define a handler
+function doc_keyUp(e) {
+    if (e.altKey && e.code === "KeyT") { // Dateien im Explorer öffnen
+        oeffne('<?php echo $_SESSION["pat_id"]; ?>');
+    }
+}
+// register the handler
+document.addEventListener('keyup', doc_keyUp, false);
+
+function oeffne(patid) {
+  location.href="oeffneverz:"+patid;
+}
 
 function ansEnde(el) {
   window.setTimeout(function () {
