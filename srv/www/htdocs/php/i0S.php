@@ -11,10 +11,6 @@
     $_SESSION['OAU']=!$_SESSION['OAU'];
  } ELSE  IF(isset($_POST['HbA1c'])) {
     $_SESSION['HbA1c']=!$_SESSION['HbA1c'];
- } ELSE  IF(isset($_POST['Uzu'])) {
-    $_SESSION['Uzu']=!$_SESSION['Uzu'];
- } ELSE  IF(isset($_POST['Hypo'])) {
-    $_SESSION['Hypo']=!$_SESSION['Hypo'];
  } ELSE  IF(isset($_POST['Hyper'])) {
     $_SESSION['Hyper']=!$_SESSION['Hyper'];
  } ELSE  IF(isset($_POST['NeuSt'])) {

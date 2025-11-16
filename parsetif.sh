@@ -104,7 +104,7 @@ awkdk="${stamm}_awkd.txt"; # 6. nach 2.sed
 erstellt=;
 erstellt=$(sed -n '/erstellt am/{s/.*am \([0-9]*.[0-9]*.[0-9]*\)/\1/p;q;}' "$txt")
 [ $verb ]&&printf "erstellt: $blau$erstellt$reset\n";
-case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *) arzt=so;; esac;
+case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *ah*) arzt=ah;; *) arzt=so;; esac;
 [ $verb ]&&printf "Arzt: $blau$arzt$reset\n";
 # sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
 # mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
@@ -339,7 +339,7 @@ raussuch() {
 #  find "$qvz" -maxdepth 1 \( -iname "*tk*.pdf" -o -iname "*gs*.pdf" \) -print0 |
   ausgew=0;
   gefund=0;
-  find "$qvz" -maxdepth 1 -iregex ".*/[^/]*DMP[^/]*\(TK\|GS\)[^/]*\.pdf$" -print0 |
+  find "$qvz" -maxdepth 1 -iregex ".*/[^/]*DMP[^/]*\(TK\|GS\|AH\)[^/]*\.pdf$" -print0 |
   while IFS= read -r -d '' datei; do
     gefund=$(expr $gefund + 1);
     [ $altverb ]&&printf "\rUntersuche $blau$datei$reset                                          \n";
