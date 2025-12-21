@@ -152,6 +152,7 @@ autoanmh.cifs
 autoanmmw.cifs
 automailgs.cifs
 my.cnf
+vsftpd.conf
 [/etc/auto.master.d]
 gs.autofs
 [/]
