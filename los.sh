@@ -1080,7 +1080,8 @@ bildschirm() {
       fi;
     fi;
 	fi;
-  # 16.11..24
+  # 16.11.24
+  # aktueller Benutzer, auch im superuser-mode: loginctl|head -n2|tail -n1|sed 's/[0-9 ]*\([^ ]*\).*$/\1/'
   for v in /root $(find /home -mindepth 1 -maxdepth 1); do 
       d=$v/.config/kcminputrc; 
       if test -f "$d"; then 
