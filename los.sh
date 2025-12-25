@@ -889,7 +889,7 @@ proginst() {
   doinst gnutls-devel; # fuer vmime
   doinst libgsasl-devel; # fuer vmime
   doinst doxygen; # fuer alle moegelichen cmake
-  doinst getmail;
+  doinst fetchmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
   doinst e2fsprogs-devel; # wg. fehler et/com_err.h missing
   zypper lr home_mnhauke_ISDN >/dev/null 2>&1||{
