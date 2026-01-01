@@ -5,6 +5,8 @@
  $_SESSION['RR']=1;
  $_SESSION['OAU']=1;
  $_SESSION['HbA1c']=1;
+ $_SESSION['Uzu, Fqmin(6)=0/a']=1;
+ $_SESSION['Hypo']=1;
  $_SESSION['Hyper']=1;
  $_SESSION['NeuSt']=1;
  $_SESSION['Fuß']=1;

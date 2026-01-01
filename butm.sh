@@ -1,12 +1,12 @@
 #!/bin/bash
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle sehr relevanten Datenen von aktiven Server linux1 auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
+# soll alle sehr relevanten Datenen von aktiven Server linux1ur auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
 # wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /amnt/virtwin/turbomed
 # wird auch aus butint.sh mit -nv aufgerufen (-> obnv), wenn dieses mit -m ("mehr") aufgerufen wird
-# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1 /opt/turbomed/PraxisDB gibt
+# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1ur /opt/turbomed/PraxisDB gibt
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost aus hostname festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost aus hostname festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, in obalt und kopiermt $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
@@ -32,11 +32,11 @@ esac
 
 if [ $wach ]; then
   testobvirt;
-  if [ "$obvirt" = 0 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
+  if [ "$obvirt" = 0 ]; then # wenn es auf linux1ur /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
       Pr=PraxisDB;
       ausf "$zish '[ -d $otr -a ! -d $otP ]&& mv $otr $otP'" $blau; # umgekehrt
       ausf "$zish '[ -d $otw -a ! -d $otP ]&& mv $otw $otP'" $blau; # umgekehrt
-  elif [ "$obvirt" = 2 ]; then # wenn es auf linux1 /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
+  elif [ "$obvirt" = 2 ]; then # wenn es auf linux1ur /opt/turbomed/PraxisDB gibt oder PraxisDB-wser
       Pr=$wserD; # PraxisDB-wser
       ausf "$zish '[ -d $otP -a ! -d $otw ]&& mv $otP $otw'" $blau; # umgekehrt
       ausf "$zish '[ -d $otr -a ! -d $otw ]&& mv $otr $otw'" $blau; # umgekehrt

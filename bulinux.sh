@@ -2,7 +2,7 @@
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
 # soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen # ./bul1.sh
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen # ./bugem.sh
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
@@ -78,7 +78,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
 	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
   # $7 = ob ohne Platzprüfung
   # $8 = ob ohne Schutzdateivergleich
-  # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
+  # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
 #  ... dann Mail-Verzeichisse kopieren,
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do

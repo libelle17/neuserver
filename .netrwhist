@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =3
+let g:netrw_dirhistcnt =4
+let g:netrw_dirhist_4='/mnt/wser/mosich'
 let g:netrw_dirhist_3='/srv/www/htdocs'
 let g:netrw_dirhist_2='/srv/www/htdocs/plz'
 let g:netrw_dirhist_1='/srv/www/htdocs'
@@ -9,4 +10,3 @@ let g:netrw_dirhist_8='/srv/www'
 let g:netrw_dirhist_7='/DATA/Patientendokumente/dok/72370'
 let g:netrw_dirhist_6='/etc/auto.master.d'
 let g:netrw_dirhist_5='/etc'
-let g:netrw_dirhist_4='/srv/www/htdocs/Papierkorb/behand'

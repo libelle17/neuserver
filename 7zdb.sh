@@ -1,5 +1,6 @@
 #!/bin/sh
 # sichert gezippte Datenbanken nach DBBack, zuletzt geändert 8.2.22
+# Sicherung zwischen labor3 und linux1ur s. netzverbind
 DBV=/DATA/Patientendokumente/Datenbanken/
 DBV2="/DATA/eigene Dateien/"
 SichV=/DATA/DBBack

@@ -2,7 +2,7 @@
 ftb="/etc/fstab";
 cre="/home/schade/.wincredentials"
 crw="/home/schade/.wsercredentials"
-# zur Funktionsfaehigkeit auf den Reservesystemen: scp -p linux1:/home/schade/.wincredentials /home/schade/
+# zur Funktionsfaehigkeit auf den Reservesystemen: scp -p linux1ur:/home/schade/.wincredentials /home/schade/
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";

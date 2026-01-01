@@ -27,12 +27,8 @@
 </h2>
 
 
-<<<<<<< HEAD
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-=======
-<p style="margin-left:9%; margin-top: 1em"><b>neuserver
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 &minus; Configuration of a new linux server</b>: Allows the
 configuration of a new linux server for a diabetologic
 practice in Dachau, after the operation system installation
@@ -46,12 +42,8 @@ by the vendor&rsquo;s programme. <br>
 </h2>
 
 
-<<<<<<< HEAD
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-=======
-<p style="margin-left:9%; margin-top: 1em"><b>neuserver
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 [-&lt;shortopt&gt;|--&lt;longopt&gt; [&lt;supplement&gt;]]
 ...</b></p>
 
@@ -60,7 +52,7 @@ by the vendor&rsquo;s programme. <br>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Contains the
+<p style="margin-left:11%; margin-top: 1em">Contains the
 necessary scripts for setup and operation (especially data
 backup on backup server). After the scripts have been
 downloaded, ./los.sh is called in the installation
@@ -74,19 +66,14 @@ transferred back to the installation directory.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">First, please
+<p style="margin-left:11%; margin-top: 1em">First, please
 read the chapters &rsquo;functionality&rsquo;,
 &rsquo;preconditions&rsquo;,&rsquo;automatically installed
 software packages&rsquo; and &rsquo;implications&rsquo;
 below. Then, if connected to the internet, call (e.g. by
 coying the line and pasting it into a terminal): <b><br>
-<<<<<<< HEAD
 N=&quot;neuserver&quot;;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/&quot;libelle17&quot;/$N/master/install.sh
-=======
-N=neuserver;P=${N}_inst.sh;cd &#732;;wget
-https://raw.githubusercontent.com/libelle17/$N/master/install.sh
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
 ./los.sh</b> <br>
@@ -97,7 +84,7 @@ and answer some questions of the program.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Ideally, the
+<p style="margin-left:11%; margin-top: 1em">Ideally, the
 program should have installed itsself after the first
 call(s) (see above) and one-time answering of some questions
 in a self-running way. <br>
@@ -111,7 +98,7 @@ With <b>sh viall</b> scripts can be edited.</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em">&rsquo;<b>./los.sh
+<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>./los.sh
 -h</b>&rsquo; shows the command line options.</p>
 
 <h2>FUNCTIONALITY
@@ -149,15 +136,9 @@ With <b>sh viall</b> scripts can be edited.</p>
 </h2>
 
 
-<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em">Please report
 any errors with the word &rsquo;&quot;neuserver&quot;&rsquo;
 included in the email headline. <br>
-=======
-<p style="margin-left:9%; margin-top: 1em">Please report
-any errors with the word &rsquo;neuserver&rsquo; included in
-the email headline. <br>
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 Please report as well, if different hard- or software yields
 a requirement for a program modification.</p>
 
@@ -166,16 +147,12 @@ a requirement for a program modification.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">By calling
+<p style="margin-left:11%; margin-top: 1em">By calling
 &rsquo;<b>sh viall</b>&rsquo; and application of the usual
 &rsquo;<b>vim</b>&rsquo;-commands, followed by
 &rsquo;<b>make</b>&rsquo; and &rsquo;<b>make
 install</b>&rsquo; from the installation directory
-<<<<<<< HEAD
 (&rsquo;<b>~/&quot;neuserver&quot;</b>), You may alter the
-=======
-(&rsquo;<b>&#732;/neuserver</b>), You may alter the
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 program.</p>
 
 <h2>LIABILITY
@@ -183,7 +160,7 @@ program.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">The program has
+<p style="margin-left:11%; margin-top: 1em">The program has
 been written with the best aim and has been tested by the
 author. <br>
 Nevertheless the author cannot be liable for any damage
@@ -194,7 +171,7 @@ caused by the program.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Gerald Schade
+<p style="margin-left:11%; margin-top: 1em">Gerald Schade
 (geraldschade@gmx.de; www.diabdachau.de)</p>
 <hr>
 </body>
@@ -227,12 +204,8 @@ caused by the program.</p>
 </h2>
 
 
-<<<<<<< HEAD
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-=======
-<p style="margin-left:9%; margin-top: 1em"><b>neuserver
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 &minus; Einrichtung eines neuen Linuxservers</b>:
 enth&auml;lt die notwendigen Programme zur Einrichtung
 eines neuen Linuxservers f&uuml;r eine diabetologische
@@ -247,12 +220,8 @@ Betriebssystems <br>
 </h2>
 
 
-<<<<<<< HEAD
 
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
-=======
-<p style="margin-left:9%; margin-top: 1em"><b>neuserver
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 [-&lt;kurzopt&gt;|--&lt;langopt&gt;
 [&lt;erg&auml;nzung&gt;]] ...</b></p>
 
@@ -262,11 +231,7 @@ Betriebssystems <br>
 
 
 
-<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;</b>
-=======
-<p style="margin-left:9%; margin-top: 1em"><b>neuserver</b>
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 Enth&auml;lt die notwendigen Scripte f&uuml;r
 Einrichtung und Betrieb (insbesondere Datensicherung auf
 Sicherungsserver). Nach dem Herunterladen der Scripte wird
@@ -283,7 +248,7 @@ zur&uuml;ck&uuml;bertragen.</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em">Zun&auml;chst
+<p style="margin-left:11%; margin-top: 1em">Zun&auml;chst
 lesen Sie bitte die untenstehenden Kapitel
 &rsquo;Funktionsweise&rsquo;,&rsquo;Voraussetzungen&rsquo;,&rsquo;Automatisch
 installierte Programmpakete&rsquo; und &rsquo;Auswirkungen
@@ -292,13 +257,8 @@ Anschlie&szlig;end verbinden Sie den Rechner falls
 n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
-<<<<<<< HEAD
 N=&quot;neuserver&quot;;P=${N}_inst.sh;cd ~;wget
 https://raw.githubusercontent.com/&quot;libelle17&quot;/$N/master/install.sh
-=======
-N=neuserver;P=${N}_inst.sh;cd &#732;;wget
-https://raw.githubusercontent.com/libelle17/$N/master/install.sh
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
 ./los.sh</b> <br>
@@ -309,7 +269,7 @@ und beantworten einige Rueckfragen des Programms.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Im Idealfall
+<p style="margin-left:11%; margin-top: 1em">Im Idealfall
 sollte sich das Programm nach dem/n erstem/n Aufruf/en
 (s.o.) und Beantworten einmaliger R&uuml;ckfragen so
 eingerichtet haben, dass es von selbst weiter
@@ -325,7 +285,7 @@ werden kann, dann geht es einfacher.</p>
 
 
 
-<p style="margin-left:9%; margin-top: 1em">&rsquo;<b>./los.sh
+<p style="margin-left:11%; margin-top: 1em">&rsquo;<b>./los.sh
 -h</b>&rsquo; zeigt die Befehlszeilenoptionen.</p>
 
 <h2>FUNKTIONSWEISE
@@ -363,13 +323,8 @@ werden kann, dann geht es einfacher.</p>
 </h2>
 
 
-<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em">Fehler bitte
 mit u.a. dem Wort &rsquo;&quot;neuserver&quot;&rsquo; in der
-=======
-<p style="margin-left:9%; margin-top: 1em">Fehler bitte mit
-u.a. dem Wort &rsquo;neuserver&rsquo; in der
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 Email-Ueberschrift melden. <br>
 Bitte auch melden, wenn sich &Auml;nderungsbedarf durch
 andere Hard- bzw. Software ergeben.</p>
@@ -379,25 +334,20 @@ andere Hard- bzw. Software ergeben.</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Durch Aufruf von
-&rsquo;<b>sh viall</b>&rsquo; mit den &uuml;blichen
+<p style="margin-left:11%; margin-top: 1em">Durch Aufruf
+von &rsquo;<b>sh viall</b>&rsquo; mit den &uuml;blichen
 &rsquo;<b>vim</b>&rsquo;-Befehlen, gefolgt von
 &rsquo;<b>make</b>&rsquo; und &rsquo;<b>make
 install</b>&rsquo; vom Installationsverzeichnis
-<<<<<<< HEAD
 (&rsquo;<b>~/&quot;neuserver&quot;</b>) aus k&ouml;nnen
 Sie das Programm &auml;ndern.</p>
-=======
-(&rsquo;<b>&#732;/neuserver</b>) aus k&ouml;nnen Sie das
-Programm &auml;ndern.</p>
->>>>>>> 1d296352445bed9f26435ff98a4d005dcaee1f3e
 
 <h2>HAFTUNG
 <a name="HAFTUNG_D"></a>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Das Programm
+<p style="margin-left:11%; margin-top: 1em">Das Programm
 wurde mit bester Absicht entwickelt und durch den Autor
 getestet. <br>
 Trotzdem kann der Autor f&uuml;r keine Sch&auml;den
@@ -409,7 +359,7 @@ k&ouml;nnten</p>
 </h2>
 
 
-<p style="margin-left:9%; margin-top: 1em">Gerald Schade
+<p style="margin-left:11%; margin-top: 1em">Gerald Schade
 (geraldschade@gmx.de; www.diabdachau.de)</p>
 <hr>
 </body>

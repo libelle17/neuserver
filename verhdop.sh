@@ -9,7 +9,7 @@ else
  if /usr/bin/ps -Alf | /usr/bin/grep "$*" | /usr/bin/grep -v grep | /usr/bin/grep -v $0 >/dev/null; then
   echo "$blau\"$@\"$rot laeuft schon. Rufe es nicht auf.$schwarz"
  else
-  echo "${rot}Rufe auf: $blau$@$schwarz"
+  echo "${rot}Rufe aus $0 auf: $blau$@$schwarz"
   $@
  fi
 fi
