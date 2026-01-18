@@ -380,20 +380,20 @@ if test -f "$pdf"; then
     nachname=na[1];
     gsub("'\''","'\'''\''",nachname);
     vorname=na[2];
-    gebdat=ar[3]
+    gebdat=ar[3];
     vnr=ar[4];
     versi=ar[5];
     dokuart=ar[6] ar[7];
     dokudat=ar[8];
     split(ar[9],qu,"/");
-    if (!art) if (vsw!="") qu[1]=vsw": "qu[1]
-    for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}
+    if (!art) if (vsw!="") qu[1]=vsw": "qu[1];
+    for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}; # Leerzeichen in der Fehlermeldung
 
-  printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
-  sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',COALESCE((SELECT MIN(pat_id) FROM namen WHERE (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))),0));";
-  print sql;
-     zl++;
-    }
+    printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
+    sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',COALESCE((SELECT MIN(pat_id) FROM namen WHERE (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))),0));";
+    print sql;
+    zl++;
+  }
   END {
       print "DELETE FROM dmpeinl WHERE Datei='\''"pdf"'\'';"
       print "INSERT INTO dmpeinl(Datei,eingelesen) VALUES('\''"pdf"'\'',FROM_UNIXTIME('\''"epo2"'\''));"
