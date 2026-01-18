@@ -1,6 +1,4 @@
 #/bin/bash
-qvz="/DATA/Patientendokumente/DMPakt";
-qvz="/DATA/Patientendokumente/DMP";
 blau="\033[1;34m";
 lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
@@ -79,6 +77,67 @@ commandline() {
     [ $neutif ]&&printf "neutif: $blau$neutif$reset => tif-Dateien werden neu erstellt und geparst\n"; 
 	fi;
 } # commandline
+
+tabellen() {
+sql="\
+CREATE TABLE IF NOT EXISTS dmprm (\
+	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
+	einlID INT(11) SIGNED COMMENT 'Bezugs-ID in dmpeinl',\
+  art VARCHAR(1) NOT NULL DEFAULT '0' COMMENT '0=Fehler, 1=berücksichtigte, 2=eingegangene Dokumentationen',\
+  arzt VARCHAR(2) NOT NULL DEFAULT '' COMMENT 'gs,tk oder so fuer Sonstige',\
+	erstellt DATE NULL DEFAULT NULL COMMENT 'Dateierstellungdatum',\
+	Nachname VARCHAR(30) NOT NULL DEFAULT '' COLLATE 'utf8mb3_unicode_ci',\
+	Vorname VARCHAR(30) NOT NULL DEFAULT '' COLLATE 'utf8mb3_unicode_ci',\
+	Versi VARCHAR(30) NOT NULL DEFAULT '' COMMENT 'Versicherung, z.B. BKK' COLLATE 'utf8mb3_unicode_ci',\
+	Dokuart VARCHAR(6) NOT NULL DEFAULT '' COMMENT 'z.B. FD2' COLLATE 'utf8mb3_unicode_ci',\
+  Aktion VARCHAR(20) NOT NULL DEFAULT '' COMMENT 'wenn statt Quartal z.B. ´Ausschr.´ dort steht',\
+	Quartal VARCHAR(2) NOT NULL DEFAULT '' COMMENT 'z.B. 1' COLLATE 'utf8mb3_unicode_ci',\
+	Jahr VARCHAR(4) NOT NULL DEFAULT '' COMMENT 'z.B. 2024' COLLATE 'utf8mb3_unicode_ci',\
+	Gebdat DATE NULL DEFAULT NULL,\
+	Pat_id INT(10) UNSIGNED NOT NULL DEFAULT '0',\
+	npid INT(10) UNSIGNED COMMENT 'Bezug auf Pat_id in Namen',\
+	VNr VARCHAR(12) NOT NULL DEFAULT '' COMMENT 'Versicherungsnummer' COLLATE 'utf8mb3_unicode_ci',\
+	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
+	PRIMARY KEY (ID) USING BTREE,\
+ 	UNIQUE INDEX eind (npid,Gebdat,Dokudat,Jahr,Quartal,Dokuart,arzt,art) USING BTREE,\
+ 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname,Dokuart,art) USING BTREE,\
+	INDEX art (art) USING BTREE,\
+	INDEX erstellt (arzt,erstellt) USING BTREE,\
+	INDEX Nachname (Nachname) USING BTREE,\
+	INDEX Vorname (Vorname) USING BTREE,\
+	INDEX Versi (Versi) USING BTREE,\
+	INDEX Dokuart (Dokuart) USING BTREE,\
+	INDEX Aktion (Aktion) USING BTREE,\
+	INDEX Quartal (Quartal) USING BTREE,\
+	INDEX Jahr (Jahr) USING BTREE,\
+	INDEX Gebdat (Gebdat) USING BTREE,\
+	INDEX Pat_id (Pat_id) USING BTREE,\
+	INDEX npid (npid) USING BTREE,\
+	INDEX VNr (VNr) USING BTREE,\
+	INDEX Dokudat (Dokudat) USING BTREE\
+)\
+COMMENT='rückgemeldete DMP-Eintragungen von der Datenstelle'\
+COLLATE='utf8mb3_unicode_ci'\
+ENGINE=InnoDB\
+";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
+sql="\
+CREATE TABLE IF NOT EXISTS dmpeinl (\
+	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
+	Datei VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb3_unicode_ci',\
+	eingelesen DATETIME NULL DEFAULT NULL,\
+	PRIMARY KEY (ID) USING BTREE,\
+	INDEX Datei (Datei) USING BTREE,\
+	INDEX eingelesen (eingelesen) USING BTREE\
+)\
+COMMENT='Einlesungen von DMP-Rückmeldungen mit der Batch-Datei parsetif.sh'\
+COLLATE='utf8mb3_unicode_ci'\
+ENGINE=InnoDB\
+";
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
+} # tabellen
 
 auswert() {
 [ $verb ]&&printf "${blau}auswert($qdd)$reset\n";
@@ -251,10 +310,10 @@ mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"INSERT INTO dmpeinl(
 einlid=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT id FROM dmpeinl WHERE Datei='$qd' AND eingelesen=FROM_UNIXTIME('$epo2')");
 [ $verb ]&&printf "einlid: $blau$einlid$reset\n";
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"UPDATE dmprm SET einlid='$einlid' WHERE einlid=$epo";
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$qd\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');\""
+# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"SELECT CONCAT('Eingelesen aus Datei ','\'\"$qd\"\'',', erstellt am ','\"$erstellt\"',' für Arzt ','\"$arzt\"',': ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y')),' Datensätze, davon: ',(SELECT COUNT(0) FROM dmprm WHERE arzt='\"$arzt\"' AND erstellt=STR_TO_DATE('\"$erstellt\"','%d.%m.%Y') AND npid IS NULL),' ohne Patientenzuordnung');\""
 printf "\r";
-# mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$qd''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Arztzuordnung');"
-ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$qd$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Arztzuordnung:');");
+# mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$qd''',' eingelesen (erstellt am ','''$erstellt''',' für Arzt ','''$arzt''','): ',(SELECT COUNT(0) FROM dmprm WHERE arzt='$arzt' AND erstellt=STR_TO_DATE('$erstellt','%d.%m.%Y')),' Datensätze, davon ',(SELECT COUNT(0) FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y') AND npid IS NULL),' ohne Patientenzuordnung');"
+ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$qd$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',' für Arzt ','''$blau$arzt$reset''','): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid'),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL),'$reset ohne Patientenzuordnung:');");
 ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) FROM dmprm WHERE einlid='$einlid' AND npid IS NULL')";
 
 # Folgende haben im Q2/25 für alle bis auf einen funktioniert:
@@ -266,8 +325,8 @@ ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) F
 # UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE left(nachname,3)=left(dp.Nachname,3) and left(vorname,3)=left(dp.vorname,3) and year(gebdat)=year(dp.gebdat)) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE left(nachname,3)=left(dp.Nachname,3) and left(vorname,3)=left(dp.vorname,3) and year(gebdat)=year(dp.gebdat))=1 ;
 # UPDATE dmprm dp SET pat_id = (SELECT pat_id FROM namen WHERE left(nachname,3)=left(dp.nachname,3) and gebdat=dp.gebdat) WHERE pat_id=0 AND LENGTH(vnr)>7 AND (SELECT COUNT(0) FROM namen WHERE left(nachname,3)=left(dp.nachname,3) and gebdat=dp.gebdat)=1 ;
 
-printf "$ausgabe\n";
-printf "$ausg2\n";
+# printf "$ausgabe\n";
+# printf "$ausg2\n";
 [ $verb ]&& {
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
@@ -276,62 +335,92 @@ printf "$ausg2\n";
 }
 } # auswert
 
-tabellen() {
-sql="\
-CREATE TABLE IF NOT EXISTS dmprm (\
-	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
-	einlID INT(11) SIGNED COMMENT 'Bezugs-ID in dmpeinl',\
-  arzt VARCHAR(2) NOT NULL DEFAULT '' COMMENT 'gs,tk oder so fuer Sonstige',\
-	erstellt DATE NULL DEFAULT NULL COMMENT 'Dateierstellungdatum',\
-	Nachname VARCHAR(30) NOT NULL DEFAULT '' COLLATE 'utf8mb3_unicode_ci',\
-	Vorname VARCHAR(30) NOT NULL DEFAULT '' COLLATE 'utf8mb3_unicode_ci',\
-	Versi VARCHAR(30) NOT NULL DEFAULT '' COMMENT 'Versicherung, z.B. BKK' COLLATE 'utf8mb3_unicode_ci',\
-	Dokuart VARCHAR(6) NOT NULL DEFAULT '' COMMENT 'z.B. FD2' COLLATE 'utf8mb3_unicode_ci',\
-	Quartal VARCHAR(2) NOT NULL DEFAULT '' COMMENT 'z.B. 1' COLLATE 'utf8mb3_unicode_ci',\
-	Jahr VARCHAR(4) NOT NULL DEFAULT '' COMMENT 'z.B. 2024' COLLATE 'utf8mb3_unicode_ci',\
-	Gebdat DATE NULL DEFAULT NULL,\
-	Pat_id INT(10) UNSIGNED NOT NULL DEFAULT '0',\
-	npid INT(10) UNSIGNED COMMENT 'Bezug auf Pat_id in Namen',\
-	VNr VARCHAR(12) NOT NULL DEFAULT '' COMMENT 'Versicherungsnummer' COLLATE 'utf8mb3_unicode_ci',\
-	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
-	PRIMARY KEY (ID) USING BTREE,\
- 	UNIQUE INDEX eind (npid, Gebdat, Dokudat, Jahr, Quartal, Dokuart, arzt) USING BTREE,\
- 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname,Dokuart) USING BTREE,\
-	INDEX erstellt (arzt,erstellt) USING BTREE,\
-	INDEX Nachname (Nachname) USING BTREE,\
-	INDEX Vorname (Vorname) USING BTREE,\
-	INDEX Versi (Versi) USING BTREE,\
-	INDEX Dokuart (Dokuart) USING BTREE,\
-	INDEX Quartal (Quartal) USING BTREE,\
-	INDEX Jahr (Jahr) USING BTREE,\
-	INDEX Gebdat (Gebdat) USING BTREE,\
-	INDEX Pat_id (Pat_id) USING BTREE,\
-	INDEX npid (npid) USING BTREE,\
-	INDEX VNr (VNr) USING BTREE,\
-	INDEX Dokudat (Dokudat) USING BTREE\
-)\
-COMMENT='rückgemeldete DMP-Eintragungen von der Datenstelle'\
-COLLATE='utf8mb3_unicode_ci'\
-ENGINE=InnoDB\
-";
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
-sql="\
-CREATE TABLE IF NOT EXISTS dmpeinl (\
-	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
-	Datei VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb3_unicode_ci',\
-	eingelesen DATETIME NULL DEFAULT NULL,\
-	PRIMARY KEY (ID) USING BTREE,\
-	INDEX Datei (Datei) USING BTREE,\
-	INDEX eingelesen (eingelesen) USING BTREE\
-)\
-COMMENT='Einlesungen von DMP-Rückmeldungen mit der Batch-Datei parsetif.sh'\
-COLLATE='utf8mb3_unicode_ci'\
-ENGINE=InnoDB\
-";
-# echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -e\"$sql\";"
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
-} # tabellen
+ausw2() {
+[ $verb ]&&printf "${blau}ausw2($qdd)$reset\n";
+pdf="$qd".pdf;
+if test -f "$pdf"; then
+  txt="$qd".txt;
+  if ! test -f "$txt"; then
+    pdftotext -layout "$pdf"
+  fi
+  erstellt=;
+  erstellt=$(sed -n '/erstellt am/{s/.*am \([0-9]*.[0-9]*.[0-9]*\)/\1/p;q;}' "$txt")
+  [ $verb ]&&printf "erstellt: $blau$erstellt$reset\n";
+  awkd="${qd}_awk.sql";   # 5. nach awk
+  awkdk="${qd}_awkd.err"; # 6. nach 2.sed
+
+  epo=$(awk 'BEGIN{srand();print -srand();}'); # $(date +%s); # -epoch als vorläufige Bezugs-ID
+  [ $verb ]&&printf "epo: $blau$epo$reset\n";
+  [ $verb ]&&printf "vor akw -F \n ... ${txt} \> ${awkd}\n";
+  epo2=$(date +%s);
+  [ $verb ]&&printf "epo2: $blau$epo2$reset\n";
+  [ $verb ]&&printf "pdf: $blau$pdf$reset\n";
+  awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" -v epo="$epo" -v epo2="$epo2" -v pdf="$pdf" '
+  BEGIN {
+    zl=0;
+    print "BEGIN;"
+  }
+  /Bitte/ {
+    art=0;
+    vsw=""
+  }
+  /Bitte.*Teilnahmeerklärung für/ {vsw="TN";}
+  /Bitte.*Teilnahmeerklärung und Erstdokumentation/ {vsw="TN,ED";}
+  /Bitte.*Erstdokumentation für/ {vsw="ED";}
+  /Bitte.*Folgedokumentation für/ {vsw="FD";}
+  /berücksichtigte Dokumentationen/ {art=1;}
+  /eingegangenen Dokumentationen/ {art=2;}
+  /^641915300/ {
+    print "-- " $0
+    gsub(/^[[:blank:]]+|[[:blank:]]+$/,"", $0)
+    gsub(/[[:blank:]]+/,"_", $0)
+    for(iru=1;iru<4;iru++) $0=gensub(/(^[0-9]*[^0-9]+)_([^0-9])/,"\\1 \\2",1,$0) # falls mehrere Vornamen
+    split($0,ar,"_")
+    split(ar[2],na,",");
+    nachname=na[1];
+    gsub("'\''","'\'''\''",nachname);
+    vorname=na[2];
+    gebdat=ar[3]
+    vnr=ar[4];
+    versi=ar[5];
+    dokuart=ar[6] ar[7];
+    dokudat=ar[8];
+    split(ar[9],qu,"/");
+    if (vsw!="") qu[1]=vsw": "qu[1]
+    for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}
+
+  printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
+  sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',COALESCE((SELECT MIN(pat_id) FROM namen WHERE (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))),0));";
+  print sql;
+     zl++;
+    }
+  END {
+      print "DELETE FROM dmpeinl WHERE Datei='\''"pdf"'\'';"
+      print "INSERT INTO dmpeinl(Datei,eingelesen) VALUES('\''"pdf"'\'',FROM_UNIXTIME('\''"epo2"'\''));"
+      print "UPDATE dmprm SET einlid=(SELECT id FROM dmpeinl WHERE Datei='\''"pdf"'\''AND eingelesen=FROM_UNIXTIME('\''"epo2"'\''))WHERE einlid="epo";";
+      print "COMMIT;"
+  }' "${txt}" >"${awkd}";
+  mariadb --defaults-extra-file=~/.mariadbpwd quelle<"${awkd}" >"${awkdk}" 2>&1
+  if test -s "${awkdk}"; then
+    vi "${awkdk}"
+  else
+    # [ $obverb ]&&printf "sed ... ${awkd} \> ${awkdk}\n";
+    # sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
+    printf "\r";
+    ausgabe=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT CONCAT('''$blau$pdf$reset''',' eingelesen (erstellt am ','''$blau$erstellt$reset''',IF('$arzt'='','',CONCAT(' für Arzt ','''$blau$arzt$reset''')),'): $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid=i.id),'$reset Datensätze, davon $blau',(SELECT COUNT(0) FROM dmprm WHERE einlid=i.id AND npid IS NULL),'$reset ohne npid, einlid=$blau',i.id,'$reset')FROM(SELECT id FROM dmpeinl WHERE Datei='$pdf' AND eingelesen=FROM_UNIXTIME('$epo2'))i;");
+    printf "$ausgabe\n";
+    # printf "$ausg2\n";
+    [ $verb ]&& {
+    #  ausf "vi ${awkdk} ${awkd} ${txt} ${txt} -p" "" direkt;
+      printf "vi \"${awkd}\" \"${txt}\" -p\n"
+    # nach 2.sed, nach awk, nach sed, nach tesseract
+      xargs -o vi "${awkd}" "${txt}" -p # sonst fehlt das Terminal
+    }
+  fi
+else
+  printf "Datei $blau\"$pdf\"$reset nicht gefunden. Höre auf.\n";
+fi
+} # ausw2
 
 raussuch() {
 #  altverb=$verb;
@@ -339,10 +428,10 @@ raussuch() {
 #  find "$qvz" -maxdepth 1 \( -iname "*tk*.pdf" -o -iname "*gs*.pdf" \) -print0 |
   ausgew=0;
   gefund=0;
-  find "$qvz" -maxdepth 1 -iregex ".*/[^/]*DMP[^/]*\(TK\|GS\|AH\)[^/]*\.pdf$" -print0 |
+  find "$qvz" -maxdepth 1 -iregex ".*/[^/]*DMP[^/]* \(TK\|GS\|AH\) [^/]*\.pdf$" -print0 |
   while IFS= read -r -d '' datei; do
     gefund=$(expr $gefund + 1);
-    [ $altverb ]&&printf "\rUntersuche $blau$datei$reset                                          \n";
+    [ $verb ]&&printf "\rUntersuche $blau$datei$reset                                          \n";
     erg=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT 0 FROM dmpeinl WHERE datei='$datei'");
     if [ ! "$erg" ]; then
       ausgew=$(expr $ausgew + 1);
@@ -354,6 +443,32 @@ raussuch() {
   done;
   printf "\n";
 #  verb=$altverb;
+  ausgew=0;
+  gefund=0;
+  find "$qp" "$qvz" -maxdepth 1 -not -iregex ".* \(TK\|GS\|AH\) .*" -iregex ".*reminder.*\.pdf$" -print0 |
+  while IFS= read -r -d '' pdf; do
+    gefund=$(expr $gefund + 1);
+    [ $verb ]&&printf "\rUntersuche $blau$pdf$reset                                          \n";
+    erg=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT 0 FROM dmpeinl WHERE datei='$pdf'");
+    if [ ! "$erg" ]; then
+      ausgew=$(expr $ausgew + 1);
+      printf "\rbearbeite: $blau$pdf$reset                                                  "; [ $verb ]&&printf "\n";
+      aktp=${pdf%/*}  # /DATA/Patientendokumente
+#      echo aktp: $aktp
+      qd=${pdf##*/} 
+      dt=${qd%.*}   # DMP-Reminder
+      qd=${pdf%.*}  # /DATA/Patientendokumente/DMP-Reminder
+#      echo qd: $qd
+#      echo dt: $dt
+      ausw2;
+      if [ "$aktp/" != "$qvz/" ]; then
+        echo mv -i "$pdf" "$qd".txt "$awkd" "$awkdk" "$qvz"
+        mv -i "$pdf" "$qd".txt "$awkd" "$awkdk" "$qvz"
+      fi;
+    fi;
+    printf "\r$blau$gefund$reset passende Dateien in \"$blau$qvz$reset\" gefunden, $blau$ausgew$reset neu ausgewertet.";
+  done;
+  printf "\n\r";
 } # raussuch
 
 
@@ -367,6 +482,8 @@ if [ "$neudb" ]; then
   fi;
 fi;
 tabellen;
+qp="/DATA/Patientendokumente";
+qvz="/DATA/Patientendokumente/DMP";
 if [ $einzeln ]; then
   if [ -f "$qd" ]; then
     [ $verb ]&&printf "${blau}qd: $qd$reset, rufe ${blau}auswert$reset auf\n";

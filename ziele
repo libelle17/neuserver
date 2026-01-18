@@ -35,6 +35,7 @@ copywd.sh
 dirsum.sh
 dbauspacken.sh
 dbeinpacken.sh
+dmp.sh
 dojpgumw.sh
 dopdfumw.sh
 dorsync.sh
@@ -67,7 +68,6 @@ mountvirt.sh
 mountwser.sh
 nampruef.sh
 obft.sh
-parsetif.sh
 pdfumw.sh
 pdftotxt.sh
 pdftotxte.sh
