@@ -48,6 +48,8 @@
  $_SESSION['Colo']=1;
  $_SESSION['Pros']=1;
  $_SESSION['Gyn']=1;
+ $_SESSION['ADL']=1;
+ $_SESSION['TUG']=1;
  $_SESSION['gar:']=1;
  $_SESSION['Arzteintrag']=1;
 ?>

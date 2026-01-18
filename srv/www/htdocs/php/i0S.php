@@ -97,6 +97,10 @@
     $_SESSION['Pros']=!$_SESSION['Pros'];
  } ELSE  IF(isset($_POST['Gyn'])) {
     $_SESSION['Gyn']=!$_SESSION['Gyn'];
+ } ELSE  IF(isset($_POST['ADL'])) {
+    $_SESSION['ADL']=!$_SESSION['ADL'];
+ } ELSE  IF(isset($_POST['TUG'])) {
+    $_SESSION['TUG']=!$_SESSION['TUG'];
  } ELSE  IF(isset($_POST['gar:'])) {
     $_SESSION['gar:']=!$_SESSION['gar:'];
  } ELSE  IF(isset($_POST['Arzteintrag'])) {

@@ -538,6 +538,28 @@
       $text=$text."Gyn";
       echo "<button class='".$stil."' name='Gyn'>".$text."</button>";
     }
+    IF ($_SESSION['obADL']) {
+      IF ($_SESSION['ADL']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."ADL";
+      echo "<button class='".$stil."' name='ADL'>".$text."</button>";
+    }
+    IF ($_SESSION['obTUG']) {
+      IF ($_SESSION['TUG']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."TUG";
+      echo "<button class='".$stil."' name='TUG'>".$text."</button>";
+    }
     IF ($_SESSION['obgar:']) {
       IF ($_SESSION['gar:']) {
         $stil=cave;

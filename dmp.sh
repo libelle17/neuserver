@@ -360,16 +360,16 @@ if test -f "$pdf"; then
     zl=0;
     print "BEGIN;"
   }
-  /Bitte/ {
+  /Bitte / {
     art=0;
     vsw=""
   }
-  /Bitte.*Teilnahmeerklärung für/ {vsw="TN";}
-  /Bitte.*Teilnahmeerklärung und Erstdokumentation/ {vsw="TN,ED";}
-  /Bitte.*Erstdokumentation für/ {vsw="ED";}
-  /Bitte.*Folgedokumentation für/ {vsw="FD";}
-  /berücksichtigte Dokumentationen/ {art=1;}
-  /eingegangenen Dokumentationen/ {art=2;}
+  /Bitte .*Teilnahmeerklärung für/ {vsw="TN";}
+  /Bitte .*Teilnahmeerklärung und Erstdokumentation/ {vsw="TN,ED";}
+  /Bitte .*Erstdokumentation für/ {vsw="ED";}
+  /Bitte .*Folgedokumentation für/ {vsw="FD";}
+  /berücksichtigte Dokumentationen/ {art=1;vsw=""}
+  /eingegangenen Dokumentationen/ {art=2;vsw=""}
   /^641915300/ {
     print "-- " $0
     gsub(/^[[:blank:]]+|[[:blank:]]+$/,"", $0)
@@ -386,7 +386,7 @@ if test -f "$pdf"; then
     dokuart=ar[6] ar[7];
     dokudat=ar[8];
     split(ar[9],qu,"/");
-    if (vsw!="") qu[1]=vsw": "qu[1]
+    if (!art) if (vsw!="") qu[1]=vsw": "qu[1]
     for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}
 
   printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
@@ -450,6 +450,7 @@ raussuch() {
     gefund=$(expr $gefund + 1);
     [ $verb ]&&printf "\rUntersuche $blau$pdf$reset                                          \n";
     erg=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT 0 FROM dmpeinl WHERE datei='$pdf'");
+#    if true -o [ ! "$erg" ]; then
     if [ ! "$erg" ]; then
       ausgew=$(expr $ausgew + 1);
       printf "\rbearbeite: $blau$pdf$reset                                                  "; [ $verb ]&&printf "\n";
@@ -481,6 +482,8 @@ if [ "$neudb" ]; then
     mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DROP TABLE dmprm";
   fi;
 fi;
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmpeinl WHERE NOT EXISTS(SELECT * FROM dmprm WHERE einlid=dmpeinl.ID)";
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmprm WHERE NOT EXISTS(SELECT * FROM dmpeinl WHERE id=einlID)"
 tabellen;
 qp="/DATA/Patientendokumente";
 qvz="/DATA/Patientendokumente/DMP";

@@ -49,6 +49,8 @@
  $_SESSION['obColo']=0;
  $_SESSION['obPros']=0;
  $_SESSION['obGyn']=0;
+ $_SESSION['obADL']=0;
+ $_SESSION['obTUG']=0;
  $_SESSION['obgar:']=0;
  $_SESSION['obArzteintrag']=0;
 ?>
