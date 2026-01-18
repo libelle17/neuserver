@@ -58,6 +58,7 @@ commandline() {
         -help) obhilfe=e;; # englische Hilfe
         nd|-neudd) neudb=1;;
         nt|-neutif) neutif=1;;
+        ln|-lneu) lneu=1;;
         *) 
           einzeln=1;
           [ $verb ]&&printf "commandline: werte aus: $blau$1$reset\n"
@@ -75,6 +76,7 @@ commandline() {
 #		printf "obecht: $blau$obecht$reset\n";
     [ $neudb ]&&printf "neudb: $blau$neudb$reset => Datenbankeinträge werden auch dann neu erstellt, wenn keine einzelne Datei angegeben\n"; 
     [ $neutif ]&&printf "neutif: $blau$neutif$reset => tif-Dateien werden neu erstellt und geparst\n"; 
+    [ $lneu ]&&printf "lneu: $blau$lneu$reset => letzte Einlesungen neu\n";
 	fi;
 } # commandline
 
@@ -331,7 +333,7 @@ ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) F
 #  ausf "vi ${awkdk} ${awkd} ${ender} ${txt} -p" "" direkt;
   printf "vi \"${awkdk}\" \"${awkd}\" \"${ender}\" \"${txt}\" -p\n"
 # nach 2.sed, nach awk, nach sed, nach tesseract
-  vi "${awkdk}" "${awkd}" "${ender}" "${txt}" -p;
+  xargs -o vi "${awkdk}" "${awkd}" "${ender}" "${txt}" -p;
 }
 } # auswert
 
@@ -390,7 +392,19 @@ if test -f "$pdf"; then
     for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}; # Leerzeichen in der Fehlermeldung
 
     printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
-    sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',COALESCE((SELECT MIN(pat_id) FROM namen WHERE (nachname='\''" nachname "'\'' AND (Vorname='\''" vorname "'\'' OR Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))) OR (Vorname='\''" vorname "'\'' AND Gebdat=STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''))),0));";
+    sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',"\
+    "(SELECT COALESCE("\
+     "(SELECT pat_id FROM namen WHERE nachname='\''"nachname"'\''AND vorname='\''"vorname"'\''AND gebdat=STR_TO_DATE('\''"gebdat"'\'','\''%d.%m.%Y'\'')ORDER by pat_id DESC LIMIT 1),"\
+     " COALESCE("\
+     "  (SELECT pat_id FROM namen WHERE nachname='\''"nachname"'\''AND gebdat=STR_TO_DATE('\''"gebdat"'\'','\''%d.%m.%Y'\'')ORDER by pat_id DESC LIMIT 1),"\
+     "   COALESCE("\
+     "   (SELECT pat_id FROM namen WHERE vorname='\''"vorname"'\''AND gebdat=STR_TO_DATE('\''"gebdat"'\'','\''%d.%m.%Y'\'')ORDER by pat_id DESC LIMIT 1),"\
+     "     COALESCE("\
+     "      (SELECT pat_id FROM namen WHERE nachname='\''"nachname"'\''AND vorname='\''"vorname"'\''ORDER by pat_id DESC LIMIT 1),"\
+     "       COALESCE("\
+     "        (SELECT pat_id FROM namen WHERE gebdat=STR_TO_DATE('\''"gebdat"'\'','\''%d.%m.%Y'\'')ORDER by pat_id DESC LIMIT 1),"\
+     "0))))))"\
+         ");";
     print sql;
     zl++;
   }
@@ -402,7 +416,7 @@ if test -f "$pdf"; then
   }' "${txt}" >"${awkd}";
   mariadb --defaults-extra-file=~/.mariadbpwd quelle<"${awkd}" >"${awkdk}" 2>&1
   if test -s "${awkdk}"; then
-    vi "${awkdk}"
+    xargs -o vi "${awkdk}"
   else
     # [ $obverb ]&&printf "sed ... ${awkd} \> ${awkdk}\n";
     # sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
@@ -450,8 +464,7 @@ raussuch() {
     gefund=$(expr $gefund + 1);
     [ $verb ]&&printf "\rUntersuche $blau$pdf$reset                                          \n";
     erg=$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"SELECT 0 FROM dmpeinl WHERE datei='$pdf'");
-#    if true -o [ ! "$erg" ]; then
-    if [ ! "$erg" ]; then
+    if [ "$lneu" -o ! "$erg" ]; then
       ausgew=$(expr $ausgew + 1);
       printf "\rbearbeite: $blau$pdf$reset                                                  "; [ $verb ]&&printf "\n";
       aktp=${pdf%/*}  # /DATA/Patientendokumente
