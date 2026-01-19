@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS dmprm (\
 	VNr VARCHAR(12) NOT NULL DEFAULT '' COMMENT 'Versicherungsnummer' COLLATE 'utf8mb3_unicode_ci',\
 	Dokudat DATE NULL DEFAULT NULL COMMENT 'Abgabedatum der Doku',\
 	PRIMARY KEY (ID) USING BTREE,\
- 	UNIQUE INDEX eind (npid,Gebdat,Dokudat,Jahr,Quartal,Dokuart,arzt,art) USING BTREE,\
- 	UNIQUE INDEX find (pat_id,Gebdat,Nachname,Vorname,Dokuart,art) USING BTREE,\
+ 	/*UNIQUE*/ INDEX eind (npid,Gebdat,Dokudat,Jahr,Quartal,Dokuart,arzt,art) USING BTREE,\
+ 	/*UNIQUE*/ INDEX find (pat_id,Gebdat,Nachname,Vorname,Dokuart,art) USING BTREE,\
 	INDEX art (art) USING BTREE,\
 	INDEX erstellt (arzt,erstellt) USING BTREE,\
 	INDEX Nachname (Nachname) USING BTREE,\
@@ -304,6 +304,7 @@ END {
 [ $obverb ]&&printf "sed ... ${awkd} \> ${awkdk}\n";
 sed '/\(^REPLACE\|^INSERT\|^ERROR\|^\$0\)/d' "${awkd}" > "${awkdk}";
 # echo "mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e\"DELETE FROM dmpeinl WHERE Datei='$qd'\";"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmprm WHERE einlid IN(SELECT id FROM dmpeinl WHERE Datei='$qd')";
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -s -s -e"DELETE FROM dmpeinl WHERE Datei='$qd'"; # Anführungszeichen um $qd führen zum Fehler!
 epo2=$(date +%s);
 [ $verb ]&&printf "epo2: $blau$epo2$reset\n";
@@ -392,7 +393,7 @@ if test -f "$pdf"; then
     for(k=10;k<13;k++){if(k in ar){qu[1]=qu[1]" "ar[k];}}; # Leerzeichen in der Fehlermeldung
 
     printf("-- %s\t%s\t%-21s\t%-22s\t%-10s\t%6s\t%10s\t%5s\t%-4s\t%s\t%s\n",zl,art,nachname,vorname,gebdat,vnr,versi,dokuart,dokudat,qu[1],qu[2]);
-    sql="REPLACE INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid) VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',"\
+    sql="INSERT INTO dmprm(einlID,art,erstellt,Nachname,Vorname,Gebdat,Pat_id,VNr,Versi,Dokuart,Dokudat,"(qu[1]~/^[0-9]+$/?"Quartal":"Aktion")",Jahr,npid)VALUES(" epo ",'\''" art "'\'',STR_TO_DATE('\''" erstellt "'\'','\''%d.%m.%Y'\''),'\''" nachname "'\'','\''" vorname "'\'',STR_TO_DATE('\''" gebdat "'\'','\''%d.%m.%Y'\''),'\''" 0 "'\'','\''" vnr "'\'','\''" versi "'\'','\''" dokuart "'\'',STR_TO_DATE('\''" dokudat "'\'','\''%d.%m.%Y'\''),'\''" qu[1] "'\'','\''" qu[2] "'\'',"\
     "(SELECT COALESCE("\
      "(SELECT pat_id FROM namen WHERE nachname='\''"nachname"'\''AND vorname='\''"vorname"'\''AND gebdat=STR_TO_DATE('\''"gebdat"'\'','\''%d.%m.%Y'\'')ORDER by pat_id DESC LIMIT 1),"\
      " COALESCE("\
@@ -409,6 +410,7 @@ if test -f "$pdf"; then
     zl++;
   }
   END {
+      print "DELETE FROM dmprm WHERE einlid IN(SELECT id FROM dmpeinl WHERE Datei='\''"pdf"'\'');"
       print "DELETE FROM dmpeinl WHERE Datei='\''"pdf"'\'';"
       print "INSERT INTO dmpeinl(Datei,eingelesen) VALUES('\''"pdf"'\'',FROM_UNIXTIME('\''"epo2"'\''));"
       print "UPDATE dmprm SET einlid=(SELECT id FROM dmpeinl WHERE Datei='\''"pdf"'\''AND eingelesen=FROM_UNIXTIME('\''"epo2"'\''))WHERE einlid="epo";";
@@ -495,11 +497,11 @@ if [ "$neudb" ]; then
     mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DROP TABLE dmprm";
   fi;
 fi;
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmpeinl WHERE NOT EXISTS(SELECT * FROM dmprm WHERE einlid=dmpeinl.ID)";
-mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmprm WHERE NOT EXISTS(SELECT * FROM dmpeinl WHERE id=einlID)"
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmpeinl WHERE NOT EXISTS(SELECT 1 FROM dmprm WHERE einlid=dmpeinl.ID)";
+mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"DELETE FROM dmprm WHERE NOT EXISTS(SELECT 1 FROM dmpeinl WHERE id=einlID)"
 tabellen;
 qp="/DATA/Patientendokumente";
-qvz="/DATA/Patientendokumente/DMP";
+qvz="/DATA/Patientendokumente/DMP-Reminder";
 if [ $einzeln ]; then
   if [ -f "$qd" ]; then
     [ $verb ]&&printf "${blau}qd: $qd$reset, rufe ${blau}auswert$reset auf\n";
