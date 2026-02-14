@@ -384,6 +384,17 @@
       $text=$text."fT3";
       echo "<button class='".$stil."' name='fT3'>".$text."</button>";
     }
+    IF ($_SESSION['obSchuleintr']) {
+      IF ($_SESSION['Schuleintr']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."Schuleintr";
+      echo "<button class='".$stil."' name='Schuleintr'>".$text."</button>";
+    }
     IF ($_SESSION['obHb']) {
       IF ($_SESSION['Hb']) {
         $stil=cave;

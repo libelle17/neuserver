@@ -35,6 +35,7 @@
  $_SESSION['obTSH']=0;
  $_SESSION['obfT4 [pmol/l]']=0;
  $_SESSION['obfT3']=0;
+ $_SESSION['obSchuleintr']=0;
  $_SESSION['obHb']=0;
  $_SESSION['obVit B12']=0;
  $_SESSION['obFolsre']=0;

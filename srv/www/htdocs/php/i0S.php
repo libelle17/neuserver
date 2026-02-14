@@ -69,6 +69,8 @@
     $_SESSION['fT4 [pmol/l]']=!$_SESSION['fT4 [pmol/l]'];
  } ELSE  IF(isset($_POST['fT3'])) {
     $_SESSION['fT3']=!$_SESSION['fT3'];
+ } ELSE  IF(isset($_POST['Schuleintr'])) {
+    $_SESSION['Schuleintr']=!$_SESSION['Schuleintr'];
  } ELSE  IF(isset($_POST['Hb'])) {
     $_SESSION['Hb']=!$_SESSION['Hb'];
  } ELSE  IF(isset($_POST['Vit B12'])) {
