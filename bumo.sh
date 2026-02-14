@@ -7,6 +7,9 @@ ZL=; # dann werden die cifs-Laufwerke verwendet
 # nurdrei=1;
 # nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
+dopweg.sh
+find /DATA/Patientendokumente/dok -iname "zulöschen*" -delete
+obOBDEL=--delete
 wirt=$buhost;
 for ziel in $ziele; do
   ZL=linux$ziel;
