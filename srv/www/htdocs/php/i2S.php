@@ -34,7 +34,6 @@
  $_SESSION['TSH']=1;
  $_SESSION['fT4 [pmol/l]']=1;
  $_SESSION['fT3']=1;
- $_SESSION['Schuleintr']=1;
  $_SESSION['Hb']=1;
  $_SESSION['Vit B12']=1;
  $_SESSION['Folsre']=1;

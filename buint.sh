@@ -5,7 +5,7 @@
 # wenn es auf dem Hauptserver wexp.fritz.box das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /amnt/virtwin/turbomed
 # mountvirt.sh -a
 MUPR=$(readlink -f $0); # Mutterprogramm
-. ${MUPR%/*}/bul1.sh # LINEINS=wexp.fritz.box, buhost festlegen
+. ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost=linux1 festlegen
 # ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux1ur, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux1ur, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
 ZL=; # dann werden die cifs-Laufwerke verwendet

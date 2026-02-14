@@ -523,7 +523,7 @@ nurdrei=;
 nurzweidrei=;
 commandline "$@"; # alle Befehlszeilenparameter übergeben, ZL aus commandline festlegen
 case $0 in *bu*)
-if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
+if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != budbaus.sh -a "$buhost"/ = "$LINEINS"/ -a -z "$ZL" \) -o "$obhilfe" ]; then 
   case "${0##*/}" in *buint.sh)
     printf "%b\n" \
     "$blau$0$reset, Syntax: $blau"$(basename $0)" <-e/-f/-k/-m/-mz <zahl>/-z \"\"> <zielhost> <SD=/Pfad/zur/Schutzdatei>$reset" \

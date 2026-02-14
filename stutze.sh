@@ -47,4 +47,4 @@ ermittledatum() {
   monat=${monat%-*};
 }
 
-. instutz.sh
+. /root/bin/instutz.sh

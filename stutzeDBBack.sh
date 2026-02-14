@@ -44,4 +44,4 @@ ermittledatum() {
   datum=$jahr-$monat-$tag;
 }
 
-. instutz.sh
+. /root/bin/instutz.sh
