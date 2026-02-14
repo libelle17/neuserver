@@ -1,4 +1,5 @@
 #/bin/bash
+echo Lösche Fehlimporte
 find /DATA/Patientendokumente/dok -iname "*(30)*" | awk '
 {
     fullpath = $0
