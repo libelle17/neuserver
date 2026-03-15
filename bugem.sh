@@ -324,7 +324,7 @@ kopiermt() { # mit test
     ausf "$diffbef" "" "" 1;
     if [ $ret/ != 0/ ]; then
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
-      printf "${rot}keine Übereinstimmung bei \"$SD\"!$reset\n"
+      printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n"
       return 1;
     fi
   }
@@ -478,6 +478,7 @@ testobvirt() {
   wserD=PraxisDB-wser;
   otw=/$ot/$wserD;
   obvirt=;
+	[ $verb ]&&printf "tush: $tush: otr: $otr, otP: $otP, otw: $otw\n";
   if eval "$tush 'test -d $otr'"; then # -res gibts
     if eval "$tush 'test -d $otP'"; then # beide gibt's
       if eval "$tush 'find $otP -maxdepth 1 -size -9M -iname objects.dat|grep .' >/dev/null" &&

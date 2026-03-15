@@ -10,7 +10,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, in obalt und kopiermt $qssh, $zssh festlegen
 # [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
-[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=$buhost;}
+[ "$buhost"/ != "$LINEINS"/ ]&&{ printf "Ziel \"$blau$buhost$reset\" wird gesetzt.\n"; ZL=$buhost;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 wirt=${QL:-$buhost};
 . ${MUPR%/*}/virtnamen.sh # legt aus $wirt fest: $gpc, $gast, $tush
@@ -27,7 +27,7 @@ case $buhost in
     tush="sh -c ";zish="ssh $ZL ";
     [ "$ZL" ]&& pruefpc "$ZL"&&wach=1;;
   *)
-    tush="ssh $ZL ";zish="sh -c ";
+    tush="ssh $QL ";zish="sh -c ";
     [ "$QL" ]&& pruefpc "$QL"&&wach=1;;
 esac
 
