@@ -52,5 +52,6 @@
  $_SESSION['TUG']=1;
  $_SESSION['gar:']=1;
  $_SESSION['Arzteintrag']=1;
+ $_SESSION['ePA runterladen']=1;
 ?>
 

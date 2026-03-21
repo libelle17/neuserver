@@ -582,5 +582,16 @@
       $text=$text."Arzteintrag";
       echo "<button class='".$stil."' name='Arzteintrag'>".$text."</button>";
     }
+    IF ($_SESSION['obePA runterladen']) {
+      IF ($_SESSION['ePA runterladen']) {
+        $stil=cave;
+        $text = "&Oslash ";
+      } ELSE {
+        $stil=unauff;
+        $text="";
+      }
+      $text=$text."ePA runterladen";
+      echo "<button class='".$stil."' name='ePA runterladen'>".$text."</button>";
+    }
 ?>
 

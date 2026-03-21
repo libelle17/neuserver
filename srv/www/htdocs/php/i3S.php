@@ -53,5 +53,6 @@
  $_SESSION['obTUG']=0;
  $_SESSION['obgar:']=0;
  $_SESSION['obArzteintrag']=0;
+ $_SESSION['obePA runterladen']=0;
 ?>
 

@@ -105,6 +105,8 @@
     $_SESSION['gar:']=!$_SESSION['gar:'];
  } ELSE  IF(isset($_POST['Arzteintrag'])) {
     $_SESSION['Arzteintrag']=!$_SESSION['Arzteintrag'];
+ } ELSE  IF(isset($_POST['ePA runterladen'])) {
+    $_SESSION['ePA runterladen']=!$_SESSION['ePA runterladen'];
  }
 ?>
 
