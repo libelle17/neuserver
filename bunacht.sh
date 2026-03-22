@@ -7,18 +7,14 @@ ZL=; # dann werden die cifs-Laufwerke verwendet
 # nurdrei=1;
 # nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
-dopweg.sh
-find /DATA/Patientendokumente/dok -iname "zulöschen*" -delete
 obOBDEL=--delete
 wirt=$buhost;
 for ziel in $ziele; do
-  echo Stelle1
   ZL=linux$ziel;
   ZmD=$ZL:;
   if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
 #  kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
 #  kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
-  echo Stelle2
   kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
 #  ZL=;
 #  ZmD=;
