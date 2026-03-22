@@ -14,8 +14,9 @@ wirt=$buhost;
 for ziel in $ziele; do
   ZL=linux$ziel;
   ZmD=$ZL:;
-  kopiermt "/DATA/Patientendokumente/dok" "/DATA/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
-  kopiermt "/DATA/Patientendokumente/eingelesen" "/DATA/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
+  if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
+  kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
+  kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
   ZL=;
   ZmD=;
   mount /mnt/wser/indamed
