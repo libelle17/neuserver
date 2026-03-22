@@ -5,6 +5,8 @@
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
+QL=;
+ZL=;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
@@ -20,7 +22,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   # $7 = ob ohne Platzprüfung
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1) und Zielrechner in $ZL hinterlegt sein
   # P1obs=$(echo "$1"|sed 's/\\//g'); # Parameter 1 ohne backslashes
-ssh linux1 /root/bin/mountwser.sh
+/root/bin/mountwser.sh
 # muss hier nicht aufgerufen werden, da er von linux1 aus kopiert
 for uvz in tmexport indamed; do
 	kopiermt /mnt/wser/$uvz /DATA/wser/ "" "" "" "" 1
