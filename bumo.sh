@@ -17,9 +17,9 @@ for ziel in $ziele; do
   if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
   kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
   kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
-  ZL=;
-  ZmD=;
-  mount /mnt/wser/indamed
-  kopiermt "/mnt/wser/indamed" "/wrz" "" "$obOBDEL" "" "";
+#  ZL=;
+#  ZmD=;
+#  mount /mnt/wser/indamed
+#  kopiermt "/mnt/wser/indamed" "/wrz" "" "$obOBDEL" "" "";
   EXGES="";
 done;
