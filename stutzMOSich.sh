@@ -43,4 +43,4 @@ ermittledatum() {
   tab=$(echo $dt|sed 's/^.\{6\}\(.\{2\}\).*$/\1/');
 }
 
-. instutz.sh
+. /root/bin/instutz.sh

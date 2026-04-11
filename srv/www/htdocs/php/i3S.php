@@ -6,8 +6,6 @@
  $_SESSION['obRR']=0;
  $_SESSION['obOAU']=0;
  $_SESSION['obHbA1c']=0;
- $_SESSION['obUzu, Fqmin(6)=0/a']=0;
- $_SESSION['obHypo']=0;
  $_SESSION['obHyper']=0;
  $_SESSION['obNeuSt']=0;
  $_SESSION['obFuß']=0;
@@ -35,7 +33,6 @@
  $_SESSION['obTSH']=0;
  $_SESSION['obfT4 [pmol/l]']=0;
  $_SESSION['obfT3']=0;
- $_SESSION['obSchuleintr']=0;
  $_SESSION['obHb']=0;
  $_SESSION['obVit B12']=0;
  $_SESSION['obFolsre']=0;
