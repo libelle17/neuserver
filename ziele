@@ -39,6 +39,7 @@ dirsum.sh
 dbauspacken.sh
 dbeinpacken.sh
 dmp.sh
+dmp_vers.sh
 dojpgumw.sh
 dopdfumw.sh
 doppelteimporte.py
