@@ -242,7 +242,7 @@ setzhost() {
 setzbenutzer() {
   printf "${dblau}setzbenutzer$reset(), gruppe: $gruppe\n";
   pruefgruppe $gruppe
-  $SPR samba 2>/dev/null||$IPR samba
+  $psuch samba 2>/dev/null||$instp samba
   systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
   systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
   systemctl start nmb 2>/dev/null||systemctl start nmbd 2>/dev/null;
@@ -753,6 +753,7 @@ richtmariadbein() {
 		1|2|3)
 			db_systemctl_name="mysql";;
 		4|5|6|7)
+			db_systemctl_name="mariadb";;
 	esac;
 	for iru in 1 2; do
 		systemctl is-enabled $db_systemctl_name >/dev/null 2>&1 ||systemctl enable $db_systemctl_name;
@@ -863,7 +864,7 @@ proginst() {
 	doinst curl;
 	doinst cifs-utils;
   doinst convmv; # fuer Turbomed
-  doinst ntp; # fuer stutzeDBBack.sh
+  doinst chrony; # fuer stutzeDBBack.sh
 #  doinst libvmime1; # fuer stutzeDBBack.sh
 #  doinst libvmime-devel; # fuer stutzeDBBack.sh
   doinst cmake;
@@ -880,8 +881,8 @@ proginst() {
   doinst p7zip;
   doinst p7zip-full;
   doinst apache2;
-  doinst apache2-mod_php7;
-  doinst php7-mysql;
+  doinst apache2-mod_php8;
+  doinst php8-mysql;
   doinst postgresql;
   doinst postgresql-contrib;
   doinst postgresql-server;
@@ -914,7 +915,7 @@ proginst() {
   # dann VirtualBox aufrufen, Add, die z.B. Wind10.vdi-Datei auswählen; File -> Host Network Manager, Create
   D=/etc/sysconfig/apache2;DN=${D}_neu;[ -f $D ]&&{
        sed 's:APACHE_CONF_INCLUDE_FILES="":APACHE_CONF_INCLUDE_FILES="/etc/apache2/httpd.conf.local":' $D >$DN;
-       for dt in php7 version; do
+       for dt in php8 version; do
          grep "^APACHE_MODULES=\".* $dt" $DN||sed -i 's:^\(APACHE_MODULES=\"[^"]*\):\1 '$dt':' $DN;
        done;
        cmp -s $D $DN &&{
@@ -925,7 +926,7 @@ proginst() {
        }
   }
   chown wwwrun:www -R /srv/www/htdocs;
-  a2enmod php7;
+  a2enmod php8;
   systemctl enable apache2;
   systemctl restart apache2;
   case $OSNR in
@@ -936,16 +937,30 @@ proginst() {
   doinst tesseract-ocr-traineddata-german
   # putty auch fuer root erlauben:
 	D=/etc/ssh/sshd_config;
-	W=PermitRootLogin;
-	if ! grep "^$W[[:space:]]*Yes$" $D; then
-		if grep "^$W" $D; then
-			sed -i "/^$W/c$W Yes" $D;
-		elif grep "^#$W" $D; then
-			sed -i "/^#$W/a$W Yes" $D;
-		fi;
-	fi;
-  D=/etc/profile.local;S=NCURSES_NO_UTF8_ACS;W=1;[ -f "$D" ]&&grep "$S" "$D"||echo "$S"="$W" >>"$D";
-  D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S"="$W # geht auch" >>"$D";
+  if test -f "$D"; then
+    W=PermitRootLogin;
+    if ! grep "^$W[[:space:]]*Yes$" $D; then
+      if grep "^$W" $D; then
+        sed -i "/^$W/c$W Yes" $D;
+      elif grep "^#$W" $D; then
+        sed -i "/^#$W/a$W Yes" $D;
+      fi;
+    fi;
+  else
+    cvz=/etc/ssh/sshd_config.d;
+    cnfd=51-permit-root-login.conf;
+    mkdir -p "$cvz/";
+    if grep -q "^PermitRootLogin" $cvz/$cnfd; then
+      # Wenn Zeile existiert (egal ob yes oder no), auf yes ändern
+      sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' $cvz/$cnfd;
+    else
+      # Wenn Zeile nicht existiert, anfügen
+      echo "PermitRootLogin yes" >> $cvz/$cnfd;
+    fi
+  fi
+  sudo systemctl reload ssh;
+D=/etc/profile.local;S=NCURSES_NO_UTF8_ACS;W=1;[ -f "$D" ]&&grep "$S" "$D"||echo "$S"="$W" >>"$D";
+D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S"="$W # geht auch" >>"$D";
 # dazu noch /.bashrc 
 # export LESS_TERMCAP_mb=$'\e[0;31m'     # begin bold => rot
 # export LESS_TERMCAP_md=$'\e[1;34m'     # begin blink -> blau
@@ -1118,10 +1133,12 @@ bildschirm() {
 
 sambaconf() {
 	printf "${dblau}sambaconf$reset()\n"
+  zustarten=0;
 	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
 	smbconf="smb.conf";
 	zusmbconf="$etcsamba/$smbconf";
-	muster="/usr/share/samba/$smbconf";
+  muster=$(find /usr/share/samba /etc/samba -name "smb.conf*" ! -name "smb.conf" 2>/dev/null | head -1);
+  [ -z "$muster" ] && muster="/usr/share/samba/$smbconf";
 	smbvars="$instvz/awksmb.inc";
 	workgr=$(sed -n '/WORKGROUP/{s/[^"]*"[^"]*"[^"]*"\([^"]*\)".*/\1/p}' "$smbvars");
 	[ "$arbgr" ]||{ printf "Arbeitsgruppe des Sambaservers: ";[ $obbash -eq 1 ]&&read -rei "$workgr" arbgr||read arbgr;};
@@ -1179,12 +1196,13 @@ sambaconf() {
      printf "};\n";
     }
    ' $ftb >$S2;
-	AWKPATH="$instvz";awk -f $instvz/awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
+	AWKPATH="$instvz" awk -f $instvz/awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
 	firewall samba;
 
 	if ! diff -q "$instvz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
 		cp -a "$instvz/$smbconf" "$zusmbconf";
+    [ -f /etc/samba/smbusers ] || touch /etc/samba/smbusers;
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
