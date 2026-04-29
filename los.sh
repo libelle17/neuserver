@@ -992,6 +992,7 @@ proginst() {
        "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnname}_${_isdnver}/home:mnhauke:ISDN.repo"
      zypper refresh;
    }
+  }
 #5.2/home:mnhauke:ISDN.repo
   doinst i4l-base;
   doinst libcapi20-2;
