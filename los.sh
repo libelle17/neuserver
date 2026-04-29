@@ -653,6 +653,10 @@ ersetzeprog() {
     if [ "$1" = "p7zip-full" ]; then eprog=""; break; fi;
     # exfatprogs heißt auf openSUSE 16.0 exfatprogs (korrekt)
     if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
+    if [ "$1" = "curlftfs" ]; then eprog="curlftpfs"; break; fi;
+    if [ "$1" = "phpPgAdmin" ]; then eprog=""; break; fi;
+    if [ "$1" = "p7zip-full" ]; then eprog=""; break; fi;
+    if [ "$1" = "liblept5" ]; then eprog="libleptonica6"; break; fi;
     ;;
   8) # manjaro
     if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
@@ -1022,6 +1026,15 @@ proginst() {
   doinst libcapi20-3;
   doinst capi4linux-devel;
   doinst curlftfs; # fuer autofax
+  # curlftpfs liegt im filesystems-Repository
+  if [ $OSNR -eq 4 ]; then
+    _osnver=$(grep ^VERSION_ID= /etc/os-release 2>/dev/null|cut -d'"' -f2);
+    zypper lr filesystems >/dev/null 2>&1 || {
+      zypper addrepo "https://download.opensuse.org/repositories/filesystems/${_osnver}/filesystems.repo";
+      zypper --gpg-auto-import-keys refresh;
+    }
+  fi
+  doinst curlftpfs; # fuer autofax  
 
 # fuer fbfax:
 # zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
