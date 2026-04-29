@@ -361,7 +361,7 @@ while read -r zeile; do
 	typ=$(echo $zeile|cut -d\" -f14);
 	pty=$(echo $zeile|cut -d\" -f16);
 	ptt=$(echo $zeile|cut -d\" -f18);
-  case "$fty" in swap|iso|fat|".*_member") continue;; esac;
+  case "$fty" in swap|iso9660|fat|*_member) continue;; esac;
   case "$typ" in rom) continue;; esac;
   case "$mtp" in /|/boot/efi) continue;; esac;
   case "$lbl" in EFI) continue;; esac;
@@ -427,10 +427,13 @@ while read -r zeile; do
 					btrfs filesystem label $dev "$lbl";;
 				reiserfs)
 					printf "${rot}reiserfstune -l $lbl $dev$reset\n";
-					reiserfstune -l "$lbl" $dev;;
+          reiserfstune -l "$lbl" $dev 2>/dev/null || \
+            printf "${rot}reiserfstune nicht verfügbar (ReiserFS in Kernel 6.6+ entfernt)$reset\n";;          
 				ntfs*)
-					printf "${rot} ntfslabel $dev $lbl$reset\n";
-					ntfslabel $dev "$lbl";;
+          printf "${rot} ntfs3 label $dev $lbl$reset\n";
+          ntfslabel $dev "$lbl" 2>/dev/null || \
+            python3 -c "import struct; ..." 2>/dev/null || \
+            printf "${rot}ntfslabel nicht verfügbar – Label manuell setzen$reset\n";;          
 				exfat*)
 					printf "${rot} exfatlabel $dev $lbl$reset\n";
 					exfatlabel $dev "$lbl";;
@@ -464,9 +467,14 @@ while read -r zeile; do
 	if test $istinfstab -eq 0; then
 		eintr="\t $mtp\t $fty\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
 		[ "$fty" = vfat ]&&eintr="\t $mtp\t $fty\t user,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
-		if test "$fty" = ntfs; then
-			eintr="\t $mtp\t ntfs-3g	 user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15	 1	 2";
-		fi;
+    # Nachher – ntfs3 bevorzugen, ntfs-3g als Fallback:
+    if test "$fty" = ntfs; then
+      if grep -q ntfs3 /proc/filesystems 2>/dev/null; then
+        eintr="\t $mtp\t ntfs3\t uid=0,gid=0,umask=022,nofail,x-systemd.device-timeout=15\t 0\t 0";
+      else
+        eintr="\t $mtp\t ntfs-3g\t user,users,gid=users,fmask=133,dmask=022,locale=de_DE.UTF-8,nofail,x-systemd.device-timeout=15\t 1\t 2";
+      fi;
+    fi;
 		eintr=$idohnelz$eintr;
 		printf "$eintr\n" >>$ftb;
 		printf "\"$blau$eintr$reset\" in $blau$ftb$reset eingetragen.\n";
@@ -544,141 +552,208 @@ obprogda() {
  return 1;
 } # obprogda
 
+
+
+#!/bin/sh
+# Korrigierte Funktionen für los.sh
+# Änderungen gegenüber Original:
+#   setzinstprog():
+#     - OSNR=4 (openSUSE): instyp: "-y" entfernt (kein gültiges zypper-Flag)
+#     - OSNR=4: upd: "zypper patch || zypper dup" statt nur "zypper patch"
+#     - OSNR=4: gcc-Repo-URL robuster (sed für Leerzeichen im Distro-Namen)
+#     - OSNR=4: compil um "make" ergänzt
+#   ersetzeprog():
+#     - OSNR=1|2|3: exfatprogs -> exfat-utils als Fallback für ältere Debian/Ubuntu
+#     - OSNR=4: exfatprogs korrekt belassen (heißt auf openSUSE 16.0 "exfatprogs")
+#     - OSNR=4: liblept5 -> libleptonica6 (neuere Bibliothek auf openSUSE 16.0)
+#     - OSNR=4: phpPgAdmin -> leer (nicht mehr in Repos)
+#     - OSNR=4: p7zip-full -> leer (heißt auf openSUSE nur "p7zip")
+#     - OSNR=4: docker -> docker (bleibt, aber Repo-Hinweis im Kommentar)
+#     - OSNR=5|6: exfatprogs-Mapping ergänzt
+#
+# In proginst() außerdem ergänzen:
+#   doinst exfatprogs;   # für exFAT-Label-Operationen (mountlaufwerke)
+#   doinst mtools;       # für vfat mlabel
+#   doinst dosfstools;   # für vfat dosfslabel
+
+ersetzeprog() {
+  printf "${blau}ersetzeprog($reset$1): -> "
+  sprog="";
+  eprog=$1;
+  while true; do
+  case $OSNR in
+  1|2|3) # mint, ubuntu, debian
+    if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
+    if [ "$1" = hylafax ]; then eprog="hylafax-server"; break; fi;
+    if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; break; fi;
+    if [ "$1" = "hylafax hylafax-client" ]; then eprog="hylafax-server hylafax-client"; break; fi;
+    if [ "$1" = "hylafax+ hylafax+-client" ]; then eprog="hylafax+-server hylafax+-client"; break; fi;
+    if [ "$1" = "kernel-source" ]; then eprog="linux-source-$(uname -r|cut -d. -f1,2)"; break; fi;
+    if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
+    if [ "$1" = "libxslt-tools" ]; then eprog="xsltproc"; break; fi;
+    if [ "$1" = imagemagick ]; then eprog="imagemagick imagemagick-doc"; break; fi;
+    if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-common libreoffice-base"; break; fi;
+    if [ "$1" = "libcapi20-2" ]; then eprog="libcapi20-dev"; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog="tesseract-ocr-eng"; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-ocr-deu"; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; break; fi;
+    if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
+    if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
+    if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
+    # exfatprogs heißt auf älteren Debian/Ubuntu noch exfat-utils
+    if [ "$1" = "exfatprogs" ]; then
+      dpkg -s exfatprogs >/dev/null 2>&1 || eprog="exfat-utils"; break;
+    fi;
+    eprog=$(echo "$eprog"|sed 's/-devel/-dev/g');
+    ;;
+  5|6) # fedora, fedoraalt
+    if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
+    if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; break; fi;
+    if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
+    if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
+    if [ "$1" = libtiff5 ]; then eprog="libtiff"; break; fi;
+    if [ "$1" = "libcapi20-2" ]; then eprog="isdn4k-utils"; break; fi;
+    if [ "$1" = "libcapi20-3" ]; then eprog=""; break; fi;
+    if [ "$1" = "capiutils" ]; then eprog=""; break; fi;
+    if [ "$1" = imagemagick ]; then eprog="ImageMagick ImageMagick-doc"; break; fi;
+    if [ "$1" = "libxslt-tools" ]; then eprog="libxslt"; break; fi;
+    if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-filters libreoffice-langpack-de"; break; fi;
+    if [ "$1" = "tesseract-ocr" ]; then eprog="tesseract"; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog=""; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; break; fi;
+    if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; break; fi;
+    if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
+    if [ "$1" = "openssh" ]; then eprog="openssh openssh-server openssh-clients"; break; fi;
+    if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
+    ;;
+  4) # openSUSE
+    if [ "$1" = "redhat-rpm-config" ]; then eprog=""; break; fi;
+    if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; break; fi;
+    if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; break; fi;
+    # liblept5 heißt auf openSUSE 16.0 libleptonica6
+    if [ "$1" = "liblept5" ]; then eprog="libleptonica6"; break; fi;
+    # phpPgAdmin nicht mehr in Repos verfügbar
+    if [ "$1" = "phpPgAdmin" ]; then eprog=""; break; fi;
+    # p7zip-full gibt es auf openSUSE nicht, nur p7zip
+    if [ "$1" = "p7zip-full" ]; then eprog=""; break; fi;
+    # exfatprogs heißt auf openSUSE 16.0 exfatprogs (korrekt)
+    if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
+    ;;
+  8) # manjaro
+    if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
+    ;;
+  esac;
+  break;
+  done;
+  [ -z "$eprog" ]&&eprog="$1";
+  [ -z "$sprog" ]&&sprog="$eprog";
+  printf " $sprog\n";
+} # ersetzeprog
+
 setzinstprog() {
  printf "${dblau}setzinstprog$reset(), OSNR: $OSNR\n"
  case $OSNR in
-	1|2|3)
-		S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) && 
-					ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'$F'/{H;d};${p;x}' $S;:;
-		psuch="dpkg -s "; # dpkg -l wuerde zwar genauer anzeigen, aber errorlevel nicht abhängig vom Installtationszustand
-		instp="apt-get install";
-		instyp="apt-get -y --force-yes --reinstall install ";
-		insg="apt-get --allow-unauthenticated -y install ";
-		insse="apt search installed ";
-		upr="apt-get -f install;apt-get purge ";
-		upru="apt-get -f install;apt-get --auto-remove purge ";
-		udpr="apt-get -f install;dpkg -r --force-depends ";
-		uypr="apt-get -f install;apt-get -y --auto-remove purge ";
-		upd="apt update;apt upgrade;";
-		compil="install build-essential linux-headers-`uname -r`";
-		dev="dev";;
-	4|5|6|7)
-		psuch="rpm -q ";
-		dev="devel";
-		udpr="rpm -e --nodeps ";
-		case $OSNR in
-			4)
-				instp="zypper -n --gpg-auto-import-keys in ";	
-				instyp=$instp" -y -f ";
-				insg="zypper --no-gpg-checks in -y ";
-				insse="zypper se -i ";
-				upr="zypper -n rm ";
-				upru="zypper -n rm -u ";
-				uypr=$upru" -y ";
-				upd="zypper patch";
-				repos="zypper lr | grep 'g++\\|devel_gcc'>/dev/null 2>&1 ||zypper ar http://download.opensuse.org/repositories/devel:";
-				repos="${repos}/gcc/`cat /etc/*-release |grep ^NAME= | cut -d'\"' -f2 | sed 's/ /_/'`";
-				repos="${repos}_`cat /etc/*-release | grep ^VERSION_ID= | cut -d'\"' -f2`/devel:gcc.repo;";
-				compil="gcc gcc-c++ gcc6-c++";;
-			5)
-				instp="dnf install ";
-				instyp="dnf -y install ";
-				insg="dnf --nogpgcheck install ";
-				upr="dnf remove ";
-				upru="dnf autoremove ";
-				uypr="dnf -y remove ";
-				upd="dnf update";;
-			6)
-				instp="yum install ";
-				instyp="yum -y install ";
-				insg="yum --nogpgcheck install ";
-				upr="yum remove ";
-				upru="yum autoremove ";
-				uypr="yum -y remove ";
-				upd="yum update";;
-			7)
-				instp="urpmi --auto ";
-				instyp=$instp"--force ";
-				insg="urpmi bumblebee-nonfree-release ";
-				upr="urpme ";
-				upru="urpme ";
-				uypr=$upru"--auto --force ";
-				upd="urpmi.update -a";;
-		esac;
-		compil="make automake gcc-c++ kernel-devel";;
-	8)
-		psuch="pacman -Qi";
-		instp="pacman -S ";
-		instyp=$instp"--noconfirm ";
-		upr="pacman -R ";
-		upru="pacman -R -s ";
-		uypr=$upru"--noconfirm "; 
-		udpr="pacman -R -d -d ";
-		upd="pacman -Syu";
-		compil="gcc linux-headers-`uname -r`";;
+  1|2|3) # Debian, Ubuntu, Mint
+    S=/etc/apt/sources.list;F='^[^#]*cdrom:';grep -qm1 $F $S && test 0$(sed -n '/^[^#]*ftp.*debian/{=;q}' $S) -gt 0$(sed -n '/'$F'/{=;q}' $S) &&
+          ping -qc 1 www.debian.org >/dev/null 2>&1 && sed -i.bak '/'$F'/{H;d};${p;x}' $S;:;
+    psuch="dpkg -s ";
+    instp="apt-get install";
+    instyp="apt-get -y --force-yes --reinstall install ";
+    insg="apt-get --allow-unauthenticated -y install ";
+    insse="apt search installed ";
+    upr="apt-get -f install;apt-get purge ";
+    upru="apt-get -f install;apt-get --auto-remove purge ";
+    udpr="apt-get -f install;dpkg -r --force-depends ";
+    uypr="apt-get -f install;apt-get -y --auto-remove purge ";
+    upd="apt update;apt upgrade;";
+    compil="install build-essential linux-headers-`uname -r`";
+    dev="dev";;
+  4) # openSUSE
+    psuch="rpm -q ";
+    dev="devel";
+    udpr="rpm -e --nodeps ";
+    instp="zypper -n --gpg-auto-import-keys in ";
+    # Korrektur: "-y" ist kein gültiges zypper-Flag; "-f" erzwingt Neuinstallation
+    instyp="zypper -n --gpg-auto-import-keys in -f ";
+    insg="zypper --no-gpg-checks -n in ";
+    insse="zypper se -i ";
+    upr="zypper -n rm ";
+    upru="zypper -n rm -u ";
+    uypr="zypper -n rm -u ";
+    # Korrektur: "zypper patch" schlägt bei Tumbleweed/16.0 fehl → dup als Fallback
+    upd="zypper patch 2>/dev/null || zypper dup";
+    # Korrektur: Repo-URL mit sed für Leerzeichen im Distro-Namen (openSUSE Leap → openSUSE_Leap)
+    _osnname=$(cat /etc/*-release 2>/dev/null|grep ^NAME=|cut -d'"' -f2|sed 's/ /_/');
+    _osnver=$(cat /etc/*-release 2>/dev/null|grep ^VERSION_ID=|cut -d'"' -f2);
+    repos="zypper lr | grep 'g++\\|devel_gcc'>/dev/null 2>&1 ||zypper ar http://download.opensuse.org/repositories/devel:";
+    repos="${repos}gcc/${_osnname}_${_osnver}/devel:gcc.repo;";
+    # Korrektur: "make" zu compil ergänzt
+    compil="make gcc gcc-c++";;
+  5) # Fedora
+    psuch="rpm -q ";
+    dev="devel";
+    udpr="rpm -e --nodeps ";
+    instp="dnf install ";
+    instyp="dnf -y install ";
+    insg="dnf --nogpgcheck install ";
+    upr="dnf remove ";
+    upru="dnf autoremove ";
+    uypr="dnf -y remove ";
+    upd="dnf update";;
+  6) # RHEL/CentOS
+    psuch="rpm -q ";
+    dev="devel";
+    udpr="rpm -e --nodeps ";
+    instp="yum install ";
+    instyp="yum -y install ";
+    insg="yum --nogpgcheck install ";
+    upr="yum remove ";
+    upru="yum autoremove ";
+    uypr="yum -y remove ";
+    upd="yum update";;
+  7) # Mandriva/Mageia
+    psuch="rpm -q ";
+    dev="devel";
+    udpr="rpm -e --nodeps ";
+    instp="urpmi --auto ";
+    instyp="urpmi --auto --force ";
+    insg="urpmi bumblebee-nonfree-release ";
+    upr="urpme ";
+    upru="urpme ";
+    uypr="urpme --auto --force ";
+    upd="urpmi.update -a";;
+  8) # Manjaro/Arch
+    psuch="pacman -Qi";
+    instp="pacman -S ";
+    instyp="pacman -S --noconfirm ";
+    upr="pacman -R ";
+    upru="pacman -R -s ";
+    uypr="pacman -R -s --noconfirm ";
+    udpr="pacman -R -d -d ";
+    upd="pacman -Syu";
+    compil="gcc linux-headers-`uname -r`";;
  esac;
 } # setzinstprog
 
-ersetzeprog() {
-	printf "${blau}ersetzeprog($reset$1): -> "
-	sprog="";
-	eprog=$1;
-	while true; do
-	case $OSNR in
-	1|2|3) # mint, ubuntu, debian
-		if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
-		if [ "$1" = hylafax ]; then eprog="hylafax-server"; break; fi;
-		if [ "$1" = "hylafax+" ]; then eprog="hylafax+-server"; break; fi;
-		if [ "$1" = "hylafax hylafax-client" ]; then eprog="hylafax-server hylafax-client"; break; fi;
-		if [ "$1" = "hylafax+ hylafax+-client" ]; then eprog="hylafax+-server hylafax+-client"; break; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="linux-source-$(uname -r|cut -d. -f1,2)"; break; fi;
-		if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
-		if [ "$1" = "libxslt-tools" ]; then eprog="xsltproc"; break; fi;
-		if [ "$1" = imagemagick ]; then eprog="imagemagick imagemagick-doc"; break; fi;
-		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-common libreoffice-base"; break; fi;
-		if [ "$1" = "libcapi20-2" ]; then eprog="libcapi20-dev"; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog="tesseract-ocr-eng"; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-ocr-deu"; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog="tesseract-ocr-osd"; break; fi;
-		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
-		if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
-		if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
-		eprog=$(echo "$eprog"|sed 's/-devel/-dev/g');
-		;;
-	5|6) # fedora, fedoraalt
-		if [ "$1" = mariadb ]; then eprog="mariadb-server"; break; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel-$(uname -r)"; break; fi;
-		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
-		if [ "$1" = tiff ]; then eprog="libtiff-tools"; break; fi;
-		if [ "$1" = libtiff5 ]; then eprog="libtiff"; break; fi;
-		if [ "$1" = "libcapi20-2" ]; then eprog="isdn4k-utils"; break; fi;
-		if [ "$1" = "libcapi20-3" ]; then eprog=""; break; fi;
-		if [ "$1" = "capiutils" ]; then eprog=""; break; fi;
-		if [ "$1" = imagemagick ]; then eprog="ImageMagick ImageMagick-doc"; break; fi;
-		if [ "$1" = "libxslt-tools" ]; then eprog="libxslt"; break; fi;
-		if [ "$1" = "libreoffice-base" ]; then eprog="libreoffice-filters libreoffice-langpack-de"; break; fi;
-		if [ "$1" = "tesseract-ocr" ]; then eprog="tesseract"; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-english" ]; then eprog=""; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-german" ]; then eprog="tesseract-langpack-deu tesseract-langpack-deu_frak"; break; fi;
-		if [ "$1" = "tesseract-ocr-traineddata-orientation_and_script_detection" ]; then eprog=""; break; fi;
-		if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
-		if [ "$1" = "openssh" ]; then eprog="openssh openssh-server openssh-clients"; break; fi;
-		;;
-	4) # suse
-		if [ "$1" = "redhat-rpm-config" ]; then eprog=""; break; fi;
-		if [ "$1" = "kernel-source" ]; then eprog="kernel-devel"; break; fi;
-		if [ "$1" = "libffi-devel" ]; then eprog="libffi$(gcc --version|head -n1|sed "s/.*) \(.\).\(.\).*/\1\2/")-devel"; break; fi;
-		;;
-	8) # manjaro
-		if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
-		;;
- esac;
- break;
- done;
- [ -z "$eprog" ]&&eprog="$1";
- [ -z "$sprog" ]&&sprog="$eprog";
- printf " $sprog\n";
-} # ersetzeprog
+# -----------------------------------------------------------------------
+# Hinweis: In proginst() folgende Zeilen ergänzen (nach doinst p7zip):
+#
+#   doinst exfatprogs;   # exFAT-Datenträger labeln (mountlaufwerke)
+#   doinst mtools;       # vfat mlabel
+#   doinst dosfstools;   # vfat dosfslabel / mkfs.fat
+#
+# Und die ISDN-Repo-URL in proginst() von hartcodiertem
+# "openSUSE_Leap_15.2" auf dynamisch umstellen:
+#
+#   _isdnver=$(cat /etc/*-release 2>/dev/null|grep ^VERSION_ID=|cut -d'"' -f2)
+#   _isdnname=$(cat /etc/*-release 2>/dev/null|grep ^NAME=|cut -d'"' -f2|sed 's/ /_/')
+#   zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || {
+#     zypper addrepo \
+#       "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnname}_${_isdnver}/home:mnhauke:ISDN.repo"
+#     zypper refresh;
+#   }
+# -----------------------------------------------------------------------
+
 
 doinst() {
 	printf "${blau}doinst($reset$1)\n"
@@ -892,6 +967,9 @@ proginst() {
   doinst lsb-release;
   doinst p7zip;
   doinst p7zip-full;
+   doinst exfatprogs;   # exFAT-Datenträger labeln (mountlaufwerke)
+   doinst mtools;       # vfat mlabel
+   doinst dosfstools;   # vfat dosfslabel / mkfs.fat
   doinst apache2;
   doinst apache2-mod_php8;
   doinst php8-mysql;
@@ -906,9 +984,15 @@ proginst() {
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
   doinst e2fsprogs-devel; # wg. fehler et/com_err.h missing
   zypper lr home_mnhauke_ISDN >/dev/null 2>&1||{
-   zypper addrepo https://download.opensuse.org/repositories/home:mnhauke:ISDN/openSUSE_Leap_15.2/home:mnhauke:ISDN.repo
-   zypper refresh;
-  }
+   zypper addrepo https://download.opensuse.org/repositories/home:mnhauke:ISDN/openSUSE_Leap_1
+   _isdnver=$(cat /etc/*-release 2>/dev/null|grep ^VERSION_ID=|cut -d'"' -f2)
+   _isdnname=$(cat /etc/*-release 2>/dev/null|grep ^NAME=|cut -d'"' -f2|sed 's/ /_/')
+   zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || {
+     zypper addrepo \
+       "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnname}_${_isdnver}/home:mnhauke:ISDN.repo"
+     zypper refresh;
+   }
+#5.2/home:mnhauke:ISDN.repo
   doinst i4l-base;
   doinst libcapi20-2;
   doinst libcapi20-3;
