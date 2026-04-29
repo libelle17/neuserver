@@ -222,7 +222,7 @@ setzhost() {
   };
   esac;
   # wake on lan erlauben
-  mac=$(ip a|sed -n '/^.: eth/{n;s/^ *[^ ]* \([^ ]*\) .*$/\1/;p}');
+  mac=$(ip link show|sed -n '/^[0-9]*: \(eth\|en\)[^:]*:/{n;s/.*link\/ether \([^ ]*\).*/\1/p}'|head -n1);
   [ "$verb" ]&&printf "${blau}mac: ${reset}$mac\n";
   if [ "$mac" ]; then
     dat="/etc/systemd/network/50-wired.link";
