@@ -1078,58 +1078,63 @@ postfix() {
 } # postfix
 
 bildschirm() {
-	printf "${dblau}bildschirm$reset()\n"
-	for SITZ in gnome.desktop cinnamon.settings-daemon; do
-			gsettings set org.$SITZ.peripherals.keyboard repeat-interval 40 2>/dev/null;
-			gsettings set org.$SITZ.peripherals.keyboard delay 300 2>/dev/null;
-	done;
-	if false; then
-    if test "$(id -u)" -ne 0 -o true; then
-  #		github;
-      if test "$DESKTOP_SESSION" = "gnome" -o "$DESKTOP_SESSION" = "gnome-classic"; then
-        gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 40;
-        gsettings set org.gnome.desktop.peripherals.keyboard delay 300;
-      fi;
-      if [ "$DESKTOP_SESSION" = cinnamon ]; then
-        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard repeat-interval 40;
-        gsettings set org.cinnamon.settings-daemon.peripherals.keyboard delay 300;
-      fi;
-    fi;
-	fi;
-  # 16.11.24
-  # aktueller Benutzer, auch im superuser-mode (wird aber nicht gebraucht): loginctl|head -n2|tail -n1|sed 's/[0-9 ]*\([^ ]*\).*$/\1/'
-  for v in /root $(find /home -mindepth 1 -maxdepth 1); do 
-      d=$v/.config/kcminputrc; 
-      if test -f "$d"; then 
-        sect="\[Keyboard\]"; 
-        sed -i '/^'$sect'/{:a;n;ba;q};$a'$sect "$d"; 
-        eint="RepeatDelay";wert="=247"; 
-        sed -i '/^\('$eint'\).*/s//\1'$wert'/' "$d"; grep -q "$eint" "$d" || sed -i '/^'$sect'/s/'$sect'/'$sect\\n$eint$wert'/' "$d";
-      fi; 
+  printf "${dblau}bildschirm$reset()\n"
+  delay=250;  # Millisekunden bis Wiederholung beginnt
+  rate=27;    # Wiederholungen pro Sekunde
+
+  # 1) KDE Plasma (5+6): kcminputrc für alle Benutzer direkt schreiben
+  for v in /root $(find /home -mindepth 1 -maxdepth 1 -type d); do
+    d="$v/.config/kcminputrc"
+    mkdir -p "$v/.config"
+    # [Keyboard]-Abschnitt anlegen falls fehlend
+    grep -q '^\[Keyboard\]' "$d" 2>/dev/null || printf '\n[Keyboard]\n' >>"$d"
+    # RepeatDelay setzen oder einfügen
+    if grep -q '^RepeatDelay=' "$d" 2>/dev/null; then
+      sed -i "s/^RepeatDelay=.*/RepeatDelay=$delay/" "$d"
+    else
+      sed -i '/^\[Keyboard\]/a RepeatDelay='"$delay" "$d"
+    fi
+    # RepeatRate setzen oder einfügen
+    if grep -q '^RepeatRate=' "$d" 2>/dev/null; then
+      sed -i "s/^RepeatRate=.*/RepeatRate=$rate/" "$d"
+    else
+      sed -i '/^\[Keyboard\]/a RepeatRate='"$rate" "$d"
+    fi
+    printf "Keyboard-Repeat in $blau$d$reset gesetzt.\n"
   done
-  case "$WINDOWMANAGER" in /usr/bin/startkde|/usr/bin/startplasma-x11)
-      DNam=kcminputrc;
-      D=~/.config/$DNam;
-      [ -f $D ]||D=/etc/xdg/$DNam;
-      RD="RepeatDelay=";
-      rd=210;
-      RR="RepeatRate=";
-      rr=27;
-      if ! grep -q "$RD$rd" "$D" || ! grep -q "$RR$rr" "$D"; then
-        echo editiere $D;
-        ue="\[Keyboard\]";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
-        ue="$RD";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
-        ue="$RR";sed -i "/^"$ue"/q;\$a"$ue"" "$D"
-        sed -i "s/^\($RD\).*/\1$rd/;s/^\($RR\).*/\1$rr/" "$D";
-        #  { export DISPLAY=:0;xauth add $DISPLAY . hexkey;};
-        if test "$DISPLAY"; then 
-          echo DISPLAY: $DISPLAY
-          echo xset r rate $rd $rr;
-          xset r rate $rd $rr;
-          echo "Fertig mit xset"
-        fi;
-      fi;;
-  esac;
+
+  # 2) kwriteconfig6/kwriteconfig5 als laufender Benutzer (falls X/Wayland aktiv)
+  aktusr=$(logname 2>/dev/null||loginctl user-status 2>/dev/null|sed -n '1s/\(.*\) .*/\1/p'||who|head -n1|awk '{print $1}')
+  for kwrite in kwriteconfig6 kwriteconfig5; do
+    if which $kwrite >/dev/null 2>&1; then
+      su -l "$aktusr" -c "$kwrite --file kcminputrc --group Keyboard --key RepeatDelay $delay" 2>/dev/null&&\
+      su -l "$aktusr" -c "$kwrite --file kcminputrc --group Keyboard --key RepeatRate  $rate"  2>/dev/null&&\
+      printf "${blau}$kwrite$reset: RepeatDelay=$delay, RepeatRate=$rate gesetzt.\n"
+      break
+    fi
+  done
+
+  # 3) X11: xset (nur wenn DISPLAY gesetzt, d.h. X läuft)
+  if [ "$DISPLAY" ]; then
+    xset r rate $delay $rate 2>/dev/null&&printf "${blau}xset r rate$reset $delay $rate gesetzt.\n"
+  fi
+
+  # 4) GNOME/Cinnamon (gsettings als eingeloggter Benutzer)
+  for SITZ in gnome.desktop cinnamon.settings-daemon; do
+    su -l "$aktusr" -c "gsettings set org.$SITZ.peripherals.keyboard repeat-interval $((1000/rate)) 2>/dev/null" 2>/dev/null
+    su -l "$aktusr" -c "gsettings set org.$SITZ.peripherals.keyboard delay $delay 2>/dev/null" 2>/dev/null
+  done
+
+  # 5) TTY/Konsole: kbdrate (gilt für Textkonsole, unabhängig von X/Wayland)
+  if which kbdrate >/dev/null 2>&1; then
+    kbdrate -d $delay -r $rate 2>/dev/null&&printf "${blau}kbdrate$reset -d $delay -r $rate gesetzt.\n"
+  fi
+  # dauerhaft in /etc/vconsole.conf
+  vconsole=/etc/vconsole.conf
+  if [ -f "$vconsole" ]; then
+    grep -q '^RATE=' "$vconsole" && sed -i "s/^RATE=.*/RATE=$rate/" "$vconsole" || echo "RATE=$rate" >>"$vconsole"
+  fi
+
 } # bildschirm
 
 sambaconf() {
