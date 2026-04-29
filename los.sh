@@ -256,20 +256,31 @@ setzbenutzer() {
 } # setzbenutzer
 
 setzpfad() {
-	printf "${dblau}setzpfad$reset()\n";
-	RB=/root/bin;
-  echo "echo $PATH|grep \"$RB\""
-  if ! echo $PATH|grep "$RB" >/dev/null; then
-		EEN=/etc/environment;
-		if grep -q "^PATH=" "$EEN" 2>/dev/null; then # wirkt auch bei Fehlen von $EEN
-			if ! grep -q "$RB" "$EEN" 2>/dev/null; then
-  			sed -i.bak '/^PATH=/{s/=["'\'']\+\(.*\)["'\'']\+/="\1:'$(echo $RB|sed "s/\//\\\\\//g")'"/}' "$EEN";
-			fi;
-		else
-			echo PATH=\"$PATH:$RB\" >>"$EEN";
-		fi;
-		. "$EEN";
-	fi;
+  printf "${dblau}setzpfad$reset()\n";
+  RB=/root/bin;
+  # 1) /etc/environment (systemweit, wirkt nach nächstem Login)
+  EEN=/etc/environment;
+  if grep -q "^PATH=" "$EEN" 2>/dev/null; then
+    grep -q "$RB" "$EEN" 2>/dev/null || \
+      sed -i.bak '/^PATH=/{s/=["'\'']\+\(.*\)["'\'']\+/="\1:'$(echo $RB|sed "s/\//\\\\\//g")'"/}' "$EEN";
+  else
+    echo PATH=\"$PATH:$RB\" >>"$EEN";
+  fi;
+  # 2) /etc/profile.d/ (wird bei jedem Login-Shell-Start ausgeführt)
+  PPD=/etc/profile.d/rootbin.sh;
+  if [ ! -f "$PPD" ] || ! grep -q "$RB" "$PPD" 2>/dev/null; then
+    printf '# /root/bin in PATH aufnehmen\ncase ":$PATH:" in\n  *":%s:"*) ;;\n  *) export PATH="$PATH:%s" ;;\nesac\n' "$RB" "$RB" >"$PPD";
+    printf "PATH-Ergänzung in $blau$PPD$reset geschrieben.\n";
+  fi;
+  # 3) /root/.bashrc (sofort für root-Sessions)
+  BRC=/root/.bashrc;
+  grep -q "$RB" "$BRC" 2>/dev/null || \
+    printf '\n# /root/bin in PATH\ncase ":$PATH:" in\n  *":%s:"*) ;;\n  *) export PATH="$PATH:%s" ;;\nesac\n' "$RB" "$RB" >>"$BRC";
+  # 4) sofort in laufender Session aktiv
+  case ":$PATH:" in
+    *":$RB:"*) ;;
+    *) export PATH="$PATH:$RB"; printf "PATH sofort um $blau$RB$reset ergänzt.\n";;
+  esac;
 } # setzpfad
 
 setzprompt() {
@@ -1934,7 +1945,7 @@ variablen;
 echo osnr: $OSNR;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
  [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
- [ $obteil = 0 ]&&setzpfad;
+ setzpfad;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
