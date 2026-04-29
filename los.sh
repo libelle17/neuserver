@@ -1134,6 +1134,9 @@ bildschirm() {
 
 sambaconf() {
 	printf "${dblau}sambaconf$reset()\n"
+  mkdir -p /obslaeuft
+  mkdir -p /opt/turbomed
+  mkdir -p /srv/www/htdocs
   zustarten=0;
 	etcsamba="/etc/samba";[ -d "$etcsamba" ]||mkdir -p $etcsamba;
 	smbconf="smb.conf";
@@ -1146,6 +1149,15 @@ sambaconf() {
 	[ "$arbgr/" = "$workgr/" ]||sed -i '/WORKGROUP/{s/\([^"]*"[^"]*"[^"]*"\)[^"]*\(.*\)/\1'$arbgr'\2/}' $smbvars;
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2="$instvz/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für awksmb.sh (s.u)
+    # Pfade für hardcodierte Shares anlegen und SELinux-Kontext setzen
+  for pfad in /opt/turbomed /srv/www/htdocs /obslaeuft; do
+    if [ ! -d "$pfad" ]; then
+      mkdir -p "$pfad"
+      printf "Verzeichnis $blau$pfad$reset angelegt.\n"
+    fi
+    semanage fcontext -a -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||true
+    restorecon -Rv "$pfad" 2>/dev/null||true
+  done
   awk -v z=0 '
     function drucke(s1,s2,avail) {
       printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
@@ -1158,7 +1170,9 @@ sambaconf() {
       drucke("php","/srv/www/htdocs",1);
       drucke("obslaeuft","/obslaeuft",1);
     }
-    $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" &&/^[^#]/ {
+  $3~"^ext|^ntfs|^btrfs$|^reiserfs$|^vfat$|^exfat|^cifs$" &&$2!="/" \
+  &&$2!~/^\/var(\/|$)|^\/root(\/|$)|^\/boot(\/|$)|^\/usr(\/|$)|^\/proc(\/|$)|^\/sys(\/|$)/ \
+  &&/^[^#]/ {
        n=$2;
        if (n~"efi") {
          sub(".*/","",n);
@@ -1208,6 +1222,11 @@ sambaconf() {
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
 	fi;
+  # SELinux-Kontexte für Samba-Logverzeichnis sicherstellen
+  # (update-samba-security-profile kann /var/log falsch labeln)
+  chcon -R -t samba_log_t /var/log/samba/ 2>/dev/null||true
+  chcon -t auditd_log_t /var/log/audit/ 2>/dev/null||true
+  chcon -t auditd_log_t /var/log/audit/audit.log 2>/dev/null||true
 } # sambaconf
 
 firewall() {
