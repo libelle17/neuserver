@@ -242,6 +242,7 @@ setzhost() {
 setzbenutzer() {
   printf "${dblau}setzbenutzer$reset(), gruppe: $gruppe\n";
   pruefgruppe $gruppe
+  setzinstprog;
   $psuch samba 2>/dev/null||$instp samba
   systemctl start smb 2>/dev/null||systemctl start smbd 2>/dev/null;
   systemctl enable smb 2>/dev/null||systemctl enable smbd 2>/dev/null;
