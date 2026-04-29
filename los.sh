@@ -27,6 +27,21 @@ tdpf="/DATA/turbomed" # Turbomed-Dokumentenpfad
 musr=praxis;
 obschreiben=0;
 
+# 30.4.26: muss noch eingebaut werden
+bleibwach() {
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+sudo mkdir -p /etc/systemd/logind.conf.d/
+ sudo tee /etc/systemd/logind.conf.d/10-nosuspend.conf << 'EOF'
+[Login]
+IdleAction=ignore
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleSuspendKey=ignore
+HandleHibernateKey=ignore
+EOF
+sudo systemctl restart systemd-logind
+}
+
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
@@ -950,6 +965,14 @@ proginst() {
 	doinst zsh;
 	doinst curl;
 	doinst cifs-utils;
+  # convmv liegt im M17N-Repository, nicht in Standard-Repos
+  if [ $OSNR -eq 4 ]; then
+  _osnver=$(grep ^VERSION_ID= /etc/os-release 2>/dev/null|cut -d'"' -f2);
+  zypper lr M17N >/dev/null 2>&1 || {
+    zypper addrepo "https://download.opensuse.org/repositories/M17N/${_osnver}/M17N.repo";
+    zypper --gpg-auto-import-keys refresh;
+  }
+  fi
   doinst convmv; # fuer Turbomed
   doinst chrony; # fuer stutzeDBBack.sh
 #  doinst libvmime1; # fuer stutzeDBBack.sh
