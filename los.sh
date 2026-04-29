@@ -278,7 +278,7 @@ setzprompt() {
   for fnr in $gesnr; do
     FB="\[$(printf '\033[48;5;253;38;5;0'$fnr'm')\]";
     FBH="\[$(printf '\033[48;5;255;38;5;0'$fnr'm')\]"
-    PSh="${FB}Farbe $fnr: \u@\h(."$(ip route get 1.1.1.1 2>/dev/null|awk '/src/{print $NF}'|cut -d. -f4)"):${FBH}\w${RESET}>"
+    PSh="${FB}Farbe $fnr: \u@\h(."$(ip route get 1.1.1.1 2>/dev/null|awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}'|cut -d. -f4)"):${FBH}\w${RESET}>"
     [ $obbash -eq 1 ]&&{
       printf "${PSh@P}";
     }||{
@@ -298,7 +298,7 @@ setzprompt() {
   echo "FB=\"\\[\$(printf '\\e[48;5;253;38;5;0'\$FNr'm')\\]\"" >>$BBL;
   echo "FBH=\"\\[\$(printf '\\e[48;5;255;38;5;0'\$FNr'm')\\]\"" >>$BBL;
   echo "RESET=\"\\[\$(printf '\\e[00m')\\]\"" >>$BBL;
-  echo "PS1=\"\${FB}\\u@\\h(.\"\$(ip route get 1.1.1.1 2>/dev/null|awk '/src/{print \$NF}'|cut -d. -f4)\"):\${FBH}\\w\${RESET}>\"" >>$BBL;
+  echo "PS1=\"\${FB}\\u@\\h(.\"\$(ip route get 1.1.1.1 2>/dev/null|awk '{for(i=1;i<=NF;i++) if(\$i==\"src\") print \$(i+1)}'|cut -d. -f4)\"):\${FBH}\\w\${RESET}>\"" >>$BBL;
   echo "export NCURSES_NO_UTF8_ACS=1" >>$BBL;
 } # setzprompt
 
