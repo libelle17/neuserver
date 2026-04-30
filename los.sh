@@ -1146,19 +1146,21 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
 	systemctl restart $sshd;
 	doinst git;
   VORVZ=$(pwd);
+  zypper rm -y libicu-devel; # muss vor vmime-Build weg (ICU 77 inkompatibel mit vmime 0.9.2)
   [ -s /usr/local/include/vmime/vmime.hpp ]||{
     D=vmime;
     cd $HOME;
-    git clone http://github.com/libelle17/$D;
+    [ -d "$HOME/$D" ]||git clone git@github.com:libelle17/$D.git;
     cd $HOME/$D;
     mkdir -p build;
     cd build;
-    cmake ..;
-    make;
-    make install;
+    cmake -DVMIME_BUILD_SAMPLES=OFF ..;
+    cmake --build .;
+    cmake --install .;
   }
+  doinst libicu-devel; # nach vmime-Build wieder installieren
   # eigene Programme holen:
-  for D in autofax vmime anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
+  for D in autofax vmime_alt anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" -o -d "$HOME/$D/cmake" ]||{ 
       [ -d "$HOME/$D" ]&&{
