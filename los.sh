@@ -654,9 +654,6 @@ ersetzeprog() {
     # exfatprogs heißt auf openSUSE 16.0 exfatprogs (korrekt)
     if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
     if [ "$1" = "curlftfs" ]; then eprog="curlftpfs"; break; fi;
-    if [ "$1" = "phpPgAdmin" ]; then eprog=""; break; fi;
-    if [ "$1" = "p7zip-full" ]; then eprog=""; break; fi;
-    if [ "$1" = "liblept5" ]; then eprog="libleptonica6"; break; fi;
     ;;
   8) # manjaro
     if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
@@ -963,6 +960,11 @@ proginst() {
 	# fehlende Programme installieren
   # postfix, ist wohl schon datei
 	doinst htop;
+  # nmap seit openSUSE 16.0 im non-free-Repository
+  if [ $OSNR -eq 4 ]; then
+    zypper modifyrepo --enable openSUSE:repo-non-oss 2>/dev/null||true;
+    zypper refresh-services --with-repos 2>/dev/null||true;
+  fi
 	doinst nmap;
 	doinst vsftpd;
 	doinst openssh;
