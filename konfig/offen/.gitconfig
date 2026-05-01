@@ -1,10 +1,7 @@
+# This is Git's per-user configuration file.
+[user]
+# Please adapt and uncomment the following lines:
+name = root
+email = root@linux0.fritz.box
 [push]
 	default = simple
-[user]
-	name = Gerald Schade
-	email = gerald.schade@gmx.de
-[safe]
-	directory = /DATA/eigene Dateien/Programmierung/Dateilesen
-	directory = /DATA/eigene Dateien/Programmierung/DP
-	directory = /DATA/eigene Dateien/Programmierung/FotosBenenn
-	directory = /DATA/eigene Dateien/Programmierung

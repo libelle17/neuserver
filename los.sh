@@ -1180,16 +1180,20 @@ richtmariadbein() {
 			pruefmroot " neues" " das neue";
       # MariaDB 10.4+: IDENTIFIED BY in GRANT nicht mehr erlaubt -> CREATE USER + GRANT
       # Ersten Zugang über Unix-Socket-Root ohne Passwort:
-      ausf "mysql -u root -e\"CREATE USER IF NOT EXISTS '$mroot'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "mysql -u root -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' WITH GRANT OPTION\"" "${blau}";
-      ausf "mysql -u root -e\"CREATE USER IF NOT EXISTS '$mroot'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "mysql -u root -e\"GRANT ALL ON *.* TO '$mroot'@'%' WITH GRANT OPTION\"" "${blau}";
-      ausf "$mysqlbef -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-      ausf "$mysqlbef -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"CREATE USER IF NOT EXISTS 'mysql'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "$mysqlbef -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' WITH GRANT OPTION\"" "${blau}";
-      ausf "$mysqlbef -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "$mysqlbef -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";
-    test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
+      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS '$mroot'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR '$mroot'@'localhost' = PASSWORD('$mrpwd')\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' WITH GRANT OPTION\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS '$mroot'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR '$mroot'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO '$mroot'@'%' WITH GRANT OPTION\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'localhost' = PASSWORD('$mrpwd')\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' WITH GRANT OPTION\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
+      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";      
+      test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     $mysqlbef -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
     erg=$?;
     if test "$erg" -ne "0"; then
@@ -1217,8 +1221,10 @@ richtmariadbein() {
           pruefmroot;
 #          test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"CREATE USER IF NOT EXISTS '$musr'@'localhost' IDENTIFIED BY '$mpwd'\"" "${blau}";
+          ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"SET PASSWORD FOR '$musr'@'localhost' = PASSWORD('$mpwd')\"" "${blau}";
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' WITH GRANT OPTION\"" "${blau}";
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"CREATE USER IF NOT EXISTS '$musr'@'%' IDENTIFIED BY '$mpwd'\"" "${blau}";
+          ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"SET PASSWORD FOR '$musr'@'%' = PASSWORD('$mpwd')\"" "${blau}";
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' WITH GRANT OPTION\"" "${blau}";
       fi;
       echo datadir: $datadir;
