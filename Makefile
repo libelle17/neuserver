@@ -301,23 +301,23 @@ endef
 git: README.md
 # @git config --global user.name "Gerald Schade"
 # @git config --global user.email "gerald.schade@gmx.de"
-  @$(call machvers);
-  @printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
-    $(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
-    "$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA)
-  -cp -au Makefile Makefile.roh
-  @[ -d .git ]||{ \
-    curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
-  }
-  $(call setz_gitv,".")
-  -sh $(INSTVZ)/los.sh -konfig;        # NEU: Configs sichern
-  -git add konfig/ .gitignore 2>/dev/null; # NEU: Configs zum Commit hinzufügen
-  -git config --global push.default simple;\
-  git add -u;\
-  git commit -m "Version $$(cat versdt)";\
-  [ "$(DPROG)" ]&&{ grep remote\ "origin"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};\
-  git push -u origin master;\
-  printf "Fertig mit make .git\n";
+	@$(call machvers);
+	@printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
+	  $(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
+	  "$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA)
+	-cp -au Makefile Makefile.roh
+	@[ -d .git ]||{ \
+	  curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
+	}
+	$(call setz_gitv,".")
+	-sh $(INSTVZ)/los.sh -konfig;        # NEU: Configs sichern
+	-git add konfig/ .gitignore 2>/dev/null; # NEU: Configs zum Commit hinzufügen
+	-git config --global push.default simple;\
+	git add -u;\
+	git commit -m "Version $$(cat versdt)";\
+	[ "$(DPROG)" ]&&{ grep remote\ "origin"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};\
+	git push -u origin master;\
+	printf "Fertig mit make .git\n";
 
 .PHONY: giterlaub
 giterlaub:

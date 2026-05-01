@@ -1,0 +1,10 @@
+[push]
+	default = simple
+[user]
+	name = Gerald Schade
+	email = gerald.schade@gmx.de
+[safe]
+	directory = /DATA/eigene Dateien/Programmierung/Dateilesen
+	directory = /DATA/eigene Dateien/Programmierung/DP
+	directory = /DATA/eigene Dateien/Programmierung/FotosBenenn
+	directory = /DATA/eigene Dateien/Programmierung

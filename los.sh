@@ -76,7 +76,6 @@ commandline() {
 		case $para in
 			neu|new) obneu=1;obschreiben=1;;
 			v|-verbose) verb=1;;
-      konfig) obkonfig=1;;
 			h|-h|-hilfe|-help|?|-?)
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
@@ -111,6 +110,7 @@ commandline() {
           host) obhost=1;;
           prompt) obprompt=1;;
           mt) obmt=1;;
+          konfig) obkonfig=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
@@ -163,6 +163,233 @@ variablen() {
  srv0=; # zur Sicherheit
 } # variablen
 
+# VORBEDINGUNG: GPG-Passphrase einmalig setzen:
+#   read -s GPGPASS; echo "$GPGPASS" > /root/.gpgpass; chmod 600 /root/.gpgpass
+#   Dann /root/.gpgpass in /root/neuserver/.gitignore eintragen!
+#
+# ============================================================
+# Aufruf: in speichern() am Ende ergänzen: konfig_sichern;
+# oder direkt: los.sh -konfig
+# ------------------------------------------------------------
+
+konfig_sichern() {
+  printf "${dblau}konfig_sichern$reset()\n";
+  KVZB="$instvz/konfig";  # ~/neuserver/konfig
+  GPGPASS_FILE="$HOME/.gpgpass";
+
+  # GPG-Passphrase prüfen / abfragen
+  if [ ! -f "$GPGPASS_FILE" ]; then
+    printf "${rot}GPG-Passphrase fehlt.$reset Bitte eingeben (wird in $blau$GPGPASS_FILE$reset gespeichert):\n";
+    stty -echo; read GPGPASS; stty echo; printf "\n";
+    printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
+    chmod 600 "$GPGPASS_FILE";
+    printf "Gespeichert in $blau$GPGPASS_FILE$reset\n";
+  fi;
+
+  mkdir -p "$KVZB/offen" "$KVZB/verschluesselt";
+
+  # ---- 1) Unkritische Dateien – offen sichern ----
+  for f in \
+    "$HOME/.gitconfig" \
+    "$HOME/.gtkrc-2.0" \
+    "$HOME/.wget-hsts" \
+    ; do
+    [ -f "$f" ] && cp -au "$f" "$KVZB/offen/" && \
+      printf "gesichert (offen): $blau$(basename $f)$reset\n";
+  done;
+
+  # .vim-Verzeichnis
+  [ -d "$HOME/.vim" ] && {
+    mkdir -p "$KVZB/offen/.vim";
+    cp -aun "$HOME/.vim/." "$KVZB/offen/.vim/";
+    printf "gesichert (offen): $blau.vim/$reset\n";
+  };
+
+  # KDE kcminputrc (Tastatur-Repeat) – unkritisch
+  [ -f "$HOME/.config/kcminputrc" ] && {
+    mkdir -p "$KVZB/offen/config";
+    cp -au "$HOME/.config/kcminputrc" "$KVZB/offen/config/";
+    printf "gesichert (offen): $blau.config/kcminputrc$reset\n";
+  };
+
+  # ---- 2) Sensible Dateien – verschlüsselt sichern ----
+  TMPDIR_KRYPT=$(mktemp -d);
+  geaendert=;
+  for f in \
+    "$HOME/.fbcredentials" \
+    "$HOME/.tr64cred" \
+    "$HOME/.loscred" \
+    "$HOME/.mariadbpwd" \
+    "$HOME/.mariadbrpwd" \
+    "$HOME/.modbpwd" \
+    "$HOME/.mysqlpwd" \
+    "$HOME/.mysqlrpwd" \
+    "$HOME/.sturm" \
+    ; do
+    [ -f "$f" ] && {
+      cp "$f" "$TMPDIR_KRYPT/";
+      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
+      geaendert=1;
+    };
+  done;
+
+  # .gnupg – komplett (privater GPG-Schlüssel!)
+  [ -d "$HOME/.gnupg" ] && {
+    cp -a "$HOME/.gnupg" "$TMPDIR_KRYPT/.gnupg";
+    printf "vorgemerkt (verschlüsselt): $blau.gnupg/$reset\n";
+    geaendert=1;
+  };
+
+  # Programmkonfigurationen (beim ersten Aufruf angelegt)
+  for f in \
+    "$HOME/anrliste.conf" \
+    "$HOME/autofax.conf" \
+    "$HOME/fbfax.conf" \
+    "$HOME/impgl.conf" \
+    "$HOME/labimp.conf" \
+    "$HOME/labpath.conf" \
+    "$HOME/termine.conf" \
+    ; do
+    [ -f "$f" ] && {
+      cp "$f" "$TMPDIR_KRYPT/";
+      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
+      geaendert=1;
+    };
+  done;
+
+  # Alles verschlüsseln
+  if [ "$geaendert" ]; then
+    ARCHIV="$TMPDIR_KRYPT/konfig_sensibel.tar";
+    tar cf "$ARCHIV" -C "$TMPDIR_KRYPT" \
+      $(ls -A "$TMPDIR_KRYPT" | grep -v "konfig_sensibel");
+    gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
+      --symmetric --cipher-algo AES256 \
+      --output "$KVZB/verschluesselt/sensibel.tar.gpg" \
+      "$ARCHIV" && \
+      printf "${gruen}verschlüsselt: $blau$KVZB/verschluesselt/sensibel.tar.gpg$reset\n" || \
+      printf "${rot}Verschlüsselung fehlgeschlagen!$reset\n";
+  fi;
+  rm -rf "$TMPDIR_KRYPT";
+
+  # .gitignore sicherstellen
+  GI="$instvz/.gitignore";
+  for eintrag in ".gpgpass" "konfig/verschluesselt/sensibel.tar.gpg"; do
+    grep -q "^$eintrag$" "$GI" 2>/dev/null || \
+      printf "%s\n" "$eintrag" >>"$GI";
+  done;
+  # ACHTUNG: sensibel.tar.gpg NICHT in .gitignore – soll ins Repo!
+  # Nur .gpgpass selbst soll nie ins Repo:
+  sed -i '/^konfig\/verschluesselt\/sensibel\.tar\.gpg$/d' "$GI" 2>/dev/null;
+
+  printf "${gruen}konfig_sichern abgeschlossen.$reset\n";
+} # konfig_sichern
+
+# ------------------------------------------------------------
+# B) Neue Funktion: konfig_laden()
+# Aufruf: in proginst() nach git clone neuserver einfügen
+# ------------------------------------------------------------
+
+konfig_laden() {
+  printf "${dblau}konfig_laden$reset()\n";
+  KVZB="$instvz/konfig";
+  GPGPASS_FILE="$HOME/.gpgpass";
+
+  # ---- 1) Unkritische Dateien wiederherstellen ----
+  if [ -d "$KVZB/offen" ]; then
+    for f in "$KVZB/offen/".[a-z]*; do
+      [ -f "$f" ] || continue;
+      ziel="$HOME/$(basename $f)";
+      if [ ! -f "$ziel" ]; then
+        cp -a "$f" "$ziel";
+        printf "wiederhergestellt: $blau$ziel$reset\n";
+      else
+        printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
+      fi;
+    done;
+    # .vim
+    if [ -d "$KVZB/offen/.vim" ] && [ ! -d "$HOME/.vim" ]; then
+      cp -a "$KVZB/offen/.vim" "$HOME/.vim";
+      printf "wiederhergestellt: $blau$HOME/.vim/$reset\n";
+    fi;
+    # kcminputrc
+    if [ -f "$KVZB/offen/config/kcminputrc" ]; then
+      mkdir -p "$HOME/.config";
+      [ -f "$HOME/.config/kcminputrc" ] || {
+        cp "$KVZB/offen/config/kcminputrc" "$HOME/.config/kcminputrc";
+        printf "wiederhergestellt: $blau$HOME/.config/kcminputrc$reset\n";
+      };
+    fi;
+  fi;
+
+  # ---- 2) Sensible Dateien entschlüsseln ----
+  ARCHIV_GPG="$KVZB/verschluesselt/sensibel.tar.gpg";
+  [ -f "$ARCHIV_GPG" ] || {
+    printf "${rot}Kein verschlüsseltes Archiv gefunden: $ARCHIV_GPG$reset\n";
+    return 0;
+  };
+
+  # Passphrase abfragen falls fehlend
+  if [ ! -f "$GPGPASS_FILE" ]; then
+    printf "GPG-Passphrase für $blau$ARCHIV_GPG$reset eingeben:\n";
+    stty -echo; read GPGPASS; stty echo; printf "\n";
+    printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
+    chmod 600 "$GPGPASS_FILE";
+  fi;
+
+  TMPDIR_KRYPT=$(mktemp -d);
+  gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
+    --decrypt "$ARCHIV_GPG" | tar xf - -C "$TMPDIR_KRYPT" 2>/dev/null;
+  if [ $? -ne 0 ]; then
+    printf "${rot}Entschlüsselung fehlgeschlagen – Passphrase prüfen!$reset\n";
+    rm -rf "$TMPDIR_KRYPT";
+    return 1;
+  fi;
+
+  # Dateien nur kopieren wenn noch nicht vorhanden
+  for f in "$TMPDIR_KRYPT/"*; do
+    [ -e "$f" ] || continue;
+    bn=$(basename "$f");
+    # Programmkonfigurationen ins Homeverzeichnis
+    case "$bn" in
+      *.conf)
+        ziel="$HOME/$bn";;
+      .gnupg)
+        ziel="$HOME/.gnupg";;
+      *)
+        ziel="$HOME/$bn";;
+    esac;
+    if [ ! -e "$ziel" ]; then
+      cp -a "$f" "$ziel";
+      chmod 600 "$ziel" 2>/dev/null;
+      printf "wiederhergestellt (sensibel): $blau$ziel$reset\n";
+    else
+      printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
+    fi;
+  done;
+
+  rm -rf "$TMPDIR_KRYPT";
+  printf "${gruen}konfig_laden abgeschlossen.$reset\n";
+} # konfig_laden
+
+# ============================================================
+# D) In ~/neuserver/Makefile – git-Target ergänzen
+# ============================================================
+# git: ...
+#     sh $(INSTVZ)/los.sh -konfig   # Configs sichern vor Push
+#     git add konfig/
+#     -git add .gitignore
+#     ... (rest wie bisher)
+#
+# wobei INSTVZ=/root/neuserver
+
+# ============================================================
+# E) Einmalige Einrichtung – auf linux0 ausführen:
+# ============================================================
+# printf "Bitte GPG-Passphrase eingeben (mind. 20 Zeichen):\n"
+# stty -echo; read GPGPASS; stty echo
+# printf "%s" "$GPGPASS" > /root/.gpgpass
+# chmod 600 /root/.gpgpass
+# # Passphrase sicher aufbewahren (Passwort-Manager o.ä.)!
 speichern() {
 	printf "${dblau}obschreiben$reset()obschreiben: $obschreiben, loscred: $loscred\n";
 	if test $obschreiben -ne 0; then
@@ -182,7 +409,6 @@ speichern() {
     printf " $pwt=$mpwd\n" >>"$phppwd";
     printf "?>" >"$phppwd";
 	fi;
-  konfig_sichern;
 } # speichern
 
 bleibwach() {
@@ -2126,7 +2352,7 @@ echo Starte mit los.sh...
 variablen;
 echo osnr: $OSNR;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
- [ $obteil = 0 -o $obsmb ]&&setzbenutzer;
+ [ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;
  setzpfad;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;
@@ -2158,230 +2384,3 @@ if false; then
 } fi;
 fi;
 
-# VORBEDINGUNG: GPG-Passphrase einmalig setzen:
-#   read -s GPGPASS; echo "$GPGPASS" > /root/.gpgpass; chmod 600 /root/.gpgpass
-#   Dann /root/.gpgpass in /root/neuserver/.gitignore eintragen!
-#
-# ============================================================
-# Aufruf: in speichern() am Ende ergänzen: konfig_sichern;
-# oder direkt: los.sh -konfig
-# ------------------------------------------------------------
-
-konfig_sichern() {
-  printf "${dblau}konfig_sichern$reset()\n";
-  KVZB="$instvz/konfig";  # ~/neuserver/konfig
-  GPGPASS_FILE="$HOME/.gpgpass";
-
-  # GPG-Passphrase prüfen / abfragen
-  if [ ! -f "$GPGPASS_FILE" ]; then
-    printf "${rot}GPG-Passphrase fehlt.$reset Bitte eingeben (wird in $blau$GPGPASS_FILE$reset gespeichert):\n";
-    stty -echo; read GPGPASS; stty echo; printf "\n";
-    printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
-    chmod 600 "$GPGPASS_FILE";
-    printf "Gespeichert in $blau$GPGPASS_FILE$reset\n";
-  fi;
-
-  mkdir -p "$KVZB/offen" "$KVZB/verschluesselt";
-
-  # ---- 1) Unkritische Dateien – offen sichern ----
-  for f in \
-    "$HOME/.gitconfig" \
-    "$HOME/.gtkrc-2.0" \
-    "$HOME/.wget-hsts" \
-    ; do
-    [ -f "$f" ] && cp -au "$f" "$KVZB/offen/" && \
-      printf "gesichert (offen): $blau$(basename $f)$reset\n";
-  done;
-
-  # .vim-Verzeichnis
-  [ -d "$HOME/.vim" ] && {
-    mkdir -p "$KVZB/offen/.vim";
-    cp -aun "$HOME/.vim/." "$KVZB/offen/.vim/";
-    printf "gesichert (offen): $blau.vim/$reset\n";
-  };
-
-  # KDE kcminputrc (Tastatur-Repeat) – unkritisch
-  [ -f "$HOME/.config/kcminputrc" ] && {
-    mkdir -p "$KVZB/offen/config";
-    cp -au "$HOME/.config/kcminputrc" "$KVZB/offen/config/";
-    printf "gesichert (offen): $blau.config/kcminputrc$reset\n";
-  };
-
-  # ---- 2) Sensible Dateien – verschlüsselt sichern ----
-  TMPDIR_KRYPT=$(mktemp -d);
-  geaendert=;
-  for f in \
-    "$HOME/.fbcredentials" \
-    "$HOME/.tr64cred" \
-    "$HOME/.loscred" \
-    "$HOME/.mariadbpwd" \
-    "$HOME/.mariadbrpwd" \
-    "$HOME/.modbpwd" \
-    "$HOME/.mysqlpwd" \
-    "$HOME/.mysqlrpwd" \
-    "$HOME/.sturm" \
-    ; do
-    [ -f "$f" ] && {
-      cp "$f" "$TMPDIR_KRYPT/";
-      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
-      geaendert=1;
-    };
-  done;
-
-  # .gnupg – komplett (privater GPG-Schlüssel!)
-  [ -d "$HOME/.gnupg" ] && {
-    cp -a "$HOME/.gnupg" "$TMPDIR_KRYPT/.gnupg";
-    printf "vorgemerkt (verschlüsselt): $blau.gnupg/$reset\n";
-    geaendert=1;
-  };
-
-  # Programmkonfigurationen (beim ersten Aufruf angelegt)
-  for f in \
-    "$HOME/anrliste.conf" \
-    "$HOME/autofax.conf" \
-    "$HOME/fbfax.conf" \
-    "$HOME/impgl.conf" \
-    "$HOME/labimp.conf" \
-    "$HOME/labpath.conf" \
-    "$HOME/termine.conf" \
-    ; do
-    [ -f "$f" ] && {
-      cp "$f" "$TMPDIR_KRYPT/";
-      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
-      geaendert=1;
-    };
-  done;
-
-  # Alles verschlüsseln
-  if [ "$geaendert" ]; then
-    ARCHIV="$TMPDIR_KRYPT/konfig_sensibel.tar";
-    tar cf "$ARCHIV" -C "$TMPDIR_KRYPT" \
-      $(ls "$TMPDIR_KRYPT" | grep -v "konfig_sensibel");
-    gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
-      --symmetric --cipher-algo AES256 \
-      --output "$KVZB/verschluesselt/sensibel.tar.gpg" \
-      "$ARCHIV" && \
-      printf "${gruen}verschlüsselt: $blau$KVZB/verschluesselt/sensibel.tar.gpg$reset\n" || \
-      printf "${rot}Verschlüsselung fehlgeschlagen!$reset\n";
-  fi;
-  rm -rf "$TMPDIR_KRYPT";
-
-  # .gitignore sicherstellen
-  GI="$instvz/.gitignore";
-  for eintrag in ".gpgpass" "konfig/verschluesselt/sensibel.tar.gpg"; do
-    grep -q "^$eintrag$" "$GI" 2>/dev/null || \
-      printf "%s\n" "$eintrag" >>"$GI";
-  done;
-  # ACHTUNG: sensibel.tar.gpg NICHT in .gitignore – soll ins Repo!
-  # Nur .gpgpass selbst soll nie ins Repo:
-  sed -i '/^konfig\/verschluesselt\/sensibel\.tar\.gpg$/d' "$GI" 2>/dev/null;
-
-  printf "${gruen}konfig_sichern abgeschlossen.$reset\n";
-} # konfig_sichern
-
-# ------------------------------------------------------------
-# B) Neue Funktion: konfig_laden()
-# Aufruf: in proginst() nach git clone neuserver einfügen
-# ------------------------------------------------------------
-
-konfig_laden() {
-  printf "${dblau}konfig_laden$reset()\n";
-  KVZB="$instvz/konfig";
-  GPGPASS_FILE="$HOME/.gpgpass";
-
-  # ---- 1) Unkritische Dateien wiederherstellen ----
-  if [ -d "$KVZB/offen" ]; then
-    for f in "$KVZB/offen/".[a-z]*; do
-      [ -f "$f" ] || continue;
-      ziel="$HOME/$(basename $f)";
-      if [ ! -f "$ziel" ]; then
-        cp -a "$f" "$ziel";
-        printf "wiederhergestellt: $blau$ziel$reset\n";
-      else
-        printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
-      fi;
-    done;
-    # .vim
-    if [ -d "$KVZB/offen/.vim" ] && [ ! -d "$HOME/.vim" ]; then
-      cp -a "$KVZB/offen/.vim" "$HOME/.vim";
-      printf "wiederhergestellt: $blau$HOME/.vim/$reset\n";
-    fi;
-    # kcminputrc
-    if [ -f "$KVZB/offen/config/kcminputrc" ]; then
-      mkdir -p "$HOME/.config";
-      [ -f "$HOME/.config/kcminputrc" ] || {
-        cp "$KVZB/offen/config/kcminputrc" "$HOME/.config/kcminputrc";
-        printf "wiederhergestellt: $blau$HOME/.config/kcminputrc$reset\n";
-      };
-    fi;
-  fi;
-
-  # ---- 2) Sensible Dateien entschlüsseln ----
-  ARCHIV_GPG="$KVZB/verschluesselt/sensibel.tar.gpg";
-  [ -f "$ARCHIV_GPG" ] || {
-    printf "${rot}Kein verschlüsseltes Archiv gefunden: $ARCHIV_GPG$reset\n";
-    return 0;
-  };
-
-  # Passphrase abfragen falls fehlend
-  if [ ! -f "$GPGPASS_FILE" ]; then
-    printf "GPG-Passphrase für $blau$ARCHIV_GPG$reset eingeben:\n";
-    stty -echo; read GPGPASS; stty echo; printf "\n";
-    printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
-    chmod 600 "$GPGPASS_FILE";
-  fi;
-
-  TMPDIR_KRYPT=$(mktemp -d);
-  gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
-    --decrypt "$ARCHIV_GPG" | tar xf - -C "$TMPDIR_KRYPT" 2>/dev/null;
-  if [ $? -ne 0 ]; then
-    printf "${rot}Entschlüsselung fehlgeschlagen – Passphrase prüfen!$reset\n";
-    rm -rf "$TMPDIR_KRYPT";
-    return 1;
-  fi;
-
-  # Dateien nur kopieren wenn noch nicht vorhanden
-  for f in "$TMPDIR_KRYPT/"*; do
-    [ -e "$f" ] || continue;
-    bn=$(basename "$f");
-    # Programmkonfigurationen ins Homeverzeichnis
-    case "$bn" in
-      *.conf)
-        ziel="$HOME/$bn";;
-      .gnupg)
-        ziel="$HOME/.gnupg";;
-      *)
-        ziel="$HOME/$bn";;
-    esac;
-    if [ ! -e "$ziel" ]; then
-      cp -a "$f" "$ziel";
-      chmod 600 "$ziel" 2>/dev/null;
-      printf "wiederhergestellt (sensibel): $blau$ziel$reset\n";
-    else
-      printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
-    fi;
-  done;
-
-  rm -rf "$TMPDIR_KRYPT";
-  printf "${gruen}konfig_laden abgeschlossen.$reset\n";
-} # konfig_laden
-
-# ============================================================
-# D) In ~/neuserver/Makefile – git-Target ergänzen
-# ============================================================
-# git: ...
-#     sh $(INSTVZ)/los.sh -konfig   # Configs sichern vor Push
-#     git add konfig/
-#     -git add .gitignore
-#     ... (rest wie bisher)
-#
-# wobei INSTVZ=/root/neuserver
-
-# ============================================================
-# E) Einmalige Einrichtung – auf linux0 ausführen:
-# ============================================================
-# printf "Bitte GPG-Passphrase eingeben (mind. 20 Zeichen):\n"
-# stty -echo; read GPGPASS; stty echo
-# printf "%s" "$GPGPASS" > /root/.gpgpass
-# chmod 600 /root/.gpgpass
-# # Passphrase sicher aufbewahren (Passwort-Manager o.ä.)!
