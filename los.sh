@@ -763,7 +763,15 @@ done; # nochmal
     sed -i 's/,user_xattr//g;s/user_xattr,//g;s/user_xattr//g' "$ftb";
     printf "${gruen}user_xattr aus $blau$ftb$reset entfernt.\n";
   fi;
-  mount -a;
+  mount -a -t nobind,nocifs,nonfs,nonfs4 2>/dev/null||true;
+  grep "^//" /etc/fstab 2>/dev/null | grep cifs | while read mline; do
+    srv=$(echo "$mline"|sed 's|//\([^/]*\)/.*|\1|');
+    mtp=$(echo "$mline"|awk '{print $2}');
+    ping -c1 -W2 "$srv" >/dev/null 2>&1 && \
+      mount "$mtp" 2>/dev/null && \
+      printf "gemountet: $blau$mtp$reset\n" || \
+      printf "Server $blau$srv$reset nicht erreichbar – $blau$mtp$reset übersprungen\n";
+  done;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
 } # mountlaufwerke
 
