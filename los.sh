@@ -636,7 +636,6 @@ ersetzeprog() {
     if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
     if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
     if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
-    if [ "$1" = "php8" ]; then eprog="php8"; break; fi;
     # exfatprogs heißt auf älteren Debian/Ubuntu noch exfat-utils
     if [ "$1" = "exfatprogs" ]; then
       dpkg -s exfatprogs >/dev/null 2>&1 || eprog="exfat-utils"; break;
@@ -1036,13 +1035,13 @@ proginst() {
   doinst fetchmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
   doinst e2fsprogs-devel; # wg. fehler et/com_err.h missing
-  _isdnurl=$(curl -s "https://download.opensuse.org/repositories/home:mnhauke:ISDN/" | grep -o 'href="[^"]*16[^"]*\.repo"' | head -1 | cut -d'"' -f2);
-  if [ "$_isdnurl" ]; then
-    zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || \
-      zypper ar "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnurl}" home_mnhauke_ISDN;
-  else
-    printf "${rot}ISDN-Repo für OpenSUSE 16.0 nicht gefunden – CAPI übersprungen$reset\n";
-  fi; 
+#  _isdnurl=$(curl -s "https://download.opensuse.org/repositories/home:mnhauke:ISDN/" | grep -o 'href="[^"]*16[^"]*\.repo"' | head -1 | cut -d'"' -f2);
+#  if [ "$_isdnurl" ]; then
+#    zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || \
+#      zypper ar "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnurl}" home_mnhauke_ISDN;
+#  else
+#    printf "${rot}ISDN-Repo für OpenSUSE 16.0 nicht gefunden – CAPI übersprungen$reset\n";
+#  fi; 
 #5.2/home:mnhauke:ISDN.repo
 #  doinst i4l-base;
 #  doinst libcapi20-2;
@@ -1081,6 +1080,11 @@ proginst() {
          mv $DN $D;
        }
   }
+  # httpd.conf.local anlegen falls fehlend und SELinux-Kontext setzen:
+  HCL=/etc/apache2/httpd.conf.local;
+  [ -f "$HCL" ]||{ touch "$HCL"; chmod 644 "$HCL"; printf "angelegt: $blau$HCL$reset\n";}
+  chcon -t httpd_config_t "$HCL" 2>/dev/null||true;
+  semanage fcontext -a -t httpd_config_t "$HCL" 2>/dev/null||true;
   chown wwwrun:www -R /srv/www/htdocs;
   a2enmod php8;
   systemctl enable apache2;
