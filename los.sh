@@ -97,7 +97,8 @@ commandline() {
         printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
-        printf "  $blau-ks$reset: sichert/lädt Konfigurationsdateien\n";
+        printf "  $blau-ks$reset: sichert Konfigurationsdateien im eigenen Repository\n";
+        printf "  $blau-kl$reset: lädt Konfigurationsdateien\n";
         printf "  $blau-vi$reset: lädt dieses Programm in vi(m).\n";
         printf "  $blau-v$reset: wird gesprächiger\n";
         printf "  $blau-h$reset: zeigt diese Hilfe an\n";
