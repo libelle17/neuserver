@@ -692,8 +692,13 @@ while read -r zeile; do
           e2label $dev "$lbl" 2>/dev/null||e2label $(echo $dev|sed 's/-/\//') "$lbl";;
 				btrfs)
 					printf "${rot}btrfs filesystem label $dev $lbl$reset\n";
-					btrfs filesystem label $dev "$lbl";;
-				reiserfs)
+          mtp=$(findmnt -n -o TARGET $dev 2>/dev/null);
+          if [ "$mtp" ]; then
+            btrfs filesystem label "$mtp" "$lbl";
+          else
+            btrfs filesystem label "$dev" "$lbl";
+          fi          
+          reiserfs)
 					printf "${rot}reiserfstune -l $lbl $dev$reset\n";
           reiserfstune -l "$lbl" $dev 2>/dev/null || \
             printf "${rot}reiserfstune nicht verfügbar (ReiserFS in Kernel 6.6+ entfernt)$reset\n";;          
@@ -733,8 +738,8 @@ while read -r zeile; do
 	obinfstab "$idohnelz" "$uid" "$dev";
 	printf "Mountpoint: $blau$mtp$reset istinfstab: $blau$istinfstab$reset\n";
 	if test $istinfstab -eq 0; then
-		eintr="\t $mtp\t $fty\t user,acl,user_xattr,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
-		[ "$fty" = vfat ]&&eintr="\t $mtp\t $fty\t user,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
+    eintr="\t $mtp\t $fty\t user,acl,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
+    [ "$fty" = vfat ]&&eintr="\t $mtp\t $fty\t user,exec,nofail,x-systemd.device-timeout=15\t 1\t 2";
     # Nachher – ntfs3 bevorzugen, ntfs-3g als Fallback:
     if test "$fty" = ntfs; then
       if grep -q ntfs3 /proc/filesystems 2>/dev/null; then
@@ -754,6 +759,10 @@ done << EOF
 $fstabteil;
 EOF
 done; # nochmal
+  if grep -q "user_xattr" "$ftb" 2>/dev/null; then
+    sed -i 's/,user_xattr//g;s/user_xattr,//g;s/user_xattr//g' "$ftb";
+    printf "${gruen}user_xattr aus $blau$ftb$reset entfernt.\n";
+  fi;
   mount -a;
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
 } # mountlaufwerke
