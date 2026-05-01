@@ -310,8 +310,8 @@ git: README.md
 	  curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
 	}
 	$(call setz_gitv,".")
-	-sh $(INSTVZ)/los.sh -ks;        # NEU: Configs sichern
-	-git add konfig/ .gitignore 2>/dev/null; # NEU: Configs zum Commit hinzufügen
+	-[ "$(DPROG)" = "neuserver" ]&&sh $(INSTVZ)/los.sh -ks||true;
+	-[ "$(DPROG)" = "neuserver" ]&&git add konfig/ .gitignore 2>/dev/null||true;
 	-git config --global push.default simple;\
 	git add -u;\
 	git commit -m "Version $$(cat versdt)";\
