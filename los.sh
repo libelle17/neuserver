@@ -698,7 +698,7 @@ while read -r zeile; do
           else
             btrfs filesystem label "$dev" "$lbl";
           fi          
-          reiserfs)
+        reiserfs)
 					printf "${rot}reiserfstune -l $lbl $dev$reset\n";
           reiserfstune -l "$lbl" $dev 2>/dev/null || \
             printf "${rot}reiserfstune nicht verfügbar (ReiserFS in Kernel 6.6+ entfernt)$reset\n";;          
