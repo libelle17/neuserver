@@ -1046,8 +1046,8 @@ proginst() {
    }
   }
 #5.2/home:mnhauke:ISDN.repo
-  doinst i4l-base;
-  doinst libcapi20-2;
+#  doinst i4l-base;
+#  doinst libcapi20-2;
   doinst libcapi20-3;
   doinst capi4linux-devel;
   doinst curlftfs; # fuer autofax
