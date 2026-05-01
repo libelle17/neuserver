@@ -763,6 +763,9 @@ done; # nochmal
     sed -i 's/,user_xattr//g;s/user_xattr,//g;s/user_xattr//g' "$ftb";
     printf "${gruen}user_xattr aus $blau$ftb$reset entfernt.\n";
   fi;
+  awk '/^[^#;]/ && !/ swap / && $2 != "none" {print $2}' "$ftb" | while read mtp; do
+    [ -d "$mtp" ] || { mkdir -p "$mtp"; printf "Verzeichnis angelegt: $blau$mtp$reset\n"; };
+  done;
   mount -a -t nobind,nocifs,nonfs,nonfs4 2>/dev/null||true;
   grep "^//" /etc/fstab 2>/dev/null | grep cifs | while read mline; do
     srv=$(echo "$mline"|sed 's|//\([^/]*\)/.*|\1|');
@@ -1166,12 +1169,14 @@ richtmariadbein() {
     chown mysql:mysql /etc/my.cnf;
 		[ -z "$datadir" ]&&datadir="/var/lib/mysql";
 		[ -e "$datadir" -a ! -d "$datadir" ]&&rm -f "$datadir";
-		if ! [ -d $datadir ]; then
-			echo rufe mysql_install_db auf
-			$(find /usr/local /usr/bin /usr/sbin -name mysql_install_db 2>/dev/null);
-			systemctl start mysql;
+		if ! [ -d "$datadir" ]; then
+			printf "datadir $blau$datadir$reset fehlt – MariaDB initialisiert beim ersten Start\n";
+			systemctl start $db_systemctl_name;
+			sleep 3;
 		fi;
-		while mysql -e'\q' 2>/dev/null; do
+		until mysql -e'\q' 2>/dev/null; do
+      sleep 1;
+    done;
 			pruefmroot " neues" " das neue";
       # 4.9.20: fuer den mysql-Import von quelle ist auch der Benutzer mysql noetig
       ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
