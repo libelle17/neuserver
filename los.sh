@@ -1160,7 +1160,11 @@ richtmariadbein() {
 			done;
 		fi;
     backup /etc/my.cnf;
-		cp -an $instvz/my.cnf /etc/;
+    cp -an $instvz/my.cnf /etc/;
+    chcon -t mysqld_etc_t /etc/my.cnf 2>/dev/null||true;
+    semanage fcontext -a -t mysqld_etc_t "/etc/my.cnf" 2>/dev/null||true;
+    chown mysql:mysql /etc/my.cnf;
+    semanage permissive -a mysqld_t 2>/dev/null||true;
     # datadir aus der lokalen Datei zurückübertragen
     [ -f /etc/my.cnf_0 ]&&{
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
