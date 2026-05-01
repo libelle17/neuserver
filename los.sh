@@ -2377,10 +2377,10 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
- [ $obteil = 0 -o $obkonfig = 1 ]&&konfig_sichern;
+ [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;
  [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
- [ $obteil = 0 -o $obmysql = 1 -o $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ [ $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
+ [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
  [                $obfb = 1 ]&&firebird;
 printf "${dblau}Ende von $0$reset\n";
