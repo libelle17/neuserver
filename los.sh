@@ -1193,6 +1193,7 @@ richtmariadbein() {
       ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
       ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
       ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";      
+      ausf "$mysqlbef -u root -e\"FLUSH PRIVILEGES\"" "${blau}";
       test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     $mysqlbef -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
     erg=$?;
@@ -1213,7 +1214,7 @@ richtmariadbein() {
       if test "$erg" -ne "0"; then
       # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
 #       test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-       erg=$($mysqlbef --defaults-extra-file=~/.mysqlrpwd -e"select count(0)=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+       erg=$($mysqlbef --defaults-extra-file=~/.mysqlrpwd -e"SELECT COUNT(0)=2 FROM mysql.user WHERE user='$musr' AND host IN('%','localhost')"|tail -n1|head -n1);
       fi;
       if test "$erg" -ne "0"; then
         echo Benutzer "$musr"  war schon eingerichtet;
@@ -1226,6 +1227,7 @@ richtmariadbein() {
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"CREATE USER IF NOT EXISTS '$musr'@'%' IDENTIFIED BY '$mpwd'\"" "${blau}";
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"SET PASSWORD FOR '$musr'@'%' = PASSWORD('$mpwd')\"" "${blau}";
           ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' WITH GRANT OPTION\"" "${blau}";
+          ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"FLUSH PRIVILEGES\"" "${blau}";
       fi;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
