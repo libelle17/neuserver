@@ -675,6 +675,9 @@ ersetzeprog() {
     # exfatprogs heißt auf openSUSE 16.0 exfatprogs (korrekt)
     if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
     if [ "$1" = "curlftfs" ]; then eprog="curlftpfs"; break; fi;
+    # libgsasl nicht in offiziellen openSUSE 16.0 Repos
+    if [ "$1" = "libgsasl" ]; then eprog=""; break; fi;
+    if [ "$1" = "libgsasl-devel" ]; then eprog=""; break; fi;      
     ;;
   8) # manjaro
     if [ "$1" = "libwbclient0" ]; then eprog="libwbclient"; break; fi;
@@ -798,18 +801,19 @@ doinst() {
   echo Fertig mit ersetzeprog
 	[ "$2" ]&&obprogda "$2"&&return 0;
   echo Fertig mit obprogda
-#	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
-	for prog in "$1"; do
+  #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
+  [ -z "$sprog" ] && sprog="$1";
+  for prog in $sprog; do
     printf "$psuch $prog: "
-		$psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
-		printf "installiere $blau$prog$reset\n";
-		if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
-			obnmr=0;
-			zypper mr -k --all;
-		fi;
-		$instp "$prog";
-	done;
-	printf "Fertig mit ${blau}doinst($reset$1)\n"
+    $psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
+    printf "installiere $blau$prog$reset\n";
+    if [ $OSNR -eq 4 -a $obnmr -eq 1 ]; then
+      obnmr=0;
+      zypper mr -k --all;
+    fi;
+    $instp "$prog";
+  done;
+  printf "Fertig mit ${blau}doinst($reset$1)\n"
 } # doinst
 
 # aufgerufen in richtmariadb ein
@@ -1184,7 +1188,7 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
   }
   doinst libicu-devel; # nach vmime-Build wieder installieren
   # eigene Programme holen:
-  for D in autofax vmime_alt anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
+  for D in autofax anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
     cd $HOME;
     [ -s "$HOME/$D/kons.cpp" -o -d "$HOME/$D/cmake" ]||{ 
       [ -d "$HOME/$D" ]&&{
