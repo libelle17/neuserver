@@ -685,7 +685,6 @@ ersetzeprog() {
   esac;
   break;
   done;
-  [ -z "$eprog" ]&&eprog="$1";
   [ -z "$sprog" ]&&sprog="$eprog";
   printf " $sprog\n";
 } # ersetzeprog
@@ -798,11 +797,9 @@ setzinstprog() {
 doinst() {
 	printf "${blau}doinst($reset$1)\n"
 	ersetzeprog "$1";
-  echo Fertig mit ersetzeprog
 	[ "$2" ]&&obprogda "$2"&&return 0;
-  echo Fertig mit obprogda
   #	printf "eprog: $blau$eprog$reset sprog: $blau$sprog$reset\n";
-  [ -z "$sprog" ] && sprog="$1";
+  [ -z "$sprog" ] && { printf "kein Paket für $blau$1$reset auf diesem System\n"; return 0; }
   for prog in $sprog; do
     printf "$psuch $prog: "
     $psuch "$prog" >/dev/null 2>&1&&{ echo gefunden; return 0; }
