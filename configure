@@ -136,7 +136,7 @@ getIPR() {
 			LT=${_LT}-${dev};
 			COMP="make automake base-devel";
 			UPR="${SUDC}pacman -R ";
-			SPR="$(which pacman) -Qi ";
+			SPR="$(which pacman) -Qi";
 			libmdb=libmysqlclient;
 			UDPR="${SUDC}$(which pacman) -Rd ";
 		};
@@ -154,7 +154,7 @@ getIPR() {
 	}
 	{ [ $OSNR -gt 3 -a $OSNR -lt 8 ]&&
 		{ 
-			SPR="$(which rpm) -q "; # in Makefile reicht hier der Pfad nicht immer
+			SPR="$(which rpm) -q"; # in Makefile reicht hier der Pfad nicht immer
 			LACL=libacl-${dev};
 			LCURL=libcurl-${dev};
 			UDPR="${SUDC}$(which rpm) -e --nodeps ";
@@ -162,7 +162,7 @@ getIPR() {
 	} || 
 	{ [ $OSNR -le 3 ]&&
 		{ 
-			SPR="$(which dpkg) -s ";
+			SPR="$(which dpkg) -s";
 			LBOOST=libboost-${dev};
 			LBIO=libboost-iostreams-${dev};
 			LBLO=libboost-locale-${dev};

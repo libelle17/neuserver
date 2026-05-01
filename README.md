@@ -27,23 +27,20 @@
 </h2>
 
 
-
-<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
 &minus; Configuration of a new linux server</b>: Allows the
 configuration of a new linux server for a diabetologic
 practice in Dachau, after the operation system installation
 by the vendor&rsquo;s programme. <br>
 (manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
-&quot;neuserver&quot;&rsquo; oder &rsquo;man -Lde
-&quot;neuserver&quot;&rsquo;)</p>
+neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS_D"></a>
 </h2>
 
 
-
-<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
 [-&lt;shortopt&gt;|--&lt;longopt&gt; [&lt;supplement&gt;]]
 ...</b></p>
 
@@ -72,8 +69,8 @@ read the chapters &rsquo;functionality&rsquo;,
 software packages&rsquo; and &rsquo;implications&rsquo;
 below. Then, if connected to the internet, call (e.g. by
 coying the line and pasting it into a terminal): <b><br>
-N=&quot;neuserver&quot;;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com/&quot;libelle17&quot;/$N/master/install.sh
+N=neuserver;P=${N}_inst.sh;cd ~;wget
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
 ./los.sh</b> <br>
@@ -137,8 +134,8 @@ With <b>sh viall</b> scripts can be edited.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Please report
-any errors with the word &rsquo;&quot;neuserver&quot;&rsquo;
-included in the email headline. <br>
+any errors with the word &rsquo;neuserver&rsquo; included in
+the email headline. <br>
 Please report as well, if different hard- or software yields
 a requirement for a program modification.</p>
 
@@ -152,8 +149,7 @@ a requirement for a program modification.</p>
 &rsquo;<b>vim</b>&rsquo;-commands, followed by
 &rsquo;<b>make</b>&rsquo; and &rsquo;<b>make
 install</b>&rsquo; from the installation directory
-(&rsquo;<b>~/&quot;neuserver&quot;</b>), You may alter the
-program.</p>
+(&rsquo;<b>~/neuserver</b>), You may alter the program.</p>
 
 <h2>LIABILITY
 <a name="LIABILITY_D"></a>
@@ -204,24 +200,21 @@ caused by the program.</p>
 </h2>
 
 
-
-<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
 &minus; Einrichtung eines neuen Linuxservers</b>:
 enth&auml;lt die notwendigen Programme zur Einrichtung
 eines neuen Linuxservers f&uuml;r eine diabetologische
 Schwerpunktpraxis in Dachau, nach Installation des
 Betriebssystems <br>
-(manpage available in english: &rsquo;man
-&quot;neuserver&quot;&rsquo; or &rsquo;man -Len
-&quot;neuserver&quot;&rsquo;)</p>
+(manpage available in english: &rsquo;man neuserver&rsquo;
+or &rsquo;man -Len neuserver&rsquo;)</p>
 
 <h2>SYNOPSIS
 <a name="SYNOPSIS_D"></a>
 </h2>
 
 
-
-<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver
 [-&lt;kurzopt&gt;|--&lt;langopt&gt;
 [&lt;erg&auml;nzung&gt;]] ...</b></p>
 
@@ -231,7 +224,7 @@ Betriebssystems <br>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>&quot;neuserver&quot;</b>
+<p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
 Enth&auml;lt die notwendigen Scripte f&uuml;r
 Einrichtung und Betrieb (insbesondere Datensicherung auf
 Sicherungsserver). Nach dem Herunterladen der Scripte wird
@@ -257,8 +250,8 @@ Anschlie&szlig;end verbinden Sie den Rechner falls
 n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
-N=&quot;neuserver&quot;;P=${N}_inst.sh;cd ~;wget
-https://raw.githubusercontent.com/&quot;libelle17&quot;/$N/master/install.sh
+N=neuserver;P=${N}_inst.sh;cd ~;wget
+https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
 ./los.sh</b> <br>
@@ -324,7 +317,7 @@ werden kann, dann geht es einfacher.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Fehler bitte
-mit u.a. dem Wort &rsquo;&quot;neuserver&quot;&rsquo; in der
+mit u.a. dem Wort &rsquo;neuserver&rsquo; in der
 Email-Ueberschrift melden. <br>
 Bitte auch melden, wenn sich &Auml;nderungsbedarf durch
 andere Hard- bzw. Software ergeben.</p>
@@ -339,8 +332,8 @@ von &rsquo;<b>sh viall</b>&rsquo; mit den &uuml;blichen
 &rsquo;<b>vim</b>&rsquo;-Befehlen, gefolgt von
 &rsquo;<b>make</b>&rsquo; und &rsquo;<b>make
 install</b>&rsquo; vom Installationsverzeichnis
-(&rsquo;<b>~/&quot;neuserver&quot;</b>) aus k&ouml;nnen
-Sie das Programm &auml;ndern.</p>
+(&rsquo;<b>~/neuserver</b>) aus k&ouml;nnen Sie das
+Programm &auml;ndern.</p>
 
 <h2>HAFTUNG
 <a name="HAFTUNG_D"></a>

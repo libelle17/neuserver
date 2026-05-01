@@ -95,6 +95,7 @@ GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 # DISTR::=$(shell which apt >/dev/null 2>&1&&echo 1||{ which zypper >/dev/null 2>&1&&echo 2||{ which dnf >/dev/null 2>&1||which yum >/dev/null 2>&1&&echo 3||{ which urpmi.update >/dev/null 2>&1&&echo 4||{ which pacman >/dev/null 2>&1&&echo 5||echo 0;};};};})
 # #	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 -include vars # wird durch install.sh generiert; DPROG und GDAT dürfen nur nachher verwendet werden
+INSTVZ::=$(shell cat instvz 2>/dev/null|tr -d '"'||echo /root/neuserver)
 ifeq ($(GCCOK),0)
 	# wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
   ifeq ($(shell expr $(OSNR) \<\= 3),1)
