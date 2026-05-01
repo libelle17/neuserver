@@ -68,7 +68,8 @@ commandline() {
   obfritz=0; # ob fritzbox eingehaengt werden soll
   obfb=0; # Firebird
   obtv=0; # Teamviewer
-  obkonfig=0; # Konfiguration sichern/laden
+  obkonfig=0; # Konfiguration sichern
+  obkonfiglad=0; Konfiguration laden
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -111,6 +112,7 @@ commandline() {
           prompt) obprompt=1;;
           mt) obmt=1;;
           konfig) obkonfig=1;;
+          konfidlad) obkonfiglad=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
@@ -2367,6 +2369,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
  [ $obteil = 0 -o $obkonfig = 1 ]&&konfig_sichern;
+ [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  [ $obteil = 0 -o $obmysql = 1 -o $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ [ $obmysqli = 1 -o $obmysqlneu = 1 ]&&{ dbinhalt immer;:; }||{ [ $obmysql = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
