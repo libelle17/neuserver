@@ -69,7 +69,7 @@ commandline() {
   obfb=0; # Firebird
   obtv=0; # Teamviewer
   obkonfig=0; # Konfiguration sichern
-  obkonfiglad=0; Konfiguration laden
+  obkonfiglad=0; # Konfiguration laden
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
