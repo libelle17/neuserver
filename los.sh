@@ -348,7 +348,7 @@ konfig_laden() {
   fi;
 
   # Dateien nur kopieren wenn noch nicht vorhanden
-  for f in "$TMPDIR_KRYPT/"*; do
+  for f in "$TMPDIR_KRYPT/"* "$TMPDIR_KRYPT/".*; do
     [ -e "$f" ] || continue;
     bn=$(basename "$f");
     # Programmkonfigurationen ins Homeverzeichnis
