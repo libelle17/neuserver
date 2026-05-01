@@ -27,21 +27,6 @@ tdpf="/DATA/turbomed" # Turbomed-Dokumentenpfad
 musr=praxis;
 obschreiben=0;
 
-# 30.4.26: muss noch eingebaut werden
-bleibwach() {
-sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
-sudo mkdir -p /etc/systemd/logind.conf.d/
- sudo tee /etc/systemd/logind.conf.d/10-nosuspend.conf << 'EOF'
-[Login]
-IdleAction=ignore
-HandleLidSwitch=ignore
-HandleLidSwitchExternalPower=ignore
-HandleSuspendKey=ignore
-HandleHibernateKey=ignore
-EOF
-sudo systemctl restart systemd-logind
-}
-
 # $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
 # in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
 ausf() {
@@ -68,6 +53,7 @@ commandline() {
 	obneu=0; # 1=Fritzboxbenutzer und Passwort neu eingeben, s.u.
 	obteil=0;# nur Teil des Scripts soll ausgeführt werden;
   obbs=0; # bildschirm aufrufen
+  obbw=0 # bleibwach: kein Suspend/Hibernate
   obhost=0; # host setzen
   obprompt=0; # prompt setzen
   obmt=0; # nur Laufwerke sollen gemountet werden
@@ -94,6 +80,7 @@ commandline() {
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
 				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-v ][-h ]$reset\n";
 				printf "  $blau-bs$reset: richtet den Bildschirm ein\n";
+        printf "  $blau-bw$reset: verhindert Suspend/Hibernate/Bildschirmschoner\n";
         printf "  $blau-host$reset: richtet den Hostnahmen im LAN ein\n";
         printf "  $blau-prompt$reset: richtet die Eingabeaufforderung ein\n";
         printf "  $blau-mt$reset: konfiguriert /etc/fstab zum Mounten der Laufwerke\n";
@@ -117,6 +104,7 @@ commandline() {
 			*) obteil=1;
 				case $para in
           bs) obbs=1;;
+          bw) obbw=1;;
           host) obhost=1;;
           prompt) obprompt=1;;
           mt) obmt=1;;
@@ -192,6 +180,39 @@ speichern() {
     printf "?>" >"$phppwd";
 	fi;
 } # speichern
+
+bleibwach() {
+  printf "${dblau}bleibwach$reset()\n";
+  geaendert=;
+  # 1) systemd-Targets maskieren – nur wenn noch nicht maskiert
+  for tgt in sleep.target suspend.target hibernate.target hybrid-sleep.target; do
+    if ! systemctl is-enabled "$tgt" 2>/dev/null | grep -q "masked"; then
+      systemctl mask "$tgt" 2>/dev/null;
+      printf "maskiert: $blau$tgt$reset\n";
+      geaendert=1;
+    fi;
+  done;
+  # 2) logind-Konfiguration – nur schreiben wenn Inhalt abweicht
+  KD=/etc/systemd/logind.conf.d;
+  KF=$KD/10-nosuspend.conf;
+  mkdir -p "$KD";
+  NEWINH="[Login]
+IdleAction=ignore
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleSuspendKey=ignore
+HandleHibernateKey=ignore";
+  if [ ! -f "$KF" ] || [ "$(cat "$KF")" != "$NEWINH" ]; then
+    printf "%s\n" "$NEWINH" >"$KF";
+    printf "geschrieben: $blau$KF$reset\n";
+    geaendert=1;
+  else
+    printf "unverändert: $blau$KF$reset\n";
+  fi;
+  # 3) logind nur neu starten wenn etwas geändert wurde
+  [ "$geaendert" ] && systemctl restart systemd-logind && \
+    printf "${gruen}systemd-logind neu gestartet$reset\n";
+} # bleibwach
 
 
 firebird() {
@@ -985,6 +1006,7 @@ proginst() {
   doinst libgsasl;
   doinst gtk3-devel;
   doinst dash;
+  setzgitssh;
   doinst git;
   doinst lsb-release;
   doinst docker;
@@ -1150,7 +1172,7 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
   [ -s /usr/local/include/vmime/vmime.hpp ]||{
     D=vmime;
     cd $HOME;
-    [ -d "$HOME/$D" ]||git clone git@github.com:libelle17/$D.git;
+    [ -d "$HOME/$D" ]||git clone git+ssh://git@github.com:libelle17/$D.git;
     cd $HOME/$D;
     mkdir -p build;
     cd build;
@@ -1170,7 +1192,7 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
          [jyJY]*) rm -rf "$HOME/$D";;
         esac;
       }
-      echo hole $D; git clone http://github.com/libelle17/$D;
+      echo hole $D; git clone git+ssh://git@github.com/libelle17/$D.git;
     };
     cd $HOME/$D;
     if [ -d cmake ]; then
@@ -1563,6 +1585,40 @@ machidpub() {
 	  ssh-keygen -t rsa; # return, return, return
 	 done;
 } # machidpub
+
+setzgitssh() {
+  printf "${dblau}setzgitssh$reset()\n";
+  GITKEY="$HOME/.ssh/id_ed25519_git";
+  # 1) Schlüssel erstellen falls fehlend
+  if [ ! -f "$GITKEY" ]; then
+    printf "SSH-Schlüssel für GitHub fehlt, erstelle $blau$GITKEY$reset ...\n";
+    ssh-keygen -t ed25519 -f "$GITKEY" -C "gerald.schade@gmx.de@github.com" -N "";
+    printf "\nBitte diesen Schlüssel auf ${blau}github.com -> Settings -> SSH keys -> New SSH key${reset} eintragen:\n";
+    cat "${GITKEY}.pub";
+    printf "\nDanach Enter drücken ...\n"; read dummy;
+  fi;
+  # 2) ssh-agent starten falls nicht aktiv
+  if [ -z "$SSH_AUTH_SOCK" ]; then
+    eval "$(ssh-agent -s)" >/dev/null;
+  fi;
+  # 3) Schlüssel laden falls noch nicht geladen
+  ssh-add -l 2>/dev/null | grep -q "$GITKEY" || ssh-add "$GITKEY" 2>/dev/null;
+  # 4) Dauerhaft in /etc/profile.d/ eintragen
+  PPD=/etc/profile.d/ssh-agent-git.sh;
+  if [ ! -f "$PPD" ] || ! grep -q "id_ed25519_git" "$PPD" 2>/dev/null; then
+    printf '# SSH-Agent fuer GitHub automatisch starten (gesetzt von los.sh)\n' >"$PPD";
+    printf 'if [ "$(id -u)" = "0" ] && [ -z "$SSH_AUTH_SOCK" ]; then\n' >>"$PPD";
+    printf '  eval "$(ssh-agent -s)" >/dev/null\n' >>"$PPD";
+    printf '  ssh-add /root/.ssh/id_ed25519_git 2>/dev/null\n' >>"$PPD";
+    printf 'fi\n' >>"$PPD";
+    printf "SSH-Agent-Autostart in $blau$PPD$reset eingetragen.\n";
+  fi;
+  # 5) Verbindung testen
+  printf "Teste GitHub-Verbindung ...\n";
+  ssh -T git@github.com 2>&1 | grep -q "successfully authenticated" && \
+    printf "${gruen}GitHub-Verbindung OK$reset\n" || \
+    printf "${rot}GitHub-Verbindung fehlgeschlagen – Schlüssel auf github.com prüfen$reset\n";
+} # setzgitssh
 
 musterserver() {
  printf "${dblau}musterserver$reset()\n";
@@ -2064,6 +2120,7 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
+[ $obteil = 0 -o $obbw = 1 ]&&bleibwach;
 variablen;
 echo osnr: $OSNR;
  [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
