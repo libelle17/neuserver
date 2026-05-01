@@ -2367,13 +2367,6 @@ konfig_laden() {
 } # konfig_laden
 
 # ============================================================
-# C) Änderungen in bestehenden Funktionen
-# ============================================================
-
-# In Hauptlogik (Zeile ~1908) ergänzen:
-#   [ $obteil = 0 -o $obkonfig = 1 ]&&konfig_sichern;
-
-# ============================================================
 # D) In ~/neuserver/Makefile – git-Target ergänzen
 # ============================================================
 # git: ...

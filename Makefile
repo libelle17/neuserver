@@ -95,6 +95,7 @@ GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 # DISTR::=$(shell which apt >/dev/null 2>&1&&echo 1||{ which zypper >/dev/null 2>&1&&echo 2||{ which dnf >/dev/null 2>&1||which yum >/dev/null 2>&1&&echo 3||{ which urpmi.update >/dev/null 2>&1&&echo 4||{ which pacman >/dev/null 2>&1&&echo 5||echo 0;};};};})
 # #	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 -include vars # wird durch install.sh generiert; DPROG und GDAT dürfen nur nachher verwendet werden
+INSTVZ::=$(shell cat instvz 2>/dev/null||echo /root/neuserver)
 ifeq ($(GCCOK),0)
 	# wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
   ifeq ($(shell expr $(OSNR) \<\= 3),1)
@@ -298,23 +299,25 @@ endef
 # xclip -sel clip < ~/.ssh/id_rsa_git.pub
 # auf http://github.com -> view profile and more -> settings -> SSH and GPG keys -> New SSH key <Titel> <key> einfuegen
 git: README.md
-#	@git config --global user.name "Gerald Schade"
-#	@git config --global user.email "gerald.schade@gmx.de"
-	@$(call machvers);
-	@printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
-		$(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
-		"$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA) 
-	-cp -au Makefile Makefile.roh
-	@[ -d .git ]||{ \
-		curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
-	}
-	$(call setz_gitv,".")
-	-git config --global push.default simple;\
-	git add -u;\
-	git commit -m "Version $$(cat versdt)";\
-	[ "$(DPROG)" ]&&{ grep remote\ \"origin\"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};\
-	git push -u origin master;\
-	printf "Fertig mit make .git\n";
+# @git config --global user.name "Gerald Schade"
+# @git config --global user.email "gerald.schade@gmx.de"
+  @$(call machvers);
+  @printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
+    $(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
+    "$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA)
+  -cp -au Makefile Makefile.roh
+  @[ -d .git ]||{ \
+    curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
+  }
+  $(call setz_gitv,".")
+  -sh $(INSTVZ)/los.sh -konfig;        # NEU: Configs sichern
+  -git add konfig/ .gitignore 2>/dev/null; # NEU: Configs zum Commit hinzufügen
+  -git config --global push.default simple;\
+  git add -u;\
+  git commit -m "Version $$(cat versdt)";\
+  [ "$(DPROG)" ]&&{ grep remote\ "origin"] .git/config $(KR)||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};\
+  git push -u origin master;\
+  printf "Fertig mit make .git\n";
 
 .PHONY: giterlaub
 giterlaub:
