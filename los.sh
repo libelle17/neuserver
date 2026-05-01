@@ -164,6 +164,7 @@ variablen() {
  phppwd="/srv/www/phppwd.php";
  test -f "$loscred"&&. "$loscred";
  srv0=; # zur Sicherheit
+ mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
 } # variablen
 
 # VORBEDINGUNG: GPG-Passphrase einmalig setzen:
@@ -1130,7 +1131,7 @@ richtmariadbein() {
 		minstalliert=1; # 1 = installiert, alle Kriterien sind erfüllt
 		mysqld=".*/\(mysqld\|mariadbd\)";
 		mysqlben="mysql";
-		mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
+#		mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql); # jetzt in variablen
     wosuch=; for wo in /usr/sbin /usr/bin /usr/libexec; do [ -d $wo ]&&wosuch=$wosuch" "$wo; done;
 		! find $wosuch -executable -size +1M -regex "$mysqld" 2>/dev/null|grep -q .&&minstalliert=0;
     [ "$verb" ]&& echo 1 minstalliert: $minstalliert;
@@ -2327,7 +2328,7 @@ dbinhalt() {
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
 #    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-    dbda=$(! mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
+    dbda=$(! $mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
       [ "$verb" ]&&{ [ "$1"/ = immer ]&&echo immer; [ "$dbda" = 0 ]&&echo dbnichtda;};
@@ -2364,7 +2365,7 @@ dbinhalt() {
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
 #         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
          printf "Q: $blau$Q$reset;";
-         ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost <\"\$Q\""
+         ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost <\"\$Q\""
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
