@@ -636,6 +636,7 @@ ersetzeprog() {
     if [ "$1" = "poppler-tools" ]; then eprog="poppler-utils"; break; fi;
     if [ "$1" = "boost-devel" ]; then eprog="libboost-dev libboost-system-dev libboost-filesystem-dev"; break; fi;
     if [ "$1" = "openssh" ]; then eprog="openssh-server openssh-client"; break; fi;
+    if [ "$1" = "php8" ]; then eprog="php8"; break; fi;
     # exfatprogs heißt auf älteren Debian/Ubuntu noch exfat-utils
     if [ "$1" = "exfatprogs" ]; then
       dpkg -s exfatprogs >/dev/null 2>&1 || eprog="exfat-utils"; break;
@@ -1019,9 +1020,9 @@ proginst() {
   doinst lsb-release;
   doinst p7zip;
   doinst p7zip-full;
-   doinst exfatprogs;   # exFAT-Datenträger labeln (mountlaufwerke)
-   doinst mtools;       # vfat mlabel
-   doinst dosfstools;   # vfat dosfslabel / mkfs.fat
+  doinst exfatprogs;   # exFAT-Datenträger labeln (mountlaufwerke)
+  doinst mtools;       # vfat mlabel
+  doinst dosfstools;   # vfat dosfslabel / mkfs.fat
   doinst apache2;
   doinst apache2-mod_php8;
   doinst php8-mysql;
@@ -1035,16 +1036,13 @@ proginst() {
   doinst fetchmail;
   doinst virtualbox virtualbox-host-source virtualbox-guest-tools; 
   doinst e2fsprogs-devel; # wg. fehler et/com_err.h missing
-  zypper lr home_mnhauke_ISDN >/dev/null 2>&1||{
-   zypper addrepo https://download.opensuse.org/repositories/home:mnhauke:ISDN/openSUSE_Leap_1
-   _isdnver=$(cat /etc/*-release 2>/dev/null|grep ^VERSION_ID=|cut -d'"' -f2)
-   _isdnname=$(cat /etc/*-release 2>/dev/null|grep ^NAME=|cut -d'"' -f2|sed 's/ /_/')
-   zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || {
-     zypper addrepo \
-       "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnname}_${_isdnver}/home:mnhauke:ISDN.repo"
-     zypper refresh;
-   }
-  }
+  _isdnurl=$(curl -s "https://download.opensuse.org/repositories/home:mnhauke:ISDN/" | grep -o 'href="[^"]*16[^"]*\.repo"' | head -1 | cut -d'"' -f2);
+  if [ "$_isdnurl" ]; then
+    zypper lr home_mnhauke_ISDN >/dev/null 2>&1 || \
+      zypper ar "https://download.opensuse.org/repositories/home:mnhauke:ISDN/${_isdnurl}" home_mnhauke_ISDN;
+  else
+    printf "${rot}ISDN-Repo für OpenSUSE 16.0 nicht gefunden – CAPI übersprungen$reset\n";
+  fi; 
 #5.2/home:mnhauke:ISDN.repo
 #  doinst i4l-base;
 #  doinst libcapi20-2;
@@ -1116,7 +1114,7 @@ proginst() {
       echo "PermitRootLogin yes" >> $cvz/$cnfd;
     fi
   fi
-  sudo systemctl reload ssh;
+systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null ||true;  
 D=/etc/profile.local;S=NCURSES_NO_UTF8_ACS;W=1;[ -f "$D" ]&&grep "$S" "$D"||echo "$S"="$W" >>"$D";
 D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S"="$W # geht auch" >>"$D";
 # dazu noch /.bashrc 
