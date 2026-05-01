@@ -697,7 +697,7 @@ while read -r zeile; do
             btrfs filesystem label "$mtp" "$lbl";
           else
             btrfs filesystem label "$dev" "$lbl";
-          fi          
+          fi;;
         reiserfs)
 					printf "${rot}reiserfstune -l $lbl $dev$reset\n";
           reiserfstune -l "$lbl" $dev 2>/dev/null || \
