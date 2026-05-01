@@ -68,7 +68,7 @@ commandline() {
   obfritz=0; # ob fritzbox eingehaengt werden soll
   obfb=0; # Firebird
   obtv=0; # Teamviewer
-  obkonfig=0; # Konfiguration sichern
+  obkonfigsp=0; # Konfiguration sichern
   obkonfiglad=0; # Konfiguration laden
   gespar="$@"
   verb=0;
@@ -97,7 +97,7 @@ commandline() {
         printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
-        printf "  $blau-konfig$reset: sichert/lädt Konfigurationsdateien\n";
+        printf "  $blau-ks$reset: sichert/lädt Konfigurationsdateien\n";
         printf "  $blau-vi$reset: lädt dieses Programm in vi(m).\n";
         printf "  $blau-v$reset: wird gesprächiger\n";
         printf "  $blau-h$reset: zeigt diese Hilfe an\n";
@@ -111,8 +111,8 @@ commandline() {
           host) obhost=1;;
           prompt) obprompt=1;;
           mt) obmt=1;;
-          konfig) obkonfig=1;;
-          konfidlad) obkonfiglad=1;;
+          ks) obkonfigsp=1;;
+          kl) obkonfiglad=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
@@ -170,8 +170,7 @@ variablen() {
 #   Dann /root/.gpgpass in /root/neuserver/.gitignore eintragen!
 #
 # ============================================================
-# Aufruf: in speichern() am Ende ergänzen: konfig_sichern;
-# oder direkt: los.sh -konfig
+# Aufruf: los.sh -ks
 # ------------------------------------------------------------
 
 konfig_sichern() {
@@ -288,7 +287,7 @@ konfig_sichern() {
 
 # ------------------------------------------------------------
 # B) Neue Funktion: konfig_laden()
-# Aufruf: in proginst() nach git clone neuserver einfügen
+# Aufruf: los.sh -kl
 # ------------------------------------------------------------
 
 konfig_laden() {
@@ -377,7 +376,7 @@ konfig_laden() {
 # D) In ~/neuserver/Makefile – git-Target ergänzen
 # ============================================================
 # git: ...
-#     sh $(INSTVZ)/los.sh -konfig   # Configs sichern vor Push
+#     sh $(INSTVZ)/los.sh -ks   # Configs sichern vor Push
 #     git add konfig/
 #     -git add .gitignore
 #     ... (rest wie bisher)
