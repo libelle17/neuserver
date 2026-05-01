@@ -1179,12 +1179,16 @@ richtmariadbein() {
     done;
 			pruefmroot " neues" " das neue";
       # 4.9.20: fuer den mysql-Import von quelle ist auch der Benutzer mysql noetig
-      ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
+      # MariaDB 10.4+: IDENTIFIED BY in GRANT nicht mehr erlaubt -> CREATE USER + GRANT
+      ausf "mysql -u\"$mroot\" -hlocalhost -e\"CREATE USER IF NOT EXISTS '$mroot'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -e\"GRANT ALL ON *.* TO '$mroot'@'localhost' WITH GRANT OPTION\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"CREATE USER IF NOT EXISTS '$mroot'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO '$mroot'@'%' WITH GRANT OPTION\"" "${blau}";
       ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'%' IDENTIFIED BY '$mrpwd' WITH GRANT OPTION\"" "${blau}";
-    done;
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"CREATE USER IF NOT EXISTS 'mysql'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' WITH GRANT OPTION\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+      ausf "mysql -u\"$mroot\" -hlocalhost -p\"$mrpwd\" -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     mysql -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
     erg=$?;
@@ -1212,8 +1216,10 @@ richtmariadbein() {
       else
           pruefmroot;
 #          test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
-          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' IDENTIFIED BY '$mpwd' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"CREATE USER IF NOT EXISTS '$musr'@'localhost' IDENTIFIED BY '$mpwd'\"" "${blau}";
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'localhost' WITH GRANT OPTION\"" "${blau}";
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"CREATE USER IF NOT EXISTS '$musr'@'%' IDENTIFIED BY '$mpwd'\"" "${blau}";
+          ausf "mysql --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e\"GRANT ALL ON *.* TO '$musr'@'%' WITH GRANT OPTION\"" "${blau}";
       fi;
       echo datadir: $datadir;
       echo Jetzt konfigurieren;
@@ -2381,7 +2387,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
  [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
-	setzinstprog;
+ [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog;
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;
  [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein;
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
