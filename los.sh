@@ -990,7 +990,6 @@ ersetzeprog() {
     if [ "$1" = "p7zip-full" ]; then eprog=""; break; fi;
     # exfatprogs heißt auf openSUSE 16.0 exfatprogs (korrekt)
     if [ "$1" = "exfatprogs" ]; then eprog="exfatprogs"; break; fi;
-    if [ "$1" = "curlftfs" ]; then eprog="curlftpfs"; break; fi;
     # libgsasl nicht in offiziellen openSUSE 16.0 Repos
     if [ "$1" = "libgsasl" ]; then eprog=""; break; fi;
     if [ "$1" = "libgsasl-devel" ]; then eprog=""; break; fi;      
@@ -1418,7 +1417,6 @@ proginst() {
 #  doinst libcapi20-2;
   doinst libcapi20-3;
   doinst capi4linux-devel;
-  doinst curlftfs; # fuer autofax
   # curlftpfs liegt im filesystems-Repository
   if [ $OSNR -eq 4 ]; then
     _osnver=$(grep ^VERSION_ID= /etc/os-release 2>/dev/null|cut -d'"' -f2);
@@ -1427,7 +1425,7 @@ proginst() {
       zypper --gpg-auto-import-keys refresh;
     }
   fi
-  doinst curlftpfs; # fuer autofax  
+  doinst curlftpfs; # fuer autofax
 
 # fuer fbfax:
 # zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
@@ -1915,45 +1913,96 @@ tufirewall() {
 } # tufirewall
 
 fritzbox() {
-	printf "${dblau}fritzbox$reset()\n";
-	ip4=$(ping -4c1 fritz.box 2>&1);
-  erg4=$?;
-  ip6=$(ping -6c1 fritz.box 2>&1);
-  erg6=$?;
-	if [ $erg4 -eq 0 -o $erg6 -eq 0 ]; then
-	 [ $erg6 -eq 0 ]&&{ ipv6=$(echo $ip6|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/'); ipv=$ipv6;} # z.B. fd00::a96:d7ff:fe49:19ca, umgeben von zwei Klammern
-	 [ $erg4 -eq 0 ]&&{ ipv4=$(echo $ip4|sed 's/^[^(]*(\([^)]*\)).*/\1/'); ipv=$ipv4;} # z.B. 192.168.178.1
-	 echo ipv: $ipv
-	 desc=$(curl $ipv:49000/tr64desc.xml 2>/dev/null);
-	 fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
-	 echo fbname: $fbname
-#	 fbuuid=$(echo "$desc"|sed -n '/UDN/{s/^[^>]*>\([^<]*\).*/\1/;s/:/=/;p;q}'|tr '[:lower:]' '[:upper:]'); # geht scheinbar nicht
-	 fbnameklein=$(echo $fbname|tr '[:upper:]' '[:lower:]');
-	 mkdir -p /mnt/$fbnameklein;
-	 credfile="/root/.fbcredentials"; # ~  # $HOME
-	 grep -q "^//$ipv4\|^//$ipv6" $ftb||{
-		 if [ ! -f "$credfile" ]; then
-			 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
-			 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
-			 printf "username=$fbuser\npassword=$fbpwd" >$credfile;
-		 fi;
-		 umount /mnt/$fbnameklein;
-		 mount //$ipv/$fbname /mnt/$fbnameklein -t cifs -o nofail,vers=1.0,credentials=$credfile >/dev/null 2>&1 &&{
-			 umount /mnt/$fbnameklein;
-			 echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,vers=1.0,credentials=$credfile 0 2" >>$ftb;
-		 :;}||{
-			 mount //$ipv/$fbname /mnt/$fbnameklein -t cifs -o nofail,credentials=$credfile >/dev/null 2>&1 &&{
-				 umount /mnt/$fbnameklein;
-				 echo "//$ipv/$fbname /mnt/$fbnameklein cifs nofail,credentials=$credfile 0 0" >>$ftb; 
-			 }
-		 }
-	 }
-#	 echo "$desc";
-   printf "Fritzbox gefunden, Name: $blau$fbname$reset, ipv4: $blau$ipv4$reset, ipv6: $blau$ipv6$reset\n";
-#	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
-#	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
-	fi;
+  printf "${dblau}fritzbox${reset}()\n";
+
+  # Fritz!Box erreichbar? IPv4 bevorzugen, IPv6 als Fallback:
+  ipv4=; ipv6=; ipv=; erg4=1; erg6=1;
+  ip4=$(ping -c1 -4 fritz.box 2>&1); erg4=$?;
+  ip6=$(ping -c1 -6 fritz.box 2>&1); erg6=$?;
+
+  if [ $erg4 -ne 0 ] && [ $erg6 -ne 0 ]; then
+    printf "${rot}fritz.box nicht erreichbar${reset}\n";
+    return 0;
+  fi;
+
+  # IPv4 bevorzugen (CIFS mit IPv6 oft unzuverlässig):
+  [ $erg4 -eq 0 ] && {
+    ipv4=$(echo "$ip4"|sed 's/^[^(]*(\([^)]*\)).*/\1/');
+    ipv=$ipv4;
+  };
+  [ -z "$ipv" ] && [ $erg6 -eq 0 ] && {
+    ipv6=$(echo "$ip6"|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/');
+    ipv=$ipv6;
+  };
+  printf "ipv: ${blau}$ipv${reset}\n";
+
+  # Fritz!Box-Namen per TR-064 ermitteln:
+  desc=$(curl --connect-timeout 5 "$ipv:49000/tr64desc.xml" 2>/dev/null);
+  if [ -z "$desc" ]; then
+    printf "${rot}TR-064 nicht erreichbar – verwende 'fritz.box' als Namen${reset}\n";
+    fbname="fritz.box";
+  else
+    fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
+  fi;
+  printf "fbname: ${blau}$fbname${reset}\n";
+  fbnameklein=$(echo "$fbname"|tr '[:upper:]' '[:lower:]'|tr ' ' '_');
+  mkdir -p "/mnt/$fbnameklein";
+
+  # Credentials prüfen / abfragen:
+  credfile="$HOME/.fbcredentials";
+  if [ ! -f "$credfile" ]; then
+    printf "Bitte Fritzbox-Benutzer eingeben: "; read fbuser;
+    printf "Bitte Passwort für ${blau}$fbuser${reset} eingeben: ";
+    stty -echo; read fbpwd; stty echo; printf "\n";
+    printf "username=%s\npassword=%s\n" "$fbuser" "$fbpwd" >"$credfile";
+    chmod 600 "$credfile";
+    printf "Credentials gespeichert in ${blau}$credfile${reset}\n";
+  fi;
+
+  # Prüfen ob Eintrag schon in fstab:
+  if grep -q "^//$ipv4\|^//$ipv6\|$fbnameklein" "$ftb" 2>/dev/null; then
+    printf "Fritz!Box bereits in ${blau}$ftb${reset} eingetragen.\n";
+    # Trotzdem versuchen zu mounten falls noch nicht gemountet:
+    mountpoint -q "/mnt/$fbnameklein" || mount "/mnt/$fbnameklein" 2>/dev/null||true;
+    return 0;
+  fi;
+
+  # Unmounten falls noch gemountet:
+  umount "/mnt/$fbnameklein" 2>/dev/null||true;
+
+  # SMBv3 → SMBv2 → SMBv1 versuchen:
+  _gemountet=;
+  for _vers in 3.0 2.1 2.0 1.0; do
+    mount "//$ipv/$fbname" "/mnt/$fbnameklein" \
+      -t cifs \
+      -o "nofail,vers=$_vers,credentials=$credfile" \
+      >/dev/null 2>&1 && {
+      _gemountet=1;
+      printf "Mount erfolgreich mit ${blau}SMB $_vers${reset}\n";
+      umount "/mnt/$fbnameklein" 2>/dev/null||true;
+      # fstab-Eintrag schreiben:
+      if [ "$_vers" = "1.0" ]; then
+        _opts="nofail,vers=1.0,credentials=$credfile";
+        _dump=0; _pass=2;
+      else
+        _opts="nofail,vers=$_vers,credentials=$credfile";
+        _dump=0; _pass=0;
+      fi;
+      printf "//$ipv/$fbname\t/mnt/$fbnameklein\tcifs\t$_opts\t$_dump\t$_pass\n" >>"$ftb";
+      printf "fstab-Eintrag geschrieben: ${blau}//$ipv/$fbname${reset}\n";
+      break;
+    };
+  done;
+
+  [ "$_gemountet" ] || \
+    printf "${rot}Mount fehlgeschlagen – Credentials oder SMB-Version prüfen${reset}\n";
+
+  printf "Fritz!Box: Name=${blau}$fbname${reset}";
+  [ "$ipv4" ] && printf ", IPv4=${blau}$ipv4${reset}";
+  [ "$ipv6" ] && printf ", IPv6=${blau}$ipv6${reset}";
+  printf "\n";
 } # fritzbox
+
 
 machidpub() {
   # ed25519 bevorzugen – moderner und schneller als rsa:
