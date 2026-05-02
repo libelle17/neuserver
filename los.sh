@@ -1917,11 +1917,11 @@ fritzbox() {
 
   # Fritz!Box erreichbar? IPv4 bevorzugen, IPv6 als Fallback:
   ipv4=; ipv6=; ipv=; erg4=1; erg6=1;
-  ip4=$(ping -c1 -4 fritz.box 2>&1); erg4=$?;
-  ip6=$(ping -c1 -6 fritz.box 2>&1); erg6=$?;
+  ip4=$(ping -c1 -4 fritz.box 2>/dev/null); erg4=$?;
+  ip6=$(ping -c1 -6 fritz.box 2>/dev/null); erg6=$?;
 
   if [ $erg4 -ne 0 ] && [ $erg6 -ne 0 ]; then
-    printf "${rot}fritz.box nicht erreichbar${reset}\n";
+    printf "%bfritz.box nicht erreichbar%b\n" "$rot" "$reset";
     return 0;
   fi;
 
@@ -1934,17 +1934,19 @@ fritzbox() {
     ipv6=$(echo "$ip6"|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/');
     ipv=$ipv6;
   };
-  printf "ipv: ${blau}$ipv${reset}\n";
+  printf "ipv: %b%s%b\n" "$blau" "$ipv" "$reset";
 
   # Fritz!Box-Namen per TR-064 ermitteln:
-  desc=$(curl --connect-timeout 5 "$ipv:49000/tr64desc.xml" 2>/dev/null);
+  # Korrektur: http:// war im Original vergessen
+  desc=$(curl --connect-timeout 5 "http://$ipv:49000/tr64desc.xml" 2>/dev/null);
   if [ -z "$desc" ]; then
-    printf "${rot}TR-064 nicht erreichbar – verwende 'fritz.box' als Namen${reset}\n";
+    printf "%bTR-064 nicht erreichbar%b – verwende 'fritz.box' als Namen\n" "$rot" "$reset";
     fbname="fritz.box";
   else
     fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
   fi;
-  printf "fbname: ${blau}$fbname${reset}\n";
+  printf "fbname: %b%s%b\n" "$blau" "$fbname" "$reset";
+  # Leerzeichen im Namen für Mountpoint ersetzen:
   fbnameklein=$(echo "$fbname"|tr '[:upper:]' '[:lower:]'|tr ' ' '_');
   mkdir -p "/mnt/$fbnameklein";
 
@@ -1952,16 +1954,16 @@ fritzbox() {
   credfile="$HOME/.fbcredentials";
   if [ ! -f "$credfile" ]; then
     printf "Bitte Fritzbox-Benutzer eingeben: "; read fbuser;
-    printf "Bitte Passwort für ${blau}$fbuser${reset} eingeben: ";
+    printf "Bitte Passwort fuer %b%s%b eingeben: " "$blau" "$fbuser" "$reset";
     stty -echo; read fbpwd; stty echo; printf "\n";
     printf "username=%s\npassword=%s\n" "$fbuser" "$fbpwd" >"$credfile";
     chmod 600 "$credfile";
-    printf "Credentials gespeichert in ${blau}$credfile${reset}\n";
+    printf "Credentials gespeichert in %b%s%b\n" "$blau" "$credfile" "$reset";
   fi;
 
   # Prüfen ob Eintrag schon in fstab:
   if grep -q "^//$ipv4\|^//$ipv6\|$fbnameklein" "$ftb" 2>/dev/null; then
-    printf "Fritz!Box bereits in ${blau}$ftb${reset} eingetragen.\n";
+    printf "Fritz%%21Box bereits in %b%s%b eingetragen.\n" "$blau" "$ftb" "$reset";
     # Trotzdem versuchen zu mounten falls noch nicht gemountet:
     mountpoint -q "/mnt/$fbnameklein" || mount "/mnt/$fbnameklein" 2>/dev/null||true;
     return 0;
@@ -1970,7 +1972,7 @@ fritzbox() {
   # Unmounten falls noch gemountet:
   umount "/mnt/$fbnameklein" 2>/dev/null||true;
 
-  # SMBv3 → SMBv2 → SMBv1 versuchen:
+  # SMBv3 → SMBv2.1 → SMBv2.0 → SMBv1 versuchen:
   _gemountet=;
   for _vers in 3.0 2.1 2.0 1.0; do
     mount "//$ipv/$fbname" "/mnt/$fbnameklein" \
@@ -1978,28 +1980,30 @@ fritzbox() {
       -o "nofail,vers=$_vers,credentials=$credfile" \
       >/dev/null 2>&1 && {
       _gemountet=1;
-      printf "Mount erfolgreich mit ${blau}SMB $_vers${reset}\n";
+      printf "Mount erfolgreich mit %bSMB %s%b\n" "$blau" "$_vers" "$reset";
       umount "/mnt/$fbnameklein" 2>/dev/null||true;
       # fstab-Eintrag schreiben:
       if [ "$_vers" = "1.0" ]; then
-        _opts="nofail,vers=1.0,credentials=$credfile";
         _dump=0; _pass=2;
       else
-        _opts="nofail,vers=$_vers,credentials=$credfile";
         _dump=0; _pass=0;
       fi;
-      printf "//$ipv/$fbname\t/mnt/$fbnameklein\tcifs\t$_opts\t$_dump\t$_pass\n" >>"$ftb";
-      printf "fstab-Eintrag geschrieben: ${blau}//$ipv/$fbname${reset}\n";
+      printf "//$ipv/$fbname\t/mnt/$fbnameklein\tcifs\tnofail,vers=%s,credentials=%s\t%s\t%s\n" \
+        "$_vers" "$credfile" "$_dump" "$_pass" >>"$ftb";
+      printf "fstab-Eintrag geschrieben: %b//%s/%s%b\n" \
+        "$blau" "$ipv" "$fbname" "$reset";
       break;
     };
   done;
 
   [ "$_gemountet" ] || \
-    printf "${rot}Mount fehlgeschlagen – Credentials oder SMB-Version prüfen${reset}\n";
+    printf "%bMount fehlgeschlagen%b – Credentials oder SMB-Version pruefen\n" \
+      "$rot" "$reset";
 
-  printf "Fritz!Box: Name=${blau}$fbname${reset}";
-  [ "$ipv4" ] && printf ", IPv4=${blau}$ipv4${reset}";
-  [ "$ipv6" ] && printf ", IPv6=${blau}$ipv6${reset}";
+  # Zusammenfassung:
+  printf "Fritz%%21Box: Name=%b%s%b" "$blau" "$fbname" "$reset";
+  [ "$ipv4" ] && printf ", IPv4=%b%s%b" "$blau" "$ipv4" "$reset";
+  [ "$ipv6" ] && printf ", IPv6=%b%s%b" "$blau" "$ipv6" "$reset";
   printf "\n";
 } # fritzbox
 
