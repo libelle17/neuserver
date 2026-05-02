@@ -2230,6 +2230,15 @@ backup() {
 
 cron() {
   printf "${dblau}cron${reset}()\n";
+    # Quellserver abfragen falls nicht gesetzt und interaktiv:
+  if [ -z "$srv0" ] && [ -t 0 ]; then
+    printf "Quellserver (leer lassen für nur lokale Sicherung): ";
+    read _srv0eingabe;
+    if [ "$_srv0eingabe" ]; then
+      srv0="$_srv0eingabe";
+      printf "Quellserver: ${blau}$srv0${reset}\n";
+    fi;
+  fi;
   chier=$instvz/cronhier;
 
   # 1) Aktuelle crontab sichern:
