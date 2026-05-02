@@ -311,11 +311,12 @@ git: README.md
 	  curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
 	}
 	$(call setz_gitv,".")
-	-[ $(DPROG) = "neuserver" ]&&sh $(INSTVZ)/los.sh -ks||true;
-	-[ $(DPROG) = "neuserver" ]&&git add konfig/ .gitignore 2>/dev/null||true;
+	-[ "$(DPROG)" = "neuserver" ]&&sh $(INSTVZ)/los.sh -ks||true;
+	-[ "$(DPROG)" = "neuserver" ]&&git add konfig/ .gitignore 2>/dev/null||true;
+# Commit auch wenn nichts geändert (--allow-empty):
 	-git config --global push.default simple;\
 	git add -u;\
-	git commit -m "Version $$(cat versdt)";\
+	git commit --allow-empty -m "Version $$(cat versdt)";\
 	[ "$(DPROG)" ]&&{ git remote get-url origin $(KR)&&git remote set-url origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git||git remote add origin git+ssh://git@github.com/$$(sed 's/"//g' gitvdt)/$(DPROG).git;};\
 	git push -u origin master;\
 	printf "Fertig mit make .git\n";

@@ -70,6 +70,7 @@ commandline() {
   obtv=0; # Teamviewer
   obkonfigsp=0; # Konfiguration sichern
   obkonfiglad=0; # Konfiguration laden
+  obkonfignl=0; # Konfiguration neu laden
   obcron=0; # crontab sichern/übernehmen
   gespar="$@"
   verb=0;
@@ -101,6 +102,7 @@ commandline() {
         printf "  $blau-cron$reset: sichert/überträgt crontab vom Quellserver\n";
         printf "  $blau-ks$reset: sichert Konfigurationsdateien im eigenen Repository\n";
         printf "  $blau-kl$reset: lädt Konfigurationsdateien\n";
+        printf "  ${blau}-knl${reset}: lädt Konfigurationsdateien neu (überschreibt vorhandene)\n";
         printf "  $blau-vi$reset: lädt dieses Programm in vi(m).\n";
         printf "  $blau-v$reset: wird gesprächiger\n";
         printf "  $blau-h$reset: zeigt diese Hilfe an\n";
@@ -116,6 +118,7 @@ commandline() {
           mt) obmt=1;;
           ks) obkonfigsp=1;;
           kl) obkonfiglad=1;;
+          knl) obkonfignl=1;;
           prog) obprog=1;;
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
@@ -296,85 +299,90 @@ konfig_sichern() {
 # ------------------------------------------------------------
 
 konfig_laden() {
-  printf "${dblau}konfig_laden$reset()\n";
+  printf "${dblau}konfig_laden${reset}()\n";
   KVZB="$instvz/konfig";
   GPGPASS_FILE="$HOME/.gpgpass";
-
+  # $1=neu: vorhandene Dateien überschreiben
+  _ueberschreiben=;
+  [ "$1" = "neu" ] && {
+    _ueberschreiben=1;
+    printf "Modus: ${rot}überschreibe vorhandene Dateien${reset}\n";
+  };
+  # Hilfsfunktion: Datei kopieren mit/ohne Überschreiben
+  _kopierdatei() {
+    _quelle="$1"; _ziel="$2"; _label="${3:-$_ziel}";
+    if [ ! -e "$_ziel" ] || [ "$_ueberschreiben" ]; then
+      cp -a "$_quelle" "$_ziel";
+      chmod 600 "$_ziel" 2>/dev/null;
+      [ "$_ueberschreiben" ] && [ -e "$_ziel" ] && \
+        printf "überschrieben: ${blau}$_label${reset}\n" || \
+        printf "wiederhergestellt: ${blau}$_label${reset}\n";
+    else
+      printf "bereits vorhanden: ${blau}$_label${reset} – übersprungen\n";
+    fi;
+  };
   # ---- 1) Unkritische Dateien wiederherstellen ----
   if [ -d "$KVZB/offen" ]; then
     for f in "$KVZB/offen/".[a-z]*; do
       [ -f "$f" ] || continue;
-      ziel="$HOME/$(basename $f)";
-      if [ ! -f "$ziel" ]; then
-        cp -a "$f" "$ziel";
-        printf "wiederhergestellt: $blau$ziel$reset\n";
-      else
-        printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
-      fi;
+      ziel="$HOME/$(basename "$f")";
+      _kopierdatei "$f" "$ziel";
     done;
-    # .vim
-    if [ -d "$KVZB/offen/.vim" ] && [ ! -d "$HOME/.vim" ]; then
-      cp -a "$KVZB/offen/.vim" "$HOME/.vim";
-      printf "wiederhergestellt: $blau$HOME/.vim/$reset\n";
+    # .vim-Verzeichnis:
+    if [ -d "$KVZB/offen/.vim" ]; then
+      if [ ! -d "$HOME/.vim" ] || [ "$_ueberschreiben" ]; then
+        cp -a "$KVZB/offen/.vim" "$HOME/.vim";
+        printf "wiederhergestellt: ${blau}$HOME/.vim/${reset}\n";
+      else
+        printf "bereits vorhanden: ${blau}$HOME/.vim/${reset} – übersprungen\n";
+      fi;
     fi;
-    # kcminputrc
+    # kcminputrc:
     if [ -f "$KVZB/offen/config/kcminputrc" ]; then
       mkdir -p "$HOME/.config";
-      [ -f "$HOME/.config/kcminputrc" ] || {
-        cp "$KVZB/offen/config/kcminputrc" "$HOME/.config/kcminputrc";
-        printf "wiederhergestellt: $blau$HOME/.config/kcminputrc$reset\n";
-      };
+      _kopierdatei \
+        "$KVZB/offen/config/kcminputrc" \
+        "$HOME/.config/kcminputrc";
     fi;
   fi;
-
   # ---- 2) Sensible Dateien entschlüsseln ----
   ARCHIV_GPG="$KVZB/verschluesselt/sensibel.tar.gpg";
   [ -f "$ARCHIV_GPG" ] || {
-    printf "${rot}Kein verschlüsseltes Archiv gefunden: $ARCHIV_GPG$reset\n";
+    printf "${rot}Kein verschlüsseltes Archiv gefunden: ${blau}$ARCHIV_GPG${reset}\n";
     return 0;
   };
-
-  # Passphrase abfragen falls fehlend
+  # Passphrase abfragen falls fehlend:
   if [ ! -f "$GPGPASS_FILE" ]; then
-    printf "GPG-Passphrase für $blau$ARCHIV_GPG$reset eingeben:\n";
+    printf "GPG-Passphrase für ${blau}$ARCHIV_GPG${reset} eingeben:\n";
     stty -echo; read GPGPASS; stty echo; printf "\n";
     printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
     chmod 600 "$GPGPASS_FILE";
   fi;
-
   TMPDIR_KRYPT=$(mktemp -d);
   gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
     --decrypt "$ARCHIV_GPG" | tar xf - -C "$TMPDIR_KRYPT" 2>/dev/null;
   if [ $? -ne 0 ]; then
-    printf "${rot}Entschlüsselung fehlgeschlagen – Passphrase prüfen!$reset\n";
+    printf "${rot}Entschlüsselung fehlgeschlagen – Passphrase prüfen!${reset}\n";
     rm -rf "$TMPDIR_KRYPT";
     return 1;
   fi;
-
-  # Dateien nur kopieren wenn noch nicht vorhanden
+  # Dateien kopieren:
   for f in "$TMPDIR_KRYPT/"* "$TMPDIR_KRYPT/".*; do
     [ -e "$f" ] || continue;
     bn=$(basename "$f");
-    # Programmkonfigurationen ins Homeverzeichnis
+    # . und .. überspringen:
+    [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
     case "$bn" in
-      *.conf)
+      *.conf|.gnupg|.fbcredentials|.loscred|.mysqlpwd|.mysqlrpwd| \
+      .modbpwd|.mariadbpwd|.mariadbrpwd|.sturm|.tr64cred)
         ziel="$HOME/$bn";;
-      .gnupg)
-        ziel="$HOME/.gnupg";;
       *)
         ziel="$HOME/$bn";;
     esac;
-    if [ ! -e "$ziel" ]; then
-      cp -a "$f" "$ziel";
-      chmod 600 "$ziel" 2>/dev/null;
-      printf "wiederhergestellt (sensibel): $blau$ziel$reset\n";
-    else
-      printf "bereits vorhanden: $blau$ziel$reset – übersprungen\n";
-    fi;
+    _kopierdatei "$f" "$ziel" "sensibel: $ziel";
   done;
-
   rm -rf "$TMPDIR_KRYPT";
-  printf "${gruen}konfig_laden abgeschlossen.$reset\n";
+  printf "${gruen}konfig_laden abgeschlossen.${reset}\n";
 } # konfig_laden
 
 # ============================================================
@@ -2557,6 +2565,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
  [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;
  [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
+ [ $obkonfignl = 1 ]&&konfig_laden neu;
 # if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
  [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } }
  [ $obteil = 0 ]&&speichern;
