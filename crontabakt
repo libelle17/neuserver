@@ -196,10 +196,12 @@ ELG=/var/log/cronf.log
 # -0 3,11,13,15 * * * pgrep -c -f "getmail -rbuchrc" || /usr/bin/getmail -rbuchhrc -rfreenetrc -rgmx1rc -rgmx2rc -rgmx3rc -rgmx4rc -rgmx5rc -rgmx6rc -rgmx7rc -rgooglerc -rgoogle2rc -rlrzrc -rmnetrc -rvrwebrc -rweb_rc -rwebrc
 # Faxe von der Fritzbox abholen (wenn Abspeichern in /mnt/diabfb/FRITZ/faxbox funktioniert) und in MySQL eintragen (ab 2020 in autofax)
 # -*/2 * * * * $RBI/faxord >>$NLG 2>>$ELG
+-0 14,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wser/mo7z&&rsync /mnt/wser/mo7z/ /DATA/mo7z/ -dlptgoDvuz --delete
+-0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wres/mo7z&&rsync /mnt/wres/mo7z/ /DATA/wresmo7z/ -dlptgoDvuz --delete
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 $RBI/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 $RBI/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 $RBI/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&$RBI/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente
 -* * * * * /usr/bin/ionice -c3 $RBI/zusalat.sh
 # Medical-Office-Dateisicherungen
 -20 14,19 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bumo.sh -e 
@@ -240,12 +242,16 @@ ELG=/var/log/cronf.log
 10 4 * * * mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null
 0 1 * * * /usr/bin/ionice -c3 /usr/bin/find /tmp -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * /usr/bin/ionice -c3 /usr/bin/nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
-10 06 * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,192.168.178.45,192.168.178.95>/dev/null
-# * * * * 1-5 weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
+40 05 * * 1-5 /root/bin/weckalle.sh
+10 06 * * 1-5 /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,192.168.178.45,192.168.178.95>/dev/null
+# * * * * 1-5 /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
+0 2 * * * /usr/bin/python3 /root/bin/doppelteimporte.py --delete --no-color >> /var/log/doppelteimporte.log 2>&1
 */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';" }
 -5 22 * * * /usr/bin/ionice -c3 $RBI/stutzeTMBack.sh
 -5 23 * * * /usr/bin/ionice -c3 $RBI/stutze.sh
 -5 0 * * * /usr/bin/ionice -c3 $RBI/stutzeDBBack.sh
+# * * * * * /usr/bin/ionice -c3 /root/bin/stutzMOSich.sh
+
 -35 0 * * * /usr/bin/ionice -c3 $RBI/komprsql.sh
 0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
