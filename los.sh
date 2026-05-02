@@ -1058,7 +1058,7 @@ doinst() {
   printf "Fertig mit ${blau}doinst($reset$1)\n"
 } # doinst
 
-# aufgerufen in richtmariadb ein
+# aufgerufen in richtmariadbein
 instmaria() {
   # anderes Datenverzeichnis auf gehostetem Laufwerk: erst in my.cnf datadir=... eintragen, ohne dass es es schon gibt, dann einmal systemctl start mysql aufrufen, dann wieder schließen, die Daten dorthin kopieren
 	printf "${blau}instmaria$reset()\n"
@@ -1234,7 +1234,8 @@ richtmariadbein() {
       echo Jetzt konfigurieren;
     fi;
 	fi;   # if [ $minstalliert -eq 1 ]; then
-	[ "$verb" ]&& echo minstalliert: $minstalliert;
+  firewall mysql;
+  [ "$verb" ]&& echo minstalliert: $minstalliert;
 } # richtmariadbein
 
 proginst() {
