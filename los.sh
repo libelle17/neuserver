@@ -1952,11 +1952,30 @@ fritzbox() {
 } # fritzbox
 
 machidpub() {
-	 idpub="$HOME/.ssh/id_rsa.pub";
-	 while [ ! -f "$idpub" ]; do
-	  printf "Es fehlt noch: $blau$idpub$reset\n";
-	  ssh-keygen -t rsa; # return, return, return
-	 done;
+  # ed25519 bevorzugen – moderner und schneller als rsa:
+  for _k in \
+    "$HOME/.ssh/id_ed25519_git" \
+    "$HOME/.ssh/id_ed25519" \
+    "$HOME/.ssh/id_rsa" \
+    ; do
+    if [ -f "${_k}.pub" ]; then
+      idpub="${_k}.pub";
+      printf "SSH-Schlüssel gefunden: ${blau}$idpub${reset}\n";
+      return 0;
+    fi;
+  done;
+  # Keiner vorhanden – neu generieren:
+  printf "Kein SSH-Schlüssel gefunden – generiere ${blau}id_ed25519_git${reset} ...\n";
+  mkdir -p "$HOME/.ssh";
+  chmod 700 "$HOME/.ssh";
+  ssh-keygen -t ed25519 \
+    -f "$HOME/.ssh/id_ed25519_git" \
+    -C "$(whoami)@$(hostname)@github.com" \
+    -N "";
+  idpub="$HOME/.ssh/id_ed25519_git.pub";
+  printf "Bitte diesen Schlüssel auf ${blau}github.com -> Settings -> SSH keys${reset} eintragen:\n";
+  cat "$idpub";
+  printf "\nDanach Enter drücken ...\n"; read _dummy;
 } # machidpub
 
 setzgitssh() {
