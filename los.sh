@@ -1058,25 +1058,62 @@ doinst() {
   printf "Fertig mit ${blau}doinst($reset$1)\n"
 } # doinst
 
-# aufgerufen in richtmariadbein
-instmaria() {
-  # anderes Datenverzeichnis auf gehostetem Laufwerk: erst in my.cnf datadir=... eintragen, ohne dass es es schon gibt, dann einmal systemctl start mysql aufrufen, dann wieder schließen, die Daten dorthin kopieren
-	printf "${blau}instmaria$reset()\n"
-	case $OSNR in
-		1|2|3)
-			apt-get -y install apt-transport-https;
-			apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --reinstall install -y mariadb-server;;
-		*)
-			doinst mariadb;
-			if [ $OSNR -eq 8 ]; then
-				mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql;
-			fi;;
-	esac;
-  for datei in /etc/mysql/mariadb.conf.d/50-server.cnf /etc/my.cnf; do
-    [ -f "$datei" ]&& sed -i.bak 's/^\(bind-address.*\)/# \1/;/^sql_mode=/a innodb_strict_mode=OFF' "$datei";
-  done;
-  systemctl restart mysql;
-} # instmaria
+datadirsetzen() {
+  printf "${dblau}datadirsetzen${reset}()\n";
+  if ! mountpoint -q /DATA 2>/dev/null; then
+    printf "${rot}/DATA nicht gemountet – MariaDB wird nicht gestartet!${reset}\n";
+    systemctl stop mariadb 2>/dev/null||true;
+    systemctl stop mysql 2>/dev/null||true;
+    return 1;
+  fi;
+  # Aktuellen datadir ermitteln:
+  _aktuell=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*//p' /etc/my.cnf 2>/dev/null|head -1);
+  [ -z "$_aktuell" ]&&_aktuell=$(readlink -f /var/lib/mysql 2>/dev/null||echo /var/lib/mysql);
+  _ziel=$(readlink -f /var/lib/mysql 2>/dev/null);
+
+  if [ "$_aktuell" = "/DATA/mysql" ] || [ "$_ziel" = "/DATA/mysql" ]; then
+    printf "datadir bereits ${blau}/DATA/mysql${reset} – nichts zu tun.\n";
+  else
+    printf "Verschiebe datadir von ${blau}$_aktuell${reset} nach ${blau}/DATA/mysql${reset} ...\n";
+    systemctl stop mariadb 2>/dev/null||systemctl stop mysql 2>/dev/null||true;
+    if [ -d /DATA/mysql ] && [ "$(ls -A /DATA/mysql 2>/dev/null)" ]; then
+      printf "${blau}/DATA/mysql${reset} bereits vorhanden und nicht leer – überspringe Verschieben.\n";
+    elif [ -d "$_aktuell" ] && [ ! -L "$_aktuell" ]; then
+      mv "$_aktuell" /DATA/mysql;
+      printf "Verschoben: ${blau}$_aktuell${reset} -> ${blau}/DATA/mysql${reset}\n";
+    else
+      mkdir -p /DATA/mysql;
+      printf "Verzeichnis ${blau}/DATA/mysql${reset} angelegt.\n";
+    fi;
+    chown mysql:mysql /DATA/mysql;
+    chcon -R -t mysqld_db_t /DATA/mysql/ 2>/dev/null||true;
+    semanage fcontext -a -t mysqld_db_t "/DATA/mysql(/.*)?" 2>/dev/null||true;
+    restorecon -Rv /DATA/mysql/ 2>/dev/null||true;
+    # my.cnf anpassen:
+    if grep -q "^[[:space:]]*datadir" /etc/my.cnf; then
+      sed -i 's|^[[:space:]]*datadir.*|datadir=/DATA/mysql|' /etc/my.cnf;
+    else
+      sed -i '/^\[mysqld\]/a datadir=/DATA/mysql' /etc/my.cnf;
+    fi;
+    printf "datadir=/DATA/mysql in ${blau}my.cnf${reset} gesetzt.\n";
+  fi;
+
+  # Symlink entfernen falls vorhanden, leeres Verzeichnis sicherstellen:
+  [ -L /var/lib/mysql ]&&rm /var/lib/mysql;
+    # Leeres Verzeichnis anlegen falls fehlend (systemd braucht es):
+  [ -d /var/lib/mysql ]||{ mkdir -p /var/lib/mysql; chown mysql:mysql /var/lib/mysql; };
+
+  # systemd-Override: MariaDB nur starten wenn /DATA gemountet:
+  _od=/etc/systemd/system/mariadb.service.d/require-data.conf;
+  if [ ! -f "$_od" ]; then
+    mkdir -p "$(dirname $_od)";
+    printf "[Unit]\nRequiresMountsFor=/DATA\nConditionPathIsMountPoint=/DATA\n" >"$_od";
+    systemctl daemon-reload;
+    printf "systemd-Schutz aktiv: MariaDB startet nur wenn ${blau}/DATA${reset} gemountet.\n";
+  else
+    printf "systemd-Schutz bereits vorhanden: ${blau}$_od${reset}\n";
+  fi;
+} # datadirsetzen
 
 pruefmroot() {
 	printf "${dblau}pruefmroot$reset()\n";
