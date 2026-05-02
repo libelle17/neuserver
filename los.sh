@@ -198,12 +198,13 @@ konfig_sichern() {
   mkdir -p "$KVZB/offen" "$KVZB/verschluesselt";
 
   # ---- 1) Unkritische Dateien – offen sichern ----
+  # cp -a statt cp -au: immer den aktuellen $HOME-Stand sichern
   for f in \
     "$HOME/.gitconfig" \
     "$HOME/.gtkrc-2.0" \
     "$HOME/.wget-hsts" \
     ; do
-    [ -f "$f" ] && cp -au "$f" "$KVZB/offen/" && \
+    [ -f "$f" ] && cp -a "$f" "$KVZB/offen/" && \
       printf "gesichert (offen): ${blau}$(basename "$f")${reset}\n";
   done;
 
@@ -217,7 +218,7 @@ konfig_sichern() {
   # KDE kcminputrc – unkritisch:
   [ -f "$HOME/.config/kcminputrc" ] && {
     mkdir -p "$KVZB/offen/config";
-    cp -au "$HOME/.config/kcminputrc" "$KVZB/offen/config/";
+    cp -a "$HOME/.config/kcminputrc" "$KVZB/offen/config/";
     printf "gesichert (offen): ${blau}.config/kcminputrc${reset}\n";
   };
 
@@ -280,15 +281,36 @@ konfig_sichern() {
   fi;
   rm -rf "$TMPDIR_KRYPT";
 
-  # .gitignore sicherstellen – nur .gpgpass ignorieren, sensibel.tar.gpg SOLL ins Repo:
+  # .gitignore sicherstellen – nur .gpgpass ignorieren:
   GI="$instvz/.gitignore";
   grep -q "^\.gpgpass$" "$GI" 2>/dev/null || printf ".gpgpass\n" >>"$GI";
   sed -i '/^konfig\/verschluesselt\/sensibel\.tar\.gpg$/d' "$GI" 2>/dev/null;
 
+  # ---- 3) Direkt nach GitHub pushen ----
+  if [ -d "$instvz/.git" ]; then
+    printf "Committe und pushe ${blau}konfig/${reset} nach GitHub ...\n";
+    # Erst alle staged Änderungen unstagen damit nur konfig/ committet wird:
+    git -C "$instvz" reset HEAD 2>/dev/null||true;
+    git -C "$instvz" add konfig/ .gitignore 2>/dev/null;
+    # Prüfen ob es überhaupt Änderungen gibt:
+    if git -C "$instvz" diff --cached --quiet 2>/dev/null; then
+      printf "Keine Änderungen in ${blau}konfig/${reset} – kein Commit nötig.\n";
+    else
+      git -C "$instvz" commit --allow-empty \
+        -m "konfig_sichern: $(date '+%Y-%m-%d %H:%M')" && \
+        printf "${gruen}Commit erstellt${reset}\n" || \
+        printf "${rot}Commit fehlgeschlagen${reset}\n";
+    fi;
+    # Push – auch wenn kein neuer Commit (--allow-empty-message):
+    git -C "$instvz" push 2>&1 && \
+      printf "${gruen}GitHub aktualisiert${reset}\n" || \
+      printf "${rot}git push fehlgeschlagen – manuell: make git${reset}\n";
+  else
+    printf "${rot}$instvz ist kein git-Repository – kein push möglich${reset}\n";
+  fi;
+
   printf "${gruen}konfig_sichern abgeschlossen.${reset}\n";
 } # konfig_sichern
-
-# ------------------------------------------------------------
 
 konfig_laden() {
   printf "${dblau}konfig_laden${reset}()\n";
