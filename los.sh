@@ -301,6 +301,10 @@ konfig_sichern() {
         printf "${gruen}Commit erstellt${reset}\n" || \
         printf "${rot}Commit fehlgeschlagen${reset}\n";
     fi;
+    # Vor dem Push: erst Remote-Stand holen und unsere Version bevorzugen:
+    git -C "$instvz" fetch origin master 2>/dev/null||true;
+    git -C "$instvz" merge -X ours origin/master \
+      -m "konfig_sichern: merge" 2>/dev/null||true;    
     # Push – auch wenn kein neuer Commit (--allow-empty-message):
     git -C "$instvz" push 2>&1 && \
       printf "${gruen}GitHub aktualisiert${reset}\n" || \
