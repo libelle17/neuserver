@@ -2432,6 +2432,7 @@ remotepc() {
 
   # RPM-Datei suchen:
   _rpmgef=;
+  printf "Suche rpm in: ${blau}$q0${reset} und ${blau}$Dw${reset}\n";
   for _suchpfad in $q0 "$Dw"; do
     if [ -f "$_suchpfad/$_rpcrpm" ]; then
       _rpmgef="$_suchpfad/$_rpcrpm";
@@ -2466,7 +2467,7 @@ remotepc() {
   printf "Installiere %b%s%b ...\n" "$blau" "$_rpmgef" "$reset";
   case $OSNR in
     4) # OpenSUSE:
-      zypper -n --gpg-auto-import-keys install "$_rpmgef" 2>&1;;
+      zypper -n --no-gpg-checks install "$_rpmgef" 2>&1;;
     1|2|3) # Debian/Ubuntu:
       _debrpm="${_rpmgef%.rpm}.deb";
       [ -f "$_debrpm" ] && apt-get install -y "$_debrpm" || \
@@ -2488,12 +2489,17 @@ remotepc() {
     printf "  2. Computer-Name und Personal Key setzen\n";
     printf "  3. Fuer eingehende Verbindungen: beim Login %bPlasma (X11)%b waehlen\n" "$blau" "$reset";
     # Interaktiv konfigurieren falls Deployment-ID bekannt:
+    # Deployment-ID nur für Enterprise – für normale Accounts login verwenden:
     if [ -t 0 ]; then
-      printf "\nDeployment-ID eingeben (leer = manuell konfigurieren): ";
+      printf "Enterprise-Account? Deployment-ID eingeben (leer = normaler Account): ";
       read _deployid;
-      [ "$_deployid" ] && remotepc-host deploy "$_deployid" 2>/dev/null || \
-        printf "Bitte %bremotepc-host login%b manuell aufrufen.\n" "$blau" "$reset";
-    fi;
+      if [ "$_deployid" ]; then
+        remotepc-host deploy "$_deployid";
+      else
+        printf "Bitte anmelden:\n";
+        remotepc-host login;
+      fi;
+    fi;    
   else
     printf "%bInstallation fehlgeschlagen.%b\n" "$rot" "$reset";
   fi;
