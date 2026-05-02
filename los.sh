@@ -1930,88 +1930,146 @@ setzgitssh() {
 } # setzgitssh
 
 musterserver() {
- printf "${dblau}musterserver$reset()\n";
- [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll: ";read srv0;};
- if [ "$srv0" ]; then
-	 machidpub;
-	 KS=$HOME/.ssh/authorized_keys;
-	 test -f "$KS"||touch "$KS";
-	 <"$idpub" xargs -i ssh $(whoami)@$srv0 'umask 077;F='$KS';grep -q "{}" $F||echo "{}" >>$F'; # unter der Annahme des gleichnamigen Benutzers
-	 ssh $(whoami)@$srv0 "HOME=\"$(getent passwd $(whoami)|cut -d: -f6)\";idpub=\"$HOME/.ssh/id_rsa.pub\"; cat \"$idpub\";"|xargs -i sh -c "umask 077;F=$KS;grep -q \"{}\" \$F||echo \"{}\" >>\$F";
-   for dt in .fbcredentials .loscred .mysqlpwd .mysqlrpwd .tr64cred; do scp -p $srv0:/root/$dt /root/; done;
- else
-   printf "Soll von einem Verzeichnis mit /root kopiert werden (jyJYnN)? ";read obpl;
-   case $obpl in 
-    [jyJY]*) 
-     altwrz=;
-     [ -s "$wzp" ]&&{ 
-       ls -l $wzp; 
-     printf "Datei $blau$wzp$reset gefunden. Soll diese als Quelle der Verzeichnisse mit /root verwendet werden (jyJYnN)? ";read altwrz;
-     };
-     case $altwrz in 
-      [jyJY]*) ;;
-      *)
-       mount --all 2>/dev/null;
-       bef="find / -maxdepth 5 -type d -name 'root' -printf '%p\\n'";
-#       bef="find / -xdev -maxdepth 5 -type d -name '*root*' -printf '%p\\n'";
-       printf "Suche Verzeichnisse mit ${blau}$(echo \"$bef\"|sed 's/%/%%/g;s/\\/\\\\/g')$reset (kann länger dauern)...\n";
-       eval "$bef" >"$wzp";
-       ;;
-     esac;
-     if [ -s "$wzp" ]; then
-       awk '{print NR" "$0}' $wzp >menuwrz;
-       FILE=$(dialog --title "gefundene Verzeichnisse mit /root" --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3);#show dialog and store output
-       muwrz="$(awk '/^'$FILE' /{print $2}' menuwrz)"; # oder: muwrz=$(sed -n '/^'$FILE' /{s/^.* //;p}' menuwrz);
-       printf "Als Vorlageverzeichnis wird verwendet: $blau$muwrz$reset\n";
-       printf "Ist das richtig? (jyJYnN) "; read best;
-       case $best in [jyJY]*);; *) muwrz=;; esac;
-     else
-       echo "Keine Verzeichnisse gefunden";
-     fi;
-     W=;
-     ;;
-   esac;
- fi; # [ "$srv0" ]
- if [ "$srv0" ]; then
-   muwrz="$srv0:$HOME";
- fi;
- if [ "$muwrz" ]; then
-	 ausf "rsync -avu $muwrz/.vim $HOME/";
-	 ausf "rsync -avu $muwrz/bin/.vimrc $HOME/bin/";
-	 ausf "rsync -avu --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
-   gesD=;
-   for D in anrliste autofax dicom fbfax impgl labimp termine; do
-     gesD="$gesD $D.conf";
-   done;
-   ausf "rsync -lptgoDvu $muwrz/.config/ $HOME/.config/ --include \"$gesD\" --exclude \"*\"";
-   vsh=/var/spool/hylafax;
-   [ -f $vsh/sendq/seqf -o -f $vsh/recvq/seqf ]||{
-     echo $vsh fehlt, hole es von $muwrz;
-     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
-   }
-   vsh=/var/spool/capisuite;
-   find "$vsh/autofaxarch/" -type f 2>/dev/null|grep . >/dev/null||{
-     echo $vsh fehlt, hole es von $muwrz;
-     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
-   }
-   vsh=/var/spool/fbfax;
-   find "$vsh/arch/" -type f 2>/dev/null|grep . >/dev/null||{
-     echo $vsh fehlt, hole es von $muwrz;
-     [ -d $vsh ]&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-     ausf "rsync -avu $muwrz/..$vsh/ $vsh";
-   }
-   vsh=/srv/www/htdocs;
-   [ -f "$vsh/plz/=.Neuer_Patient" ]||{
-     echo $vsh fehlt, hole es von $muwrz;
-     find $vsh -type f 2>/dev/null|grep . >/dev/null&&ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-     ausf "rsync -avu $muwrz/..$vsh/ $vsh/.. --exclude \"*Papierkorb*\"";
-     chown wwwrun:www -R /srv/www/htdocs;
-     systemctl restart apache2;
-   }
-#	 ausf "rsync -avu  $srv0:/root/bin /root/";
- fi;
+  printf "${dblau}musterserver${reset}()\n";
+
+  # Quellserver abfragen falls nicht gesetzt:
+  [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll (leer=lokal): "; read srv0; };
+
+  if [ "$srv0" ]; then
+    # SSH-Schlüssel austauschen:
+    machidpub;
+    KS=$HOME/.ssh/authorized_keys;
+    test -f "$KS" || touch "$KS";
+
+    # Eigenen Schlüssel auf Quellserver eintragen:
+    # Korrektur: xargs -I{} statt veraltetem xargs -i
+    <"$idpub" xargs -I{} ssh $(whoami)@$srv0 \
+      'umask 077;F='"$KS"';grep -qF "{}" "$F"||echo "{}" >>"$F"' 2>/dev/null||true;
+
+    # Alle Schlüssel vom Quellserver holen (nicht nur id_rsa.pub):
+    ssh $(whoami)@$srv0 "for f in ~/.ssh/*.pub; do cat \"\$f\"; done" 2>/dev/null | \
+      while IFS= read -r key; do
+        [ "$key" ] && { grep -qF "$key" "$KS" || echo "$key" >>"$KS"; };
+      done;
+
+    # Credentials vom Quellserver holen – nur wenn noch nicht vorhanden:
+    # (konfig_laden stellt sie aus sensibel.tar.gpg wieder her falls vorhanden)
+    if [ -f "$instvz/konfig/verschluesselt/sensibel.tar.gpg" ]; then
+      printf "konfig-Archiv vorhanden – überspringe scp für Credentials.\n";
+    else
+      for dt in .fbcredentials .loscred .mysqlpwd .mysqlrpwd .tr64cred; do
+        if [ -f "/root/$dt" ]; then
+          printf "${blau}/root/$dt${reset} bereits vorhanden – übersprungen\n";
+        else
+          scp -p "$srv0:/root/$dt" /root/ 2>/dev/null && \
+            printf "kopiert: ${blau}/root/$dt${reset}\n" || \
+            printf "${rot}scp /root/$dt fehlgeschlagen${reset}\n";
+        fi;
+      done;
+    fi;
+
+  else
+    # Kein Quellserver – lokal nach root-Verzeichnis suchen:
+    printf "Soll von einem Verzeichnis mit /root kopiert werden (jyJYnN)? "; read obpl;
+    case $obpl in
+      [jyJY]*)
+        altwrz=;
+        [ -s "$wzp" ] && {
+          ls -l "$wzp";
+          printf "Datei ${blau}$wzp${reset} gefunden. Als Quelle verwenden (jyJYnN)? "; read altwrz;
+        };
+        case $altwrz in
+          [jyJY]*) ;;
+          *)
+            mount --all 2>/dev/null;
+            # Korrektur: -xdev um Pseudo-Filesysteme zu überspringen → schneller
+            bef="find / -maxdepth 5 -xdev -mount -type d -name 'root' -printf '%p\\n'";
+            printf "Suche Verzeichnisse mit ${blau}$(echo "$bef"|sed 's/%/%%/g;s/\\/\\\\/g')${reset} (kann länger dauern)...\n";
+            eval "$bef" >"$wzp";
+            ;;
+        esac;
+        if [ -s "$wzp" ]; then
+          awk '{print NR" "$0}' "$wzp" >menuwrz;
+          # dialog verwenden falls vorhanden, sonst Texteingabe:
+          if which dialog >/dev/null 2>&1; then
+            FILE=$(dialog --title "gefundene Verzeichnisse mit /root" \
+              --menu "Wähle eine" 0 0 0 --file menuwrz 3>&2 2>&1 1>&3);
+          else
+            printf "${rot}dialog nicht installiert${reset} – bitte Nummer wählen:\n";
+            cat menuwrz | head -30;
+            printf "Nummer eingeben: "; read FILE;
+          fi;
+          muwrz="$(awk '/^'"$FILE"' /{print $2}' menuwrz)";
+          printf "Als Vorlageverzeichnis wird verwendet: ${blau}$muwrz${reset}\n";
+          printf "Ist das richtig? (jyJYnN) "; read best;
+          case $best in [jyJY]*) ;; *) muwrz=; ;; esac;
+        else
+          echo "Keine Verzeichnisse gefunden";
+        fi;
+        W=;
+        ;;
+    esac;
+  fi; # [ "$srv0" ]
+
+  if [ "$srv0" ]; then
+    muwrz="$srv0:$HOME";
+  fi;
+
+  if [ "$muwrz" ]; then
+    # SSH-Optionen für rsync:
+    _rsync="rsync -avu -e 'ssh -o StrictHostKeyChecking=accept-new'";
+
+    ausf "$_rsync $muwrz/.vim $HOME/";
+    ausf "$_rsync $muwrz/bin/.vimrc $HOME/bin/";
+    ausf "$_rsync --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
+
+    # Programmkonfigurationen – nur wenn nicht schon durch konfig_laden vorhanden:
+    gesD=;
+    for D in anrliste autofax dicom fbfax impgl labimp termine; do
+      gesD="$gesD $D.conf";
+    done;
+    if [ -f "$instvz/konfig/verschluesselt/sensibel.tar.gpg" ]; then
+      printf "konfig_laden verwaltet .conf-Dateien – rsync für .config/ übersprungen.\n";
+    else
+      ausf "$_rsync $muwrz/.config/ $HOME/.config/ --include \"$gesD\" --exclude \"*\"";
+    fi;
+
+    # HylaFAX-Spool:
+    vsh=/var/spool/hylafax;
+    [ -f "$vsh/sendq/seqf" -o -f "$vsh/recvq/seqf" ] || {
+      echo "$vsh fehlt, hole es von $muwrz";
+      [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+    };
+
+    # CapiSuite-Spool:
+    vsh=/var/spool/capisuite;
+    find "$vsh/autofaxarch/" -type f 2>/dev/null | grep . >/dev/null || {
+      echo "$vsh fehlt, hole es von $muwrz";
+      [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+    };
+
+    # fbfax-Spool:
+    vsh=/var/spool/fbfax;
+    find "$vsh/arch/" -type f 2>/dev/null | grep . >/dev/null || {
+      echo "$vsh fehlt, hole es von $muwrz";
+      [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+    };
+
+    # Webverzeichnis:
+    vsh=/srv/www/htdocs;
+    [ -f "$vsh/plz/=.Neuer_Patient" ] || {
+      echo "$vsh fehlt, hole es von $muwrz";
+      find "$vsh" -type f 2>/dev/null | grep . >/dev/null && \
+        ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
+      ausf "$_rsync $muwrz/..$vsh/ $vsh/.. --exclude \"*Papierkorb*\"";
+      chown wwwrun:www -R /srv/www/htdocs;
+      systemctl restart apache2;
+    };
+
+  fi; # [ "$muwrz" ]
 } # musterserver
 
 #holt Datei $1 entweder aus "/DATA/down /DATA/daten/down" ($q0) oder $srv0 oder $2 auf /root/Downloads (=$Dw); $3 = potentieller hol-Name
