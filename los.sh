@@ -70,6 +70,7 @@ commandline() {
   obtv=0; # Teamviewer
   obkonfigsp=0; # Konfiguration sichern
   obkonfiglad=0; # Konfiguration laden
+  obcron=0; # crontab sichern/übernehmen
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -97,6 +98,7 @@ commandline() {
         printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
+        printf "  $blau-cron$reset: sichert/überträgt crontab vom Quellserver\n";
         printf "  $blau-ks$reset: sichert Konfigurationsdateien im eigenen Repository\n";
         printf "  $blau-kl$reset: lädt Konfigurationsdateien\n";
         printf "  $blau-vi$reset: lädt dieses Programm in vi(m).\n";
@@ -125,7 +127,8 @@ commandline() {
           fritz) obfritz=1;;
           firebird) obfb=1;;
           teamviewer) obtv=1;;
-				esac;;
+          cron) obcron=1;;
+        esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
 		shift;
@@ -1108,6 +1111,7 @@ datadirsetzen() {
   if [ ! -f "$_od" ]; then
     mkdir -p "$(dirname $_od)";
     printf "[Unit]\nRequiresMountsFor=/DATA\nConditionPathIsMountPoint=/DATA\n" >"$_od";
+    printf "[Service]\nExecStart=\nExecStart=/usr/sbin/mariadbd --defaults-file=/etc/my.cnf --user=mysql --socket=/run/mysql/mysql.sock\n" >"$_od";
     systemctl daemon-reload;
     printf "systemd-Schutz aktiv: MariaDB startet nur wenn ${blau}/DATA${reset} gemountet.\n";
   else
@@ -2217,48 +2221,89 @@ backup() {
 		[ -s "$ursp" ]&& mv "$ursp" "${ursp}_0";
 } # backup
 
+# ============================================================
+# 4) In Hauptlogik ersetzen:
+#    Vorher: [ $obteil = 0 ]&&cron;
+#    Nachher:
+#      [ $obteil = 0 -o "$obcron" = 1 ]&&cron;
+# ============================================================
+
 cron() {
-	printf "${dblau}cron$reset()\n";
-	chier=$instvz/cronhier;
-	csrv=$instvz/crons$srv0;
-	backup "$chier"
-	crontab -l >"$chier";
-	if [ "$srv0" ]; then
-		backup "$csrv"
-		crontab -l >$csrv;
-		echo csrv: $csrv;
-		ssh $(whoami)@$srv0 "crontab -l" >"$csrv";
-	fi;
-  [ "$srvhier" ]||srvhier=$(uname -n);
-  crh=$instvz/cronshier; # cron-Datei des Quellservers mit korrigierten Namen
-  if false; then # 14.9.: die crontab soll serveruebergreifend identisch sein und dazu hostname aufrufen
-   sed 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $csrv>$crh;
-  else
-   cp -a $csrv $crh:
-  fi;
-  # hier die Scripte aus crontab eintragen, die auf gegegenwärtigem Server gespeichert sind
-  ca=$instvz/cronbefehle;
-  rm -f $ca;
-  touch $ca;
-  # nehme $csrv, entferne Kommentarzeilen, entferne Steuerungsangaben, Teile an Leerzeichen auf, entferne Ausdrücke mit Sonderzeichen, Leerzeilen, abschliessende ';', stelle jede Zeile in eine Variable $zeile, falls diese lesebar (nicht: ausfuehrbar) und kein Verzeichnis ist und nicht schon in $ca vorkommt und '#!' am Beginn der ersten Zeile aufweist, dann fuege es an $ca an
-  sed -nr '/^#/d;s/^([^ ]+ +){5}|^@[^ ]+ //;s/ /\n/g;p' $csrv|sed -r '/^-|[][>$|<:*"`'\''=&\\,}{]|^$/d;s/;$//'| 
-  while read zeile;do 
-    if test -r $zeile -a ! -d $zeile; then
-      if ! grep -Fxq $zeile $ca; then 
-        sed -n '/^#!/!q1;q0' $zeile&&echo $zeile>>$ca;
-      fi;
-    fi;
-  done;
-  # in den in $ca stehenden Dateien Namen austauschen
-  while read z; do 
-    if grep -qe "\(\<$srv0\>\|\<$srvhier\>\)" $z; then
-      sed -i.bak 's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' $z;
-      printf "In $blau$z$reset $blau$srvhier$reset durch $blau${srvhier}ur$reset und $blau$srv0$reset durch $blau$srvhier$reset ersetzt\n";
+  printf "${dblau}cron${reset}()\n";
+  chier=$instvz/cronhier;
+
+  # 1) Aktuelle crontab sichern:
+  backup "$chier";
+  crontab -l >"$chier" 2>/dev/null||true;
+  printf "crontab gesichert in ${blau}$chier${reset}\n";
+
+  # 2) Crontab vom Quellserver holen (nur wenn $srv0 gesetzt):
+  if [ "$srv0" ]; then
+    csrv=$instvz/crons$srv0;
+    backup "$csrv";
+    printf "Hole crontab von ${blau}$srv0${reset} ...\n";
+    ssh $(whoami)@$srv0 "crontab -l" >"$csrv" 2>/dev/null;
+    if [ $? -ne 0 ]; then
+      printf "${rot}SSH-Verbindung zu $srv0 fehlgeschlagen – verwende lokale crontab${reset}\n";
+      csrv=$chier;
     else
-      [ "$verb" ]&& printf "${blau}$z$reset enthält kein ${blau}${srvhier}$reset oder ${blau}${srv0}$reset, wird belassen\n";
+      printf "crontab von ${blau}$srv0${reset} gesichert in ${blau}$csrv${reset}\n";
     fi;
-  done <$ca;
-  crontab <$crh;
+  else
+    printf "${blau}srv0${reset} nicht gesetzt – kein Quellserver, verwende lokale crontab.\n";
+    csrv=$chier;
+  fi;
+
+  # 3) Arbeitskopie erstellen:
+  [ "$srvhier" ]||srvhier=$(uname -n);
+  crh=$instvz/cronshier;
+  cp -a "$csrv" "$crh";
+
+  # 4) Scripte aus crontab ermitteln die lokal vorhanden sind:
+  ca=$instvz/cronbefehle;
+  rm -f "$ca";
+  touch "$ca";
+  # Erklärung:
+  # - Kommentarzeilen entfernen
+  # - Zeitangaben und @-Direktiven entfernen
+  # - An Leerzeichen aufteilen
+  # - Ausdrücke mit Sonderzeichen und Leerzeilen entfernen
+  # - Abschließende Semikolons entfernen
+  # - Nur lesbare Nicht-Verzeichnis-Dateien mit Shebang aufnehmen
+  sed -nr '/^#/d;s/^([^ ]+ +){5}|^@[^ ]+ //;s/ /\n/g;p' "$csrv" | \
+    sed -r '/^-|[][>$|<:*"`'\''=&\\,}{]|^$/d;s/;$//' | \
+    while read zeile; do
+      if test -r "$zeile" -a ! -d "$zeile"; then
+        if ! grep -Fxq "$zeile" "$ca"; then
+          sed -n '/^#!/!q1;q0' "$zeile" && echo "$zeile" >>"$ca";
+        fi;
+      fi;
+    done;
+  [ -s "$ca" ] && printf "Gefundene Scripts:\n$(cat $ca)\n" || \
+    printf "Keine lokalen Scripts in crontab gefunden.\n";
+
+  # 5) Servernamen in Scripts austauschen (nur wenn Quellserver gesetzt):
+  if [ "$srv0" ] && [ "$srv0" != "$srvhier" ]; then
+    while read z; do
+      if grep -qe "\(\<$srv0\>\|\<$srvhier\>\)" "$z" 2>/dev/null; then
+        sed -i.bak \
+          's/\<'$srvhier'\>/'${srvhier}'ur/g;s/\<'$srv0'\>/'$srvhier'/g' "$z";
+        printf "In ${blau}$z${reset}: ${blau}$srvhier${reset} → ${blau}${srvhier}ur${reset}, ${blau}$srv0${reset} → ${blau}$srvhier${reset}\n";
+      else
+        [ "$verb" ] && \
+          printf "${blau}$z${reset}: kein ${blau}$srvhier${reset} oder ${blau}$srv0${reset} – unverändert\n";
+      fi;
+    done <"$ca";
+  fi;
+
+  # 6) Neue crontab installieren – nur wenn $crh existiert und nicht leer:
+  if [ -s "$crh" ]; then
+    printf "Installiere crontab aus ${blau}$crh${reset} ...\n";
+    crontab <"$crh";
+    printf "crontab installiert.\n";
+  else
+    printf "${rot}$crh leer oder fehlt – crontab nicht installiert${reset}\n";
+  fi;
 } # cron
 
 tu_turbomed() {
@@ -2441,7 +2486,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
  [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;
- [ $obteil = 0 ]&&cron;
+ [ $obteil = 0 -o "$obcron" = 1 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
  [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;
  [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
