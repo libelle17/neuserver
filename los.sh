@@ -425,7 +425,16 @@ konfig_laden() {
     bn=$(basename "$f");
     [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
     ziel="$HOME/$bn";
-    _kopierdatei "$f" "$ziel" "sensibel: $ziel";
+    case "$bn" in
+      .mysqlpwd|.mysqlrpwd|.mariadbpwd|.mariadbrpwd|.modbpwd)
+        if [ ! -e "$ziel" ]; then
+          _kopierdatei "$f" "$ziel" "sensibel: $ziel";
+        else
+          printf "Passwort-Datei ${blau}$ziel${reset} – nie überschreiben (auch nicht bei -knl)\n";
+          fi;;
+        *)
+          _kopierdatei "$f" "$ziel" "sensibel: $ziel";;
+      esac;    
   done;
 
   rm -rf "$TMPDIR_KRYPT";
