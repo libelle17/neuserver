@@ -1,42 +1,75 @@
 #!/bin/sh
-# fehlt: /home/schade/.wincredentials, /amnt/virtwin..., mysql daten auf die Reserveserver
-#        systemctl enable autofs
-# autofs: s. /etc/auto.master, statt cifs
-# blau="\e[1;34m";
-blau="\033[1;34m";
-dblau="\033[0;34;1;47m";
-rot="\033[1;31m";
-# reset="\e[0m";
-reset="\033[0m";
-prog="";
-obnmr=1;
-ftb="/etc/fstab";
-GITACC=libelle17;
-AUFRUFDIR=$(pwd)
-# meinpfad="$(cd "$(dirname "$0")"&&pwd)"
-meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
-[ "$meingespfad" ]||meingespfad="$(readlink -m "$0")"; # Name dieses Programms samt Pfad
-meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
-instvz="/root/neuserver"
-wzp="$instvz/wurzelplatten";
-Dw="/root/Downloads";
-gruppe=$(cat $instvz/gruppe);
-q0="/DATA/down /DATA/daten/down";
-spf=/DATA/down; # Server-Pfad
-tdpf="/DATA/turbomed" # Turbomed-Dokumentenpfad
-musr=praxis;
-obschreiben=0;
+# los.sh – Servereinrichtungs- und Konfigurationsskript
+# Copyright Gerald Schade 2018-2026
+# Repository: github.com/libelle17/neuserver
+#
+# Zweck: Automatisierte Einrichtung eines (neuen) Linux-Servers:
+#   - Benutzer, Gruppen, Samba, MariaDB, Apache, Drucker
+#   - Programme installieren, Laufwerke mounten, Prompt setzen
+#   - Konfigurationsdateien verschlüsselt sichern/laden (GitHub)
+#   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
+#
+# Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
+#                 -mariai|-marianeu|-smb|-must|-fritz|-firebird|
+#                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
+# Ohne Parameter: vollständige Einrichtung
+#
+# Voraussetzungen:
+#   - Root-Rechte
+#   - /root/neuserver/vars (von configure erzeugt)
+#   - /root/neuserver/gruppe (enthält Gruppenname, z.B. "praxis")
+#   - SSH-Schlüssel für GitHub in ~/.ssh/id_ed25519_git
+#
+# TODO: /home/schade/.wincredentials, /amnt/virtwin...,
+#       mysql-Daten auf Reserveserver, systemctl enable autofs
+#       (autofs: s. /etc/auto.master, statt cifs)
 
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# ---- Farb-Escapes für Terminalausgaben ----
+# Verwendung: printf "%b%s%b\n" "$blau" "Text" "$reset"
+blau="\033[1;34m";   # hellblau, für Dateinamen/Werte
+dblau="\033[0;34;1;47m"; # dunkelblau auf weißem Hintergrund, für Funktionsnamen
+rot="\033[1;31m";    # rot, für Fehler/Warnungen
+gruen="\033[0;32m";  # grün, für Erfolgsmeldungen
+reset="\033[0m";     # Farbe zurücksetzen
+
+# ---- Globale Variablen ----
+prog="";             # aktuell laufendes Programm
+obnmr=1;             # ob zypper --no-gpg-checks verwendet werden soll
+ftb="/etc/fstab";    # Pfad zur fstab
+GITACC=libelle17;    # GitHub-Accountname
+AUFRUFDIR=$(pwd);    # Verzeichnis aus dem das Script aufgerufen wurde
+# Eigenen Skriptpfad ermitteln (readlink -f für absolute Pfadauflösung):
+meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
+[ "$meingespfad" ]||meingespfad="$(readlink -m "$0")";
+meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
+instvz="/root/neuserver";  # Installationsverzeichnis (Repository)
+wzp="$instvz/wurzelplatten"; # Liste gefundener root-Verzeichnisse (für musterserver)
+Dw="/root/Downloads";      # lokales Download-Verzeichnis
+gruppe=$(cat $instvz/gruppe); # Hauptgruppe (z.B. "praxis")
+q0="/DATA/down /DATA/daten/down"; # Suchpfade für Downloads auf DATA-Partition
+spf=/DATA/down;            # Server-Pfad für Dateiübertragungen
+tdpf="/DATA/turbomed";     # Turbomed-Dokumentenpfad
+musr=praxis;               # Standard-Datenbankbenutzer
+obschreiben=0;             # 1 = Konfiguration neu schreiben
+
+# ============================================================
+# ausf() – zentraler Befehlsausführer mit Logging
+# $1 = auszuführender Befehl (Shell-String)
+# $2 = Anzeigefarbe (optional; wenn gesetzt wird Befehl immer angezeigt)
+# $3 = "direkt" (optional; Ergebnis nicht in $resu speichern,
+#      z.B. bei Pipe-Befehlen oder "... && var=1")
+# Ergebnis: $ret = Exit-Code, $resu = stdout des Befehls
+# Verwendung: ausf "befehl" "${blau}" [direkt]
+# Tipp: Sonderzeichen im Befehl maskieren: \ → \\, $ → \$, " → \"
+# ============================================================
 ausf() {
-	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # escape für %, soll kein printf-specifier sein
+	[ "$verb" -o "$2" ]&&{ anzeige=$(echo "$2$1$reset\n"|sed 's/%/%%/'); printf "$anzeige";}; # % escapen damit printf es nicht als Formatzeichen interpretiert
 	if test "$3"; then 
     eval "$1"; 
   else 
-    resu=$(eval "$1"); 
+    resu=$(eval "$1"); # Ergebnis in $resu speichern
   fi;
-  ret=$?;
+  ret=$?; # Exit-Code merken
   [ "$verb" ]&&{
     printf "ret: $blau$ret$reset"
     [ "$3" ]||printf ", resu: \"$blau$resu$reset\"";
@@ -44,6 +77,7 @@ ausf() {
   }
 } # ausf
 
+# ausfd() – Kurzform von ausf() mit direkt-Flag (kein $resu)
 ausfd() {
   ausf "$1" "$2" direkt;
 } # ausfd
@@ -853,14 +887,19 @@ done; # nochmal
   awk '/^[^#;]/ && !/ swap /{printf "%s ",$1;system("mountpoint "$2);}' $ftb;
 } # mountlaufwerke
 
+
+# pruefgruppe() – legt Gruppe $1 an falls noch nicht vorhanden
 pruefgruppe() {
     [ "$1" ]&&{ grep -q "^$1:" /etc/group||groupadd $1;}||echo Aufruf pruefgruppe ohne Gruppe!
 } # pruefgruppe
 
+# pruefuser() – legt Linux- und Samba-Benutzer $1 an falls noch nicht vorhanden
+# $1 = Benutzername, $2 = Kommentarfeld (GECOS)
+# Fragt interaktiv nach Passwort wenn Benutzer fehlt
 pruefuser() {
 	printf "${dblau}pruefuser$reset($1)\n";
-		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;
-		pdbedit -L|grep "^$1:" &&obs=0||obs=1;
+		id -u "$1" >/dev/null 2>&1 &&obu=0||obu=1;  # obu=1: Linux-User fehlt
+		pdbedit -L|grep "^$1:" &&obs=0||obs=1;       # obs=1: Samba-User fehlt
 		passw="";
 		if test $obu -eq 1 -o $obs -eq 1; then {
 			while test -z "$passw"; do
@@ -869,30 +908,33 @@ pruefuser() {
 		} fi;
 		if test $obu -eq 1; then {
 			printf "erstelle Linux-Benutzer $blau$1$reset\n";
-			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen:  passwd "$1"; # loeschen: userdel $1;
+			useradd -p $(openssl passwd -1 $passw) -c"$2" -g "$gruppe" "$1"; # zuweisen: passwd "$1"; löschen: userdel $1
 		} fi;
-    groups $1|grep -q praxis||usermod -aG praxis $1
+    groups $1|grep -q praxis||usermod -aG praxis $1  # zur Praxis-Gruppe hinzufügen
     pruefgruppe www
-    groups $1|grep -q www||usermod -aG www $1
+    groups $1|grep -q www||usermod -aG www $1        # zur www-Gruppe hinzufügen
 		if test $obs -eq 1; then {
-				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # loeschen: pdbedit -x -u $1;
-				printf "$passw\n$passw"|smbpasswd -as $1; # pruefen: smbclient -L //localhost/ -U $1
+				printf "erstelle Samba-Benutzer $blau$1$reset\n"; # löschen: pdbedit -x -u $1
+				printf "$passw\n$passw"|smbpasswd -as $1; # prüfen: smbclient -L //localhost/ -U $1
 		} fi;
 } # pruefuser
 
+# obinfstab() – prüft ob Gerät bereits in fstab eingetragen ist
+# $1 = LABEL=xxx oder LABEL=xxx\040... (mit Leerzeichen kodiert)
+# $2 = UUID des Geräts
+# $3 = Gerätedatei z.B. /dev/sda1
+# Ergebnis: $istinfstab=1 wenn gefunden, =0 wenn nicht
 obinfstab() {
 	printf "${dblau}obinfstab$reset($blau$1$reset, $blau$2$reset, $blau$3$reset)\n";
 	istinfstab=0;
-  sdev=${3##*/}; # nur der letzte Name
+  sdev=${3##*/}; # nur der Gerätename ohne Pfad (z.B. "sda1")
 	while read -r zeile; do
-		# echo "dort: $zeile;"
-		vgl=$(printf "$zeile"|cut -f1|sed 's/ /\\\\040/g')
-		# z.B.  LABEL=Seagate\040Expansion\040Drive
-#		printf "vgl: $rot$vgl$reset vs: $rot$(echo $(echo $1)|sed 's/ //g')$reset\n";
+		vgl=$(printf "$zeile"|cut -f1|sed 's/ /\\\\040/g')  # Leerzeichen als \040 kodieren
 		if test "$vgl" = "$(echo $(echo $1)|sed 's/ //g')"; then istinfstab=1; break; fi;
 		if test "$vgl" = "$1"; then istinfstab=1; break; fi;
 		if test "$vgl" = "UUID=$2";then istinfstab=1; break; fi;
 		if test "$vgl" = "$3";then istinfstab=1; break; fi;
+		# auch /dev/disk/by-id/-Pfade prüfen:
 		for dbid in $(find /dev/disk/by-id -lname "*$sdev"); do
 			if test "$vgl" = "$dbid";then istinfstab=1; break; fi;
 		done;
@@ -900,9 +942,10 @@ obinfstab() {
 	done << EOF
 $fstb
 EOF
-#[ $istinfstab -eq 0 ]&&printf "(echo (echo 1..: $rot$(echo $(echo $1)|sed 's/ //g')$reset\n";
 } # obinfstab
 
+# obprogda() – prüft ob Programm $1 in Standardpfaden vorhanden ist
+# Ergebnis: $prog = gefundener Pfad, Return 0 wenn gefunden, 1 wenn nicht
 obprogda() {
  printf "${dblau}obprogda$reset(${blau}$1$reset)\n";
  prog="";
@@ -917,19 +960,14 @@ obprogda() {
 
 
 
-#!/bin/sh
-# Korrigierte Funktionen für los.sh
-# Änderungen gegenüber Original:
-#     - OSNR=4: gcc-Repo-URL robuster (sed für Leerzeichen im Distro-Namen)
-#     - OSNR=4: compil um "make" ergänzt
-#   ersetzeprog():
-#     - OSNR=1|2|3: exfatprogs -> exfat-utils als Fallback für ältere Debian/Ubuntu
-#     - OSNR=4: exfatprogs korrekt belassen (heißt auf openSUSE 16.0 "exfatprogs")
-#     - OSNR=4: liblept5 -> libleptonica6 (neuere Bibliothek auf openSUSE 16.0)
-#     - OSNR=4: phpPgAdmin -> leer (nicht mehr in Repos)
-#     - OSNR=4: p7zip-full -> leer (heißt auf openSUSE nur "p7zip")
-#     - OSNR=4: docker -> docker (bleibt, aber Repo-Hinweis im Kommentar)
-#     - OSNR=5|6: exfatprogs-Mapping ergänzt
+# ============================================================
+# ersetzeprog() – übersetzt distro-unabhängige Paketnamen in
+# distro-spezifische Namen anhand von $OSNR
+# $1 = generischer Paketname (z.B. "mariadb", "boost-devel")
+# Ergebnis: $sprog = tatsächlich zu installierender Paketname
+#           leerer $sprog = Paket auf diesem System nicht verfügbar
+# Wird von doinst() aufgerufen
+# ============================================================
 
 ersetzeprog() {
   printf "${blau}ersetzeprog($reset$1): -> "
@@ -1112,6 +1150,13 @@ setzinstprog() {
 # -----------------------------------------------------------------------
 
 
+# ============================================================
+# doinst() – installiert Paket $1 falls noch nicht vorhanden
+# $1 = generischer Paketname (wird durch ersetzeprog() übersetzt)
+# $2 = alternative Programmdatei zum Prüfen ob bereits installiert (optional)
+# Verwendet $psuch (rpm -q / dpkg -s) und $instp (zypper in / apt-get)
+# aus setzinstprog() – muss vorher aufgerufen worden sein
+# ============================================================
 doinst() {
 	printf "${blau}doinst($reset$1)\n"
 	ersetzeprog "$1";
@@ -2506,19 +2551,23 @@ remotepc() {
 } # remotepc
 
 
+# github() – trägt den eigenen SSH-Schlüssel bei GitHub ein
+# und setzt die Remote-URL des Repositories auf SSH um
 github() {
 	printf "${dblau}github()$reset()\n";
 	machidpub;
-	# echo Stelle 2: $GITACC $idpub
+	# Prüfen ob Schlüssel bereits bei GitHub eingetragen:
 	if { key=$(sed 's/.* \(.*\) .*/\1/;s/\//\\\//g;' $idpub);curl https://github.com/$GITACC.keys 2>/dev/null|sed -n '/'$key'/q1';}; then
 		echo curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 		curl -u "$GITACC" --data '{"title":"'"$(whoami)"'@'"$(hostname)"'","key":"'"$(cat $idpub)"'"}' https://api.github.com/user/keys;
 	fi;
-#	curl -u "$GITACC:$passwd" ...
 	git remote set-url origin git@github.com:$GITACC/$DPROG.git;
-# git clone ssh://git@github.com/$GITACC/$DPROG.git 
 } # github
 
+# backup() – rollierende Sicherung einer Datei (bis zu 100 Versionen)
+# $1 = Basisdateiname (z.B. /etc/samba/smb.conf)
+# $2 = alternative Quelldatei (optional; Standard: $1)
+# Erzeugt: $1_0 (aktuell), $1_1 (vorherige), ... $1_100 (älteste)
 backup() {
 	printf "${dblau}backup$reset($1,$2)\n";
 		for i in $(seq 100 -1 0); do
@@ -2780,40 +2829,44 @@ dbinhalt() {
 	printf "${dblau}Ende dbinhalt$reset()\n";
 } # dbinhalt
 
-# Start
-# hier geht's los
+# ============================================================
+# HAUPTLOGIK – hier beginnt die eigentliche Ausführung
+# ============================================================
 printf "${dblau}$0$reset()${blau} Copyright Gerald Schade$reset\n"
-commandline "$@"; # alle Befehlszeilenparameter übergeben
+commandline "$@"; # alle Befehlszeilenparameter auswerten
+# Prüfen ob bash (read -e) oder sh:
 echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
+# Root-Rechte sicherstellen:
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
-[ $obteil = 0 -o $obbs = 1 ]&&bildschirm;
-[ $obteil = 0 -o $obbw = 1 ]&&bleibwach;
-variablen;
+# Reihenfolge der Funktionsaufrufe:
+# $obteil=0: alle Funktionen; $obteil=1: nur die mit gesetztem ob*-Flag
+[ $obteil = 0 -o $obbs = 1 ]&&bildschirm;         # Bildschirm/Keyboard einrichten
+[ $obteil = 0 -o $obbw = 1 ]&&bleibwach;           # Suspend/Hibernate deaktivieren
+variablen;                                          # Variablen aus vars/configure laden
 echo osnr: $OSNR;
- [ $obteil = 0 -o $obhost = 1 ]&&setzhost;
- [ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;
- setzpfad;
- [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;
- [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;
- [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;
- [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog;
- [ $obteil = 0 -o $obprog = 1 ]&&proginst;
- [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein;
- [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;
- [ $obteil = 0 -o $obmust = 1 ]&&musterserver;
- [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # firebird für GelbeListe normalerweise nicht übers Netz nötig
- [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;
- [ $obteil = 0 -o "$obcron" = 1 ]&&cron;
- [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
- [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;
- [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;
- [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
- [ $obkonfignl = 1 ]&&konfig_laden neu;
-# if test "$1" == mysqlneu; then dbinhalt immer; else dbinhalt; fi;
- [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } }
- [ $obteil = 0 ]&&speichern;
- [                $obfb = 1 ]&&firebird;
+ [ $obteil = 0 -o $obhost = 1 ]&&setzhost;         # Hostname setzen
+ [ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;      # Benutzer/Samba einrichten
+ setzpfad;                                          # /root/bin in PATH aufnehmen
+ [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;     # Shell-Prompt konfigurieren
+ [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;        # Fritzbox einbinden
+ [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;     # Laufwerke in fstab eintragen
+ [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog; # Paketverwaltungs-Variablen setzen
+ [ $obteil = 0 -o $obprog = 1 ]&&proginst;         # Programme installieren + Git-Repos klonen
+ [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein; # MariaDB einrichten
+ [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;         # Samba konfigurieren
+ [ $obteil = 0 -o $obmust = 1 ]&&musterserver;     # Dateien vom Musterserver kopieren
+ [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
+ [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;       # TeamViewer installieren
+ [ $obteil = 0 -o "$obcron" = 1 ]&&cron;           # crontab vom Quellserver übernehmen
+ [ $obteil = 0 -o $obtm = 1 ]&&turbomed;           # Turbomed-Praxissoftware einrichten
+ [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;        # RemotePC installieren
+ [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;  # Konfiguration verschlüsselt sichern
+ [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;   # Konfiguration laden (nur fehlende)
+ [ $obkonfignl = 1 ]&&konfig_laden neu;               # Konfiguration laden (alles überschreiben)
+ [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } } # Datenbankinhalt importieren
+ [ $obteil = 0 ]&&speichern;                        # Konfiguration in Dateien schreiben
+ [                $obfb = 1 ]&&firebird;            # Firebird-Datenbank einrichten
 printf "${dblau}Ende von $0$reset\n";
 
 if false; then
