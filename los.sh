@@ -68,6 +68,7 @@ commandline() {
   obfritz=0; # ob fritzbox eingehaengt werden soll
   obfb=0; # Firebird
   obtv=0; # Teamviewer
+  obrpc=0; # RemotePC Fernwartung
   obkonfigsp=0; # Konfiguration sichern
   obkonfiglad=0; # Konfiguration laden
   obkonfignl=0; # Konfiguration neu laden
@@ -99,6 +100,7 @@ commandline() {
         printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
+        printf "  ${blau}-remotepc${reset}: installiert und richtet RemotePC ein\n";
         printf "  $blau-cron$reset: sichert/überträgt crontab vom Quellserver\n";
         printf "  $blau-ks$reset: sichert Konfigurationsdateien im eigenen Repository\n";
         printf "  $blau-kl$reset: lädt Konfigurationsdateien\n";
@@ -130,6 +132,7 @@ commandline() {
           fritz) obfritz=1;;
           firebird) obfb=1;;
           teamviewer) obtv=1;;
+          remotepc|rpc) obrpc=1;;
           cron) obcron=1;;
         esac;;
 		esac;
@@ -2385,6 +2388,118 @@ teamviewer10() {
 	fi;
 } # teamviewer10()
 
+# ============================================================
+# Änderungen in los.sh für -remotepc Parameter:
+#
+# 4) Hauptlogik (nach teamviewer-Zeile):
+#      [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;
+#
+# HINWEIS: RemotePC unterstützt auf Wayland nur ausgehende Verbindungen.
+# Für eingehende Remote-Kontrolle (Server) muss beim Login Xorg gewählt werden.
+# OpenSUSE 16.0 startet standardmäßig mit Wayland – beim Anmeldebildschirm
+# unten rechts auf "Plasma (X11)" wechseln falls eingehende Verbindungen nötig.
+# ============================================================
+
+remotepc() {
+  printf "${dblau}remotepc${reset}()\n";
+
+  # Download-URL: muss manuell von remotepc.com/download geholt werden
+  # da Login erforderlich. Alternativ aus /DATA/down oder $srv0 holen.
+  _rpcrpm="remotepc-host.rpm";  # Host-Only für Server (empfohlen)
+  _rpcurl="https://www.remotepc.com/download";  # Downloadseite
+
+  # Prüfen ob bereits installiert:
+  if which remotepc-host >/dev/null 2>&1 || which remotepc >/dev/null 2>&1; then
+    _rpcv=$(remotepc-host --version 2>/dev/null || remotepc --version 2>/dev/null || echo "unbekannt");
+    printf "RemotePC bereits installiert: %b%s%b\n" "$blau" "$_rpcv" "$reset";
+    # Service-Status prüfen:
+    if systemctl is-active remotepc-host >/dev/null 2>&1; then
+      printf "remotepc-host: %baktiv${reset}\n" "$gruen";
+    else
+      printf "remotepc-host: %bnicht aktiv%b – starte ...\n" "$rot" "$reset";
+      systemctl enable remotepc-host 2>/dev/null||true;
+      systemctl start  remotepc-host 2>/dev/null||true;
+    fi;
+    return 0;
+  fi;
+
+  # Wayland-Warnung ausgeben:
+  if [ "$WAYLAND_DISPLAY" ] || [ "$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type 2>/dev/null | grep wayland)" ]; then
+    printf "%bHinweis: Wayland erkannt!%b\n" "$rot" "$reset";
+    printf "RemotePC unterstuetzt auf Wayland nur %bausgehende%b Verbindungen.\n" "$blau" "$reset";
+    printf "Fuer eingehende Verbindungen beim Login auf %bPlasma (X11)%b wechseln.\n" "$blau" "$reset";
+  fi;
+
+  # RPM-Datei suchen:
+  _rpmgef=;
+  for _suchpfad in $q0 "$Dw"; do
+    if [ -f "$_suchpfad/$_rpcrpm" ]; then
+      _rpmgef="$_suchpfad/$_rpcrpm";
+      printf "RPM gefunden: %b%s%b\n" "$blau" "$_rpmgef" "$reset";
+      break;
+    fi;
+  done;
+
+  # Falls nicht lokal – vom Quellserver holen:
+  if [ -z "$_rpmgef" ] && [ "$srv0" ]; then
+    printf "Suche %b%s%b auf %b%s%b ...\n" "$blau" "$_rpcrpm" "$reset" "$blau" "$srv0" "$reset";
+    for _suchpfad in $q0 "$Dw"; do
+      scp -p "$srv0:$_suchpfad/$_rpcrpm" "$Dw/" 2>/dev/null && {
+        _rpmgef="$Dw/$_rpcrpm";
+        printf "Kopiert von %b%s%b\n" "$blau" "$srv0" "$reset";
+        break;
+      };
+    done;
+  fi;
+
+  # Falls immer noch nicht gefunden – Hinweis ausgeben:
+  if [ -z "$_rpmgef" ]; then
+    printf "%bRemotePC RPM nicht gefunden.%b\n" "$rot" "$reset";
+    printf "Bitte %bremotepc-host.rpm%b von %b%s%b herunterladen\n" \
+      "$blau" "$reset" "$blau" "$_rpcurl" "$reset";
+    printf "und nach %b%s%b kopieren, dann erneut aufrufen.\n" \
+      "$blau" "$(echo $q0 | cut -d' ' -f1)" "$reset";
+    return 1;
+  fi;
+
+  # Installieren:
+  printf "Installiere %b%s%b ...\n" "$blau" "$_rpmgef" "$reset";
+  case $OSNR in
+    4) # OpenSUSE:
+      zypper -n --gpg-auto-import-keys install "$_rpmgef" 2>&1;;
+    1|2|3) # Debian/Ubuntu:
+      _debrpm="${_rpmgef%.rpm}.deb";
+      [ -f "$_debrpm" ] && apt-get install -y "$_debrpm" || \
+        printf "%bKein .deb gefunden – bitte remotepc-host.deb verwenden%b\n" "$rot" "$reset";;
+    5|6) # Fedora/RHEL:
+      dnf install -y "$_rpmgef" 2>/dev/null || yum install -y "$_rpmgef";;
+    *) zypper -n install "$_rpmgef" 2>/dev/null || rpm -i "$_rpmgef";;
+  esac;
+
+  # Nach Installation:
+  if which remotepc-host >/dev/null 2>&1; then
+    printf "%bRemotePC erfolgreich installiert.%b\n" "$gruen" "$reset";
+    # Autostart einrichten:
+    systemctl enable remotepc-host 2>/dev/null||true;
+    systemctl start  remotepc-host 2>/dev/null||true;
+    printf "\nNaechste Schritte:\n";
+    printf "  1. %bremotepc-host login%b\n" "$blau" "$reset";
+    printf "     oder: %bremotepc-host deploy <Deployment-ID>%b\n" "$blau" "$reset";
+    printf "  2. Computer-Name und Personal Key setzen\n";
+    printf "  3. Fuer eingehende Verbindungen: beim Login %bPlasma (X11)%b waehlen\n" "$blau" "$reset";
+    # Interaktiv konfigurieren falls Deployment-ID bekannt:
+    if [ -t 0 ]; then
+      printf "\nDeployment-ID eingeben (leer = manuell konfigurieren): ";
+      read _deployid;
+      [ "$_deployid" ] && remotepc-host deploy "$_deployid" 2>/dev/null || \
+        printf "Bitte %bremotepc-host login%b manuell aufrufen.\n" "$blau" "$reset";
+    fi;
+  else
+    printf "%bInstallation fehlgeschlagen.%b\n" "$rot" "$reset";
+  fi;
+} # remotepc
+
+
 github() {
 	printf "${dblau}github()$reset()\n";
 	machidpub;
@@ -2685,6 +2800,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;
  [ $obteil = 0 -o "$obcron" = 1 ]&&cron;
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;
+ [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;
  [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;
  [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;
  [ $obkonfignl = 1 ]&&konfig_laden neu;
