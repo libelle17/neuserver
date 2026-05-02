@@ -1915,32 +1915,26 @@ tufirewall() {
 fritzbox() {
   printf "${dblau}fritzbox${reset}()\n";
 
-  # Fritz!Box erreichbar? IPv4 bevorzugen, IPv6 als Fallback:
-  ipv4=; ipv6=; ipv=; erg4=1; erg6=1;
-  ip4=$(ping -c1 -4 fritz.box 2>/dev/null); erg4=$?;
-  ip6=$(ping -c1 -6 fritz.box 2>/dev/null); erg6=$?;
-
-  if [ $erg4 -ne 0 ] && [ $erg6 -ne 0 ]; then
+  # Fritz!Box erreichbar prüfen:
+  ipv4=; ipv6=; ipv=;
+  ping -c1 fritz.box >/dev/null 2>&1;
+  if [ $? -ne 0 ]; then
     printf "%bfritz.box nicht erreichbar%b\n" "$rot" "$reset";
     return 0;
   fi;
 
+  # IP-Adressen per getent ermitteln – sauber ohne ping-Ausgabe parsen:
+  ipv4=$(getent hosts fritz.box | awk '{print $1}' | grep -v ':' | head -1);
+  ipv6=$(getent hosts fritz.box | awk '{print $1}' | grep ':'   | head -1);
   # IPv4 bevorzugen (CIFS mit IPv6 oft unzuverlässig):
-  [ $erg4 -eq 0 ] && {
-    ipv4=$(echo "$ip4"|sed 's/^[^(]*(\([^)]*\)).*/\1/');
-    ipv=$ipv4;
-  };
-  [ -z "$ipv" ] && [ $erg6 -eq 0 ] && {
-    ipv6=$(echo "$ip6"|sed 's/^[^(]*([^(]*(\([^)]*\).*$/\1/');
-    ipv=$ipv6;
-  };
+  [ "$ipv4" ] && ipv=$ipv4 || ipv=$ipv6;
   printf "ipv: %b%s%b\n" "$blau" "$ipv" "$reset";
 
   # Fritz!Box-Namen per TR-064 ermitteln:
-  # Korrektur: http:// war im Original vergessen
   desc=$(curl --connect-timeout 5 "http://$ipv:49000/tr64desc.xml" 2>/dev/null);
   if [ -z "$desc" ]; then
-    printf "%bTR-064 nicht erreichbar%b – verwende 'fritz.box' als Namen\n" "$rot" "$reset";
+    printf "%bTR-064 nicht erreichbar%b – verwende 'fritz.box' als Namen\n" \
+      "$rot" "$reset";
     fbname="fritz.box";
   else
     fbname=$(echo "$desc"|sed -n '/friendlyName/{s/^[^>]*>\([^<]*\).*/\1/;p;q}');
@@ -1962,8 +1956,8 @@ fritzbox() {
   fi;
 
   # Prüfen ob Eintrag schon in fstab:
-  if grep -q "^//$ipv4\|^//$ipv6\|$fbnameklein" "$ftb" 2>/dev/null; then
-    printf "Fritz%%21Box bereits in %b%s%b eingetragen.\n" "$blau" "$ftb" "$reset";
+  if grep -q "//$ipv4\|//$ipv6\|$fbnameklein" "$ftb" 2>/dev/null; then
+    printf "Fritz!Box bereits in %b%s%b eingetragen.\n" "$blau" "$ftb" "$reset";
     # Trotzdem versuchen zu mounten falls noch nicht gemountet:
     mountpoint -q "/mnt/$fbnameklein" || mount "/mnt/$fbnameklein" 2>/dev/null||true;
     return 0;
@@ -1983,11 +1977,7 @@ fritzbox() {
       printf "Mount erfolgreich mit %bSMB %s%b\n" "$blau" "$_vers" "$reset";
       umount "/mnt/$fbnameklein" 2>/dev/null||true;
       # fstab-Eintrag schreiben:
-      if [ "$_vers" = "1.0" ]; then
-        _dump=0; _pass=2;
-      else
-        _dump=0; _pass=0;
-      fi;
+      [ "$_vers" = "1.0" ] && { _dump=0; _pass=2; } || { _dump=0; _pass=0; };
       printf "//$ipv/$fbname\t/mnt/$fbnameklein\tcifs\tnofail,vers=%s,credentials=%s\t%s\t%s\n" \
         "$_vers" "$credfile" "$_dump" "$_pass" >>"$ftb";
       printf "fstab-Eintrag geschrieben: %b//%s/%s%b\n" \
@@ -2001,7 +1991,7 @@ fritzbox() {
       "$rot" "$reset";
 
   # Zusammenfassung:
-  printf "Fritz%%21Box: Name=%b%s%b" "$blau" "$fbname" "$reset";
+  printf "Fritz!Box: Name=%b%s%b" "$blau" "$fbname" "$reset";
   [ "$ipv4" ] && printf ", IPv4=%b%s%b" "$blau" "$ipv4" "$reset";
   [ "$ipv6" ] && printf ", IPv6=%b%s%b" "$blau" "$ipv6" "$reset";
   printf "\n";
