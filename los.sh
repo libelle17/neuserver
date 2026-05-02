@@ -182,17 +182,17 @@ variablen() {
 # ------------------------------------------------------------
 
 konfig_sichern() {
-  printf "${dblau}konfig_sichern$reset()\n";
-  KVZB="$instvz/konfig";  # ~/neuserver/konfig
+  printf "${dblau}konfig_sichern${reset}()\n";
+  KVZB="$instvz/konfig";
   GPGPASS_FILE="$HOME/.gpgpass";
 
-  # GPG-Passphrase prüfen / abfragen
+  # GPG-Passphrase prüfen / abfragen:
   if [ ! -f "$GPGPASS_FILE" ]; then
-    printf "${rot}GPG-Passphrase fehlt.$reset Bitte eingeben (wird in $blau$GPGPASS_FILE$reset gespeichert):\n";
+    printf "${rot}GPG-Passphrase fehlt.${reset} Bitte eingeben (wird in ${blau}$GPGPASS_FILE${reset} gespeichert):\n";
     stty -echo; read GPGPASS; stty echo; printf "\n";
     printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
     chmod 600 "$GPGPASS_FILE";
-    printf "Gespeichert in $blau$GPGPASS_FILE$reset\n";
+    printf "Gespeichert in ${blau}$GPGPASS_FILE${reset}\n";
   fi;
 
   mkdir -p "$KVZB/offen" "$KVZB/verschluesselt";
@@ -204,21 +204,21 @@ konfig_sichern() {
     "$HOME/.wget-hsts" \
     ; do
     [ -f "$f" ] && cp -au "$f" "$KVZB/offen/" && \
-      printf "gesichert (offen): $blau$(basename $f)$reset\n";
+      printf "gesichert (offen): ${blau}$(basename "$f")${reset}\n";
   done;
 
-  # .vim-Verzeichnis
+  # .vim-Verzeichnis – komplett ersetzen um Doppelkopie zu vermeiden:
   [ -d "$HOME/.vim" ] && {
-    mkdir -p "$KVZB/offen/.vim";
-    cp -aun "$HOME/.vim/." "$KVZB/offen/.vim/";
-    printf "gesichert (offen): $blau.vim/$reset\n";
+    rm -rf "$KVZB/offen/.vim";
+    cp -a "$HOME/.vim" "$KVZB/offen/.vim";
+    printf "gesichert (offen): ${blau}.vim/${reset}\n";
   };
 
-  # KDE kcminputrc (Tastatur-Repeat) – unkritisch
+  # KDE kcminputrc – unkritisch:
   [ -f "$HOME/.config/kcminputrc" ] && {
     mkdir -p "$KVZB/offen/config";
     cp -au "$HOME/.config/kcminputrc" "$KVZB/offen/config/";
-    printf "gesichert (offen): $blau.config/kcminputrc$reset\n";
+    printf "gesichert (offen): ${blau}.config/kcminputrc${reset}\n";
   };
 
   # ---- 2) Sensible Dateien – verschlüsselt sichern ----
@@ -237,19 +237,19 @@ konfig_sichern() {
     ; do
     [ -f "$f" ] && {
       cp "$f" "$TMPDIR_KRYPT/";
-      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
+      printf "vorgemerkt (verschlüsselt): ${blau}$(basename "$f")${reset}\n";
       geaendert=1;
     };
   done;
 
-  # .gnupg – komplett (privater GPG-Schlüssel!)
+  # .gnupg – komplett (privater GPG-Schlüssel!):
   [ -d "$HOME/.gnupg" ] && {
     cp -a "$HOME/.gnupg" "$TMPDIR_KRYPT/.gnupg";
-    printf "vorgemerkt (verschlüsselt): $blau.gnupg/$reset\n";
+    printf "vorgemerkt (verschlüsselt): ${blau}.gnupg/${reset}\n";
     geaendert=1;
   };
 
-  # Programmkonfigurationen (beim ersten Aufruf angelegt)
+  # Programmkonfigurationen:
   for f in \
     "$HOME/anrliste.conf" \
     "$HOME/autofax.conf" \
@@ -261,12 +261,12 @@ konfig_sichern() {
     ; do
     [ -f "$f" ] && {
       cp "$f" "$TMPDIR_KRYPT/";
-      printf "vorgemerkt (verschlüsselt): $blau$(basename $f)$reset\n";
+      printf "vorgemerkt (verschlüsselt): ${blau}$(basename "$f")${reset}\n";
       geaendert=1;
     };
   done;
 
-  # Alles verschlüsseln
+  # Alles verschlüsseln:
   if [ "$geaendert" ]; then
     ARCHIV="$TMPDIR_KRYPT/konfig_sensibel.tar";
     tar cf "$ARCHIV" -C "$TMPDIR_KRYPT" \
@@ -275,27 +275,19 @@ konfig_sichern() {
       --symmetric --cipher-algo AES256 \
       --output "$KVZB/verschluesselt/sensibel.tar.gpg" \
       "$ARCHIV" && \
-      printf "${gruen}verschlüsselt: $blau$KVZB/verschluesselt/sensibel.tar.gpg$reset\n" || \
-      printf "${rot}Verschlüsselung fehlgeschlagen!$reset\n";
+      printf "${gruen}verschlüsselt: ${blau}$KVZB/verschluesselt/sensibel.tar.gpg${reset}\n" || \
+      printf "${rot}Verschlüsselung fehlgeschlagen!${reset}\n";
   fi;
   rm -rf "$TMPDIR_KRYPT";
 
-  # .gitignore sicherstellen
+  # .gitignore sicherstellen – nur .gpgpass ignorieren, sensibel.tar.gpg SOLL ins Repo:
   GI="$instvz/.gitignore";
-  for eintrag in ".gpgpass" "konfig/verschluesselt/sensibel.tar.gpg"; do
-    grep -q "^$eintrag$" "$GI" 2>/dev/null || \
-      printf "%s\n" "$eintrag" >>"$GI";
-  done;
-  # ACHTUNG: sensibel.tar.gpg NICHT in .gitignore – soll ins Repo!
-  # Nur .gpgpass selbst soll nie ins Repo:
+  grep -q "^\.gpgpass$" "$GI" 2>/dev/null || printf ".gpgpass\n" >>"$GI";
   sed -i '/^konfig\/verschluesselt\/sensibel\.tar\.gpg$/d' "$GI" 2>/dev/null;
 
-  printf "${gruen}konfig_sichern abgeschlossen.$reset\n";
+  printf "${gruen}konfig_sichern abgeschlossen.${reset}\n";
 } # konfig_sichern
 
-# ------------------------------------------------------------
-# B) Neue Funktion: konfig_laden()
-# Aufruf: los.sh -kl
 # ------------------------------------------------------------
 
 konfig_laden() {
@@ -303,7 +295,7 @@ konfig_laden() {
   KVZB="$instvz/konfig";
   GPGPASS_FILE="$HOME/.gpgpass";
 
-  # $1=neu: vorhandene Dateien überschreiben
+  # $1=neu: vorhandene Dateien überschreiben:
   _ueberschreiben=;
   [ "$1" = "neu" ] && {
     _ueberschreiben=1;
@@ -311,23 +303,26 @@ konfig_laden() {
   };
 
   # ---- 0) Aktuelle Konfiguration von GitHub holen ----
+  # git show liest direkt aus Remote-Commit ohne Index zu verändern
+  # → kein Merge-Konflikt möglich
   if [ -d "$instvz/.git" ]; then
     printf "Hole aktuelle Konfiguration von GitHub ...\n";
     git -C "$instvz" fetch origin master 2>/dev/null;
     if [ $? -eq 0 ]; then
+      # sensibel.tar.gpg immer holen:
+      git -C "$instvz" show origin/master:konfig/verschluesselt/sensibel.tar.gpg \
+        >"$KVZB/verschluesselt/sensibel.tar.gpg" 2>/dev/null && \
+        printf "${gruen}sensibel.tar.gpg aktualisiert${reset}\n" || \
+        printf "${rot}sensibel.tar.gpg konnte nicht geholt werden – verwende lokalen Stand${reset}\n";
+      # Bei -knl: offen/-Verzeichnis ebenfalls holen:
       if [ "$_ueberschreiben" ]; then
-        # -knl: offen/ und sensibel.tar.gpg holen:
-        git -C "$instvz" checkout origin/master -- \
-          konfig/verschluesselt/sensibel.tar.gpg \
-          konfig/offen/ 2>/dev/null && \
-          printf "${gruen}konfig/offen/ und sensibel.tar.gpg aktualisiert${reset}\n" || \
-          printf "${rot}git checkout fehlgeschlagen – verwende lokalen Stand${reset}\n";
-      else
-        # -kl: nur sensibel.tar.gpg holen:
-        git -C "$instvz" checkout origin/master -- \
-          konfig/verschluesselt/sensibel.tar.gpg 2>/dev/null && \
-          printf "${gruen}sensibel.tar.gpg aktualisiert${reset}\n" || \
-          printf "${rot}sensibel.tar.gpg konnte nicht geholt werden – verwende lokalen Stand${reset}\n";
+        for _gitpfad in $(git -C "$instvz" ls-tree -r --name-only \
+            origin/master konfig/offen/ 2>/dev/null); do
+          mkdir -p "$instvz/$(dirname "$_gitpfad")";
+          git -C "$instvz" show "origin/master:$_gitpfad" \
+            >"$instvz/$_gitpfad" 2>/dev/null;
+        done;
+        printf "${gruen}konfig/offen/ aktualisiert${reset}\n";
       fi;
     else
       printf "${rot}git fetch fehlgeschlagen – verwende lokalen Stand${reset}\n";
@@ -336,13 +331,13 @@ konfig_laden() {
     printf "${rot}$instvz ist kein git-Repository – kein fetch möglich${reset}\n";
   fi;
 
-  # Hilfsfunktion: Datei kopieren mit/ohne Überschreiben
+  # Hilfsfunktion: Datei kopieren mit/ohne Überschreiben:
   _kopierdatei() {
     _quelle="$1"; _ziel="$2"; _label="${3:-$_ziel}";
     if [ ! -e "$_ziel" ] || [ "$_ueberschreiben" ]; then
       cp -a "$_quelle" "$_ziel";
       chmod 600 "$_ziel" 2>/dev/null;
-      [ "$_ueberschreiben" ] && [ -e "$_ziel" ] && \
+      [ "$_ueberschreiben" ] && \
         printf "überschrieben: ${blau}$_label${reset}\n" || \
         printf "wiederhergestellt: ${blau}$_label${reset}\n";
     else
@@ -361,6 +356,7 @@ konfig_laden() {
     # .vim-Verzeichnis:
     if [ -d "$KVZB/offen/.vim" ]; then
       if [ ! -d "$HOME/.vim" ] || [ "$_ueberschreiben" ]; then
+        rm -rf "$HOME/.vim";
         cp -a "$KVZB/offen/.vim" "$HOME/.vim";
         printf "wiederhergestellt: ${blau}$HOME/.vim/${reset}\n";
       else
