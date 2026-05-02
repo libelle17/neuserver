@@ -302,12 +302,40 @@ konfig_laden() {
   printf "${dblau}konfig_laden${reset}()\n";
   KVZB="$instvz/konfig";
   GPGPASS_FILE="$HOME/.gpgpass";
+
   # $1=neu: vorhandene Dateien überschreiben
   _ueberschreiben=;
   [ "$1" = "neu" ] && {
     _ueberschreiben=1;
     printf "Modus: ${rot}überschreibe vorhandene Dateien${reset}\n";
   };
+
+  # ---- 0) Aktuelle Konfiguration von GitHub holen ----
+  if [ -d "$instvz/.git" ]; then
+    printf "Hole aktuelle Konfiguration von GitHub ...\n";
+    git -C "$instvz" fetch origin master 2>/dev/null;
+    if [ $? -eq 0 ]; then
+      if [ "$_ueberschreiben" ]; then
+        # -knl: offen/ und sensibel.tar.gpg holen:
+        git -C "$instvz" checkout origin/master -- \
+          konfig/verschluesselt/sensibel.tar.gpg \
+          konfig/offen/ 2>/dev/null && \
+          printf "${gruen}konfig/offen/ und sensibel.tar.gpg aktualisiert${reset}\n" || \
+          printf "${rot}git checkout fehlgeschlagen – verwende lokalen Stand${reset}\n";
+      else
+        # -kl: nur sensibel.tar.gpg holen:
+        git -C "$instvz" checkout origin/master -- \
+          konfig/verschluesselt/sensibel.tar.gpg 2>/dev/null && \
+          printf "${gruen}sensibel.tar.gpg aktualisiert${reset}\n" || \
+          printf "${rot}sensibel.tar.gpg konnte nicht geholt werden – verwende lokalen Stand${reset}\n";
+      fi;
+    else
+      printf "${rot}git fetch fehlgeschlagen – verwende lokalen Stand${reset}\n";
+    fi;
+  else
+    printf "${rot}$instvz ist kein git-Repository – kein fetch möglich${reset}\n";
+  fi;
+
   # Hilfsfunktion: Datei kopieren mit/ohne Überschreiben
   _kopierdatei() {
     _quelle="$1"; _ziel="$2"; _label="${3:-$_ziel}";
@@ -321,6 +349,7 @@ konfig_laden() {
       printf "bereits vorhanden: ${blau}$_label${reset} – übersprungen\n";
     fi;
   };
+
   # ---- 1) Unkritische Dateien wiederherstellen ----
   if [ -d "$KVZB/offen" ]; then
     for f in "$KVZB/offen/".[a-z]*; do
@@ -328,6 +357,7 @@ konfig_laden() {
       ziel="$HOME/$(basename "$f")";
       _kopierdatei "$f" "$ziel";
     done;
+
     # .vim-Verzeichnis:
     if [ -d "$KVZB/offen/.vim" ]; then
       if [ ! -d "$HOME/.vim" ] || [ "$_ueberschreiben" ]; then
@@ -337,6 +367,7 @@ konfig_laden() {
         printf "bereits vorhanden: ${blau}$HOME/.vim/${reset} – übersprungen\n";
       fi;
     fi;
+
     # kcminputrc:
     if [ -f "$KVZB/offen/config/kcminputrc" ]; then
       mkdir -p "$HOME/.config";
@@ -345,12 +376,14 @@ konfig_laden() {
         "$HOME/.config/kcminputrc";
     fi;
   fi;
+
   # ---- 2) Sensible Dateien entschlüsseln ----
   ARCHIV_GPG="$KVZB/verschluesselt/sensibel.tar.gpg";
   [ -f "$ARCHIV_GPG" ] || {
     printf "${rot}Kein verschlüsseltes Archiv gefunden: ${blau}$ARCHIV_GPG${reset}\n";
     return 0;
   };
+
   # Passphrase abfragen falls fehlend:
   if [ ! -f "$GPGPASS_FILE" ]; then
     printf "GPG-Passphrase für ${blau}$ARCHIV_GPG${reset} eingeben:\n";
@@ -358,6 +391,7 @@ konfig_laden() {
     printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
     chmod 600 "$GPGPASS_FILE";
   fi;
+
   TMPDIR_KRYPT=$(mktemp -d);
   gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
     --decrypt "$ARCHIV_GPG" | tar xf - -C "$TMPDIR_KRYPT" 2>/dev/null;
@@ -366,21 +400,16 @@ konfig_laden() {
     rm -rf "$TMPDIR_KRYPT";
     return 1;
   fi;
+
   # Dateien kopieren:
   for f in "$TMPDIR_KRYPT/"* "$TMPDIR_KRYPT/".*; do
     [ -e "$f" ] || continue;
     bn=$(basename "$f");
-    # . und .. überspringen:
     [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
-    case "$bn" in
-      *.conf|.gnupg|.fbcredentials|.loscred|.mysqlpwd|.mysqlrpwd| \
-      .modbpwd|.mariadbpwd|.mariadbrpwd|.sturm|.tr64cred)
-        ziel="$HOME/$bn";;
-      *)
-        ziel="$HOME/$bn";;
-    esac;
+    ziel="$HOME/$bn";
     _kopierdatei "$f" "$ziel" "sensibel: $ziel";
   done;
+
   rm -rf "$TMPDIR_KRYPT";
   printf "${gruen}konfig_laden abgeschlossen.${reset}\n";
 } # konfig_laden
