@@ -42,7 +42,7 @@ AUFRUFDIR=$(pwd);    # Verzeichnis aus dem das Script aufgerufen wurde
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
 [ "$meingespfad" ]||meingespfad="$(readlink -m "$0")";
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
-instvz="/root/neuserver";  # Installationsverzeichnis (Repository)
+instvz="/root/neuserver"
 wzp="$instvz/wurzelplatten"; # Liste gefundener root-Verzeichnisse (für musterserver)
 Dw="/root/Downloads";      # lokales Download-Verzeichnis
 gruppe=$(cat $instvz/gruppe); # Hauptgruppe (z.B. "praxis")
@@ -99,6 +99,7 @@ commandline() {
 	obmysqli=0; # nur mysql soll eingerichtet werden, jede Datenbank geprüft
   obsmb=0; # nur smbconf soll aufgerufen werden
   obmust=0; # ob von musterserver kopiert werden soll
+  obmustneu=0; # musterserver mit Überschreiben vorhandener Dateien
   obfritz=0; # ob fritzbox eingehaengt werden soll
   obfb=0; # Firebird
   obtv=0; # Teamviewer
@@ -131,6 +132,7 @@ commandline() {
         printf "  $blau-mariai$reset: lädt den Datenbankinhalt aus den jüngsten Dateien in /DATA/sql\n";
         printf "  $blau-smb$reset: richtet Samba ein\n";
         printf "  $blau-must$reset: kopiert vom Musterserver\n";
+        printf "  ${blau}-mustneu${reset}: wie -must, aber überschreibt vorhandene Dateien\n";
         printf "  $blau-fritz$reset: hängt die Fritzbox ein\n";
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -163,6 +165,7 @@ commandline() {
           mariai|mysqli) obmysqli=1;;
           smb) obsmb=1;;
           must) obmust=1;;
+          mustneu) obmustneu=1;;
           fritz) obfritz=1;;
           firebird) obfb=1;;
           teamviewer) obtv=1;;
@@ -176,7 +179,7 @@ commandline() {
 	if [ "$verb" ]; then
 		printf "obneu: $blau$obneu$reset\n";
 		printf "obschreiben: $blau$obschreiben$reset\n";
-		[ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n"
+    [ $obteil = 1 ]&& printf "obteil: ${blau}1$reset\n" || printf "obteil: ${blau}0$reset\n"
 		[ "$obbs" = 1 ]&& printf "obbs: ${blau}1$reset\n"
 		[ "$obhost" = 1 ]&& printf "obhost: ${blau}1$reset\n"
 		[ "$obprompt" = 1 ]&& printf "obprompt: ${blau}1$reset\n"
@@ -189,6 +192,16 @@ commandline() {
 		[ "$obsmb" = 1 ]&& printf "obsmb: ${blau}1$reset\n"
 		[ "$obmust" = 1 ]&& printf "obmust: ${blau}1$reset\n"
 		[ "$obfritz" = 1 ]&& printf "obfritz: ${blau}1$reset\n"
+    [ "$obmustneu" = 1 ]&& printf "obmustneu: ${blau}1$reset\n"
+    [ "$obtm" = 1 ]&&     printf "obtm: ${blau}1$reset\n"
+    [ "$obfb" = 1 ]&&     printf "obfb: ${blau}1$reset\n"
+    [ "$obtv" = 1 ]&&     printf "obtv: ${blau}1$reset\n"
+    [ "$obrpc" = 1 ]&&    printf "obrpc: ${blau}1$reset\n"
+    [ "$obkonfigsp" = 1 ]&&printf "obkonfigsp: ${blau}1$reset\n"
+    [ "$obkonfiglad" = 1 ]&&printf "obkonfiglad: ${blau}1$reset\n"
+    [ "$obkonfignl" = 1 ]&&printf "obkonfignl: ${blau}1$reset\n"
+    [ "$obcron" = 1 ]&&   printf "obcron: ${blau}1$reset\n"
+    [ "$obbw" = 1 ]&&     printf "obbw: ${blau}1$reset\n"
 	fi;
 } # commandline
 
@@ -2108,7 +2121,10 @@ setzgitssh() {
 } # setzgitssh
 
 musterserver() {
-  printf "${dblau}musterserver${reset}()\n";
+  printf "${dblau}musterserver $1${reset}()\n";
+  # $1=neu: rsync auch ausführen wenn Zielverzeichnis bereits existiert
+  [ "$1" = "neu" ] && \
+    printf "Modus: ${rot}kopiert erneut, falls schon vorhanden${reset}\n";
 
   # Quellserver abfragen falls nicht gesetzt:
   [ "$srv0" ]||{ printf "Bitte ggf. Server angeben, von dem kopiert werden soll (leer=lokal): "; read srv0; };
@@ -2214,7 +2230,7 @@ musterserver() {
 
     # HylaFAX-Spool:
     vsh=/var/spool/hylafax;
-    [ -f "$vsh/sendq/seqf" -o -f "$vsh/recvq/seqf" ] || {
+    { [ "$1" = "neu" ] || { [ ! -f "$vsh/sendq/seqf" ] && [ ! -f "$vsh/recvq/seqf" ]; }; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
       ausf "$_rsync $muwrz/..$vsh/ $vsh";
@@ -2222,7 +2238,7 @@ musterserver() {
 
     # CapiSuite-Spool:
     vsh=/var/spool/capisuite;
-    find "$vsh/autofaxarch/" -type f 2>/dev/null | grep . >/dev/null || {
+    { [ "$1" = "neu" ] || ! find "$vsh/autofaxarch/" -type f 2>/dev/null | grep -q .; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
       ausf "$_rsync $muwrz/..$vsh/ $vsh";
@@ -2230,7 +2246,7 @@ musterserver() {
 
     # fbfax-Spool:
     vsh=/var/spool/fbfax;
-    find "$vsh/arch/" -type f 2>/dev/null | grep . >/dev/null || {
+    { [ "$1" = "neu" ] || ! find "$vsh/arch/" -type f 2>/dev/null | grep -q .; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
       ausf "$_rsync $muwrz/..$vsh/ $vsh";
@@ -2238,7 +2254,7 @@ musterserver() {
 
     # Webverzeichnis:
     vsh=/srv/www/htdocs;
-    [ -f "$vsh/plz/=.Neuer_Patient" ] || {
+    { [ "$1" = "neu" ] || [ ! -f "$vsh/plz/=.Neuer_Patient" ]; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       find "$vsh" -type f 2>/dev/null | grep . >/dev/null && \
         ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
@@ -2856,6 +2872,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein; # MariaDB einrichten
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;         # Samba konfigurieren
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;     # Dateien vom Musterserver kopieren
+ [ "$obmustneu" = 1 ]&&musterserver neu;
  [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
  [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;       # TeamViewer installieren
  [ $obteil = 0 -o "$obcron" = 1 ]&&cron;           # crontab vom Quellserver übernehmen
