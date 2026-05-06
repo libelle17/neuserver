@@ -300,21 +300,20 @@ konfig_sichern() {
     geaendert=1;
   };
 
-  # Programmkonfigurationen:
-  for f in \
-    "$HOME/anrliste.conf" \
-    "$HOME/autofax.conf" \
-    "$HOME/fbfax.conf" \
-    "$HOME/impgl.conf" \
-    "$HOME/labimp.conf" \
-    "$HOME/labpath.conf" \
-    "$HOME/termine.conf" \
-    ; do
-    [ -f "$f" ] && {
-      cp "$f" "$TMPDIR_KRYPT/";
-      printf "vorgemerkt (verschlüsselt): ${blau}$(basename "$f")${reset}\n";
-      geaendert=1;
-    };
+  # Programmkonfigurationen – in ~/.config/ und ~/  suchen:
+  # Programme legen ihre .conf-Dateien je nach Version verschieden ab
+  for prog in \
+    anrliste auffaell autofax berein dicom fbfax impgl \
+    labimp labpath pznbdt termine; do
+    # Erst in ~/.config/ suchen, dann in ~/
+    for f in "$HOME/.config/${prog}.conf" "$HOME/${prog}.conf"; do
+      [ -f "$f" ] && {
+        cp "$f" "$TMPDIR_KRYPT/${prog}.conf";
+        printf "vorgemerkt (verschlüsselt): ${blau}${prog}.conf${reset} (aus $(dirname $f))\n";
+        geaendert=1;
+        break; # nur einmal sichern ($.config/ hat Vorrang)
+      };
+    done;
   done;
 
   # Alles verschlüsseln:
@@ -339,10 +338,8 @@ konfig_sichern() {
   # ---- 3) Direkt nach GitHub pushen ----
   if [ -d "$instvz/.git" ]; then
     printf "Committe und pushe ${blau}konfig/${reset} nach GitHub ...\n";
-    # Erst alle staged Änderungen unstagen damit nur konfig/ committet wird:
     git -C "$instvz" reset HEAD 2>/dev/null||true;
     git -C "$instvz" add konfig/ .gitignore 2>/dev/null;
-    # Prüfen ob es überhaupt Änderungen gibt:
     if git -C "$instvz" diff --cached --quiet 2>/dev/null; then
       printf "Keine Änderungen in ${blau}konfig/${reset} – kein Commit nötig.\n";
     else
@@ -351,20 +348,19 @@ konfig_sichern() {
         printf "${gruen}Commit erstellt${reset}\n" || \
         printf "${rot}Commit fehlgeschlagen${reset}\n";
     fi;
-    # Vor dem Push: erst Remote-Stand holen und unsere Version bevorzugen:
-    # In konfig_sichern() vor git push:
     git -C "$instvz" fetch origin master 2>/dev/null||true;
     git -C "$instvz" merge -X ours origin/master \
       -m "konfig_sichern: $(date '+%Y-%m-%d %H:%M')" 2>/dev/null||true;
-    # Push – auch wenn kein neuer Commit (--allow-empty-message):
     git -C "$instvz" push 2>&1 && \
       printf "${gruen}GitHub aktualisiert${reset}\n" || \
-      printf "${rot}git push fehlgeschlagen – manuell: make git${reset}\n";    
+      printf "${rot}git push fehlgeschlagen – manuell: make git${reset}\n";
   else
     printf "${rot}$instvz ist kein git-Repository – kein push möglich${reset}\n";
   fi;
   printf "${gruen}konfig_sichern abgeschlossen.${reset}\n";
 } # konfig_sichern
+
+# ------------------------------------------------------------
 
 konfig_laden() {
   printf "${dblau}konfig_laden${reset}()\n";
@@ -474,21 +470,28 @@ konfig_laden() {
   fi;
 
   # Dateien kopieren:
+  mkdir -p "$HOME/.config";
   for f in "$TMPDIR_KRYPT/"* "$TMPDIR_KRYPT/".*; do
     [ -e "$f" ] || continue;
     bn=$(basename "$f");
     [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
-    ziel="$HOME/$bn";
     case "$bn" in
+      # Passwort-Dateien nie überschreiben:
       .mysqlpwd|.mysqlrpwd|.mariadbpwd|.mariadbrpwd|.modbpwd)
-        if [ ! -e "$ziel" ]; then
-          _kopierdatei "$f" "$ziel" "sensibel: $ziel";
+        if [ ! -e "$HOME/$bn" ]; then
+          _kopierdatei "$f" "$HOME/$bn" "sensibel: $HOME/$bn";
         else
-          printf "Passwort-Datei ${blau}$ziel${reset} – nie überschreiben (auch nicht bei -knl)\n";
-          fi;;
-        *)
-          _kopierdatei "$f" "$ziel" "sensibel: $ziel";;
-      esac;    
+          printf "Passwort-Datei ${blau}$HOME/$bn${reset} – nie überschreiben\n";
+        fi;;
+      # Programmkonfigurationen nach ~/.config/ (dort werden sie erwartet):
+      *.conf)
+        ziel="$HOME/.config/$bn";
+        _kopierdatei "$f" "$ziel" "sensibel: $ziel";;
+      # Alle anderen nach $HOME/:
+      *)
+        ziel="$HOME/$bn";
+        _kopierdatei "$f" "$ziel" "sensibel: $ziel";;
+    esac;
   done;
 
   rm -rf "$TMPDIR_KRYPT";
