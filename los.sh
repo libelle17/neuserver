@@ -215,6 +215,7 @@ variablen() {
   if test "$("$instvz/configure" nuros)" != "$OSNR"; then "$instvz/configure";:;else break;fi;
  done;
  HOMEORIG="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)"; # ~  # $HOME
+ RBI=/root/bin;  # Verzeichnis für selbst erstellte Scripts
  loscred="$HOME/.loscred"; # ~  # $HOME
  mypwd="$HOME/.mysqlpwd";
  phppwd="/srv/www/phppwd.php";
@@ -2652,6 +2653,18 @@ cron() {
   else
     printf "${blau}srv0${reset} nicht gesetzt – kein Quellserver, verwende lokale crontab.\n";
     csrv=$chier;
+  fi;
+  # bulinux.sh-Eintrag prüfen und ggf. eintragen:
+  if [ -f "$RBI/bulinux.sh" ]; then
+    _bulentry="-20 14,22 * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 \$RBI/verhdop.sh \$RBI/bulinux.sh";
+    if ! crontab -l 2>/dev/null | grep -q "bulinux.sh"; then
+      { crontab -l 2>/dev/null; printf "%s\n" "$_bulentry"; } | crontab -;
+        printf "bulinux.sh in ${blau}crontab${reset} eingetragen.\n";
+      else
+        printf "bulinux.sh bereits in ${blau}crontab${reset} vorhanden.\n";
+    fi;
+  else
+    printf "${rot}bulinux.sh nicht gefunden in $RBI${reset} – crontab-Eintrag übersprungen.\n";
   fi;
 
   # 3) Arbeitskopie erstellen:
