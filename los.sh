@@ -2817,7 +2817,13 @@ dbinhalt() {
       [ "$verb" ]&&{ [ "$1"/ = immer ]&&echo immer; [ "$dbda" = 0 ]&&echo dbnichtda;};
 #      printf "$blau$db$reset"; if test "$1"/ = immer/; then printf " wird neu gespeichert!\n"; else printf " fehlt als Datenbank!"; fi;
 #      Q=$(ls "$VZ/"$db--*.sql -S|head -n1);     # die als jüngste benannte Datei ...
-      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f $instvz/awkfdatei.sh);
+#      Q=$(awk -v pfad="$VZ" -v n1="$db--" -v n2=".sql" -f $instvz/awkfdatei.sh);
+      _groesste=$(ls "$VZ/$db--"*.sql -S 2>/dev/null|head -1);
+      _groe=$(stat --printf='%s' "$_groesste" 2>/dev/null||echo 0);
+      _ming=$(awk "BEGIN{printf \"%.0f\", $_groe * 0.8}");
+      Q=$(find "$VZ" -maxdepth 1 -size "+${_ming}c" -name "$db--*.sql" \
+        -printf '%f %p\n' 2>/dev/null|sort -rn|head -1|awk '{print $2}');
+
       Zt=$(echo $Q|sed 's:.*--\([^/]*\)\..*$:\1:;s/[-.]//g'); # Zeit rausziehen
       Sz=$(stat "$Q" --printf="%s\\n");
       [ -f $pd ]||echo "Letzte Datenbankeintragungen:" >$pd;
