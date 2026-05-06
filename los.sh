@@ -499,6 +499,76 @@ konfig_laden() {
   printf "${gruen}konfig_laden abgeschlossen.${reset}\n";
 } # konfig_laden
 
+
+# ============================================================
+# schutzdatei_verteilen() – verteilt Schutzdatei_bitte_belassen.doc
+# auf /var/spool/, /DATA/rett/ und stellt git-Timestamp wieder her.
+# Wird aufgerufen nach proginst() und musterserver()
+# ============================================================
+schutzdatei_verteilen() {
+  printf "${dblau}schutzdatei_verteilen${reset}()\n";
+  _sd="$instvz/Schutzdatei_bitte_belassen.doc";
+  [ -f "$_sd" ] || {
+    printf "${rot}Schutzdatei nicht gefunden: ${blau}$_sd${reset}\n";
+    return 1;
+  };
+
+  # Timestamp aus git-Log wiederherstellen (nach git clone falsch):
+  _sdts=$(git -C "$instvz" log -1 --format="%ai" -- \
+    "Schutzdatei_bitte_belassen.doc" 2>/dev/null);
+  [ "$_sdts" ] && {
+    touch -d "$_sdts" "$_sd";
+    printf "Schutzdatei Timestamp: ${blau}$_sdts${reset}\n";
+  };
+
+  # git-Hooks anlegen damit Timestamp nach jedem pull/checkout korrekt ist:
+  _hooksdir="$instvz/.git/hooks";
+  if [ -d "$_hooksdir" ]; then
+    for _hook in post-checkout post-merge; do
+      [ -f "$_hooksdir/$_hook" ] && continue; # nicht überschreiben falls schon vorhanden
+      cat >"$_hooksdir/$_hook" <<'HOOKEOF'
+#!/bin/sh
+sd="$(git rev-parse --show-toplevel)/Schutzdatei_bitte_belassen.doc"
+[ -f "$sd" ] || exit 0
+ts=$(git log -1 --format="%ai" -- Schutzdatei_bitte_belassen.doc 2>/dev/null)
+[ "$ts" ] && touch -d "$ts" "$sd"
+HOOKEOF
+      chmod +x "$_hooksdir/$_hook";
+      printf "git-Hook angelegt: ${blau}$_hooksdir/$_hook${reset}\n";
+    done;
+  fi;
+
+  # Nach /var/spool/ kopieren:
+  cp -a "$_sd" /var/spool/ 2>/dev/null && \
+    printf "Schutzdatei nach ${blau}/var/spool/${reset} kopiert.\n" || \
+    printf "${rot}Kopie nach /var/spool/ fehlgeschlagen${reset}\n";
+
+  # Nach /DATA/rett/ falls /DATA gemountet:
+  if mountpoint -q /DATA 2>/dev/null; then
+    mkdir -p /DATA/rett/;
+    cp -a "$_sd" /DATA/rett/ 2>/dev/null && \
+      printf "Schutzdatei nach ${blau}/DATA/rett/${reset} kopiert.\n";
+    # neuserver-Repository nach /DATA/rett/ sichern
+    # Passwort- und Schlüsseldateien ausschließen (werden verschlüsselt via -ks gesichert):
+    rsync -avu \
+      --exclude=".mysqlpwd" \
+      --exclude=".mysqlrpwd" \
+      --exclude=".mariadbpwd" \
+      --exclude=".mariadbrpwd" \
+      --exclude=".modbpwd" \
+      --exclude=".fbcredentials" \
+      --exclude=".tr64cred" \
+      --exclude=".loscred" \
+      --exclude=".sturm" \
+      --exclude=".gnupg/" \
+      --exclude=".gpgpass" \
+      --exclude="konfig/verschluesselt/" \
+      "$instvz/" /DATA/rett/neuserver/ 2>/dev/null;
+    printf "neuserver nach ${blau}/DATA/rett/neuserver/${reset} gesichert.\n";
+  fi;
+} # schutzdatei_verteilen
+
+
 # ============================================================
 # D) In ~/neuserver/Makefile – git-Target ergänzen
 # ============================================================
@@ -1648,6 +1718,7 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
     git remote set-url origin  git+ssh://git@github.com/libelle17/$D.git
   done;
   konfig_laden;
+  schutzdatei_verteilen;
   cd $VORVZ;
 } # proginst
 
@@ -2282,6 +2353,7 @@ musterserver() {
     };
 
   fi; # [ "$muwrz" ]
+  schutzdatei_verteilen;
 } # musterserver
 
 #holt Datei $1 entweder aus "/DATA/down /DATA/daten/down" ($q0) oder $srv0 oder $2 auf /root/Downloads (=$Dw); $3 = potentieller hol-Name

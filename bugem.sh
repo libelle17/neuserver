@@ -395,7 +395,33 @@ kopiermt() { # mit test
 } # kopiermt
 
 kopieros() {
-  kopiermt root/$1 "root" "" "--exclude='.*.swp'" "" "" 1
+  # $1 = Dateiname oder Verzeichnisname unter /root/
+  # Bei Einzeldateien (z.B. .fbcredentials): Schutzdatei in ~ prüfen
+  # Bei Verzeichnissen: Schutzdatei im Verzeichnis prüfen (bisheriges Verhalten via kopiermt)
+  machssh;
+  _ist_datei=;
+  # Prüfen ob $1 eine einzelne Datei ist (auf Quellrechner):
+  eval "$qssh 'test -f /root/$1'" 2>/dev/null && _ist_datei=1;
+
+  if [ "$_ist_datei" ]; then
+    # Einzeldatei – Schutzdatei in ~ vergleichen (Größe + Timestamp):
+    _sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
+    _sdz=$(eval "$zssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
+    if [ -z "$_sdq" ]; then
+      printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden – überspringe $blau$1$reset\n";
+      return 1;
+    fi;
+    if [ "$_sdq" = "$_sdz" ]; then
+      # Schutzdatei identisch – Kopie durchführen:
+      ausf "$kopbef -avu ${QmD}root/$1 ${ZmD}root/" "$dblau";
+    else
+      printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
+      return 1;
+    fi;
+  else
+    # Verzeichnis – bisheriges Verhalten mit kopiermt:
+    kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1;
+  fi;
 }
 
 kopieretc() {
