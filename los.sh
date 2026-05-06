@@ -2848,7 +2848,7 @@ dbinhalt() {
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
 #         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
 #         printf "Q: $blau$Q$reset;";
-         ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd --skip-lock-tables -hlocalhost <\"$Q\""
+         ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd --force -hlocalhost <\"$Q\""
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
