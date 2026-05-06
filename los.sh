@@ -42,7 +42,7 @@ AUFRUFDIR=$(pwd);    # Verzeichnis aus dem das Script aufgerufen wurde
 meingespfad="$(readlink -f "$0")"; # Name dieses Programms samt Pfad
 [ "$meingespfad" ]||meingespfad="$(readlink -m "$0")";
 meinpfad="$(dirname $meingespfad)"; # Pfad dieses Programms ohne Name
-instvz="/root/neuserver" # Installationsverzeichnis (Repository)
+instvz="/root/neuserver"
 wzp="$instvz/wurzelplatten"; # Liste gefundener root-Verzeichnisse (für musterserver)
 Dw="/root/Downloads";      # lokales Download-Verzeichnis
 gruppe=$(cat $instvz/gruppe); # Hauptgruppe (z.B. "praxis")
@@ -2259,7 +2259,7 @@ musterserver() {
       find "$vsh" -type f 2>/dev/null | grep . >/dev/null && \
         ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
       ausf "$_rsync $muwrz/..$vsh/ $vsh/.. --exclude \"*Papierkorb*\"";
-      chown wwwrun:www -R /srv/www/htdocs;
+      chown wwwrun:www -R $vsh;
       systemctl restart apache2;
     };
 
