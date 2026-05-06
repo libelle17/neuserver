@@ -2210,12 +2210,19 @@ musterserver() {
   fi;
 
   if [ "$muwrz" ]; then
+    
     # SSH-Optionen für rsync:
     _rsync="rsync -avu -e 'ssh -o StrictHostKeyChecking=accept-new'";
 
-    ausf "$_rsync $muwrz/.vim $HOME/";
-    ausf "$_rsync $muwrz/bin/.vimrc $HOME/bin/";
-    ausf "$_rsync --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
+    # .vim – bei -mustneu immer, sonst nur wenn fehlend:
+    { [ "$1" = "neu" ] || [ ! -d "$HOME/.vim" ]; } && \
+      ausf "$_rsync $muwrz/.vim $HOME/";
+
+    # .vimrc und Shell-Scripts – bei -mustneu immer, sonst nur wenn fehlend:
+    { [ "$1" = "neu" ] || [ ! -f "$HOME/bin/.vimrc" ]; } && \
+      ausf "$_rsync $muwrz/bin/.vimrc $HOME/bin/";
+    { [ "$1" = "neu" ] || [ ! -d "$HOME/bin" ]; } && \
+      ausf "$_rsync --include='*/' --include='*.sh' --exclude='*' $muwrz/bin $HOME/";
 
     # Programmkonfigurationen – nur wenn nicht schon durch konfig_laden vorhanden:
     gesD=;
@@ -2225,40 +2232,47 @@ musterserver() {
     if [ -f "$instvz/konfig/verschluesselt/sensibel.tar.gpg" ]; then
       printf "konfig_laden verwaltet .conf-Dateien – rsync für .config/ übersprungen.\n";
     else
-      ausf "$_rsync $muwrz/.config/ $HOME/.config/ --include \"$gesD\" --exclude \"*\"";
+      { [ "$1" = "neu" ] || [ ! -d "$HOME/.config" ]; } && \
+        ausf "$_rsync $muwrz/.config/ $HOME/.config/ --include \"$gesD\" --exclude \"*\"";
     fi;
-
+   
     # HylaFAX-Spool:
     vsh=/var/spool/hylafax;
     { [ "$1" = "neu" ] || { [ ! -f "$vsh/sendq/seqf" ] && [ ! -f "$vsh/recvq/seqf" ]; }; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+      [ "$srv0" ] && \
+        ausf "$_rsync $srv0:$vsh/ $vsh/" || \
+        ausf "$_rsync ${muwrz%/*}$vsh/ $vsh/";
     };
-
     # CapiSuite-Spool:
     vsh=/var/spool/capisuite;
     { [ "$1" = "neu" ] || ! find "$vsh/autofaxarch/" -type f 2>/dev/null | grep -q .; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+      [ "$srv0" ] && \
+        ausf "$_rsync $srv0:$vsh/ $vsh/" || \
+        ausf "$_rsync ${muwrz%/*}$vsh/ $vsh/";
     };
-
     # fbfax-Spool:
     vsh=/var/spool/fbfax;
     { [ "$1" = "neu" ] || ! find "$vsh/arch/" -type f 2>/dev/null | grep -q .; } && {
       echo "$vsh fehlt, hole es von $muwrz";
       [ -d "$vsh" ] && ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-      ausf "$_rsync $muwrz/..$vsh/ $vsh";
+      [ "$srv0" ] && \
+        ausf "$_rsync $srv0:$vsh/ $vsh/" || \
+        ausf "$_rsync ${muwrz%/*}$vsh/ $vsh/";
     };
-
+    
     # Webverzeichnis:
     vsh=/srv/www/htdocs;
     { [ "$1" = "neu" ] || [ ! -f "$vsh/plz/=.Neuer_Patient" ]; } && {
       echo "$vsh fehlt, hole es von $muwrz";
-      find "$vsh" -type f 2>/dev/null | grep . >/dev/null && \
+      find "$vsh" -type f 2>/dev/null | grep -q . && \
         ausf "mv -i $vsh ${vsh}_$(date +\"%Y%m%d%H%M%S\")";
-      ausf "$_rsync $muwrz/..$vsh/ $vsh/.. --exclude \"*Papierkorb*\"";
+      [ "$srv0" ] && \
+        ausf "$_rsync $srv0:$vsh/ $vsh/ --exclude \"*Papierkorb*\"" || \
+        ausf "$_rsync ${muwrz%/*}$vsh/ $vsh/ --exclude \"*Papierkorb*\"";
       chown wwwrun:www -R $vsh;
       systemctl restart apache2;
     };
