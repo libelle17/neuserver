@@ -553,7 +553,6 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
   ;; esac; 
-  exit;
 fi;;
 esac;
 
