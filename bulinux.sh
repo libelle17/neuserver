@@ -93,7 +93,7 @@ kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" di
  for uverz in Praxis Schade Wagner Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
-   find /$qverz -iname INBOX|while IFS= read -r inbox; do
+	 $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
      [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};

@@ -190,9 +190,10 @@ kopiermt() { # mit test
   echo `date +%Y:%m:%d\ %T` "vor /$QVos" >> $PROT
   printf "${blau}kopiermt$reset Q: $blau$1$reset, Z: $blau$2$reset, Ex: $blau$3$reset, Opt: $blau$4$reset, AltPrf: $blau$5$reset, >s: $blau$6$reset, oPlP: $blau$7$reset, QL: $blau$QL$reset, /QVos: /$blau$QVos$reset, QVofs: $blau$QVofs$reset, ZL: $blau$ZL$reset, ZVos: $blau$ZVos$reset, ZVofs: $blau$ZVofs$reset, obsub: $blau$obsub$reset, obdat: $blau$obdat$reset, qssh: $blau$qssh$reset, zssh: $blau$zssh$reset\n";
 	# Quelle auf Existenz prüfen – falls weder Datei noch Verzeichnis: überspringen
-	if ! eval "$qssh 'test -e \"/$QVos\"'" 2>/dev/null; then
-		  printf "${rot}/$QVos auf ${blau}${QL:-lokal}${rot} nicht vorhanden – übersprungen${reset}\n";
-			  return 0;
+	_QVos_real=$(echo "/$QVos" | sed 's/\\ / /g');
+	if ! eval "$qssh 'test -e \"$_QVos_real\"'" 2>/dev/null; then
+		printf "${rot}$_QVos_real auf ${blau}${QL:-lokal}${rot} nicht vorhanden – übersprungen${reset}\n";
+		return 0;
 	fi;
   for pc in "$QL" "$ZL"; do
     [ "$pc" ]&&{ 
