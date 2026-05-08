@@ -234,7 +234,8 @@ kopiermt() { # mit test
         if [ -d "$zuteh" ]; then # das sollte dann ein schon bestehendes Verzeichnis sein
           echo "$hsh 'mountpoint -q \"$zuteh\"'"
   #        $hsh "mountpoint -q \"$zuteh\"||mount \"$zuteh\" >/dev/null 2>&1";
-          for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+#          for vers in 3.11 3.11 3.02 3.02 3.0 3.0 2.1 2.1 2.0 2.0 1.0 1.0; do
+					for vers in 3.11 3.02 3.0 2.1 2.0 1.0; do
            if ! $hsh "mountpoint -q \"$zuteh\""; then
              # das Leerzeichen nach &1 schützt vor ambiguous redirect-Fehler
              ausf "$hsh \"mount '$zuteh' -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau "" 1;
@@ -242,7 +243,6 @@ kopiermt() { # mit test
 #            ausf "$hsh \"mount $zuteh -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
              # hier geht gar nix:
 #             ausf "$hsh \"mount \\\\\"$zuteh\\\\\" -t cifs -o nofail,vers=$vers,credentials=/home/schade/.wincredentials >/dev/null 2>&1 \"" $blau
-             echo "neue Zeile 4";
            else
       #       printf " ${blau}$cifs$reset gemountet!\n"
              break;
@@ -413,7 +413,7 @@ kopieros() {
     fi;
     if [ "$_sdq" = "$_sdz" ]; then
       # Schutzdatei identisch – Kopie durchführen:
-      ausf "$kopbef -avu ${QmD}root/$1 ${ZmD}root/" "$dblau";
+			ausf "$kopbef -avu ${QmD}/root/$1 ${ZmD}/root/" "$dblau";
     else
       printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
       return 1;
