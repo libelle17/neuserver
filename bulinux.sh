@@ -106,7 +106,7 @@ kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" di
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
-	[ -z $auslass ]&&kopiermt "$Dt/$A" "$DtZ/$A" "" "$OBDEL";
+	[ -z $auslass ]&&kopiermt "$Dt/$A" "$DtZ/$A/" "" "$OBDEL";
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
 	if [ "$A"/ = sql/ ]; then
 		if [ "$obecht" ]; then
@@ -118,7 +118,7 @@ kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" di
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
- kopiermt "$Dt" "$DtZ" "$EXCL" "-W $OBDEL";
+ kopiermt "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL";
 fi;
 #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)

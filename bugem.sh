@@ -401,8 +401,12 @@ kopieros() {
   machssh;
   _ist_datei=;
   # Prüfen ob $1 eine einzelne Datei ist (auf Quellrechner):
-  eval "$qssh 'test -f /root/$1'" 2>/dev/null && _ist_datei=1;
-
+	if eval "$qssh 'test -f /root/$1'" 2>/dev/null; then
+		_ist_datei=1;
+	elif ! eval "$qssh 'test -e /root/$1'" 2>/dev/null; then
+		printf "${rot}/root/$1 auf Quelle nicht gefunden – überspringe$reset\n";
+		return 0;
+	fi;
   if [ "$_ist_datei" ]; then
     # Einzeldatei – Schutzdatei in ~ vergleichen (Größe + Timestamp):
     _sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
