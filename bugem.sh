@@ -80,7 +80,8 @@ commandline() {
         nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
         z|-ziele) shift; ziele="$1";
-                  echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
+          echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
+        q|-quelle) shift; QL="$1";;
       esac;;
      *)
 #      [ "$ZL" ]&&QL=$ZL; # z.B. linux0 linux7 # The source and destination cannot both be remote.
@@ -101,6 +102,7 @@ commandline() {
 		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
+    [ "$QL" ]&&printf "QL: ${blau}$QL${reset}\n";
 		printf "ZL: $blau$ZL$reset\n";
 		printf "nichtvirt: $blau$obnv$reset\n";
 		[ $nurdrei ]&&printf "nurdrei: $blau$nurdrei$reset => in buint.sh nur auf Zielrechnern zwischen virt.Windows und Linux kopieren\n";

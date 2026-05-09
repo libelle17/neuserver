@@ -5,6 +5,16 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen # ./bugem.sh
+# Falls -q gesetzt: Quellrechner explizit, Zielrechner = lokal
+# Überschreibt die Logik aus bul1.sh:
+[ "$QL" -a "$QL" != "$LINEINS" -a -z "$ZL" ]&&{
+  printf "Explizite Quelle: ${blau}$QL${reset} → Ziel: ${blau}lokal${reset}\n";
+  # qssh/zssh werden in bugem.sh nach commandline() gesetzt – hier nochmal überschreiben:
+  qssh="ssh $QL";
+  zssh="sh -c";
+  QmD="$QL:";
+  ZmD=;
+};
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
