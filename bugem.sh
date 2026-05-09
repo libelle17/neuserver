@@ -363,6 +363,16 @@ kopiermt() { # mit test
       echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
     fi;
   fi; # if [ "$7" ]
+  # Zielverzeichnis anlegen falls fehlend:
+  if [ "$obecht" ]; then
+    if [ "$ZL" ]; then
+      $zssh "mkdir -p \"/$ZVos\"" 2>/dev/null||true;
+    else
+      mkdir -p "/$ZVos" 2>/dev/null||true;
+    fi;
+  else
+    printf "Simulation: mkdir -p /$ZVos\n";
+  fi;
   if test $rest -gt 0; then
 		case $QVos in *var/lib/mysql*)
 			printf "stoppe mysql auf $blau$ZL$reset\n";
@@ -372,7 +382,9 @@ kopiermt() { # mit test
 	  esac;
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
-    Quelle=$QmD/$QVofs;[ "$QL" ]&&Quelle=\"$Quelle\";
+    _QVofs_real=$(echo "$QVofs" | sed 's/\\ / /g');
+    _ZVofs_real=$(echo "$ZVofs" | sed 's/\\ / /g');
+    Quelle=$QmD/$_QVofs_real;[ "$QL" ]&&Quelle=\"$Quelle\";
     [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
 #    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
 #    QVofs=/ Pfad/zum/qv[/]
@@ -382,12 +394,11 @@ kopiermt() { # mit test
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL" $dblau;
-#      echo "nach ausf mit dblau, nur zum Debuggen"
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$ZVofs\" $4 -$attr $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
-		ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'" "" "" 1;[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
+    ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'" "" "" 1;[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
 		case $QVos in *var/lib/mysql*)
 			echo starte mysql auf $ZL;
