@@ -124,8 +124,8 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  done;
  fi; # kopweit
 #  ... sodann die folgenden Verzeichisse: 
-# for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
- for A in sql; do
+# for A in sql; do
+ for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
 	[ -z $auslass ]&&kopiermt "$Dt/$A" "$DtZ/$A/" "" "$OBDEL";
