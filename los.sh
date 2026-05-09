@@ -539,6 +539,10 @@ HOOKEOF
       printf "git-Hook angelegt: ${blau}$_hooksdir/$_hook${reset}\n";
     done;
   fi;
+	if [ -d "$instvz/.githooks" ]; then
+		  git -C "$instvz" config core.hooksPath .githooks;
+			  chmod +x "$instvz/.githooks/"* 2>/dev/null||true;
+	fi;
 
   # Nach /var/spool/ kopieren:
   cp -a "$_sd" /var/spool/ 2>/dev/null && \
@@ -1684,7 +1688,10 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
     D=vmime;
     cd $HOME;
     [ -d "$HOME/$D" ]||git clone git+ssh://git@github.com:libelle17/$D.git;
-    cd $HOME/$D;
+		git -C "$D" config core.hooksPath .githooks;
+		chmod +x "$D/.githooks/"* 2>/dev/null||true;
+		printf "git-Hooks aktiviert: ${blau}$D/.githooks/${reset}\n";
+		cd $HOME/$D;
     mkdir -p build;
     cd build;
     cmake -DVMIME_BUILD_SAMPLES=OFF ..;
@@ -1704,7 +1711,10 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
         esac;
       }
       echo hole $D; git clone git+ssh://git@github.com/libelle17/$D.git;
-    };
+			git -C "$D" config core.hooksPath .githooks;
+			chmod +x "$D/.githooks/"* 2>/dev/null||true;
+			printf "git-Hooks aktiviert: ${blau}$D/.githooks/${reset}\n";
+		};
     cd $HOME/$D;
     if [ -d cmake ]; then
      [ -d build ]||mkdir build;
