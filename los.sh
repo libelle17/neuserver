@@ -529,9 +529,11 @@ schutzdatei_verteilen() {
       cat >"$_hooksdir/$_hook" <<'HOOKEOF'
 #!/bin/sh
 sd="$(git rev-parse --show-toplevel)/Schutzdatei_bitte_belassen.doc"
+ts_file="$(git rev-parse --show-toplevel)/Schutzdatei_timestamp.txt"
 [ -f "$sd" ] || exit 0
-ts=$(git log -1 --format="%ai" -- Schutzdatei_bitte_belassen.doc 2>/dev/null)
-[ "$ts" ] && touch -d "$ts" "$sd"
+[ -f "$ts_file" ] && ts=$(cat "$ts_file") || \
+  ts=$(git log -1 --format="%ai" -- Schutzdatei_bitte_belassen.doc 2>/dev/null)
+	[ "$ts" ] && touch -d "$ts" "$sd"
 HOOKEOF
       chmod +x "$_hooksdir/$_hook";
       printf "git-Hook angelegt: ${blau}$_hooksdir/$_hook${reset}\n";
