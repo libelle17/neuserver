@@ -79,7 +79,9 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
 		kopiermt mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 		kopiermt mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 	}
-kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+if ssh linux1 mountpoint -q /mnt/anmmw; then
+	kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+fi;
 # kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
