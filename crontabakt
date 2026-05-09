@@ -70,18 +70,8 @@ ELG=/var/log/cronf.log
 -0 0 1 1 *    mountpoint -q "/DATA" && $RBI/fpstatusmb.sh > "/DATA/Festplattenstatus `date +\%Y`.txt" 2>&1
 
 # mariadb-Datenbanken sichern
-#-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 13,21  * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines dp  > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines depot  > /DATA/sql/depot--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 14,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines faxeinp  > /DATA/sql/faxeinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--45 14,20 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines fotosinp  > /DATA/sql/fotosinp--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines haerzte  > /DATA/sql/haerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--50 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines haerzte_neu  > /DATA/sql/haerzte_neu--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--55 19 1,15 * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines kvaerzte  > /DATA/sql/kvaerzte--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines konten  > /DATA/sql/konten--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--0 21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines programmstaende  > /DATA/sql/programmstaende--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--30 21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines office  > /DATA/sql/office--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
--15 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines quelle  > /DATA/sql/quelle--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
+#-0 13,21  * * * mountpoint -q "/DATA" && /usr/bin/mariadb-dump --defaults-extra-file=/root/.mysqlpwd --default-character-set=latin1 -c -C -K -B --routines dp | sed s/"^SET character_set_client = utf8;"/"SET character_set_client = latin1;"/g | sed 's/DEFINER=`[^`]*`@`[^`]*`//g' > /DATA/sql/dp--`date +\%F-\%H.\%M.\%S`.sql 2>>/var/log/mysqldump-Aufruf.log
+-15 2,14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" &&{ pt=/var/log/mariadbdump-Aufruf.log; date +\%Y\%m\%d_\%H\%M\%S: >> $pt; for db in dp depot faxeinp fotosinp haerzte haerzte_neu kvaerzte konten programmstaende office quelle; do /usr/bin/mariadb-dump --defaults-extra-file=/root/.mysqlpwd --default-character-set=UTF8 -c -C -K -B --routines --single-transaction --lock-tables=false $db  | sed 's/DEFINER=`[^`]*`@`[^`]*`//g' > /DATA/sql/$db--`date +\%F-\%H.\%M.\%S`.sql 2>>$pt; done; }
 -00 7 * * * D=/root/sqlFehler.txt;find /DATA/sql -mindepth 1 -maxdepth 1 -type f -iname "*.sql" -print0|xargs -0 grep -iL "dump completed">$D;[ ! -s $D ]&&rm $D||cp -a $D /DATA/Fehlerhafte_SQL_Dumps.txt
 #-25 20 */10 * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/mysqldump --defaults-extra-file=/root/.mysqlpwd --default-character-set=latin1 -c -C -K -B quelle2  > /DATA/sql/quelle2--`date +\%F-\%H.\%M.\%S`.sql 2>>$VL/mysqldump-Aufruf.log
 
@@ -173,7 +163,7 @@ ELG=/var/log/cronf.log
 -1 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && chmod 550 "/DATA/eigene\ Dateien/Office.mdb" >/dev/null 2>>$ELG
 -1 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && chmod 550 -R /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
 -1 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && chmod 774 /DATA/eigene\ Dateien/DM/Eig* >/dev/null 2>>$ELG
--27 5 * * * /usr/bin/termine >>$NLG 2>>$ELG
+# -27 5 * * * /usr/bin/termine >>$NLG 2>>$ELG
 -15 23 * * * $RBI/rett.sh >>$NLG 2>>$ELG
 # -15 22 * * * $RBI/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
 -55 4 * * * /usr/sbin/ntpdate ptbtime1.ptb.de >>$NLG 2>>$ELG
@@ -208,7 +198,7 @@ ELG=/var/log/cronf.log
 -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bunacht.sh -e 
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 # -10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/butm.sh # auskommentiert 1.1.26
--20 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh
+-20 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -e
 # -05 0 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
@@ -256,7 +246,8 @@ ELG=/var/log/cronf.log
 0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
 -33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
--0 9 * * 1 /usr/bin/ionice -c3 /usr/bin/auffaell
+# muss noch geaendert werden, damit er nicht nach den Zugangsdaten fraegt:
+-0 9 * * 1 /usr/bin/ionice -c3 /usr/bin/auffaell > /dev/null 2>&1
 */1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
