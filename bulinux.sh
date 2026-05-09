@@ -18,7 +18,9 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-# if false; then
+mkos=true;
+kopweit=true;
+if $mkos; then
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
@@ -54,6 +56,7 @@ if [ "$obecht" ]; then
 else
   printf "Befehl wäre: $dblau$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
 fi;
+fi; # $mkos
 verb=$altverb;
 # fi;
 # kopieros "root/bin" # auskommentiert 29.7.19
@@ -65,9 +68,11 @@ Dt=DATA;
 DtZ=$DATAZIEL; # Ziel-Äquivalent von $Dt
 machssh;
 ausf "$qssh 'mountpoint -q /$Dt||mount /$Dt'" $blau;
-ausf "$zssh 'mountpoint -q /$Dt||mount /$Dt'" $blau;
+ausf "$zssh 'mountpoint -q /$DtZ||{ mountpoint -q /$Dt||mount /$Dt;}'" $blau;
 # falls die gemountet sind ...
-if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
+if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
+ { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
+	if $kopweit; then
   mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
   mountpoint -q /mnt/wser/mosich&&{
     mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
@@ -89,9 +94,9 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
 		kopiermt mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 		kopiermt mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 	}
-if ssh linux1 mountpoint -q /mnt/anmmw; then
-	kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
-fi;
+	if ssh linux1 mountpoint -q /mnt/anmmw; then
+		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+	fi;
 # kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
@@ -117,8 +122,10 @@ fi;
    done;
   fi;
  done;
+ fi; # kopweit
 #  ... sodann die folgenden Verzeichisse: 
- for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
+# for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
+ for A in sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
 	[ -z $auslass ]&&kopiermt "$Dt/$A" "$DtZ/$A/" "" "$OBDEL";
