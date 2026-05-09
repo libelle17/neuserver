@@ -72,7 +72,10 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/nu
 		kopiermt "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1
 		kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "" "" 0 1 1
 		kopiermt mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1
-		kopiermt mnt/wser/indamed/dat/MOSTAT253B.gdb /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
+		mostat=$(ssh linux1 ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb|head -n1);
+		if test -n "$mostat"; then
+			kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
+		fi
 		kopiermt mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 		kopiermt mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 	}
@@ -90,7 +93,7 @@ kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" di
 
 #  ... dann Mail-Verzeichisse kopieren,
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
- for uverz in Praxis Schade Wagner Kothny Hammerschmidt Beraterinnen; do
+ for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
    qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
 	 $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
