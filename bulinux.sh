@@ -60,8 +60,8 @@ ausf "$zssh 'mountpoint -q /$Dt||mount /$Dt'" $blau;
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && $zssh "mountpoint -q /$Dt 2>/dev/null"; then
   mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
   mountpoint -q /mnt/wser/mosich&&{
-    mouvz=$(ls -1dt /mnt/wser/mosich/2*|head -n1);
-    mouvz=${mouvz/\/};
+    mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
+    mouvz=${mouvz#/};  # führendes / entfernen
 		if [ "$obecht" ]; then
 			$zssh "mkdir -p /$DtZ/MO/Sich";
 			$zssh "mkdir -p /$DtZ/MO/INDAMED";
