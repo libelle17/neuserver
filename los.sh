@@ -539,9 +539,10 @@ HOOKEOF
       printf "git-Hook angelegt: ${blau}$_hooksdir/$_hook${reset}\n";
     done;
   fi;
-	if [ -d "$instvz/.githooks" ]; then
-		  git -C "$instvz" config core.hooksPath .githooks;
-			  chmod +x "$instvz/.githooks/"* 2>/dev/null||true;
+  if [ -d "$instvz/.githooks" ]; then
+    # git-Hooks ausführbar machen:
+    chmod +x "$instvz/.githooks/"* 2>/dev/null||true;
+    git -C "$instvz" config core.hooksPath .githooks;
 	fi;
 
   # Nach /var/spool/ kopieren:
