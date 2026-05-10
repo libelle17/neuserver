@@ -19,8 +19,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-mkos=false; # true;
-kopweit=false; # true;
+mkos=true;
+kopweit=true;
 # -----------------------------------------------------------------------
 # Inkrementeller Modus (Standard) vs. Vollabgleich:
 #   Sonntags (Wochentag 7) oder mit -f (force) → kopiermt (vollständig)
@@ -170,7 +170,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
  fi; # kopweit
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-# -----------------------------------------------------------------------
+exit; # -----------------------------------------------------------------------
 # MariaDB-Synchronisation
 # Gleiche major.minor-Version → rsync des datadir (schnell, Minuten)
 # Verschiedene Versionen      → mariadb-dump/import (sicher, langsamer)
