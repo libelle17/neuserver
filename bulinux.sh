@@ -240,7 +240,7 @@ if [ -n "$VLM" ]; then
     else
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       if [ "$obecht" ]; then
-        set -o pipefail;  # Dump-seitiger Fehler wird nicht verschluckt
+        set -o pipefail;
         ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
           "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
             --default-character-set=UTF8 -c -K \
@@ -249,22 +249,56 @@ if [ -n "$VLM" ]; then
             --ignore-table=faxeinp.tmph --add-drop-database \
             --databases $(printf '%s ' $_bu_dbs)" \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
-            --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;" \
-        && printf "${blau}Import erfolgreich${reset}\n" \
-        || { printf "${rot}Import fehlgeschlagen${reset}\n"; _bu_fehler=1; };
+            --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
+        _bu_ps=("${PIPESTATUS[@]}");  # sofort sichern, bevor weitere Befehle PIPESTATUS überschreiben
         set +o pipefail;
-      else
+        [ "${_bu_ps[0]}" = 0 ] && [ "${_bu_ps[1]}" = 0 ] \
+          && printf "${blau}Import erfolgreich${reset}\n" \
+          || { printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Import=${_bu_ps[1]})${reset}\n"; _bu_fehler=1; };
+        # ── Abschlussmeldung Datenbankvergleich ──────────────────────────
+        printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
+        printf "  Dump: %b  Import: %b\n" \
+          "$([ "${_bu_ps[0]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
+          "$([ "${_bu_ps[1]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
+        for _db in $_bu_dbs; do
+          case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
+          _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+            -e "SELECT COUNT(*) FROM information_schema.tables \
+                WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
+          _tabs_q=$(eval "$qssh \
+            'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+             -e \"SELECT COUNT(*) FROM information_schema.tables \
+                  WHERE table_schema=\\'$_db\\' AND table_type=\\'BASE TABLE\\';\"'" 2>/dev/null);
+          _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+            -e "SELECT CONCAT(table_name,'.',column_name) \
+                FROM information_schema.columns \
+                WHERE table_schema='$_db' AND column_name REGEXP '^zp$|zeit|time|datum' \
+                ORDER BY table_name,ordinal_position LIMIT 1;" 2>/dev/null);
+          if [ -n "$_col" ]; then
+            _tbl=${_col%%.*}; _feld=${_col##*.};
+            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+              -e "SELECT MAX($_feld) FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+            _ts_q=$(eval "$qssh \
+              'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+               -e \"SELECT MAX($_feld) FROM \\`$_db\\`.\\`$_tbl\\`;\"'" 2>/dev/null);
+            printf "  %-16s Tab Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
+              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "$_feld" "${_ts_z:--}" "${_ts_q:--}";
+          else
+            printf "  %-16s Tab Z/Q: %s/%s\n" "$_db" "${_tabs_z:--}" "${_tabs_q:--}";
+          fi;
+        done;
+        printf "${blau}────────────────────────────────────────────────────────${reset}\n";
+      else # [ "$obecht" ]; then
         printf "Simulation: ssh %s mariadb-dump ... %s | mariadb --init-command=...\n" \
           "$QL" "$(printf '%s ' $_bu_dbs)";
-      fi;
+      fi; # [ "$obecht" ]; then else
     fi;
   fi;
 fi;
 #  ... und kopieren:
+echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
+echo Fertig;
 exit; # Ende
-
-
-
 
 
 # kopieretc "samba" # auskommentiert 29.7.19
@@ -296,8 +330,6 @@ if [ "$buhost"/ != "$LINEINS"/ ]; then
 	fi;
 	echo Fertig mit los.sh;
 fi;
-echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
-echo Fertig;
 # exit
 # echo `date +%Y:%m:%d\ %T` "vor /etc/hosts" >> $PROT
 # rsync $QL:/etc/samba $QL:/etc/hosts $QL:/etc/vsftpd*.conf $QL:/etc/my.cnf $QL:/etc/fstab $ZL/etc/ -avuz # keine Anführungszeichen um den Stern!
