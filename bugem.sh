@@ -352,8 +352,9 @@ kopiermt() { # mit test
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
 #      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       # In bugem.sh, in kopiermt(), bei der schonda-Ermittlung:
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'" "" "" 1; schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; 
       #                                                                               ↑ stderr wegwerfen        ↑ 0 statt 1 (logischer)
+      schonda=${resu:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
