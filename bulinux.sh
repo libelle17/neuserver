@@ -226,7 +226,8 @@ if [ -n "$VLM" ]; then
       printf "Simulation: systemctl start mariadb\n";
     fi;
 
-  else
+  else # [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
+
     # ── Verschiedene Versionen: mariadb-dump/import ────────────────────
     printf "${rot}verschieden → mariadb-dump${reset}\n";
     # Datenbanken auf Quelle ermitteln (ohne reine Systemdatenbanken)
@@ -237,7 +238,7 @@ if [ -n "$VLM" ]; then
     if [ -z "$_bu_dbs" ]; then
       printf "${rot}Keine Datenbanken auf Quelle gefunden – abgebrochen${reset}\n";
       _bu_fehler=1;
-    else
+    else # [ -z "$_bu_dbs" ]; then
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       if [ "$obecht" ]; then
         set -o pipefail;
@@ -248,18 +249,34 @@ if [ -n "$VLM" ]; then
             --single-transaction --skip-lock-tables --skip-add-locks --quick \
             --ignore-table=faxeinp.tmph --add-drop-database \
             --databases $(printf '%s ' $_bu_dbs)" \
+        | awk '
+            /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
+              db=$4; gsub(/`/,"",db);
+              printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr"
+            }
+            /^\-\- Table structure for table/ {
+              tbl=$NF; gsub(/`/,"",tbl);
+              printf "    Struktur:  %-30s\r", tbl > "/dev/stderr"
+            }
+            /^\-\- Dumping data for table/ {
+              tbl=$NF; gsub(/`/,"",tbl);
+              printf "    Daten:     \033[34m%-30s\033[0m\r", tbl > "/dev/stderr"
+            }
+            { print }
+        ' \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
             --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
         _bu_ps=("${PIPESTATUS[@]}");  # sofort sichern, bevor weitere Befehle PIPESTATUS überschreiben
         set +o pipefail;
-        [ "${_bu_ps[0]}" = 0 ] && [ "${_bu_ps[1]}" = 0 ] \
+        [ "${_bu_ps[0]}" = 0 ] && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ] \
           && printf "${blau}Import erfolgreich${reset}\n" \
-          || { printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Import=${_bu_ps[1]})${reset}\n"; _bu_fehler=1; };
+          || { printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Awk=${_bu_ps[1]} Import=${_bu_ps[2]})${reset}\n"; _bu_fehler=1; };
         # ── Abschlussmeldung Datenbankvergleich ──────────────────────────
         printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
-        printf "  Dump: %b  Import: %b\n" \
+        printf "  Dump: %b  Awk: %b  Import: %b\n" \
           "$([ "${_bu_ps[0]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
-          "$([ "${_bu_ps[1]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
+          "$([ "${_bu_ps[1]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
+          "$([ "${_bu_ps[2]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
         for _db in $_bu_dbs; do
           case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
           _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
@@ -272,7 +289,7 @@ if [ -n "$VLM" ]; then
           _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
             -e "SELECT CONCAT(table_name,'.',column_name) \
                 FROM information_schema.columns \
-                WHERE table_schema='$_db' AND column_name REGEXP '^zp$|zeit|time|datum' \
+                WHERE table_schema='$_db' AND column_name REGEXP 'zeit|time|datum' \
                 ORDER BY table_name,ordinal_position LIMIT 1;" 2>/dev/null);
           if [ -n "$_col" ]; then
             _tbl=${_col%%.*}; _feld=${_col##*.};
@@ -291,11 +308,10 @@ if [ -n "$VLM" ]; then
       else # [ "$obecht" ]; then
         printf "Simulation: ssh %s mariadb-dump ... %s | mariadb --init-command=...\n" \
           "$QL" "$(printf '%s ' $_bu_dbs)";
-      fi; # [ "$obecht" ]; then else
-    fi;
-  fi;
-fi;
-#  ... und kopieren:
+      fi; # [ "$obecht" ]; then else:
+    fi; # [ -z "$_bu_dbs" ]; then else
+  fi; # [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then else
+fi; # [ -n "$VLM" ]; then
 echo `date +%Y:%m:%d\ %T` "nach Kopieren" >> $PROT
 echo Fertig;
 exit; # Ende
