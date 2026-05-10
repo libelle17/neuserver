@@ -560,8 +560,9 @@ shziel:
           [ 0$$AHr -gt 0$$APC ]&&{ \
             PF=$$(dirname $$D);\
             [ -d "$$Z/$$PF" ]||$(SUDC)mkdir -p "$$Z/$$PF";\
-            printf " $${rot}$(SUDC)cp -a $$D $$Z/$$PF/; $$reset\n";\
-            $(SUDC)cp -a $$D $$Z/$$PF/;\
+            BNAME=$$(basename $$D);\
+            printf " $${rot}$(SUDC)cp→mv $$D → $$Z/$$PF/$$BNAME; $$reset\n";\
+            $(SUDC)cp -a $$D $$Z/$$PF/.$$BNAME.new && $(SUDC)mv $$Z/$$PF/.$$BNAME.new $$Z/$$PF/$$BNAME;\
           };\
         fi;\
         ;;\

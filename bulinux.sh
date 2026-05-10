@@ -27,9 +27,13 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 # [ "$(date +%u)" = 7 ] && _bu_vollabgleich=1 || \
    _bu_vollabgleich=;
 [ "$obforce" ] && _bu_vollabgleich=1;
-[ "$_bu_vollabgleich" ] \
-  && printf "${blau}Vollabgleich${reset} (Sonntag oder -f)\n" \
-  || printf "${blau}Inkrementeller Abgleich${reset} (delta)\n";
+if [ "$sdneu" ]; then
+  printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
+elif [ "$_bu_vollabgleich" ]; then
+  printf "${blau}Vollabgleich${reset} (-f)\n";
+else
+  printf "${blau}Inkrementeller Abgleich${reset} (delta)\n";
+fi;
 _bu_fehler=;  # Fehler-Flag: wird gesetzt wenn ein kopiermt/kopiermt_delta-Aufruf scheitert
 # Wrapper: ruft je nach _bu_vollabgleich kopiermt oder kopiermt_delta auf
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
