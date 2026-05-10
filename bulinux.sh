@@ -240,11 +240,18 @@ if [ -n "$VLM" ]; then
     else
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       if [ "$obecht" ]; then
+        set -o pipefail;  # Dump-seitiger Fehler wird nicht verschluckt
+        ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
+          ssh "$QL" "mariadb-dump ..." \
+          | mariadb ... \
+          && printf "${blau}Import erfolgreich${reset}\n" \
+          || { printf "${rot}Import fehlgeschlagen (Dump oder Import)${reset}\n"; _bu_fehler=1; };
         ssh "$QL" \
           "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
             --default-character-set=UTF8 -c -K \
             --routines --events --triggers \
             --single-transaction --skip-lock-tables --skip-add-locks --quick \
+            --ignore-table=faxeinp.tmph --add-drop-database \
             --databases $(printf '%s ' $_bu_dbs)" \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
             --init-command="SET SESSION foreign_key_checks=0; \
@@ -252,6 +259,7 @@ if [ -n "$VLM" ]; then
                             SET SESSION sql_log_bin=0;" \
         && printf "${blau}Import erfolgreich${reset}\n" \
         || { printf "${rot}Import fehlgeschlagen${reset}\n"; _bu_fehler=1; };
+        set +o pipefail;
       else
         printf "Simulation: ssh %s mariadb-dump ... %s | mariadb --init-command=...\n" \
           "$QL" "$(printf '%s ' $_bu_dbs)";
