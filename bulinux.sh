@@ -170,12 +170,20 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
  fi; # kopweit
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-# MariaDB kopieren
-      $zssh systemctl stop mariadb; 
-      $zssh systemctl disable mariadb; 
-      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
-      $zssh systemctl start mariadb; 
-      $zssh systemctl enable mariadb; 
+
+# Variablen für MariaDB-Sync (normalerweise in kopweit gesetzt, hier explizit):
+VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
+[ "$obforce" ] && testdat= || testdat=ibdata1;
+
+# MariaDB kopieren – NUR wenn obecht und VLM gesetzt:
+if [ "$obecht" ] && [ -n "$VLM" ]; then
+  $zssh "systemctl stop mariadb";    # Anführungszeichen!
+  $zssh "systemctl disable mariadb";
+  kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
+  $zssh "systemctl start mariadb";
+  $zssh "systemctl enable mariadb";
+fi;
+exit; # Ende
 #  ... und kopieren:
 exit; # Ende
 
