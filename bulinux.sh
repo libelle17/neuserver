@@ -254,9 +254,7 @@ if [ -n "$VLM" ]; then
             --ignore-table=faxeinp.tmph --add-drop-database \
             --databases $(printf '%s ' $_bu_dbs)" \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
-            --init-command="SET SESSION foreign_key_checks=0; \
-                            SET SESSION unique_checks=0; \
-                            SET SESSION sql_log_bin=0;" \
+            --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;" \
         && printf "${blau}Import erfolgreich${reset}\n" \
         || { printf "${rot}Import fehlgeschlagen${reset}\n"; _bu_fehler=1; };
         set +o pipefail;
