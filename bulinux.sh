@@ -179,7 +179,7 @@ VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/m
 if [ "$obecht" ] && [ -n "$VLM" ]; then
   $zssh "systemctl stop mariadb";    # Anführungszeichen!
   $zssh "systemctl disable mariadb";
-  kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
+  kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 "" 1;
   $zssh "systemctl start mariadb";
   $zssh "systemctl enable mariadb";
 fi;
