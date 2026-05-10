@@ -91,27 +91,27 @@ ausf "$zssh 'mountpoint -q /$DtZ||{ mountpoint -q /$Dt||mount /$Dt;}'" $blau;
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
 	if $kopweit; then
-  mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
-  mountpoint -q /mnt/wser/mosich&&{
-    mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
-    mouvz=${mouvz#/};  # führendes / entfernen
-		if [ "$obecht" ]; then
-			$zssh "mkdir -p /$DtZ/MO/Sich";
-			$zssh "mkdir -p /$DtZ/MO/INDAMED";
-		else
-			printf "Simulation: mkdir -p /$DtZ/MO/Sich\n";
-			printf "Simulation: mkdir -p /$DtZ/MO/INDAMED\n";
-		fi;
-		bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1 || _bu_fehler=1
-		kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "" "" 0 1 1
-		bukopierfn mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1 || _bu_fehler=1
-		mostat=$(ssh linux1 ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb|head -n1);
-		if test -n "$mostat"; then
-			kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
-		fi
-		bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
-		bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
-	}
+    mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
+    mountpoint -q /mnt/wser/mosich&&{
+      mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
+      mouvz=${mouvz#/};  # führendes / entfernen
+      if [ "$obecht" ]; then
+        $zssh "mkdir -p /$DtZ/MO/Sich";
+        $zssh "mkdir -p /$DtZ/MO/INDAMED";
+      else
+        printf "Simulation: mkdir -p /$DtZ/MO/Sich\n";
+        printf "Simulation: mkdir -p /$DtZ/MO/INDAMED\n";
+      fi;
+      bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1 || _bu_fehler=1
+      kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "" "" 0 1 1
+      bukopierfn mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1 || _bu_fehler=1
+      mostat=$(ssh linux1 ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb|head -n1);
+      if test -n "$mostat"; then
+        kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
+      fi
+      bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
+      bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
+    }
 	if ssh linux1 mountpoint -q /mnt/anmmw; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
 	fi;
@@ -140,10 +140,9 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
    done;
   fi;
  done;
- fi; # kopweit
 #  ... sodann die folgenden Verzeichisse: 
- for A in sql; do
-# for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
+# for A in sql; do
+ for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
 	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
@@ -161,11 +160,6 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
         printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
         printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
       fi;
-      $zssh systemctl stop mariadb; 
-      $zssh systemctl disable mariadb; 
-      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
-      $zssh systemctl start mariadb; 
-      $zssh systemctl enable mariadb; 
     else
 			printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
 		fi;
@@ -174,7 +168,14 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
-fi;
+ fi; # kopweit
+fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
+# MariaDB kopieren
+      $zssh systemctl stop mariadb; 
+      $zssh systemctl disable mariadb; 
+      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
+      $zssh systemctl start mariadb; 
+      $zssh systemctl enable mariadb; 
 #  ... und kopieren:
 exit; # Ende
 
