@@ -388,6 +388,9 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
     _QVofs_real=$(echo "$QVofs" | sed 's/\\ / /g');
+    # Trailing / wenn Ziel explizit angegeben und Quelle ein Verzeichnis (kein obdat):
+    # rsync src/ dest/ kopiert Inhalt; rsync src dest/ legt dest/src/ an (falsch)
+    [ "$obsub" -a -z "$obdat" -a -n "$2" -a "$2" != "..." ] && _QVofs_real="${_QVofs_real%/}/"
     _ZVofs_real=$(echo "$ZVofs" | sed 's/\\ / /g');
     Quelle=$QmD/$_QVofs_real;[ "$QL" ]&&Quelle=\"$Quelle\";
 		EX=${EX#,/,};
@@ -401,7 +404,7 @@ kopiermt() { # mit test
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau;
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau 1;
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
@@ -542,7 +545,7 @@ kopiermt_delta() {
   _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -av ${4:+$4} ${_ergae:+$_ergae}";
   _ret=0;
   if [ "$obecht" ]; then
-    ausf "$_bef" "$dblau";
+    ausf "$_bef" "$dblau" 1;
     _ret=${ret:-0};
   else
     printf "Befehl wäre: %b%s%b\n" "$dblau" "$_bef" "$reset";

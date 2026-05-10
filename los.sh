@@ -1451,7 +1451,7 @@ richtmariadbein() {
     if test "$erg" -ne "0"; then
     # erg: 1= andere Zahl von Eintraegen, 0 = 2 Eintraege
 #     test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-     erg=$($mysqlbef --defaults-extra-file=~/.mysqlrpwd -e"select count(0)!=2 from mysql.user where user='$musr' and host in ('%','localhost')"|tail -n1|head -n1);
+     erg=$($mysqlbef --defaults-extra-file=~/.mysqlrpwd -e"SELECT COUNT(0)!=2 FROM mysql.user WHERE user='$musr' AND host IN ('%','localhost')"|tail -n1|head -n1);
     fi;
     test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     $mysqlbef -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
@@ -2909,7 +2909,7 @@ dbinhalt() {
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
 #    test "$mrpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$mroot" eingeben:
-    dbda=$(! $mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"use \"$db\"" >/dev/null 2>&1;printf $?);
+    dbda=$(! $mysqlbef --defaults-extra-file=~/.mysqlrpwd -hlocalhost -e"USE \"$db\"" >/dev/null 2>&1;printf $?);
     # wenn "immer" oder Datenbank nicht existiert, dann
     if test "$1"/ = immer/ -o $dbda = 0; then
       [ "$verb" ]&&{ [ "$1"/ = immer ]&&echo immer; [ "$dbda" = 0 ]&&echo dbnichtda;};
@@ -2952,7 +2952,7 @@ dbinhalt() {
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
 #         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
 #         printf "Q: $blau$Q$reset;";
-         ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd --force -hlocalhost <\"$Q\""
+         ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd --init-command='SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;' --force -hlocalhost <\"$Q\"" "$blau" 1
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
   # oder:        sed -i '/^\('$db'=\).*/{s//\1'$Zt'/;:a;n;ba;q};$a'$db'='$Zt'' $pd
