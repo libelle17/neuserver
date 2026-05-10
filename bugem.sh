@@ -8,7 +8,7 @@ lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
-kopbef="ionice -c3 nice -n19 rsync";
+kopbef="ionice -c2 nice -n10 rsync";
 SD="Schutzdatei_bitte_belassen.doc"
 LINEINS=linux1;
 maxz=0;
@@ -287,6 +287,9 @@ kopiermt() { # mit test
     EXHIER=$(readlink -f "${EXREST##*,}"); EXREST=${EXREST%,*};
     case "$EXHIER" in $(readlink -f "/$QVofs")*) EXAKT="$EXAKT,"${EXHIER%/}"/";; esac;
   done;
+	echo 3: $3
+	echo EXAKT: $EXAKT
+	echo EXFEST: $EXFEST
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
 # falls nur die Schutzdatei überall etabliert werden soll
@@ -387,6 +390,8 @@ kopiermt() { # mit test
     _QVofs_real=$(echo "$QVofs" | sed 's/\\ / /g');
     _ZVofs_real=$(echo "$ZVofs" | sed 's/\\ / /g');
     Quelle=$QmD/$_QVofs_real;[ "$QL" ]&&Quelle=\"$Quelle\";
+		EX=${EX#,/,};
+		EX=${EX#,};
     [ "$EX" ]&&AUSSCHL=" --exclude={""$EX""}"||AUSSCHL=;
 #    QVos=/ Pfad/zum/qv / # zum Kopieren der Schutzdatei
 #    QVofs=/ Pfad/zum/qv[/]
