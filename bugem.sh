@@ -79,6 +79,8 @@ commandline() {
         nd|-nurdrei) nurdrei=1;;
         nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
+        dt|-nurdt|-nur-dateien) obdt=1;;  # nur Dateitransfer, keine DB
+        db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
         z|-ziele) shift; ziele="$1";
           echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
         q|-quelle) shift; QL="$1";;
@@ -100,6 +102,8 @@ commandline() {
     [ $obmehr ]&&printf "obmehr: $blau$obmehr$reset => in buint.sh auch 2. auf linux{$ziele} und dort auf virtuelle Windows-Server kopieren\n";
     [ $obnv ]&&printf "obnv: $blau$obnv$reset => in butm.sh nicht auf virtuellen Windows-Server weiter kopieren\n"; 
 		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
+		[ "$obdt" ]&&printf "obdt: ${blau}$obdt${reset} => nur Dateitransfer (keine DB)\n";
+		[ "$obdb" ]&&printf "obdb: ${blau}$obdb${reset} => nur Datenbank (keine Dateien)\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
     [ "$QL" ]&&printf "QL: ${blau}$QL${reset}\n";
@@ -287,6 +291,9 @@ kopiermt() { # mit test
     EXHIER=$(readlink -f "${EXREST##*,}"); EXREST=${EXREST%,*};
     case "$EXHIER" in $(readlink -f "/$QVofs")*) EXAKT="$EXAKT,"${EXHIER%/}"/";; esac;
   done;
+	echo 3: $3
+	echo EXAKT: $EXAKT
+	echo EXFEST: $EXFEST
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
 # falls nur die Schutzdatei überall etabliert werden soll
@@ -347,11 +354,7 @@ kopiermt() { # mit test
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if test $rest -gt 0; then
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-#      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
-      # In bugem.sh, in kopiermt(), bei der schonda-Ermittlung:
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; 
-      #                                                                               ↑ stderr wegwerfen        ↑ 0 statt 1 (logischer)
-      schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
@@ -389,9 +392,6 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
     _QVofs_real=$(echo "$QVofs" | sed 's/\\ / /g');
-    # Trailing / wenn Ziel explizit angegeben und Quelle ein Verzeichnis (kein obdat):
-    # rsync src/ dest/ kopiert Inhalt; rsync src dest/ legt dest/src/ an (falsch)
-    [ "$obsub" -a -z "$obdat" -a -n "$2" -a "$2" != "..." ] && _QVofs_real="${_QVofs_real%/}/"
     _ZVofs_real=$(echo "$ZVofs" | sed 's/\\ / /g');
     Quelle=$QmD/$_QVofs_real;[ "$QL" ]&&Quelle=\"$Quelle\";
 		EX=${EX#,/,};
@@ -405,7 +405,7 @@ kopiermt() { # mit test
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau 1;
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau;
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
@@ -422,143 +422,6 @@ kopiermt() { # mit test
 		return 1;
   fi;
 } # kopiermt
-
-kopiermt_delta() {
-  # Inkrementelles Kopieren: nur geänderte Dateien (--files-from + find -newer)
-  # Parameter identisch mit kopiermt ($1–$8).
-  # Fällt automatisch auf kopiermt zurück bei:
-  #   - obforce gesetzt (-f)
-  #   - sdneu gesetzt (Schutzdatei-Verteilmodus)
-  #   - --delete in $4 oder $OBDEL (Löschen im Ziel – braucht Vollabgleich)
-  #   - Erstlauf (noch kein Zeitstempel vorhanden)
-  # Voraussetzung: bustate.sh muss gesourct sein.
-
-  # --- Fallback-Prüfung ---
-  local _grund=
-  [ "$obforce" ]  && _grund="obforce";
-  [ -z "$_grund" ] && [ "$sdneu" ] && _grund="sdneu";
-  [ -z "$_grund" ] && printf '%s %s' "${4:-}" "${OBDEL:-}" | grep -q -- '--delete' \
-    && _grund="delete";
-  if [ "$_grund" ]; then
-    [ "$verb" ] && printf "  ${blau}kopiermt_delta${reset}: Fallback→kopiermt (%s)\n" "$_grund";
-    kopiermt "$@"; return $?;
-  fi;
-
-  # --- Pfade normalisieren (wie in kopiermt) ---
-  local QVofs_d QVos_d ZVofs_d ZVos_d obsub_d obdat_d _QVofs_real _ZVofs_real
-  QVofs_d=$(printf '%s' "${1#/}" | sed 's/\([^\\]\) /\1\\ /g');
-  QVos_d=${QVofs_d%/};
-  case $QVofs_d in */) obsub_d=;; *) obsub_d=1;; esac;
-  machssh;
-  [ "$obsub_d" ] && { $qssh "[ -f \"/$QVos_d\" ]" 2>/dev/null \
-    && obdat_d=1 || obdat_d=; };
-
-  local _zielhost="${ZL:-lokal}";
-  local _tmplist="/tmp/bu_delta_$$_$(printf '%s' "$QVos_d" | tr '/ ' '__').lst";
-
-  # --- Geänderte Dateien ermitteln ---
-  bustate_changed "/$QVos_d" "$_zielhost" "$_tmplist";
-
-  # Erstlauf → vollständiger Abgleich via kopiermt
-  if [ "$bustate_erstlauf" ]; then
-    printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}Erstlauf${reset} → vollständiger Abgleich\n";
-    rm -f "$_tmplist";
-    kopiermt "$@"; return $?;
-  fi;
-
-  # Keine Änderungen → überspringen
-  if [ "$bustate_count" -eq 0 ]; then
-    printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}unverändert${reset}\n";
-    echo "$(date +%Y:%m:%d\ %T) /$QVos_d unverändert (delta)" >> "$PROT";
-    rm -f "$_tmplist";
-    return 0;
-  fi;
-
-  echo "$(date +%Y:%m:%d\ %T) vor /$QVos_d (delta: $bustate_count Dateien)" >> "$PROT";
-  printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}%s${reset} Dateien\n" "$bustate_count";
-
-  # --- Quelle prüfen ---
-  _QVofs_real=$(printf '%s' "/$QVos_d" | sed 's/\\ / /g');
-  if ! eval "$qssh 'test -e \"$_QVofs_real\"'" 2>/dev/null; then
-    printf "${rot}%s auf ${blau}%s${rot} nicht vorhanden – übersprungen${reset}\n" \
-      "$_QVofs_real" "${QL:-lokal}";
-    rm -f "$_tmplist"; return 0;
-  fi;
-
-  # --- Erreichbarkeit prüfen ---
-  local _pc;
-  for _pc in "$QL" "$ZL"; do
-    [ "$_pc" ] && {
-      if ! ping -c1 -W1 "$_pc" >/dev/null 2>&1; then
-        printf "${rot}%s nicht anpingbar – übersprungen${reset}\n" "$_pc";
-        rm -f "$_tmplist"; return 1;
-      fi;
-    };
-  done;
-
-  # --- Schutzdatei prüfen (wenn nicht per $8 deaktiviert und kein Datei-Modus) ---
-  if [ "$SD" ] && [ -z "$8" ] && [ -z "$obdat_d" ]; then
-    local _diffbef;
-    if [ "$QL" ]; then
-      _diffbef="ssh $QL cat \"/$QVos_d/$SD\" 2>/dev/null | diff - /$QVos_d/$SD 2>/dev/null";
-    elif [ "$ZL" ]; then
-      _diffbef="ssh $ZL cat \"/$QVos_d/$SD\" 2>/dev/null | diff - /$QVos_d/$SD 2>/dev/null";
-    else
-      _diffbef="diff /$QVos_d/$SD /$QVos_d/$SD 2>/dev/null";
-    fi;
-    ausf "$_diffbef" "" "" 1;
-    if [ "${ret:-1}" != 0 ]; then
-      printf "${rot}Schutzdatei-Unterschied bei /$QVos_d – übersprungen${reset}\n";
-      rm -f "$_tmplist"; return 1;
-    fi;
-  fi;
-
-  # --- Zielverzeichnis berechnen (wie in kopiermt) ---
-  if [ -z "$2" ] || [ "$2" = "..." ]; then
-    ZVofs_d="${QVofs_d%/*}/";
-    [ "$ZVofs_d" = "$QVofs_d/" ] && ZVofs_d="";
-  else
-    ZVofs_d=$(printf '%s' "${2#/}" | sed 's/\([^\\]\) /\1\\ /g');
-  fi;
-  ZVos_d=${ZVofs_d%/}; ZVofs_d="${ZVos_d}/";
-  [ "$obsub_d" ] && { [ -z "$2" ] || [ "$2" = "..." ]; } && \
-    ZVos_d="${ZVos_d}/${QVofs_d##*/}";
-  ZVos_d="${ZVos_d#/}"; ZVofs_d="${ZVofs_d#/}";
-
-  # --- Zielverzeichnis anlegen ---
-  if [ "$obecht" ]; then
-    if [ "$ZL" ]; then
-      $zssh "mkdir -p \"/$ZVos_d\"" 2>/dev/null || true;
-    else
-      mkdir -p "/$ZVos_d" 2>/dev/null || true;
-    fi;
-  else
-    printf "  Simulation: mkdir -p /%s\n" "$ZVos_d";
-  fi;
-
-  # --- Rsync mit --files-from aufrufen ---
-  local _ergae _Quelle _bef _ret;
-  { [ "$QL" ] || [ "$ZL" ]; } && _ergae="--rsync-path='$kopbef'" || _ergae=;
-  _QVofs_real=$(printf '%s' "$QVofs_d/" | sed 's/\\ / /g');  # trailing / → --files-from-Semantik
-  _ZVofs_real=$(printf '%s' "$ZVofs_d"  | sed 's/\\ / /g');
-  _Quelle="${QmD}/${_QVofs_real}";
-  [ "$QL" ] && _Quelle="\"$_Quelle\"";
-  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -av ${4:+$4} ${_ergae:+$_ergae}";
-  _ret=0;
-  if [ "$obecht" ]; then
-    ausf "$_bef" "$dblau" 1;
-    _ret=${ret:-0};
-  else
-    printf "Befehl wäre: %b%s%b\n" "$dblau" "$_bef" "$reset";
-  fi;
-
-  # In EXGES aufnehmen (wie kopiermt)
-  eval "$qssh 'test -d \"/$QVos_d\"'" 2>/dev/null && EXGES="${EXGES},/$QVos_d/";
-  [ "$verb" ] && printf "EXGES: %b%s%b\n" "$blau" "$EXGES" "$reset";
-
-  rm -f "$_tmplist";
-  return $_ret;
-} # kopiermt_delta
 
 kopieros() {
   # $1 = Dateiname oder Verzeichnisname unter /root/
@@ -715,6 +578,8 @@ obkill=;
 obmehr=;
 obnv=;
 obhilfe=;
+obdt=;
+obdb=;
 sdneu=;
 nurdrei=;
 nurzweidrei=;
@@ -748,6 +613,18 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-nv${reset} bewirkt, dass die Dateien auf dem virtuellen Windows-Server nicht mit kopiert werden." \
     " ${blau}-z|--zielev${reset} verwendet den nächsten Parameter zur Bestimmung der Kopierziele, z.B. '0 7' => linux0, linux7" \
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
+  ;; *bulinux.sh)
+    printf "%b\n" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-db] [-e] [-f] [-v] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
+    " ${blau}Zielhost${reset}          Zielrechner (z.B. linux0, linux7); leer wenn lokal" \
+    " ${blau}-dt${reset}               nur Dateitransfer; Datenbank wird ausgelassen" \
+    " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
+    " ${blau}SD${reset}                Schutzdatei ${blau}$SD${reset} auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
+    " ${blau}SD=/Pfad/Datei${reset}    wie SD, aber mit abweichendem Dateinamen/-pfad" \
+    " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
+    " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
+    " ${blau}-v${reset}                gesprächigere Ausgabe" \
+    " ${blau}-h / -? / --help${reset}  diese Hilfe anzeigen";
   ;; esac; 
 fi;;
 esac;
