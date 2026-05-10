@@ -420,6 +420,121 @@ kopiermt() { # mit test
   fi;
 } # kopiermt
 
+kopiermt_delta() {
+  # Inkrementelles Kopieren: nur geänderte Dateien (--files-from + find -newer).
+  # Parameter identisch mit kopiermt ($1–$8).
+  # Fällt auf kopiermt zurück bei: obforce, sdneu, --delete, Erstlauf.
+  # Voraussetzung: bustate.sh muss gesourct sein.
+
+  # --- Fallback-Prüfung ---
+  local _grund=
+  [ "$obforce" ]  && _grund="obforce";
+  [ -z "$_grund" ] && [ "$sdneu" ] && _grund="sdneu";
+  [ -z "$_grund" ] && printf '%s %s' "${4:-}" "${OBDEL:-}" | grep -q -- '--delete' \
+    && _grund="delete";
+  if [ "$_grund" ]; then
+    [ "$verb" ] && printf "  ${blau}kopiermt_delta${reset}: Fallback→kopiermt (%s)\n" "$_grund";
+    kopiermt "$@"; return $?;
+  fi;
+
+  # --- Pfade normalisieren (wie in kopiermt) ---
+  local QVofs_d QVos_d ZVofs_d ZVos_d obsub_d obdat_d _QVofs_real _ZVofs_real
+  QVofs_d=$(printf '%s' "${1#/}" | sed 's/\([^\\]\) /\1\\ /g');
+  QVos_d=${QVofs_d%/};
+  case $QVofs_d in */) obsub_d=;; *) obsub_d=1;; esac;
+  machssh;
+  [ "$obsub_d" ] && { $qssh "[ -f \"/$QVos_d\" ]" 2>/dev/null \
+    && obdat_d=1 || obdat_d=; };
+
+  local _zielhost="${ZL:-lokal}";
+  local _tmplist="/tmp/bu_delta_$$_$(printf '%s' "$QVos_d" | tr '/ ' '__').lst";
+
+  # --- Geänderte Dateien ermitteln ---
+  bustate_changed "/$QVos_d" "$_zielhost" "$_tmplist";
+
+  # Erstlauf → vollständiger Abgleich via kopiermt
+  if [ "$bustate_erstlauf" ]; then
+    printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}Erstlauf${reset} → vollständiger Abgleich\n";
+    rm -f "$_tmplist";
+    kopiermt "$@"; return $?;
+  fi;
+
+  # Keine Änderungen → überspringen
+  if [ "$bustate_count" -eq 0 ]; then
+    printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}unverändert${reset}\n";
+    echo "$(date +%Y:%m:%d\ %T) /$QVos_d unverändert (delta)" >> "$PROT";
+    rm -f "$_tmplist";
+    return 0;
+  fi;
+
+  echo "$(date +%Y:%m:%d\ %T) vor /$QVos_d (delta: $bustate_count Dateien)" >> "$PROT";
+  printf "  ${blau}kopiermt_delta${reset} /${QVos_d}: ${blau}%s${reset} Dateien\n" "$bustate_count";
+
+  # --- Quelle prüfen ---
+  _QVofs_real=$(echo "$QVofs_d/" | sed 's/\\ / /g');
+  if ! eval "$qssh 'test -e \"/${QVos_d}\"'" 2>/dev/null; then
+    printf "${rot}/%s auf ${blau}%s${rot} nicht vorhanden – übersprungen${reset}\n" \
+      "$QVos_d" "${QL:-lokal}";
+    rm -f "$_tmplist"; return 0;
+  fi;
+
+  # --- Erreichbarkeit prüfen ---
+  local _pc;
+  for _pc in "$QL" "$ZL"; do
+    [ "$_pc" ] && {
+      if ! ping -c1 -W1 "$_pc" >/dev/null 2>&1; then
+        printf "${rot}%s nicht anpingbar – übersprungen${reset}\n" "$_pc";
+        rm -f "$_tmplist"; return 1;
+      fi;
+    };
+  done;
+
+  # --- Zielverzeichnis berechnen (wie in kopiermt) ---
+  if [ -z "$2" ] || [ "$2" = "..." ]; then
+    ZVofs_d="${QVofs_d%/*}/";
+    [ "$ZVofs_d" = "$QVofs_d/" ] && ZVofs_d="";
+  else
+    ZVofs_d=$(printf '%s' "${2#/}" | sed 's/\([^\\]\) /\1\\ /g');
+  fi;
+  ZVos_d=${ZVofs_d%/}; ZVofs_d="${ZVos_d}/";
+  [ "$obsub_d" ] && { [ -z "$2" ] || [ "$2" = "..." ]; } && \
+    ZVos_d="${ZVos_d}/${QVofs_d##*/}";
+  ZVos_d="${ZVos_d#/}"; ZVofs_d="${ZVofs_d#/}";
+
+  # --- Zielverzeichnis anlegen ---
+  if [ "$obecht" ]; then
+    if [ "$ZL" ]; then
+      $zssh "mkdir -p \"/$ZVos_d\"" 2>/dev/null || true;
+    else
+      mkdir -p "/$ZVos_d" 2>/dev/null || true;
+    fi;
+  else
+    printf "  Simulation: mkdir -p /%s\n" "$ZVos_d";
+  fi;
+
+  # --- Rsync mit --files-from aufrufen ---
+  local _ergae _Quelle _ZVofs_real _bef _ret;
+  { [ "$QL" ] || [ "$ZL" ]; } && _ergae="--rsync-path='$kopbef'" || _ergae=;
+  _ZVofs_real=$(printf '%s' "$ZVofs_d" | sed 's/\\ / /g');
+  _Quelle="${QmD}/${_QVofs_real}";
+  [ "$QL" ] && _Quelle="\"$_Quelle\"";
+  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -av ${4:+$4} ${_ergae:+$_ergae}";
+  _ret=0;
+  if [ "$obecht" ]; then
+    ausf "$_bef" "$dblau" 1;
+    _ret=${ret:-0};
+  else
+    printf "Befehl wäre: %b%s%b\n" "$dblau" "$_bef" "$reset";
+  fi;
+
+  # In EXGES aufnehmen (wie kopiermt)
+  eval "$qssh 'test -d \"/$QVos_d\"'" 2>/dev/null && EXGES="${EXGES},/$QVos_d/";
+  [ "$verb" ] && printf "EXGES: %b%s%b\n" "$blau" "$EXGES" "$reset";
+
+  rm -f "$_tmplist";
+  return $_ret;
+} # kopiermt_delta
+
 kopieros() {
   # $1 = Dateiname oder Verzeichnisname unter /root/
   # Bei Einzeldateien (z.B. .fbcredentials): Schutzdatei in ~ prüfen
