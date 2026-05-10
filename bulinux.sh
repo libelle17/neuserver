@@ -142,7 +142,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  done;
 #  ... sodann die folgenden Verzeichisse: 
 # for A in sql; do
- for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
+ for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger mariatrans att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
 	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
@@ -170,20 +170,95 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
  fi; # kopweit
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-
-# Variablen für MariaDB-Sync (normalerweise in kopweit gesetzt, hier explizit):
-VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
+# -----------------------------------------------------------------------
+# MariaDB-Synchronisation
+# Gleiche major.minor-Version → rsync des datadir (schnell, Minuten)
+# Verschiedene Versionen      → mariadb-dump/import (sicher, langsamer)
+# Kein Echtlauf (-e fehlt)    → Simulation
+# -----------------------------------------------------------------------
+VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf);
 [ "$obforce" ] && testdat= || testdat=ibdata1;
 
-# MariaDB kopieren – NUR wenn obecht und VLM gesetzt:
-if [ "$obecht" ] && [ -n "$VLM" ]; then
-  $zssh "systemctl stop mariadb";    # Anführungszeichen!
-  $zssh "systemctl disable mariadb";
-  kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 "" 1;
-  $zssh "systemctl start mariadb";
-  $zssh "systemctl enable mariadb";
+if [ -n "$VLM" ]; then
+  # Versionen ermitteln (major.minor, z.B. "10.11")
+  _bu_ver_q=$(eval "$qssh \
+    'mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null'" 2>/dev/null \
+    | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
+  _bu_ver_z=$(mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null \
+    | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
+  printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (lokal): " \
+    "${_bu_ver_q:-unbekannt}" "${QL:-lokal}" "${_bu_ver_z:-unbekannt}";
+
+  if [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
+    # ── Gleiche Version: schneller datadir-Sync ────────────────────────
+    printf "${blau}gleich → rsync datadir${reset}\n";
+    # Rotation der Sicherungskopien:
+    #   ${VLM}_1 = aktuelle Kopie (wird gleich neu erstellt)
+    #   ${VLM}_2 = Vorversion zur Sicherheit (bleibt erhalten)
+    #   ${VLM}_3 und älter = werden gelöscht
+    if [ "$obecht" ]; then
+      for _i in $(seq 9 -1 3); do
+        [ -d "${VLM}_${_i}" ] && {
+          rm -rf "${VLM}_${_i}";
+          printf "  ${blau}%s_%s${reset} gelöscht\n" "$VLM" "$_i";
+        };
+      done;
+      [ -d "${VLM}_2" ] && {
+        rm -rf "${VLM}_2";
+        printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM";
+      };
+      [ -d "${VLM}_1" ] && {
+        mv "${VLM}_1" "${VLM}_2";
+        printf "  ${blau}%s_1${reset} → ${blau}%s_2${reset} (Vorversion)\n" "$VLM" "$VLM";
+      };
+    else
+      printf "Simulation: %s_3..9 löschen, %s_1 → %s_2\n" "$VLM" "$VLM" "$VLM";
+    fi;
+    if [ "$obecht" ]; then
+      $zssh "systemctl stop mariadb";
+      $zssh "systemctl disable mariadb";
+      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
+      $zssh "systemctl start mariadb";
+      $zssh "systemctl enable mariadb";
+    else
+      printf "Simulation: systemctl stop mariadb\n";
+      printf "Simulation: kopiermt %s/ %s_1 ... 1 1\n" "$VLM" "$VLM";
+      printf "Simulation: systemctl start mariadb\n";
+    fi;
+
+  else
+    # ── Verschiedene Versionen: mariadb-dump/import ────────────────────
+    printf "${rot}verschieden → mariadb-dump${reset}\n";
+    # Datenbanken auf Quelle ermitteln (ohne reine Systemdatenbanken)
+    _bu_dbs=$(eval "$qssh \
+      'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+       -e \"SHOW DATABASES\" 2>/dev/null'" \
+      | grep -vE '^(information_schema|performance_schema|sys)$');
+    if [ -z "$_bu_dbs" ]; then
+      printf "${rot}Keine Datenbanken auf Quelle gefunden – abgebrochen${reset}\n";
+      _bu_fehler=1;
+    else
+      printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
+      if [ "$obecht" ]; then
+        ssh "$QL" \
+          "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
+            --default-character-set=UTF8 -c -K \
+            --routines --events --triggers \
+            --single-transaction --skip-lock-tables --skip-add-locks --quick \
+            --databases $(printf '%s ' $_bu_dbs)" \
+        | mariadb --defaults-extra-file=/root/.mysqlrpwd \
+            --init-command="SET SESSION foreign_key_checks=0; \
+                            SET SESSION unique_checks=0; \
+                            SET SESSION sql_log_bin=0;" \
+        && printf "${blau}Import erfolgreich${reset}\n" \
+        || { printf "${rot}Import fehlgeschlagen${reset}\n"; _bu_fehler=1; };
+      else
+        printf "Simulation: ssh %s mariadb-dump ... %s | mariadb --init-command=...\n" \
+          "$QL" "$(printf '%s ' $_bu_dbs)";
+      fi;
+    fi;
+  fi;
 fi;
-exit; # Ende
 #  ... und kopieren:
 exit; # Ende
 
