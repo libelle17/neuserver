@@ -1,6 +1,5 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =3
-let g:netrw_dirhist_3='/var/lib/mysql-files'
+let g:netrw_dirhistcnt =2
 let g:netrw_dirhist_2='/DATA'
 let g:netrw_dirhist_1='/DATA/mariatrans'
 let g:netrw_dirhist_0='/DATA'
@@ -10,3 +9,4 @@ let g:netrw_dirhist_7='/DATA/mariatrans'
 let g:netrw_dirhist_6='/srv/www/htdocs/Papierkorb/behand'
 let g:netrw_dirhist_5='/etc/samba'
 let g:netrw_dirhist_4='/mnt/wser/mosich'
+let g:netrw_dirhist_3='/srv/www/htdocs'
