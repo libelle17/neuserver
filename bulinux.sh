@@ -38,7 +38,7 @@ _bu_fehler=;  # Fehler-Flag: wird gesetzt wenn ein kopiermt/kopiermt_delta-Aufru
 # Wrapper: ruft je nach _bu_vollabgleich kopiermt oder kopiermt_delta auf
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
 # -----------------------------------------------------------------------
-if [ -z "$obdb" ] && [ -z "$sdneu" ]; then  # nicht bei -db oder SD-Modus: Konfigdateien
+if [ -z "$obdb" ]; then  # nicht bei -db (SD-Modus: kopiermt verteilt SD selbst)
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
@@ -92,7 +92,7 @@ ausf "$zssh 'mountpoint -q /$DtZ||{ mountpoint -q /$Dt||mount /$Dt;}'" $blau;
 # falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-	if [ -z "$obdb" ] && [ -z "$sdneu" ]; then  # nicht bei -db oder SD-Modus
+	if [ -z "$obdb" ]; then  # nicht bei -db (SD-Modus: kopiermt verteilt SD selbst)
     mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
     mountpoint -q /mnt/wser/mosich&&{
       mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
