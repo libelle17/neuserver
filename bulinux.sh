@@ -37,43 +37,43 @@ _bu_fehler=;  # Fehler-Flag: wird gesetzt wenn ein kopiermt/kopiermt_delta-Aufru
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
 # -----------------------------------------------------------------------
 if $mkos; then
-# auf Rechner mit kleinen Platten weniger kopieren
-case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
-# Faxprotokolle und alte Faxe, Linux-Mails
-kopiermt "var/spool" ... "" "" "" "" 1
-# Editoreinstellungen
-kopieros ".vim"
-# Berechtigungen zum Mounten der Fritz-Box als cifs-Laufwerk
-kopieros ".fbcredentials"
-# aktuelle Kopie dieser Datei
-kopieros "crontabakt"
-# Verzeichnis für den Mailaufruf in /root
-kopieros ".getmail"
-# Passwort für Verschlüsselung
-kopieros ".7zpassw"
-# Passwort für Mysql/Mariadb
-kopieros ".mysqlpwd"
-# Passwort für Mysql/Mariadb-Superuser
-kopieros ".mysqlrpwd"
-# Passwort für MO-Datenbank-Superuser
-kopieros ".modbpwd"
-# Passwort für cifs-Mounts
-kopiermt home/schade/.wincredentials ... "" "" "" "" 1
-kopieros ".sturm"
-# Konfigurationsdateien für postfix-Mailprogramm
-kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
-for D in main.cf master.cf sasl_passwd; do
-  kopiermt "etc/postfix/$D" ... "" "" "" "" 1
-done;
-# selbst erstellte Scripte
-V=/root/bin/;
-altverb=$verb;
-verb=1;
-if [ "$obecht" ]; then
-  ausf "$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'" $dblau;
-else
-  printf "Befehl wäre: $dblau$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
-fi;
+  # auf Rechner mit kleinen Platten weniger kopieren
+  case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
+  # Faxprotokolle und alte Faxe, Linux-Mails
+  kopiermt "var/spool" ... "" "" "" "" 1
+  # Editoreinstellungen
+  kopieros ".vim"
+  # Berechtigungen zum Mounten der Fritz-Box als cifs-Laufwerk
+  kopieros ".fbcredentials"
+  # aktuelle Kopie dieser Datei
+  kopieros "crontabakt"
+  # Verzeichnis für den Mailaufruf in /root
+  kopieros ".getmail"
+  # Passwort für Verschlüsselung
+  kopieros ".7zpassw"
+  # Passwort für Mysql/Mariadb
+  kopieros ".mysqlpwd"
+  # Passwort für Mysql/Mariadb-Superuser
+  kopieros ".mysqlrpwd"
+  # Passwort für MO-Datenbank-Superuser
+  kopieros ".modbpwd"
+  # Passwort für cifs-Mounts
+  kopiermt home/schade/.wincredentials ... "" "" "" "" 1
+  kopieros ".sturm"
+  # Konfigurationsdateien für postfix-Mailprogramm
+  kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
+  for D in main.cf master.cf sasl_passwd; do
+    kopiermt "etc/postfix/$D" ... "" "" "" "" 1
+  done;
+  # selbst erstellte Scripte
+  V=/root/bin/;
+  altverb=$verb;
+  verb=1;
+  if [ "$obecht" ]; then
+    ausf "$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'" $dblau;
+  else
+    printf "Befehl wäre: $dblau$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
+  fi;
 fi; # $mkos
 verb=$altverb;
 # fi;
@@ -112,65 +112,66 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
       bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
       bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
     }
-	if ssh linux1 mountpoint -q /mnt/anmmw; then
-		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
-	fi;
-# kopiermt() { # mit test
-  # $1 = Verzeichnis auf Quelle
-  # $2 = Verzeichnis auf Ziel
-  # $3 = excludes
-  # $4 = Optionen 
-	# $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
-	# $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
-  # $7 = ob ohne Platzprüfung
-  # $8 = ob ohne Schutzdateivergleich
-  # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
+    if ssh linux1 mountpoint -q /mnt/anmmw; then
+      kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+    fi;
+  # kopiermt() { # mit test
+    # $1 = Verzeichnis auf Quelle
+    # $2 = Verzeichnis auf Ziel
+    # $3 = excludes
+    # $4 = Optionen 
+    # $5 = Pfad zur Datei, die als Alterskriterium geprüft werden soll
+    # $6 = Zahl der Sekunden Altersunterschied, ab der kopiert werden soll
+    # $7 = ob ohne Platzprüfung
+    # $8 = ob ohne Schutzdateivergleich
+    # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
-#  ... dann Mail-Verzeichisse kopieren,
-# for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
- for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
-  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
-   qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
-	 $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
-     [ "$sdneu" ]||echo inbox: "$inbox";
-     # eine Woche
-     [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
-		 bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
-		 break;
-   done;
-  fi;
- done;
-#  ... sodann die folgenden Verzeichisse: 
-# for A in sql; do
- for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger mariatrans att sql; do
-  auslass=;
-  [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
-	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
-#  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
-	if [ "$A"/ = sql/ ]; then
-		if [ "$obecht" ]; then
-#			$zssh "if systemctl list-units --full -all|grep -q 'mariadb.service.*running';then los.sh mysqli;fi;";
-      #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
-      VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
-      [ "$obforce" ]&&testdat=||testdat=ibdata1;
-      # Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
-      if [ -z "$_bu_fehler" ]; then
-        bustate_update "$ZL";
-      else
-        printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
-        printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
-      fi;
-    else
-			printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
-		fi;
-	fi;
- done;
- EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
- [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
- bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
+  #  ... dann Mail-Verzeichisse kopieren,
+  # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
+   for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
+    if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
+     qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
+     $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
+       [ "$sdneu" ]||echo inbox: "$inbox";
+       # eine Woche
+       [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
+       bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
+       break;
+     done;
+    fi; #   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
+   done; #  for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
+  #  ... sodann die folgenden Verzeichisse: 
+  # for A in sql; do
+   for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger mariatrans att sql; do
+    auslass=;
+    [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
+    [ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
+  #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
+    if [ "$A"/ = sql/ ]; then
+      if [ "$obecht" ]; then
+  #			$zssh "if systemctl list-units --full -all|grep -q 'mariadb.service.*running';then los.sh mysqli;fi;";
+        #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
+        VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
+        [ "$obforce" ]&&testdat=||testdat=ibdata1;
+        # Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
+        if [ -z "$_bu_fehler" ]; then
+          bustate_update "$ZL";
+        else
+          printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
+          printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
+        fi;
+      else #    if [ "$obecht" ]; then
+        printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
+      fi; #     if [ "$obecht" ]; then else
+    fi; #   if [ "$A"/ = sql/ ]; then
+   done; #  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger mariatrans att sql; do
+   EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
+   [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
+   bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
  fi; # kopweit
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-exit; # -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
 # MariaDB-Synchronisation
 # Gleiche major.minor-Version → rsync des datadir (schnell, Minuten)
 # Verschiedene Versionen      → mariadb-dump/import (sicher, langsamer)
