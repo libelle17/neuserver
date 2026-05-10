@@ -5,6 +5,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen # ./bugem.sh
+. ${MUPR%/*}/bustate.sh # Zeitstempel-Verwaltung für inkrementelles Backup
 # Falls -q gesetzt: Quellrechner explizit, Zielrechner = lokal
 # Überschreibt die Logik aus bul1.sh:
 [ "$QL" -a "$QL" != "$LINEINS" -a -z "$ZL" ]&&{
@@ -20,6 +21,21 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 mkos=true;
 kopweit=true;
+# -----------------------------------------------------------------------
+# Inkrementeller Modus (Standard) vs. Vollabgleich:
+#   Sonntags (Wochentag 7) oder mit -f (force) → kopiermt (vollständig)
+#   Alle anderen Tage                           → kopiermt_delta (nur Änderungen)
+# Manueller Vollabgleich: bulinux.sh -e -f
+# [ "$(date +%u)" = 7 ] && _bu_vollabgleich=1 || \
+   _bu_vollabgleich=;
+[ "$obforce" ] && _bu_vollabgleich=1;
+[ "$_bu_vollabgleich" ] \
+  && printf "${blau}Vollabgleich${reset} (Sonntag oder -f)\n" \
+  || printf "${blau}Inkrementeller Abgleich${reset} (delta)\n";
+_bu_fehler=;  # Fehler-Flag: wird gesetzt wenn ein kopiermt/kopiermt_delta-Aufruf scheitert
+# Wrapper: ruft je nach _bu_vollabgleich kopiermt oder kopiermt_delta auf
+bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
+# -----------------------------------------------------------------------
 if $mkos; then
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
@@ -39,6 +55,8 @@ kopieros ".7zpassw"
 kopieros ".mysqlpwd"
 # Passwort für Mysql/Mariadb-Superuser
 kopieros ".mysqlrpwd"
+# Passwort für MO-Datenbank-Superuser
+kopieros ".modbpwd"
 # Passwort für cifs-Mounts
 kopiermt home/schade/.wincredentials ... "" "" "" "" 1
 kopieros ".sturm"
@@ -84,15 +102,15 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
 			printf "Simulation: mkdir -p /$DtZ/MO/Sich\n";
 			printf "Simulation: mkdir -p /$DtZ/MO/INDAMED\n";
 		fi;
-		kopiermt "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1
+		bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1 || _bu_fehler=1
 		kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "" "" 0 1 1
-		kopiermt mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1
+		bukopierfn mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1 || _bu_fehler=1
 		mostat=$(ssh linux1 ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb|head -n1);
 		if test -n "$mostat"; then
 			kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
 		fi
-		kopiermt mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
-		kopiermt mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
+		bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
+		bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
 	}
 	if ssh linux1 mountpoint -q /mnt/anmmw; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
@@ -117,7 +135,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
      [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
-		 kopiermt $qverz ... "" -d "$testdat" 604800;
+		 bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
 		 break;
    done;
   fi;
@@ -128,7 +146,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
-	[ -z $auslass ]&&kopiermt "$Dt/$A" "$DtZ/$A/" "" "$OBDEL";
+	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
 	if [ "$A"/ = sql/ ]; then
 		if [ "$obecht" ]; then
@@ -140,11 +158,18 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  done;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
- kopiermt "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL";
+ bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
 fi;
 #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
 [ "$obforce" ]&&testdat=||testdat=ibdata1;
+# Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
+if [ -z "$_bu_fehler" ]; then
+  bustate_update "$ZL";
+else
+  printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
+  printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
+fi;
 #  ... und kopieren:
 exit; # Ende
 
