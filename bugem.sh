@@ -625,6 +625,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
     " ${blau}-h / -? / --help${reset}  diese Hilfe anzeigen";
+    [ "$obhilfe" ] && exit 0;  # nach Hilfe beenden
   ;; esac; 
 fi;;
 esac;

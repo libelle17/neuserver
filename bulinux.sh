@@ -17,7 +17,7 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   ZmD=;
 };
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
-[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ] && [ -z "$obhilfe" ] && { printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 # -----------------------------------------------------------------------
 # Inkrementeller Modus (Standard) vs. Vollabgleich:
