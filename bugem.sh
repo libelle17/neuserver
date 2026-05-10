@@ -291,9 +291,6 @@ kopiermt() { # mit test
     EXHIER=$(readlink -f "${EXREST##*,}"); EXREST=${EXREST%,*};
     case "$EXHIER" in $(readlink -f "/$QVofs")*) EXAKT="$EXAKT,"${EXHIER%/}"/";; esac;
   done;
-	echo 3: $3
-	echo EXAKT: $EXAKT
-	echo EXFEST: $EXFEST
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
 # falls nur die Schutzdatei überall etabliert werden soll
