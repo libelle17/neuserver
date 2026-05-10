@@ -242,11 +242,6 @@ if [ -n "$VLM" ]; then
       if [ "$obecht" ]; then
         set -o pipefail;  # Dump-seitiger Fehler wird nicht verschluckt
         ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
-          ssh "$QL" "mariadb-dump ..." \
-          | mariadb ... \
-          && printf "${blau}Import erfolgreich${reset}\n" \
-          || { printf "${rot}Import fehlgeschlagen (Dump oder Import)${reset}\n"; _bu_fehler=1; };
-        ssh "$QL" \
           "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
             --default-character-set=UTF8 -c -K \
             --routines --events --triggers \
