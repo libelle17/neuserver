@@ -19,8 +19,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ]&&{ printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
-mkos=true;
-kopweit=true;
+mkos=false; # true;
+kopweit=false; # true;
 # -----------------------------------------------------------------------
 # Inkrementeller Modus (Standard) vs. Vollabgleich:
 #   Sonntags (Wochentag 7) oder mit -f (force) → kopiermt (vollständig)
@@ -142,16 +142,31 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  done;
  fi; # kopweit
 #  ... sodann die folgenden Verzeichisse: 
-# for A in sql; do
- for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
+ for A in sql; do
+# for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
 	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
 	if [ "$A"/ = sql/ ]; then
 		if [ "$obecht" ]; then
-			$zssh "if systemctl list-units --full -all|grep -q 'mariadb.service.*running';then los.sh mysqli;fi;";
-		else
+#			$zssh "if systemctl list-units --full -all|grep -q 'mariadb.service.*running';then los.sh mysqli;fi;";
+      #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
+      VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
+      [ "$obforce" ]&&testdat=||testdat=ibdata1;
+      # Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
+      if [ -z "$_bu_fehler" ]; then
+        bustate_update "$ZL";
+      else
+        printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
+        printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
+      fi;
+      $zssh systemctl stop mariadb; 
+      $zssh systemctl disable mariadb; 
+      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
+      $zssh systemctl start mariadb; 
+      $zssh systemctl enable mariadb; 
+    else
 			printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
 		fi;
 	fi;
@@ -160,26 +175,11 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
 fi;
-#  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
-VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
-[ "$obforce" ]&&testdat=||testdat=ibdata1;
-# Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
-if [ -z "$_bu_fehler" ]; then
-  bustate_update "$ZL";
-else
-  printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
-  printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
-fi;
 #  ... und kopieren:
 exit; # Ende
 
 
 
-$zssh systemctl stop mysql; 
-$zssh systemctl disable mysql; 
-kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400;
-$zssh systemctl start mysql; 
-$zssh systemctl enable mysql; 
 
 
 # kopieretc "samba" # auskommentiert 29.7.19
