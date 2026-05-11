@@ -31,8 +31,18 @@ if [ "$sdneu" ]; then
   printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
 elif [ "$_bu_vollabgleich" ]; then
   printf "${blau}Vollabgleich${reset} (-f)\n";
+elif [ "$obdb" ] && [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; then
+  printf "${blau}Nur Datenbank${reset} (-db)\n";
+elif [ "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdb" ]; then
+  printf "${blau}Nur Konfigdateien+MO${reset} (-dt1)\n";
+elif [ "$obdt2" ] && [ -z "$obdt1" ] && [ -z "$obdb" ]; then
+  printf "${blau}Nur /DATA${reset} (-dt2)\n";
 else
-  printf "${blau}Inkrementeller Abgleich${reset} (delta)\n";
+  printf "${blau}Inkrementeller Abgleich${reset} (delta";
+  [ "$obdt1" ] && printf ", dt1";
+  [ "$obdt2" ] && printf ", dt2";
+  [ "$obdb" ]  && printf ", db";
+  printf ")\n";
 fi;
 _bu_fehler=;  # Fehler-Flag
 _bu_start=$(date +%s);  # Gesamtstartzeit
@@ -131,6 +141,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
     }
 	if ssh linux1 mountpoint -q /mnt/anmmw; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
+	fi;
 	}; # Ende dt1-B MO
 	_bu_ob_dt1 && _bu_ftr "dt1 Ende  " $_bu_ts_dt1;
 	_bu_ob_dt2 && { _bu_ts_dt2=$(date +%s); _bu_hdr "dt2 Beginn"; };

@@ -740,12 +740,15 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
   ;; *bulinux.sh)
     printf "%b\n" \
-    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-db] [-e] [-f] [-v] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-dt1|-dt2|-db] [-e] [-f] [-v] [-wh <n>] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
     " ${blau}Zielhost${reset}          Zielrechner (z.B. linux0, linux7); leer wenn lokal" \
     " ${blau}-dt${reset}               Dateitransfer (dt1+dt2); Datenbank wird ausgelassen" \
     " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
     " ${blau}-dt2${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
+    " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
+    " ${blau}-dt2${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
     " ${blau}-dt1 -db${reset}          Konfigdateien+MO UND Datenbank (kein /DATA)" \
+    " ${blau}-dt2 -db${reset}          /DATA UND Datenbank (keine Konfigdateien)" \
     " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
     " ${blau}SD${reset}                Schutzdatei ${blau}$SD${reset} auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
     " ${blau}SD=/Pfad/Datei${reset}    wie SD, aber mit abweichendem Dateinamen/-pfad" \
