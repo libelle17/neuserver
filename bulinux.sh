@@ -250,7 +250,7 @@ if [ -n "$VLM" ]; then
             --default-character-set=UTF8 -c -K \
             --routines --events --triggers \
             --single-transaction --skip-lock-tables --skip-add-locks --quick \
-            --ignore-table=faxeinp.tmph --add-drop-database \
+            --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry --add-drop-database \
             --databases $(printf '%s ' $_bu_dbs)" \
         | awk '
             /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
@@ -282,25 +282,13 @@ if [ -n "$VLM" ]; then
           "$([ "${_bu_ps[2]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
         for _db in $_bu_dbs; do
           case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
-          _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT COUNT(*) FROM information_schema.tables \
-                WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-          _tabs_q=$(eval "$qssh \
-            'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-             -e \"SELECT COUNT(*) FROM information_schema.tables \
-                  WHERE table_schema=\\'$_db\\' AND table_type=\\'BASE TABLE\\';\"'" 2>/dev/null);
-          _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT CONCAT(table_name,'.',column_name) \
-                FROM information_schema.columns \
-                WHERE table_schema='$_db' AND column_name REGEXP 'zeit|time|datum' \
-                ORDER BY table_name,ordinal_position LIMIT 1;" 2>/dev/null);
+          _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
+          _tabs_q=$(eval "$qssh 'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\\\"'\"'\"'$_db'\"'\"'\\\" AND table_type=\\\"BASE TABLE\\\";\"'" 2>/dev/null);
+          _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SELECT CONCAT(table_name,'.',column_name) FROM information_schema.columns WHERE table_schema='$_db' AND column_name REGEXP 'zeit|time|datum' ORDER BY table_name,ordinal_position LIMIT 1;" 2>/dev/null);
           if [ -n "$_col" ]; then
             _tbl=${_col%%.*}; _feld=${_col##*.};
-            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e "SELECT MAX($_feld) FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
-            _ts_q=$(eval "$qssh \
-              'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-               -e \"SELECT MAX($_feld) FROM \\`$_db\\`.\\`$_tbl\\`;\"'" 2>/dev/null);
+            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SELECT MAX(\`$_feld\`) FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+            _ts_q=$(eval "$qssh 'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e \"SELECT MAX(\\\`$_feld\\\`) FROM \\\`$_db\\\`.\\\`$_tbl\\\`;\"'" 2>/dev/null);
             printf "  %-16s Tab Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
               "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "$_feld" "${_ts_z:--}" "${_ts_q:--}";
           else
