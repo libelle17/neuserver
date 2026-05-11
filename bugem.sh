@@ -297,23 +297,18 @@ kopiermt() { # mit test
 # beim Kopieren einzelner Dateien hierauf verzichten
   [ "$sdneu" -a ! "$obdat" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
-      if [ -z "$QL" ]; then
-        tue="cp -a \"$SDQ\" \"/$QVos/$SD\"";
-      else
-        tue="scp -p \"$SDQ\" \"$QL:/$QVos/$SD\"";
-      fi;
+      # SD nur lokal verteilen (nicht auf Quell-Rechner):
+      # Quell-Daten sollen vor der ersten Sicherung manuell geprüft und
+      # SD dort separat per "bulinux.sh SD" auf dem Quellrechner verteilt werden.
       if [ -z "$ZL" ]; then
-        tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" \"/$ZVos/$SD\"";
+        tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" /$ZVos/$SD";  # kein Quoting
       else
-        tu2="$zssh 'mkdir -p /$ZVos'; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"";
+        _sd_zvos="${_ZVofs_real%/}";
+        tu2="$zssh 'mkdir -p \"/$_sd_zvos\"';\
+          scp -p \"$SDQ\" \"$ZL:/$_sd_zvos/$SD\"";
       fi;
-      if [ "$obecht" ]; then
-        ausf "$tue";
-        ausf "$tu2";
-      else
-        printf "$dblau$tue$reset\n";
-        printf "$dblau$tu2$reset\n";
-      fi;
+      # obimmer=1: SD-Verteilung läuft auch ohne -e
+      ausf "$tu2" "$blau" "" 1;
     return 0;
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
@@ -351,7 +346,7 @@ kopiermt() { # mit test
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if test $rest -gt 0; then
       # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s||echo 1;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
@@ -389,6 +384,10 @@ kopiermt() { # mit test
     # die Excludes funktionieren so unter bash und zsh, aber nicht unter dash
     [ "$QL" -o "$ZL" ]&&ergae="--rsync-path='$kopbef'"||ergae=;
     _QVofs_real=$(echo "$QVofs" | sed 's/\\ / /g');
+    # Trailing / wenn Ziel explizit angegeben und Quelle ein Verzeichnis:
+    # rsync src/ dest/ kopiert Inhalt; rsync src dest/ legt dest/src/ an (falsch)
+    [ "$obsub" -a -z "$obdat" -a -n "$2" -a "$2" != "..." ] \
+      && _QVofs_real="${_QVofs_real%/}/";
     _ZVofs_real=$(echo "$ZVofs" | sed 's/\\ / /g');
     Quelle=$QmD/$_QVofs_real;[ "$QL" ]&&Quelle=\"$Quelle\";
 		EX=${EX#,/,};
@@ -402,7 +401,7 @@ kopiermt() { # mit test
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau;
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau 1;
     else
       printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL$reset\n";
     fi;
@@ -548,6 +547,11 @@ kopieros() {
 		printf "${rot}/root/$1 auf Quelle nicht gefunden – überspringe$reset\n";
 		return 0;
 	fi;
+  # SD-Modus: kein SD-Vergleich in ~, Einzeldateien überspringen
+  if [ "$sdneu" ]; then
+    [ -z "$_ist_datei" ] && kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1;
+    return 0;
+  fi;
   if [ "$_ist_datei" ]; then
     # Einzeldatei – Schutzdatei in ~ vergleichen (Größe + Timestamp):
     _sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
@@ -558,7 +562,7 @@ kopieros() {
     fi;
     if [ "$_sdq" = "$_sdz" ]; then
       # Schutzdatei identisch – Kopie durchführen:
-			ausf "$kopbef -avu ${QmD}/root/$1 ${ZmD}/root/" "$dblau";
+			ausf "$kopbef -avu ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
     else
       printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
       return 1;
