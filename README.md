@@ -28,19 +28,9 @@
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
-&minus; Configuration of a new linux server</b>: Allows the
-configuration of a new linux server for a diabetologic
-practice in Dachau, after the operation system installation
-by the vendor&rsquo;s programme. <br>
-(manpage-Hilfe in deutsch verf&uuml;gbar: &rsquo;man
-neuserver&rsquo; oder &rsquo;man -Lde neuserver&rsquo;)</p>
-
-<h2>SYNOPSIS
-<a name="SYNOPSIS_D"></a>
-</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>neuserver
+=======
+<p style="margin-left:9%; margin-top: 1em"><b>neuserver
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 [-&lt;shortopt&gt;|--&lt;longopt&gt; [&lt;supplement&gt;]]
 ...</b></p>
 
@@ -69,7 +59,11 @@ read the chapters &rsquo;functionality&rsquo;,
 software packages&rsquo; and &rsquo;implications&rsquo;
 below. Then, if connected to the internet, call (e.g. by
 coying the line and pasting it into a terminal): <b><br>
+<<<<<<< HEAD
 N=neuserver;P=${N}_inst.sh;cd ~;wget
+=======
+N=neuserver;P=${N}_inst.sh;cd &#732;;wget
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 At last, call: <b><br>
@@ -133,7 +127,11 @@ With <b>sh viall</b> scripts can be edited.</p>
 </h2>
 
 
+<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em">Please report
+=======
+<p style="margin-left:9%; margin-top: 1em">Please report
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 any errors with the word &rsquo;neuserver&rsquo; included in
 the email headline. <br>
 Please report as well, if different hard- or software yields
@@ -149,7 +147,12 @@ a requirement for a program modification.</p>
 &rsquo;<b>vim</b>&rsquo;-commands, followed by
 &rsquo;<b>make</b>&rsquo; and &rsquo;<b>make
 install</b>&rsquo; from the installation directory
+<<<<<<< HEAD
 (&rsquo;<b>~/neuserver</b>), You may alter the program.</p>
+=======
+(&rsquo;<b>&#732;/neuserver</b>), You may alter the
+program.</p>
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 
 <h2>LIABILITY
 <a name="LIABILITY_D"></a>
@@ -202,7 +205,11 @@ caused by the program.</p>
 </h2>
 
 
+<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
+=======
+<p style="margin-left:9%; margin-top: 1em"><b>neuserver
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 &minus; Einrichtung eines neuen Linuxservers</b>:
 enth&auml;lt die notwendigen Programme zur Einrichtung
 eines neuen Linuxservers f&uuml;r eine diabetologische
@@ -216,7 +223,11 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 </h2>
 
 
+<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver
+=======
+<p style="margin-left:9%; margin-top: 1em"><b>neuserver
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 [-&lt;kurzopt&gt;|--&lt;langopt&gt;
 [&lt;erg&auml;nzung&gt;]] ...</b></p>
 
@@ -226,7 +237,11 @@ or &rsquo;man -Len neuserver&rsquo;)</p>
 
 
 
+<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em"><b>neuserver</b>
+=======
+<p style="margin-left:9%; margin-top: 1em"><b>neuserver</b>
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 Enth&auml;lt die notwendigen Scripte f&uuml;r
 Einrichtung und Betrieb (insbesondere Datensicherung auf
 Sicherungsserver). Nach dem Herunterladen der Scripte wird
@@ -252,7 +267,11 @@ Anschlie&szlig;end verbinden Sie den Rechner falls
 n&ouml;tig mit dem Internet und rufen Sie auf (z.B.
 durch Kopieren der Zeile in die Zwischenablage und
 Einf&uuml;gen in einem Terminal): <b><br>
+<<<<<<< HEAD
 N=neuserver;P=${N}_inst.sh;cd ~;wget
+=======
+N=neuserver;P=${N}_inst.sh;cd &#732;;wget
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 https://raw.githubusercontent.com/libelle17/$N/master/install.sh
 -O$P&&sh $P</b> <br>
 Zuletzt rufen Sie auf: <b><br>
@@ -318,8 +337,13 @@ werden kann, dann geht es einfacher.</p>
 </h2>
 
 
+<<<<<<< HEAD
 <p style="margin-left:11%; margin-top: 1em">Fehler bitte
 mit u.a. dem Wort &rsquo;neuserver&rsquo; in der
+=======
+<p style="margin-left:9%; margin-top: 1em">Fehler bitte mit
+u.a. dem Wort &rsquo;neuserver&rsquo; in der
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 Email-Ueberschrift melden. <br>
 Bitte auch melden, wenn sich &Auml;nderungsbedarf durch
 andere Hard- bzw. Software ergeben.</p>
@@ -334,7 +358,11 @@ von &rsquo;<b>sh viall</b>&rsquo; mit den &uuml;blichen
 &rsquo;<b>vim</b>&rsquo;-Befehlen, gefolgt von
 &rsquo;<b>make</b>&rsquo; und &rsquo;<b>make
 install</b>&rsquo; vom Installationsverzeichnis
+<<<<<<< HEAD
 (&rsquo;<b>~/neuserver</b>) aus k&ouml;nnen Sie das
+=======
+(&rsquo;<b>&#732;/neuserver</b>) aus k&ouml;nnen Sie das
+>>>>>>> 07d20078bbe092d23cec83d0089029ccfe389247
 Programm &auml;ndern.</p>
 
 <h2>HAFTUNG
