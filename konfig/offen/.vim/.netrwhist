@@ -1,6 +1,6 @@
 let g:netrw_dirhistmax  =10
 let g:netrw_dirhistcnt =3
-let g:netrw_dirhist_3='/DATA/mariatrans'
+let g:netrw_dirhist_3='/var/lib/mysql-files'
 let g:netrw_dirhist_2='/DATA'
 let g:netrw_dirhist_1='/DATA/mariatrans'
 let g:netrw_dirhist_0='/DATA'
