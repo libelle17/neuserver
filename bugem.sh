@@ -79,8 +79,11 @@ commandline() {
         nd|-nurdrei) nurdrei=1;;
         nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
-        dt|-nurdt|-nur-dateien) obdt=1;;  # nur Dateitransfer, keine DB
+        dt|-nurdt|-nur-dateien) obdt=1;;  # Dateitransfer (dt1+dt2), keine DB
+        dt1|-nur-dt1) obdt1=1;;           # nur Konfigdateien+MO, keine DATA, keine DB
+        dt2|-nur-dt2) obdt2=1;;           # nur /DATA-Verzeichnisse, keine DB
         db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
+        wh|-wh) _bu_wh_max="${2:-3}"; shift;;  # DB-Dump Wiederholungen bei Verbindungsverlust
         z|-ziele) shift; ziele="$1";
           echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
         q|-quelle) shift; QL="$1";;
@@ -102,8 +105,11 @@ commandline() {
     [ $obmehr ]&&printf "obmehr: $blau$obmehr$reset => in buint.sh auch 2. auf linux{$ziele} und dort auf virtuelle Windows-Server kopieren\n";
     [ $obnv ]&&printf "obnv: $blau$obnv$reset => in butm.sh nicht auf virtuellen Windows-Server weiter kopieren\n"; 
 		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
-		[ "$obdt" ]&&printf "obdt: ${blau}$obdt${reset} => nur Dateitransfer (keine DB)\n";
-		[ "$obdb" ]&&printf "obdb: ${blau}$obdb${reset} => nur Datenbank (keine Dateien)\n";
+		[ "$obdt" ]&&printf "obdt: ${blau}$obdt${reset} => Dateitransfer (keine DB)\n";
+		[ "$obdt1" ]&&printf "obdt1: ${blau}$obdt1${reset} => nur Konfigdateien+MO\n";
+		[ "$obdt2" ]&&printf "obdt2: ${blau}$obdt2${reset} => nur /DATA-Verzeichnisse\n";
+		[ "$obdb" ]&&printf "obdb: ${blau}$obdb${reset} => nur Datenbank\n";
+		[ "$_bu_wh_max" ]&&printf "wh: ${blau}$_bu_wh_max${reset} => DB-Dump Wiederholungen\n";
 		printf "SD: $blau$SD$reset\n";
 		printf "SDQ: $blau$SDQ$reset\n";
     [ "$QL" ]&&printf "QL: ${blau}$QL${reset}\n";
@@ -695,7 +701,10 @@ obmehr=;
 obnv=;
 obhilfe=;
 obdt=;
+obdt1=;
+obdt2=;
 obdb=;
+_bu_wh_max=;
 sdneu=;
 nurdrei=;
 nurzweidrei=;
@@ -733,13 +742,17 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     printf "%b\n" \
     "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-db] [-e] [-f] [-v] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
     " ${blau}Zielhost${reset}          Zielrechner (z.B. linux0, linux7); leer wenn lokal" \
-    " ${blau}-dt${reset}               nur Dateitransfer; Datenbank wird ausgelassen" \
+    " ${blau}-dt${reset}               Dateitransfer (dt1+dt2); Datenbank wird ausgelassen" \
+    " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
+    " ${blau}-dt2${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
+    " ${blau}-dt1 -db${reset}          Konfigdateien+MO UND Datenbank (kein /DATA)" \
     " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
     " ${blau}SD${reset}                Schutzdatei ${blau}$SD${reset} auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
     " ${blau}SD=/Pfad/Datei${reset}    wie SD, aber mit abweichendem Dateinamen/-pfad" \
     " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
+    " ${blau}-wh <n>${reset}           bei Verbindungsverlust im DB-Dump bis zu n mal wiederholen" \
     " ${blau}-h / -? / --help${reset}  diese Hilfe anzeigen";
     [ "$obhilfe" ] && exit 0;  # nach Hilfe beenden
   ;; esac; 

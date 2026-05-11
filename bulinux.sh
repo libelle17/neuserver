@@ -34,11 +34,25 @@ elif [ "$_bu_vollabgleich" ]; then
 else
   printf "${blau}Inkrementeller Abgleich${reset} (delta)\n";
 fi;
-_bu_fehler=;  # Fehler-Flag: wird gesetzt wenn ein kopiermt/kopiermt_delta-Aufruf scheitert
+_bu_fehler=;  # Fehler-Flag
+_bu_start=$(date +%s);  # Gesamtstartzeit
+# Zeitformat-Hilfsfunktionen
+_bu_ts()  { date "+%d.%m.%y %H:%M:%S"; }
+_bu_dur() { local s=$(( $(date +%s) - ${1:-$_bu_start} ));
+            printf "%02d:%02d:%02d" $((s/3600)) $(((s%3600)/60)) $((s%60)); }
+_bu_hdr() { printf "${blau}── %s: %s ──────────────────────────${reset}\n" "$1" "$(_bu_ts)"; }
+_bu_ftr() { printf "${blau}── %s: %s  Dauer: %s ────${reset}\n" "$1" "$(_bu_ts)" "$(_bu_dur $2)"; }
 # Wrapper: ruft je nach _bu_vollabgleich kopiermt oder kopiermt_delta auf
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
 # -----------------------------------------------------------------------
-if [ -z "$obdb" ]; then  # nicht bei -db (SD-Modus: kopiermt verteilt SD selbst)
+# dt1-Block: Konfigdateien + MO (nicht DATA)
+_bu_ob_dt1() { [ -n "$obdt1" ] || { [ -z "$obdb" ] && [ -z "$obdt2" ]; }; }
+# dt2-Block: /DATA-Verzeichnisse
+_bu_ob_dt2() { [ -n "$obdt2" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ]; }; }
+# db-Block: Datenbank
+_bu_ob_db()  { [ -n "$obdb"  ] || { [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; }; }
+if _bu_ob_dt1; then  # dt1: Konfigdateien + MO
+  _bu_ts_dt1=$(date +%s); _bu_hdr "dt1 Beginn";
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
@@ -76,7 +90,7 @@ if [ "$obecht" ]; then
 else
   printf "Befehl wäre: $dblau$kopbef -avu $ergae --prune-empty-dirs --include='*/' --include='*.sh' --exclude='*' '$QmD$V' '$ZmD$V'$reset\n";
 fi;
-fi; # Konfigdateien-Block (nicht bei -db oder SD)
+fi; # Ende dt1-A Konfigdateien
 verb=$altverb;
 # fi;
 # kopieros "root/bin" # auskommentiert 29.7.19
@@ -92,7 +106,8 @@ ausf "$zssh 'mountpoint -q /$DtZ||{ mountpoint -q /$Dt||mount /$Dt;}'" $blau;
 # falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-	if [ -z "$obdb" ]; then  # nicht bei -db (SD-Modus: kopiermt verteilt SD selbst)
+	_bu_ob_dt1 && {
+	  # dt1-B: MO-Daten (von Windows-Share, nicht /DATA)
     mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
     mountpoint -q /mnt/wser/mosich&&{
       mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
@@ -116,7 +131,9 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
     }
 	if ssh linux1 mountpoint -q /mnt/anmmw; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
-	fi;
+	}; # Ende dt1-B MO
+	_bu_ob_dt1 && _bu_ftr "dt1 Ende  " $_bu_ts_dt1;
+	_bu_ob_dt2 && { _bu_ts_dt2=$(date +%s); _bu_hdr "dt2 Beginn"; };
 # kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
@@ -129,6 +146,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
 #  ... dann Mail-Verzeichisse kopieren,
+ if _bu_ob_dt2; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
@@ -170,11 +188,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
- fi; # obdt-Block (Dateitransfer)
+ fi; # _bu_ob_dt2 Mail+DATA
+ _bu_ob_dt2 && _bu_ftr "dt2 Ende  " $_bu_ts_dt2;
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
 # -----------------------------------------------------------------------
-# MariaDB-Synchronisation (nicht bei -dt oder SD-Modus)
-if [ -z "$obdt" ] && [ -z "$sdneu" ]; then
+# MariaDB-Synchronisation
+if _bu_ob_db && [ -z "$sdneu" ]; then
+  _bu_ts_db=$(date +%s); _bu_hdr "db  Beginn";
 # -----------------------------------------------------------------------
 # Gleiche major.minor-Version → rsync des datadir (schnell, Minuten)
 # Verschiedene Versionen      → mariadb-dump/import (sicher, langsamer)
@@ -244,8 +264,11 @@ if [ -n "$VLM" ]; then
     else
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       if [ "$obecht" ]; then
-        set -o pipefail;
-        ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
+        _bu_wh_try=0; _bu_wh_ok=;
+        while [ "$_bu_wh_try" -le "${_bu_wh_max:-0}" ]; do
+          [ "$_bu_wh_try" -gt 0 ] && printf "${blau}DB-Dump Wiederholung %s/%s …${reset}\n" "$_bu_wh_try" "${_bu_wh_max}";
+          set -o pipefail;
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
           "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
             --default-character-set=UTF8 -c -K \
             --routines --events --triggers \
@@ -269,13 +292,24 @@ if [ -n "$VLM" ]; then
         ' \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
             --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
-        _bu_ps=("${PIPESTATUS[@]}");  # sofort sichern, bevor weitere Befehle PIPESTATUS überschreiben
-        set +o pipefail;
-        # Dump exit 2 = nur Warnings, Dump vollständig – kein Fehler
-        { [ "${_bu_ps[0]}" = 0 ] || [ "${_bu_ps[0]}" = 2 ]; } \
-          && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ] \
-          && printf "${blau}Import erfolgreich${reset} (Dump=${_bu_ps[0]})\n" \
-          || { printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Awk=${_bu_ps[1]} Import=${_bu_ps[2]})${reset}\n"; _bu_fehler=1; };
+          _bu_ps=("${PIPESTATUS[@]}");
+          set +o pipefail;
+          # Dump exit 0/2=OK, exit 3=Lost Connection (→ Retry falls -wh gesetzt)
+          if { [ "${_bu_ps[0]}" = 0 ] || [ "${_bu_ps[0]}" = 2 ]; } \
+               && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ]; then
+            printf "${blau}Import erfolgreich${reset} (Dump=${_bu_ps[0]})\n";
+            _bu_wh_ok=1; break;
+          elif [ "${_bu_ps[0]}" = 3 ] && [ "$_bu_wh_try" -lt "${_bu_wh_max:-0}" ]; then
+            printf "${rot}Verbindungsverlust (Dump=3) – warte 10s, Versuch %s/%s${reset}\n" \
+              "$((_bu_wh_try+1))" "${_bu_wh_max}";
+            sleep 10;
+          else
+            printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Awk=${_bu_ps[1]} Import=${_bu_ps[2]})${reset}\n";
+            _bu_fehler=1; break;
+          fi;
+          _bu_wh_try=$((_bu_wh_try + 1));
+        done;
+        [ -z "$_bu_wh_ok" ] && [ -z "$_bu_fehler" ] && _bu_fehler=1;
         # ── Abschlussmeldung Datenbankvergleich ──────────────────────────
         printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
         printf "  Dump: %b  Awk: %b  Import: %b\n" \
@@ -318,8 +352,10 @@ if [ -n "$VLM" ]; then
     fi;
   fi;
 fi;
-fi; # MariaDB-Block (nicht bei -dt oder SD)
+  _bu_ftr "db  Ende  " $_bu_ts_db;
+fi; # MariaDB-Block
 #  ... und kopieren:
+_bu_ftr "Gesamt Ende" $_bu_start;
 exit; # Ende
 
 
