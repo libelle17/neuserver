@@ -297,18 +297,17 @@ kopiermt() { # mit test
 # beim Kopieren einzelner Dateien hierauf verzichten
   [ "$sdneu" -a ! "$obdat" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
-      if [ -z "$QL" ]; then
-        tue="cp -a \"$SDQ\" /$QVos/$SD";  # kein Quoting: \ vor Space = Escape in eval
-      else
-        tue="scp -p \"$SDQ\" \"$QL:/$QVos/$SD\"";
-      fi;
+      # SD nur lokal verteilen (nicht auf Quell-Rechner):
+      # Quell-Daten sollen vor der ersten Sicherung manuell geprüft und
+      # SD dort separat per "bulinux.sh SD" auf dem Quellrechner verteilt werden.
       if [ -z "$ZL" ]; then
         tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" /$ZVos/$SD";  # kein Quoting
       else
-        tu2="$zssh 'mkdir -p /$ZVos'; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"";
+        _sd_zvos="${_ZVofs_real%/}";
+        tu2="$zssh 'mkdir -p \"/$_sd_zvos\"';\
+          scp -p \"$SDQ\" \"$ZL:/$_sd_zvos/$SD\"";
       fi;
       # obimmer=1: SD-Verteilung läuft auch ohne -e
-      ausf "$tue" "$blau" "" 1;
       ausf "$tu2" "$blau" "" 1;
     return 0;
   }
