@@ -298,22 +298,18 @@ kopiermt() { # mit test
   [ "$sdneu" -a ! "$obdat" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       if [ -z "$QL" ]; then
-        tue="cp -a \"$SDQ\" \"/$QVos/$SD\"";
+        tue="cp -a \"$SDQ\" /$QVos/$SD";  # kein Quoting: \ vor Space = Escape in eval
       else
         tue="scp -p \"$SDQ\" \"$QL:/$QVos/$SD\"";
       fi;
       if [ -z "$ZL" ]; then
-        tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" \"/$ZVos/$SD\"";
+        tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" /$ZVos/$SD";  # kein Quoting
       else
         tu2="$zssh 'mkdir -p /$ZVos'; scp -p \"$SDQ\" \"$ZL:/$ZVos/$SD\"";
       fi;
-      if [ "$obecht" ]; then
-        ausf "$tue";
-        ausf "$tu2";
-      else
-        printf "$dblau$tue$reset\n";
-        printf "$dblau$tu2$reset\n";
-      fi;
+      # obimmer=1: SD-Verteilung läuft auch ohne -e
+      ausf "$tue" "$blau" "" 1;
+      ausf "$tu2" "$blau" "" 1;
     return 0;
   }
 # Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
@@ -548,6 +544,11 @@ kopieros() {
 		printf "${rot}/root/$1 auf Quelle nicht gefunden – überspringe$reset\n";
 		return 0;
 	fi;
+  # SD-Modus: kein SD-Vergleich in ~, Einzeldateien überspringen
+  if [ "$sdneu" ]; then
+    [ -z "$_ist_datei" ] && kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1;
+    return 0;
+  fi;
   if [ "$_ist_datei" ]; then
     # Einzeldatei – Schutzdatei in ~ vergleichen (Größe + Timestamp):
     _sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
