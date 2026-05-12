@@ -299,7 +299,8 @@ if [ -n "$VLM" ]; then
               tbl=$NF; gsub(/`/,"",tbl);
               printf "    Daten:     \033[34m%-30s\033[0m\r", tbl > "/dev/stderr"
             }
-            { print }
+            # DEFINER entfernen: user auf Ziel oft nicht vorhanden (ERROR 1449)
+            { gsub(/ DEFINER=`[^`]*`@`[^`]*`/, ""); gsub(/ SQL SECURITY DEFINER/, ""); print }
         ' \
         | mariadb --defaults-extra-file=/root/.mysqlrpwd \
             --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
