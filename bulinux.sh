@@ -371,42 +371,50 @@ if [ -n "$VLM" ]; then
           "$([ "${_bu_ps[2]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
         for _db in $_bu_dbs; do
           case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
+          # ── Tabellenzahl ──
           _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
             -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-          if [ -n "$QL" ]; then
+          [ -n "$QL" ] && \
             _tabs_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null);
-          else
+              -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
             _tabs_q=;
-          fi;
-          # Zeitfeld suchen: MAX muss NOT NULL sein und <= 4 Wochen alt
-          _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+          # ── Zeilensumme (Schätzwert aus information_schema, sofort) ──
+          _rows_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+            -e "SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
+          [ -n "$QL" ] && \
+            _rows_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+              -e 'SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
+            _rows_q=;
+          # ── Zeitfeld: erste Spalte mit aktuellem Datum (beide Seiten <= 4 Wochen alt, NOT NULL) ──
+          _col=;
+          while IFS='.' read -r _tbl _feld; do
+            [ -z "$_tbl" ] && continue;
+            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+              -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+            [ -z "$_ts_z" ] && continue;
+            [ -n "$QL" ] && \
+              _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+                -e 'SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null) || \
+              _ts_q=;
+            [ -z "$_ts_q" ] && continue;
+            _col="$_tbl.$_feld"; break;
+          done < <(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
             -e "SELECT CONCAT(c.table_name,'.',c.column_name) \
                 FROM information_schema.columns c \
                 WHERE c.table_schema='$_db' \
                   AND c.column_name REGEXP 'zeit|time|datum' \
                   AND c.data_type IN ('datetime','timestamp','date') \
-                ORDER BY c.table_name, c.ordinal_position \
-                LIMIT 1;" 2>/dev/null);
-          # Prüfen ob MAX des Zeitfelds brauchbar ist (NOT NULL, max. 4 Wochen alt)
+                ORDER BY c.table_name, c.ordinal_position;" 2>/dev/null);
+          # ── Ausgabe ──
           if [ -n "$_col" ]; then
             _tbl=${_col%%.*}; _feld=${_col##*.};
-            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
-                              AND MAX(\`$_feld\`) >= DATE_SUB(NOW(), INTERVAL 4 WEEK) \
-                         THEN MAX(\`$_feld\`) ELSE NULL END \
-                  FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
-            [ -z "$_ts_z" ] || [ "$_ts_z" = "NULL" ] && _col=;  # Feld unbrauchbar
-            if [ -n "$QL" ]; then
-              _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-                -e 'SELECT MAX(\`$_feld\`) FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null);
-            else
-              _ts_q=;
-            fi;
-            printf "  %-16s Tab Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
-              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "$_feld" "${_ts_z:--}" "${_ts_q:--}";
+            printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
+              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
+              "${_rows_z:--}" "${_rows_q:--}" \
+              "$_feld" "${_ts_z:--}" "${_ts_q:--}";
           else
-            printf "  %-16s Tab Z/Q: %s/%s\n" "$_db" "${_tabs_z:--}" "${_tabs_q:--}";
+            printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s\n" \
+              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
           fi;
         done;
         printf "${blau}────────────────────────────────────────────────────────${reset}\n";
