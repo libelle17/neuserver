@@ -275,7 +275,8 @@ if [ -n "$VLM" ]; then
     else
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       if [ "$obecht" ]; then
-        _bu_wh_try=0; _bu_wh_ok=;
+        [ -z "$_bu_wh_max" ] && _bu_wh_max=5;  # Standard: 5 Wiederholungen
+        _bu_wh_try=0; _bu_wh_ok=; _bu_wh_anzahl=0;
         while [ "$_bu_wh_try" -le "${_bu_wh_max:-0}" ]; do
           [ "$_bu_wh_try" -gt 0 ] && printf "${blau}DB-Dump Wiederholung %s/%s …${reset}\n" "$_bu_wh_try" "${_bu_wh_max}";
           set -o pipefail;
@@ -316,12 +317,51 @@ if [ -n "$VLM" ]; then
             printf "${rot}Verbindungsverlust (Dump=${_bu_ps[0]}) – warte 10s, Versuch %s/%s${reset}\n" \
               "$((_bu_wh_try+1))" "${_bu_wh_max}";
             sleep 10;
+            _bu_wh_anzahl=$((_bu_wh_anzahl + 1));
           else
             printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Awk=${_bu_ps[1]} Import=${_bu_ps[2]})${reset}\n";
             _bu_fehler=1; break;
           fi;
           _bu_wh_try=$((_bu_wh_try + 1));
         done;
+        [ "$_bu_wh_anzahl" -gt 0 ] && \
+          printf "${blau}DB-Dump: %s Wiederholung(en) nötig${reset}
+" "$_bu_wh_anzahl";
+        # ── Fallback: Übertragung über Dump-Datei wenn Pipe-Methode scheitert ──
+        if [ -z "$_bu_wh_ok" ]; then
+          _bu_sqldump_dir="${VLM%/*}/bu_sqldump";
+          _bu_sqldump_f="$_bu_sqldump_dir/dump_$(date +%Y%m%d_%H%M%S).sql";
+          printf "${rot}Pipe-Import fehlgeschlagen – Fallback: Dump-Datei${reset}
+";
+          printf "  Schreibe Dump nach ${blau}%s${reset} auf linux1 …
+" "$_bu_sqldump_f";
+          eval "$qssh '
+            mkdir -p "$_bu_sqldump_dir";
+            mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
+              --default-character-set=UTF8 -c -K \
+              --routines --events --triggers \
+              --single-transaction --skip-lock-tables --skip-add-locks --quick \
+              --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry --add-drop-database \
+              --databases $(printf "%s " $_bu_dbs) > "$_bu_sqldump_f"
+          '";
+          if [ $? -eq 0 ]; then
+            printf "  Importiere von ${blau}%s${reset} …
+" "$_bu_sqldump_f";
+            eval "$qssh 'cat "$_bu_sqldump_f"'" \
+            | sed 's/ DEFINER=`[^`]*`@`[^`]*`//g; s/ SQL SECURITY DEFINER//g' \
+            | mariadb --defaults-extra-file=/root/.mysqlrpwd \
+                --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;" \
+            && { printf "${blau}Fallback-Import erfolgreich${reset}
+"; _bu_wh_ok=1; _bu_fehler=; \
+                 eval "$qssh 'rm -f "$_bu_sqldump_f"'"; } \
+            || { printf "${rot}Fallback-Import fehlgeschlagen${reset}
+"; _bu_fehler=1; };
+          else
+            printf "${rot}Dump-Datei konnte nicht erstellt werden${reset}
+";
+            _bu_fehler=1;
+          fi;
+        fi;
         [ -z "$_bu_wh_ok" ] && [ -z "$_bu_fehler" ] && _bu_fehler=1;
         # ── Abschlussmeldung Datenbankvergleich ──────────────────────────
         printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
@@ -339,12 +379,24 @@ if [ -n "$VLM" ]; then
           else
             _tabs_q=;
           fi;
+          # Zeitfeld suchen: MAX muss NOT NULL sein und <= 4 Wochen alt
           _col=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT CONCAT(table_name,'.',column_name) FROM information_schema.columns WHERE table_schema='$_db' AND column_name REGEXP 'zeit|time|datum' ORDER BY table_name,ordinal_position LIMIT 1;" 2>/dev/null);
+            -e "SELECT CONCAT(c.table_name,'.',c.column_name) \
+                FROM information_schema.columns c \
+                WHERE c.table_schema='$_db' \
+                  AND c.column_name REGEXP 'zeit|time|datum' \
+                  AND c.data_type IN ('datetime','timestamp','date') \
+                ORDER BY c.table_name, c.ordinal_position \
+                LIMIT 1;" 2>/dev/null);
+          # Prüfen ob MAX des Zeitfelds brauchbar ist (NOT NULL, max. 4 Wochen alt)
           if [ -n "$_col" ]; then
             _tbl=${_col%%.*}; _feld=${_col##*.};
             _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e "SELECT MAX(\`$_feld\`) FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+              -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
+                              AND MAX(\`$_feld\`) >= DATE_SUB(NOW(), INTERVAL 4 WEEK) \
+                         THEN MAX(\`$_feld\`) ELSE NULL END \
+                  FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+            [ -z "$_ts_z" ] || [ "$_ts_z" = "NULL" ] && _col=;  # Feld unbrauchbar
             if [ -n "$QL" ]; then
               _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
                 -e 'SELECT MAX(\`$_feld\`) FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null);

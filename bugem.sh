@@ -83,7 +83,7 @@ commandline() {
         dt1|-nur-dt1) obdt1=1;;           # nur Konfigdateien+MO, keine DATA, keine DB
         dt2|-nur-dt2) obdt2=1;;           # nur /DATA-Verzeichnisse, keine DB
         db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
-        wh|-wh) _bu_wh_max="${2:-3}"; shift;;  # DB-Dump Wiederholungen bei Verbindungsverlust
+        wh|-wh) _bu_wh_max="${2:-5}"; shift;;  # DB-Dump Wiederholungen bei Verbindungsverlust
         z|-ziele) shift; ziele="$1";
           echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
         q|-quelle) shift; QL="$1";;
@@ -755,7 +755,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
-    " ${blau}-wh <n>${reset}           bei Verbindungsverlust im DB-Dump bis zu n mal wiederholen" \
+    " ${blau}-wh [n]${reset}           bei Verbindungsverlust: bis zu n mal wiederholen (Standard: 5); ohne -wh: auch 5" \
     " ${blau}-h / -? / --help${reset}  diese Hilfe anzeigen";
     [ "$obhilfe" ] && exit 0;  # nach Hilfe beenden
   ;; esac; 
