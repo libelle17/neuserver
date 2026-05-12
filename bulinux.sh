@@ -268,7 +268,7 @@ if [ -n "$VLM" ]; then
     _bu_dbs=$(eval "$qssh \
       'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
        -e \"SHOW DATABASES\" 2>/dev/null'" \
-      | grep -vE '^(information_schema|performance_schema|sys)$');
+      | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
     if [ -z "$_bu_dbs" ]; then
       printf "${rot}Keine Datenbanken auf Quelle gefunden – abgebrochen${reset}\n";
       _bu_fehler=1;
@@ -310,8 +310,9 @@ if [ -n "$VLM" ]; then
                && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ]; then
             printf "${blau}Import erfolgreich${reset} (Dump=${_bu_ps[0]})\n";
             _bu_wh_ok=1; break;
-          elif [ "${_bu_ps[0]}" = 3 ] && [ "$_bu_wh_try" -lt "${_bu_wh_max:-0}" ]; then
-            printf "${rot}Verbindungsverlust (Dump=3) – warte 10s, Versuch %s/%s${reset}\n" \
+          elif { [ "${_bu_ps[0]}" = 3 ] || [ "${_bu_ps[0]}" = 5 ]; } \
+               && [ "$_bu_wh_try" -lt "${_bu_wh_max:-0}" ]; then
+            printf "${rot}Verbindungsverlust (Dump=${_bu_ps[0]}) – warte 10s, Versuch %s/%s${reset}\n" \
               "$((_bu_wh_try+1))" "${_bu_wh_max}";
             sleep 10;
           else
