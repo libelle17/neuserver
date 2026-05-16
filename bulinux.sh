@@ -31,6 +31,8 @@ if [ "$sdneu" ]; then
   printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
 elif [ "$_bu_vollabgleich" ]; then
   printf "${blau}Vollabgleich${reset} (-f)\n";
+elif [ "$obdberg" ]; then
+  printf "${blau}Datenbankvergleich${reset} (-dberg)\n";
 elif [ "$obdb" ] && [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; then
   printf "${blau}Nur Datenbank${reset} (-db)\n";
 elif [ "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdb" ]; then
@@ -56,9 +58,9 @@ _bu_ftr() { printf "${blau}── %s: %s  Dauer: %s ────${reset}\n" "$1"
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
 # -----------------------------------------------------------------------
 # dt1-Block: Konfigdateien + MO (nicht DATA)
-_bu_ob_dt1() { [ -n "$obdt1" ] || { [ -z "$obdb" ] && [ -z "$obdt2" ]; }; }
+_bu_ob_dt1() { [ -z "$obdberg" ] && { [ -n "$obdt1" ] || { [ -z "$obdb" ] && [ -z "$obdt2" ]; }; }; }
 # dt2-Block: /DATA-Verzeichnisse
-_bu_ob_dt2() { [ -n "$obdt2" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ]; }; }
+_bu_ob_dt2() { [ -z "$obdberg" ] && { [ -n "$obdt2" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ]; }; }; }
 # db-Block: Datenbank
 _bu_ob_db()  { [ -n "$obdb"  ] || { [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; }; }
 if _bu_ob_dt1; then  # dt1: Konfigdateien + MO
