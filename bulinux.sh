@@ -252,23 +252,26 @@ bu_db_erg() {
     _sql_rows="SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
     _rows_z=$(_bu_erg_sql_z "$_sql_rows");
     _rows_q=$(_bu_erg_sql_q "$_sql_rows");
-    # Zeitfeld suchen: erste Spalte mit aktuellem MAX auf BEIDEN Seiten
+    # Zeitfeld: erstes Feld mit aktuellem MAX auf Quell-Seite (Q); Z-Seite immer anzeigen
     _col=; _ts_z=; _ts_q=;
     while IFS='.' read -r _tbl _feld; do
       [ -z "$_tbl" ] && continue;
       _sql_ts="SELECT CASE WHEN MAX($_feld) IS NOT NULL AND MAX($_feld) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX($_feld) END FROM $_db.$_tbl;"
-      _ts_z=$(_bu_erg_sql_z "$_sql_ts");
-      [ -z "$_ts_z" ] && continue;
       _ts_q=$(_bu_erg_sql_q "$_sql_ts");
-      [ -z "$_ts_q" ] && continue;
+      # Nur Q muss aktuell sein (Quelle = autoritativer Stand)
+      { [ -z "$_ts_q" ] || [ "$_ts_q" = "NULL" ]; } && continue;
+      # Z immer anzeigen (kann älter sein – das ist der Vergleich)
+      _ts_z=$(_bu_erg_sql_z "$_sql_ts");
+      [ "$_ts_z" = "NULL" ] && _ts_z="(älter 4W)";
+      [ -z "$_ts_z" ] && _ts_z="-";
       _col="$_tbl.$_feld"; break;
-    done < <(_bu_erg_sql_z \
+    done < <(_bu_erg_sql_q \
       "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c WHERE c.table_schema='$_db' AND c.column_name REGEXP 'zeit|time|datum' AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
     if [ -n "$_col" ]; then
       printf "  %-16s | %-7s | %-8s | %-10s | %-10s | ${blau}%-12s${reset} | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
         "${_rows_z:--}" "${_rows_q:--}" \
-        "${_col##*.}" "${_ts_z:--}" "${_ts_q:--}";
+        "$_col" "${_ts_z:--}" "${_ts_q:--}";
     else
       printf "  %-16s | %-7s | %-8s | %-10s | %-10s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
