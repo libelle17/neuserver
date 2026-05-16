@@ -2897,7 +2897,7 @@ turbomed() {
 
 dbinhalt() {
   VZ=/DATA/sql;
-	printf "${dblau}dbinhalt$reset()\n";
+	printf "${dblau}dbinhalt$reset(), immer: $immer\n";
 #  pruefmroot;
   pd=$instvz/sqlprot.txt;
   [ "$verb" ]&&printf "obschreiben: $blau$obschreiben$reset, loscred: $blau$loscred$reset, Vergleichsdatei: $blau$pd$reset\n";

@@ -204,18 +204,97 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
 # -----------------------------------------------------------------------
 # MariaDB-Synchronisation
+# ═══════════════════════════════════════════════════════════════════════
+# Funktion: DB-Ergebnisvergleich (auch standalone mit -dberg aufrufbar)
+# Setzt voraus: $_bu_dbs, $QL, $blau, $rot, $reset
+# ═══════════════════════════════════════════════════════════════════════
+bu_db_erg() {
+  printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
+  [ -n "${_bu_ps[*]}" ] && \
+    printf "  Dump: %b  Awk: %b  Import: %b\n" \
+      "$([ "${_bu_ps[0]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
+      "$([ "${_bu_ps[1]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
+      "$([ "${_bu_ps[2]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
+  # Datenbanken ermitteln falls nicht gesetzt (Standalone-Modus)
+  if [ -z "$_bu_dbs" ]; then
+    _bu_dbs=$(eval "$qssh \
+      'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+       -e \"SHOW DATABASES\" 2>/dev/null'" \
+      | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
+  fi;
+  for _db in $_bu_dbs; do
+    case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
+    # ── Tabellenzahl ──
+    _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+      -e "SELECT COUNT(*) FROM information_schema.tables \
+          WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
+    [ -n "$QL" ] && \
+      _tabs_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+        -e 'SELECT COUNT(*) FROM information_schema.tables \
+            WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
+      _tabs_q=;
+    # ── Zeilensumme (Schätzwert aus information_schema, kein Table-Scan) ──
+    _rows_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+      -e "SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables \
+          WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
+    [ -n "$QL" ] && \
+      _rows_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+        -e 'SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables \
+            WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
+      _rows_q=;
+    # ── Zeitfeld: erste Spalte mit aktuellem Datum auf BEIDEN Seiten ──
+    _col=; _ts_z=; _ts_q=;
+    while IFS='.' read -r _tbl _feld; do
+      [ -z "$_tbl" ] && continue;
+      _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+        -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
+                        AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) \
+                   THEN MAX(\`$_feld\`) END \
+            FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+      [ -z "$_ts_z" ] && continue;
+      if [ -n "$QL" ]; then
+        _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+          -e 'SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
+                          AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) \
+                     THEN MAX(\`$_feld\`) END \
+              FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null);
+        [ -z "$_ts_q" ] && continue;
+      fi;
+      _col="$_tbl.$_feld"; break;
+    done < <(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+      -e "SELECT CONCAT(c.table_name,'.',c.column_name) \
+          FROM information_schema.columns c \
+          WHERE c.table_schema='$_db' \
+            AND c.column_name REGEXP 'zeit|time|datum' \
+            AND c.data_type IN ('datetime','timestamp','date') \
+          ORDER BY c.table_name, c.ordinal_position;" 2>/dev/null);
+    # ── Ausgabe ──
+    if [ -n "$_col" ]; then
+      printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
+        "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
+        "${_rows_z:--}" "${_rows_q:--}" \
+        "${_col##*.}" "${_ts_z:--}" "${_ts_q:--}";
+    else
+      printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s\n" \
+        "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
+    fi;
+  done;
+  printf "${blau}────────────────────────────────────────────────────────${reset}\n";
+} # bu_db_erg
+
+# Standalone-Aufruf via -dberg
+[ "$obdberg" ] && { machssh; _bu_dbs=; bu_db_erg; exit 0; }
+
+# ═══════════════════════════════════════════════════════════════════════
+# MariaDB-Synchronisation
+# ═══════════════════════════════════════════════════════════════════════
 if _bu_ob_db && [ -z "$sdneu" ]; then
   _bu_ts_db=$(date +%s); _bu_hdr "db  Beginn";
-# -----------------------------------------------------------------------
-# Gleiche major.minor-Version → rsync des datadir (schnell, Minuten)
-# Verschiedene Versionen      → mariadb-dump/import (sicher, langsamer)
-# Kein Echtlauf (-e fehlt)    → Simulation
-# -----------------------------------------------------------------------
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf);
 [ "$obforce" ] && testdat= || testdat=ibdata1;
 
 if [ -n "$VLM" ]; then
-  # Versionen ermitteln (major.minor, z.B. "10.11")
+  # Versionen ermitteln (major.minor)
   _bu_ver_q=$(eval "$qssh \
     'mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null'" 2>/dev/null \
     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
@@ -227,199 +306,111 @@ if [ -n "$VLM" ]; then
   if [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
     # ── Gleiche Version: schneller datadir-Sync ────────────────────────
     printf "${blau}gleich → rsync datadir${reset}\n";
-    # Rotation der Sicherungskopien:
-    #   ${VLM}_1 = aktuelle Kopie (wird gleich neu erstellt)
-    #   ${VLM}_2 = Vorversion zur Sicherheit (bleibt erhalten)
-    #   ${VLM}_3 und älter = werden gelöscht
     if [ "$obecht" ]; then
       for _i in $(seq 9 -1 3); do
-        [ -d "${VLM}_${_i}" ] && {
-          rm -rf "${VLM}_${_i}";
-          printf "  ${blau}%s_%s${reset} gelöscht\n" "$VLM" "$_i";
-        };
+        [ -d "${VLM}_${_i}" ] && { rm -rf "${VLM}_${_i}"; printf "  ${blau}%s_%s${reset} gelöscht\n" "$VLM" "$_i"; };
       done;
-      [ -d "${VLM}_2" ] && {
-        rm -rf "${VLM}_2";
-        printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM";
-      };
-      [ -d "${VLM}_1" ] && {
-        mv "${VLM}_1" "${VLM}_2";
-        printf "  ${blau}%s_1${reset} → ${blau}%s_2${reset} (Vorversion)\n" "$VLM" "$VLM";
-      };
+      [ -d "${VLM}_2" ] && { rm -rf "${VLM}_2"; printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM"; };
+      [ -d "${VLM}_1" ] && { mv "${VLM}_1" "${VLM}_2"; printf "  ${blau}%s_1 → %s_2${reset} (Vorversion)\n" "$VLM" "$VLM"; };
+      $zssh "systemctl stop mariadb"; $zssh "systemctl disable mariadb";
+      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
+      $zssh "systemctl start mariadb"; $zssh "systemctl enable mariadb";
     else
       printf "Simulation: %s_3..9 löschen, %s_1 → %s_2\n" "$VLM" "$VLM" "$VLM";
-    fi;
-    if [ "$obecht" ]; then
-      $zssh "systemctl stop mariadb";
-      $zssh "systemctl disable mariadb";
-      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
-      $zssh "systemctl start mariadb";
-      $zssh "systemctl enable mariadb";
-    else
-      printf "Simulation: systemctl stop mariadb\n";
-      printf "Simulation: kopiermt %s/ %s_1 ... 1 1\n" "$VLM" "$VLM";
-      printf "Simulation: systemctl start mariadb\n";
+      printf "Simulation: systemctl stop/start mariadb, kopiermt %s/ %s_1\n" "$VLM" "$VLM";
     fi;
 
   else
     # ── Verschiedene Versionen: mariadb-dump/import ────────────────────
     printf "${rot}verschieden → mariadb-dump${reset}\n";
-    # Datenbanken auf Quelle ermitteln (ohne reine Systemdatenbanken)
     _bu_dbs=$(eval "$qssh \
       'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
        -e \"SHOW DATABASES\" 2>/dev/null'" \
       | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
     if [ -z "$_bu_dbs" ]; then
-      printf "${rot}Keine Datenbanken auf Quelle gefunden – abgebrochen${reset}\n";
-      _bu_fehler=1;
+      printf "${rot}Keine Datenbanken auf Quelle gefunden – abgebrochen${reset}\n"; _bu_fehler=1;
     else
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
+      # ── Parameter für mariadb-dump (nur einmal definiert) ────────────
+      _bu_dump_args="--defaults-extra-file=/root/.mysqlrpwd \
+        --default-character-set=UTF8 -c -K \
+        --routines --events --triggers \
+        --single-transaction --skip-lock-tables --skip-add-locks --quick \
+        --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry \
+        --add-drop-database";
+      # ── awk-Filter (Fortschritt + DEFINER-Bereinigung) ───────────────
+      _bu_awk_filter='
+        /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
+          db=$4; gsub(/`/,"",db);
+          printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr"
+        }
+        /^\-\- Table structure for table/ {
+          tbl=$NF; gsub(/`/,"",tbl);
+          printf "    Struktur:  %-30s\r", tbl > "/dev/stderr"
+        }
+        /^\-\- Dumping data for table/ {
+          tbl=$NF; gsub(/`/,"",tbl);
+          printf "    Daten:     \033[34m%-30s\033[0m\r", tbl > "/dev/stderr"
+        }
+        { gsub(/ DEFINER=`[^`]*`@`[^`]*`/, ""); gsub(/ SQL SECURITY DEFINER/, ""); print }
+      ';
+      # ── mariadb Import-Optionen ──────────────────────────────────────
+      _bu_import_args="--defaults-extra-file=/root/.mysqlrpwd \
+        --init-command='SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;'";
       if [ "$obecht" ]; then
-        [ -z "$_bu_wh_max" ] && _bu_wh_max=5;  # Standard: 5 Wiederholungen
+        [ -z "$_bu_wh_max" ] && _bu_wh_max=5;
         _bu_wh_try=0; _bu_wh_ok=; _bu_wh_anzahl=0;
-        while [ "$_bu_wh_try" -le "${_bu_wh_max:-0}" ]; do
-          [ "$_bu_wh_try" -gt 0 ] && printf "${blau}DB-Dump Wiederholung %s/%s …${reset}\n" "$_bu_wh_try" "${_bu_wh_max}";
+        while [ "$_bu_wh_try" -le "$_bu_wh_max" ]; do
+          [ "$_bu_wh_try" -gt 0 ] && printf "${blau}DB-Dump Wiederholung %s/%s …${reset}\n" "$_bu_wh_try" "$_bu_wh_max";
           set -o pipefail;
           ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
-          "mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
-            --default-character-set=UTF8 -c -K \
-            --routines --events --triggers \
-            --single-transaction --skip-lock-tables --skip-add-locks --quick \
-            --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry --add-drop-database \
-            --databases $(printf '%s ' $_bu_dbs)" \
-        | awk '
-            /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
-              db=$4; gsub(/`/,"",db);
-              printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr"
-            }
-            /^\-\- Table structure for table/ {
-              tbl=$NF; gsub(/`/,"",tbl);
-              printf "    Struktur:  %-30s\r", tbl > "/dev/stderr"
-            }
-            /^\-\- Dumping data for table/ {
-              tbl=$NF; gsub(/`/,"",tbl);
-              printf "    Daten:     \033[34m%-30s\033[0m\r", tbl > "/dev/stderr"
-            }
-            # DEFINER entfernen: user auf Ziel oft nicht vorhanden (ERROR 1449)
-            { gsub(/ DEFINER=`[^`]*`@`[^`]*`/, ""); gsub(/ SQL SECURITY DEFINER/, ""); print }
-        ' \
-        | mariadb --defaults-extra-file=/root/.mysqlrpwd \
-            --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
-          _bu_ps=("${PIPESTATUS[@]}");
-          set +o pipefail;
-          # Dump exit 0/2=OK, exit 3=Lost Connection (→ Retry falls -wh gesetzt)
+            "mariadb-dump $_bu_dump_args --databases $(printf '%s ' $_bu_dbs)" \
+          | awk "$_bu_awk_filter" \
+          | mariadb $_bu_import_args;
+          _bu_ps=("${PIPESTATUS[@]}"); set +o pipefail;
           if { [ "${_bu_ps[0]}" = 0 ] || [ "${_bu_ps[0]}" = 2 ]; } \
                && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ]; then
             printf "${blau}Import erfolgreich${reset} (Dump=${_bu_ps[0]})\n";
             _bu_wh_ok=1; break;
           elif { [ "${_bu_ps[0]}" = 3 ] || [ "${_bu_ps[0]}" = 5 ]; } \
-               && [ "$_bu_wh_try" -lt "${_bu_wh_max:-0}" ]; then
+               && [ "$_bu_wh_try" -lt "$_bu_wh_max" ]; then
             printf "${rot}Verbindungsverlust (Dump=${_bu_ps[0]}) – warte 10s, Versuch %s/%s${reset}\n" \
-              "$((_bu_wh_try+1))" "${_bu_wh_max}";
-            sleep 10;
-            _bu_wh_anzahl=$((_bu_wh_anzahl + 1));
+              "$((_bu_wh_try+1))" "$_bu_wh_max";
+            sleep 10; _bu_wh_anzahl=$((_bu_wh_anzahl+1));
           else
             printf "${rot}Import fehlgeschlagen (Dump=${_bu_ps[0]} Awk=${_bu_ps[1]} Import=${_bu_ps[2]})${reset}\n";
             _bu_fehler=1; break;
           fi;
-          _bu_wh_try=$((_bu_wh_try + 1));
+          _bu_wh_try=$((_bu_wh_try+1));
         done;
         [ "$_bu_wh_anzahl" -gt 0 ] && \
-          printf "${blau}DB-Dump: %s Wiederholung(en) nötig${reset}
-" "$_bu_wh_anzahl";
-        # ── Fallback: Übertragung über Dump-Datei wenn Pipe-Methode scheitert ──
+          printf "${blau}DB-Dump: %s Wiederholung(en) nötig${reset}\n" "$_bu_wh_anzahl";
+        # ── Fallback: Dump-Datei auf Quelle ─────────────────────────────
         if [ -z "$_bu_wh_ok" ]; then
           _bu_sqldump_dir="${VLM%/*}/bu_sqldump";
           _bu_sqldump_f="$_bu_sqldump_dir/dump_$(date +%Y%m%d_%H%M%S).sql";
-          printf "${rot}Pipe-Import fehlgeschlagen – Fallback: Dump-Datei${reset}
-";
-          printf "  Schreibe Dump nach ${blau}%s${reset} auf linux1 …
-" "$_bu_sqldump_f";
-          eval "$qssh '
-            mkdir -p "$_bu_sqldump_dir";
-            mariadb-dump --defaults-extra-file=/root/.mysqlrpwd \
-              --default-character-set=UTF8 -c -K \
-              --routines --events --triggers \
-              --single-transaction --skip-lock-tables --skip-add-locks --quick \
-              --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry --add-drop-database \
-              --databases $(printf "%s " $_bu_dbs) > "$_bu_sqldump_f"
-          '";
+          printf "${rot}Pipe-Import fehlgeschlagen – Fallback: Dump-Datei${reset}\n";
+          printf "  Schreibe Dump nach ${blau}%s${reset} auf %s …\n" "$_bu_sqldump_f" "${QL:-lokal}";
+          eval "$qssh 'mkdir -p \"$_bu_sqldump_dir\" && \
+            mariadb-dump $_bu_dump_args \
+            --databases $(printf "%s " $_bu_dbs) > \"$_bu_sqldump_f\"'";
           if [ $? -eq 0 ]; then
-            printf "  Importiere von ${blau}%s${reset} …
-" "$_bu_sqldump_f";
-            eval "$qssh 'cat "$_bu_sqldump_f"'" \
+            printf "  Importiere von ${blau}%s${reset} …\n" "$_bu_sqldump_f";
+            eval "$qssh 'cat \"$_bu_sqldump_f\"'" \
             | sed 's/ DEFINER=`[^`]*`@`[^`]*`//g; s/ SQL SECURITY DEFINER//g' \
-            | mariadb --defaults-extra-file=/root/.mysqlrpwd \
-                --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;" \
-            && { printf "${blau}Fallback-Import erfolgreich${reset}
-"; _bu_wh_ok=1; _bu_fehler=; \
-                 eval "$qssh 'rm -f "$_bu_sqldump_f"'"; } \
-            || { printf "${rot}Fallback-Import fehlgeschlagen${reset}
-"; _bu_fehler=1; };
+            | mariadb $_bu_import_args \
+            && { printf "${blau}Fallback-Import erfolgreich${reset}\n";
+                 _bu_wh_ok=1; _bu_fehler=;
+                 eval "$qssh 'rm -f \"$_bu_sqldump_f\"'"; } \
+            || { printf "${rot}Fallback-Import fehlgeschlagen${reset}\n"; _bu_fehler=1; };
           else
-            printf "${rot}Dump-Datei konnte nicht erstellt werden${reset}
-";
-            _bu_fehler=1;
+            printf "${rot}Dump-Datei konnte nicht erstellt werden${reset}\n"; _bu_fehler=1;
           fi;
         fi;
         [ -z "$_bu_wh_ok" ] && [ -z "$_bu_fehler" ] && _bu_fehler=1;
-        # ── Abschlussmeldung Datenbankvergleich ──────────────────────────
-        printf "\n${blau}── Datenbankabgleich Abschluss ────────────────${reset}\n";
-        printf "  Dump: %b  Awk: %b  Import: %b\n" \
-          "$([ "${_bu_ps[0]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
-          "$([ "${_bu_ps[1]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")" \
-          "$([ "${_bu_ps[2]}" = 0 ] && printf "${blau}OK${reset}" || printf "${rot}FEHLER${reset}")";
-        for _db in $_bu_dbs; do
-          case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
-          # ── Tabellenzahl ──
-          _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-          [ -n "$QL" ] && \
-            _tabs_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
-            _tabs_q=;
-          # ── Zeilensumme (Schätzwert aus information_schema, sofort) ──
-          _rows_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-          [ -n "$QL" ] && \
-            _rows_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e 'SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
-            _rows_q=;
-          # ── Zeitfeld: erste Spalte mit aktuellem Datum (beide Seiten <= 4 Wochen alt, NOT NULL) ──
-          _col=;
-          while IFS='.' read -r _tbl _feld; do
-            [ -z "$_tbl" ] && continue;
-            _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-              -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
-            [ -z "$_ts_z" ] && continue;
-            [ -n "$QL" ] && \
-              _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-                -e 'SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null) || \
-              _ts_q=;
-            [ -z "$_ts_q" ] && continue;
-            _col="$_tbl.$_feld"; break;
-          done < <(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-            -e "SELECT CONCAT(c.table_name,'.',c.column_name) \
-                FROM information_schema.columns c \
-                WHERE c.table_schema='$_db' \
-                  AND c.column_name REGEXP 'zeit|time|datum' \
-                  AND c.data_type IN ('datetime','timestamp','date') \
-                ORDER BY c.table_name, c.ordinal_position;" 2>/dev/null);
-          # ── Ausgabe ──
-          if [ -n "$_col" ]; then
-            _tbl=${_col%%.*}; _feld=${_col##*.};
-            printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
-              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
-              "${_rows_z:--}" "${_rows_q:--}" \
-              "$_feld" "${_ts_z:--}" "${_ts_q:--}";
-          else
-            printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s\n" \
-              "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
-          fi;
-        done;
-        printf "${blau}────────────────────────────────────────────────────────${reset}\n";
+        bu_db_erg;
       else
-        printf "Simulation: ssh %s mariadb-dump ... %s | mariadb --init-command=...\n" \
+        printf "Simulation: ssh %s mariadb-dump [args] %s | awk [filter] | mariadb [args]\n" \
           "$QL" "$(printf '%s ' $_bu_dbs)";
       fi;
     fi;
