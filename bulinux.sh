@@ -224,64 +224,66 @@ bu_db_erg() {
        -e \"SHOW DATABASES\" 2>/dev/null'" \
       | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
   fi;
+  # Richtung: ZL gesetzt → lokal=Quelle, ssh ZL=Ziel; QL gesetzt → lokal=Ziel, ssh QL=Quelle
+  _bu_erg_sql_z() {  # $1 = SQL-Statement
+    if [ -n "$ZL" ]; then
+      ssh "$ZL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e '$1'" 2>/dev/null;
+    else
+      mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "$1" 2>/dev/null;
+    fi;
+  }
+  _bu_erg_sql_q() {  # $1 = SQL-Statement
+    if [ -n "$QL" ]; then
+      ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e '$1'" 2>/dev/null;
+    elif [ -n "$ZL" ]; then
+      mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "$1" 2>/dev/null;
+    fi;
+  }
+  printf "  %s%-16s%s | %s%-7s%s | %s%-8s%s | %s%-10s%s | %s%-10s%s | %-12s | %s%-20s%s | %s%s%s\n" \
+    "$blau" "Datenbank" "$reset" \
+    "$blau" "Tab Z" "$reset" \
+    "$blau" "Tab Q" "$reset" \
+    "$blau" "~Zeilen Z" "$reset" \
+    "$blau" "~Zeilen Q" "$reset" \
+    "Zeitfeld" \
+    "$blau" "MAX Ziel" "$reset" \
+    "$blau" "MAX Quelle" "$reset";
+  printf "  %s\n" "$(printf '─%.0s' {1..110})";
   for _db in $_bu_dbs; do
     case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
-    # ── Tabellenzahl ──
-    _tabs_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-      -e "SELECT COUNT(*) FROM information_schema.tables \
-          WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-    [ -n "$QL" ] && \
-      _tabs_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-        -e 'SELECT COUNT(*) FROM information_schema.tables \
-            WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
-      _tabs_q=;
-    # ── Zeilensumme (Schätzwert aus information_schema, kein Table-Scan) ──
-    _rows_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-      -e "SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables \
-          WHERE table_schema='$_db' AND table_type='BASE TABLE';" 2>/dev/null);
-    [ -n "$QL" ] && \
-      _rows_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-        -e 'SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables \
-            WHERE table_schema=\"$_db\" AND table_type=\"BASE TABLE\";'" 2>/dev/null) || \
-      _rows_q=;
-    # ── Zeitfeld: erste Spalte mit aktuellem Datum auf BEIDEN Seiten ──
+    _sql_tabs="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
+    _tabs_z=$(_bu_erg_sql_z "$_sql_tabs");
+    _tabs_q=$(_bu_erg_sql_q "$_sql_tabs");
+    _sql_rows="SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
+    _rows_z=$(_bu_erg_sql_z "$_sql_rows");
+    _rows_q=$(_bu_erg_sql_q "$_sql_rows");
+    # Zeitfeld suchen: erste Spalte mit aktuellem MAX auf BEIDEN Seiten
     _col=; _ts_z=; _ts_q=;
     while IFS='.' read -r _tbl _feld; do
       [ -z "$_tbl" ] && continue;
-      _ts_z=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-        -e "SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
-                        AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) \
-                   THEN MAX(\`$_feld\`) END \
-            FROM \`$_db\`.\`$_tbl\`;" 2>/dev/null);
+      _sql_ts="SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;"
+      _ts_z=$(_bu_erg_sql_z "$_sql_ts");
       [ -z "$_ts_z" ] && continue;
-      if [ -n "$QL" ]; then
-        _ts_q=$(ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-          -e 'SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL \
-                          AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) \
-                     THEN MAX(\`$_feld\`) END \
-              FROM \`$_db\`.\`$_tbl\`;'" 2>/dev/null);
-        [ -z "$_ts_q" ] && continue;
-      fi;
+      _ts_q=$(_bu_erg_sql_q "$_sql_ts");
+      [ -z "$_ts_q" ] && continue;
       _col="$_tbl.$_feld"; break;
-    done < <(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
-      -e "SELECT CONCAT(c.table_name,'.',c.column_name) \
-          FROM information_schema.columns c \
-          WHERE c.table_schema='$_db' \
-            AND c.column_name REGEXP 'zeit|time|datum' \
-            AND c.data_type IN ('datetime','timestamp','date') \
-          ORDER BY c.table_name, c.ordinal_position;" 2>/dev/null);
-    # ── Ausgabe ──
+    done < <(_bu_erg_sql_z "SELECT CONCAT(c.table_name,'.',c.column_name) \
+        FROM information_schema.columns c \
+        WHERE c.table_schema='$_db' \
+          AND c.column_name REGEXP 'zeit|time|datum' \
+          AND c.data_type IN ('datetime','timestamp','date') \
+        ORDER BY c.table_name, c.ordinal_position;");
     if [ -n "$_col" ]; then
-      printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s  MAX(%-12s) Z: %-20s Q: %s\n" \
+      printf "  %-16s | %-7s | %-8s | %-10s | %-10s | %-12s | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
         "${_rows_z:--}" "${_rows_q:--}" \
         "${_col##*.}" "${_ts_z:--}" "${_ts_q:--}";
     else
-      printf "  %-16s Tab Z/Q: %s/%s  ~Zeilen Z/Q: %s/%s\n" \
+      printf "  %-16s | %-7s | %-8s | %-10s | %-10s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
     fi;
   done;
-  printf "${blau}────────────────────────────────────────────────────────${reset}\n";
+  printf "  %s\n" "$(printf '─%.0s' {1..110})";
 } # bu_db_erg
 
 # Standalone-Aufruf via -dberg
