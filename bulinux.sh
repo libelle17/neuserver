@@ -243,7 +243,7 @@ bu_db_erg() {
   # Kopfzeile: $blau/$reset in Formatstring, nicht als %s-Argument
   printf "  ${blau}%-16s | %-7s | %-8s | %-10s | %-10s | %-12s | %-20s | %s${reset}\n" \
     "Datenbank" "Tab Z" "Tab Q" "~Zeilen Z" "~Zeilen Q" "Zeitfeld" "MAX Ziel" "MAX Quelle";
-  printf "  %110s\n" | tr ' ' '─';
+  printf '  '; printf '─%.0s' {1..110}; printf '\n';
   for _db in $_bu_dbs; do
     case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
     _sql_tabs="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
@@ -256,7 +256,7 @@ bu_db_erg() {
     _col=; _ts_z=; _ts_q=;
     while IFS='.' read -r _tbl _feld; do
       [ -z "$_tbl" ] && continue;
-      _sql_ts="SELECT CASE WHEN MAX(\`$_feld\`) IS NOT NULL AND MAX(\`$_feld\`) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX(\`$_feld\`) END FROM \`$_db\`.\`$_tbl\`;"
+      _sql_ts="SELECT CASE WHEN MAX($_feld) IS NOT NULL AND MAX($_feld) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX($_feld) END FROM $_db.$_tbl;"
       _ts_z=$(_bu_erg_sql_z "$_sql_ts");
       [ -z "$_ts_z" ] && continue;
       _ts_q=$(_bu_erg_sql_q "$_sql_ts");
@@ -274,7 +274,7 @@ bu_db_erg() {
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
     fi;
   done;
-  printf "  %110s\n" | tr ' ' '─';
+  printf '  '; printf '─%.0s' {1..110}; printf '\n';
 } # bu_db_erg
 
 # Standalone-Aufruf via -dberg
