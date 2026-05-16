@@ -266,7 +266,7 @@ bu_db_erg() {
       [ -z "$_ts_z" ] && _ts_z="-";
       _col="$_tbl.$_feld"; break;
     done < <(_bu_erg_sql_q \
-      "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c WHERE c.table_schema='$_db' AND c.column_name REGEXP 'zeit|time|datum|^tag$|aenddat' AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
+      "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c WHERE c.table_schema='$_db' AND c.column_name REGEXP 'zeit|time|datum' AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
     if [ -n "$_col" ]; then
       printf "  %-16s | %-7s | %-8s | %-10s | %-10s | ${blau}%-12s${reset} | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
@@ -352,9 +352,11 @@ if [ -n "$VLM" ]; then
         }
         { gsub(/ DEFINER=`[^`]*`@`[^`]*`/, ""); gsub(/ SQL SECURITY DEFINER/, ""); print }
       ';
-      # ── mariadb Import-Optionen ──────────────────────────────────────
-      _bu_import_args="--defaults-extra-file=/root/.mysqlrpwd \
-        --init-command='SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;'";
+      # ── mariadb Import-Funktion (Funktion statt Variable → kein Wordsplit-Problem) ──
+      _bu_mariadb_import() {
+        mariadb --defaults-extra-file=/root/.mysqlrpwd \
+          --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
+      }
       if [ "$obecht" ]; then
         [ -z "$_bu_wh_max" ] && _bu_wh_max=5;
         _bu_wh_try=0; _bu_wh_ok=; _bu_wh_anzahl=0;
@@ -364,7 +366,7 @@ if [ -n "$VLM" ]; then
           ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
             "mariadb-dump $_bu_dump_args --databases $(printf '%s ' $_bu_dbs)" \
           | awk "$_bu_awk_filter" \
-          | mariadb $_bu_import_args;
+          | _bu_mariadb_import;
           _bu_ps=("${PIPESTATUS[@]}"); set +o pipefail;
           if { [ "${_bu_ps[0]}" = 0 ] || [ "${_bu_ps[0]}" = 2 ]; } \
                && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ]; then
@@ -396,7 +398,7 @@ if [ -n "$VLM" ]; then
             printf "  Importiere von ${blau}%s${reset} …\n" "$_bu_sqldump_f";
             eval "$qssh 'cat \"$_bu_sqldump_f\"'" \
             | sed 's/ DEFINER=`[^`]*`@`[^`]*`//g; s/ SQL SECURITY DEFINER//g' \
-            | mariadb $_bu_import_args \
+            | _bu_mariadb_import \
             && { printf "${blau}Fallback-Import erfolgreich${reset}\n";
                  _bu_wh_ok=1; _bu_fehler=;
                  eval "$qssh 'rm -f \"$_bu_sqldump_f\"'"; } \
