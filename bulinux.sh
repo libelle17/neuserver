@@ -225,30 +225,25 @@ bu_db_erg() {
       | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
   fi;
   # Richtung: ZL gesetzt → lokal=Quelle, ssh ZL=Ziel; QL gesetzt → lokal=Ziel, ssh QL=Quelle
-  _bu_erg_sql_z() {  # $1 = SQL-Statement
+  # Quoting: \"$1\" damit SQL mit einfachen Anführungszeichen korrekt übertragen wird
+  _bu_erg_sql_z() {
     if [ -n "$ZL" ]; then
-      ssh "$ZL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e '$1'" 2>/dev/null;
+      ssh "$ZL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e \"$1\"" 2>/dev/null;
     else
       mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "$1" 2>/dev/null;
     fi;
   }
-  _bu_erg_sql_q() {  # $1 = SQL-Statement
+  _bu_erg_sql_q() {
     if [ -n "$QL" ]; then
-      ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e '$1'" 2>/dev/null;
+      ssh "$QL" "mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e \"$1\"" 2>/dev/null;
     elif [ -n "$ZL" ]; then
       mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "$1" 2>/dev/null;
     fi;
   }
-  printf "  %s%-16s%s | %s%-7s%s | %s%-8s%s | %s%-10s%s | %s%-10s%s | %-12s | %s%-20s%s | %s%s%s\n" \
-    "$blau" "Datenbank" "$reset" \
-    "$blau" "Tab Z" "$reset" \
-    "$blau" "Tab Q" "$reset" \
-    "$blau" "~Zeilen Z" "$reset" \
-    "$blau" "~Zeilen Q" "$reset" \
-    "Zeitfeld" \
-    "$blau" "MAX Ziel" "$reset" \
-    "$blau" "MAX Quelle" "$reset";
-  printf "  %s\n" "$(printf '─%.0s' {1..110})";
+  # Kopfzeile: $blau/$reset in Formatstring, nicht als %s-Argument
+  printf "  ${blau}%-16s | %-7s | %-8s | %-10s | %-10s | %-12s | %-20s | %s${reset}\n" \
+    "Datenbank" "Tab Z" "Tab Q" "~Zeilen Z" "~Zeilen Q" "Zeitfeld" "MAX Ziel" "MAX Quelle";
+  printf "  %110s\n" | tr ' ' '─';
   for _db in $_bu_dbs; do
     case $_db in information_schema|performance_schema|sys|mysql) continue;; esac;
     _sql_tabs="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
@@ -267,14 +262,10 @@ bu_db_erg() {
       _ts_q=$(_bu_erg_sql_q "$_sql_ts");
       [ -z "$_ts_q" ] && continue;
       _col="$_tbl.$_feld"; break;
-    done < <(_bu_erg_sql_z "SELECT CONCAT(c.table_name,'.',c.column_name) \
-        FROM information_schema.columns c \
-        WHERE c.table_schema='$_db' \
-          AND c.column_name REGEXP 'zeit|time|datum' \
-          AND c.data_type IN ('datetime','timestamp','date') \
-        ORDER BY c.table_name, c.ordinal_position;");
+    done < <(_bu_erg_sql_z \
+      "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c WHERE c.table_schema='$_db' AND c.column_name REGEXP 'zeit|time|datum' AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
     if [ -n "$_col" ]; then
-      printf "  %-16s | %-7s | %-8s | %-10s | %-10s | %-12s | %-20s | %s\n" \
+      printf "  %-16s | %-7s | %-8s | %-10s | %-10s | ${blau}%-12s${reset} | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
         "${_rows_z:--}" "${_rows_q:--}" \
         "${_col##*.}" "${_ts_z:--}" "${_ts_q:--}";
@@ -283,7 +274,7 @@ bu_db_erg() {
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" "${_rows_z:--}" "${_rows_q:--}";
     fi;
   done;
-  printf "  %s\n" "$(printf '─%.0s' {1..110})";
+  printf "  %110s\n" | tr ' ' '─';
 } # bu_db_erg
 
 # Standalone-Aufruf via -dberg
