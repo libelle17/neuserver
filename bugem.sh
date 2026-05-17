@@ -570,6 +570,14 @@ kopieros() {
     if [ "$_sdq" = "$_sdz" ]; then
       # Schutzdatei identisch – Kopie durchführen:
 			ausf "$kopbef -avu ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
+			# /root/-Rechte auf Ziel wiederherstellen (rsync -a ändert sonst Eigentümer):
+			[ "$ZL" ] && eval "$zssh 'chown 0:0 /root; chmod 700 /root;
+			  [ -d /root/.ssh ] && { chown 0:0 /root/.ssh; chmod 700 /root/.ssh;
+			    chmod 600 /root/.ssh/* 2>/dev/null; }'"
+			[ -z "$ZL" -a -z "$QL" ] && {
+			  chown root:root /root; chmod 700 /root;
+			  [ -d /root/.ssh ] && { chown root:root -R /root/.ssh; chmod 700 /root/.ssh;
+			    chmod 600 /root/.ssh/* 2>/dev/null; }; };
     else
       printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
       return 1;

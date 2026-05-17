@@ -341,7 +341,10 @@ if [ -n "$VLM" ]; then
       _bu_awk_filter='
         /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
           db=$4; gsub(/`/,"",db);
-          printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr"
+          if (db != lastdb) {
+            printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr";
+            lastdb=db;
+          }
         }
         /^\-\- Table structure for table/ {
           tbl=$NF; gsub(/`/,"",tbl);
