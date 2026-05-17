@@ -266,7 +266,7 @@ bu_db_erg() {
       [ -z "$_ts_z" ] && _ts_z="-";
       _col="$_tbl.$_feld"; break;
     done < <(_bu_erg_sql_q \
-      "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c WHERE c.table_schema='$_db' /* AND c.column_name REGEXP 'zeit|time|datum|^tag$|' */ AND table_type='BASE TABLE'AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
+      "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c JOIN information_schema.tables t USING(TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME) WHERE c.table_schema='$_db' /* AND c.column_name REGEXP 'zeit|time|datum|^tag$|' */ AND t.table_type='BASE TABLE'AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
     if [ -n "$_col" ]; then
       printf "  %-16s | %-7s | %-8s | %-10s | %-10s | ${blau}%-12s${reset} | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
