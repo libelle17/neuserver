@@ -1366,6 +1366,49 @@ fragmpwd() {
   done;
 } # fragmpwd
 
+instmaria() {
+  # Installiert MariaDB-Server + Client + Bibliotheken
+  # Unterstützt anderes datadir: erst my.cnf anpassen, einmal starten,
+  # stoppen, Daten kopieren, wieder starten
+  printf "${blau}instmaria$reset()\n"
+  case $OSNR in
+    1|2|3) # Debian/Ubuntu/Mint
+      apt-get -y install apt-transport-https 2>/dev/null||true;
+      apt-get update && DEBIAN_FRONTEND=noninteractive \
+        apt-get --reinstall install -y mariadb-server 2>/dev/null||true;
+      # Zusatzpakete Debian
+      DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        mariadb-client mariadb-backup libmariadb3 2>/dev/null||true;;
+    8) # Arch/Manjaro
+      doinst mariadb;
+      mysql_install_db --user="$mysqlben" --basedir=/usr/ --ldata=/var/lib/mysql \
+        2>/dev/null||true;;
+    *) # openSUSE, Fedora, RHEL, Mandriva
+      doinst mariadb;
+      # Zusatzpakete rpm-basiert
+      for _pkg in mariadb-client mariadb-bench libmariadb3 libmariadb_plugins; do
+        eval "$instp $_pkg 2>/dev/null||true";
+      done;;
+  esac;
+  # bind-address auskommentieren (lokaler Zugriff + Netz), innodb_strict_mode aus
+  for _datei in /etc/mysql/mariadb.conf.d/50-server.cnf /etc/my.cnf; do
+    [ -f "$_datei" ] && sed -i.bak \
+      's/^\(bind-address.*\)/# \1/;/^sql_mode=/a innodb_strict_mode=OFF' \
+      "$_datei" 2>/dev/null||true;
+  done;
+  # mysql-Benutzer anlegen falls fehlend
+  id mysql >/dev/null 2>&1 || \
+    useradd -r -s /sbin/nologin -d /var/lib/mysql mysql 2>/dev/null||true;
+  # Dienst starten (Servicename je nach OS)
+  for _svc in mariadb mysql; do
+    systemctl enable "$_svc" 2>/dev/null && \
+    systemctl restart "$_svc" 2>/dev/null && break;
+  done;
+  # mysqlbef neu ermitteln nach Installation
+  mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
+  printf "${blau}instmaria$reset() fertig: mysqlbef=${blau}%s${reset}\n" "$mysqlbef"
+} # instmaria
+
 richtmariadbein() {
 	printf "${blau}richtmariadbein$reset()\n"
 	# Mariadb
@@ -2931,10 +2974,18 @@ dbinhalt() {
 #  pruefmroot;
   pd=$instvz/sqlprot.txt;
   [ "$verb" ]&&printf "obschreiben: $blau$obschreiben$reset, loscred: $blau$loscred$reset, Vergleichsdatei: $blau$pd$reset\n";
+  # MariaDB-Client installieren falls fehlend
+  mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null);
+  if [ -z "$mysqlbef" ]; then
+    printf "${blau}MariaDB-Client fehlt – installiere...${reset}\n";
+    instmaria;
+    mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
+  fi;
   datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);
 #  for dt in $(VZ=/DATA/sql;for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do ls $VZ/$db--*.sql -t|head -n1; done); do scp -p $dt linux8:/DATA/sql/; done
   [ "$verb" ]&&printf "datadir: $blau$datadir$reset\n";
-  [ "$datadir" ]&& chown mysql:mysql -R "$datadir";
+  # chown nur wenn mysql-Benutzer existiert (fehlt vor MariaDB-Installation):
+  [ "$datadir" ] && id mysql >/dev/null 2>&1 && chown mysql:mysql -R "$datadir" 2>/dev/null||true;
   # alle Rümpfe, jeden einmal
   for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do
     [ "$verb" ]&&printf "Untersuche $blau$db$reset: ";
@@ -2982,6 +3033,7 @@ dbinhalt() {
          sed -i.bak 's/ROW_FORMAT=FIXED//g' "$Q";
 #         ausf "mysql -u\"\$mroot\" -p\"\$mrpwd\" -hlocalhost <\"\$Q\""
 #         printf "Q: $blau$Q$reset;";
+         mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
          ausf "$mysqlbef --defaults-extra-file=~/.mysqlrpwd --init-command='SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;' --force -hlocalhost <\"$Q\"" "$blau" 1
          [ $ret = 0 ]&&{
            ausf "sed -i '/^\\($db=\\).*/{s//\\1$Zt/;:a;n;ba;q};\$a$db=$Zt' $pd"
