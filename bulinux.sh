@@ -335,7 +335,8 @@ if [ -n "$VLM" ]; then
         --routines --events --triggers \
         --single-transaction --skip-lock-tables --skip-add-locks --quick \
         --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry \
-        --add-drop-database";
+        --add-drop-database \
+        --init-command=\"SET SESSION net_write_timeout=3600; SET SESSION net_read_timeout=3600;\"";
       # ── awk-Filter (Fortschritt + DEFINER-Bereinigung) ───────────────
       _bu_awk_filter='
         /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
@@ -393,6 +394,7 @@ if [ -n "$VLM" ]; then
           printf "  Schreibe Dump nach ${blau}%s${reset} auf %s …\n" "$_bu_sqldump_f" "${QL:-lokal}";
           eval "$qssh 'mkdir -p \"$_bu_sqldump_dir\" && \
             mariadb-dump $_bu_dump_args \
+            --init-command=\\\"SET SESSION net_write_timeout=3600; SET SESSION net_read_timeout=3600;\\\" \
             --databases $(printf "%s " $_bu_dbs) > \"$_bu_sqldump_f\"'";
           if [ $? -eq 0 ]; then
             printf "  Importiere von ${blau}%s${reset} …\n" "$_bu_sqldump_f";
