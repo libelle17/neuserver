@@ -1399,6 +1399,21 @@ instmaria() {
   # mysql-Benutzer anlegen falls fehlend
   id mysql >/dev/null 2>&1 || \
     useradd -r -s /sbin/nologin -d /var/lib/mysql mysql 2>/dev/null||true;
+  # /etc/my.cnf aus neuserver-Vorlage kopieren falls fehlend
+  if [ ! -f /etc/my.cnf ]; then
+    if [ -f "$instvz/my.cnf" ]; then
+      cp -a "$instvz/my.cnf" /etc/my.cnf;
+      printf "${blau}/etc/my.cnf${reset} aus Vorlage erstellt\n";
+    else
+      mkdir -p /run/mysql;
+      printf "[mysqld]\ndatadir=/var/lib/mysql\nsocket=/run/mysql/mysql.sock\n\n[client]\nsocket=/run/mysql/mysql.sock\n" > /etc/my.cnf;
+      printf "${blau}/etc/my.cnf${reset} minimal erstellt\n";
+    fi;
+    chmod 644 /etc/my.cnf;
+    # SELinux-Kontext korrigieren (verhindert sonst Startzugriff)
+    restorecon /etc/my.cnf 2>/dev/null || chcon -t mysqld_etc_t /etc/my.cnf 2>/dev/null||true;
+  fi;
+  mkdir -p /run/mysql; chown mysql:mysql /run/mysql 2>/dev/null||true;
   # Dienst starten (Servicename je nach OS)
   for _svc in mariadb mysql; do
     systemctl enable "$_svc" 2>/dev/null && \
@@ -1455,6 +1470,7 @@ richtmariadbein() {
 		fi;
     backup /etc/my.cnf;
 		cp -an $instvz/my.cnf /etc/;
+           restorecon /etc/my.cnf 2>/dev/null || chcon -t mysqld_etc_t /etc/my.cnf 2>/dev/null||true;
     # datadir aus der lokalen Datei zurückübertragen
     [ -f /etc/my.cnf_0 ]&&{
       dad=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/p' /etc/my.cnf_0 2>/dev/null);
@@ -1481,12 +1497,15 @@ richtmariadbein() {
       ausf "$mysqlbef -u root -e\"SET PASSWORD FOR '$mroot'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
       ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO '$mroot'@'%' WITH GRANT OPTION\"" "${blau}";
       ausf "$mysqlbef -u root -e\"SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'localhost' = PASSWORD('$mrpwd')\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' WITH GRANT OPTION\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
-      ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";      
+      # 'mysql' als fester DB-Superuser nur anlegen wenn mroot != mysql (sonst Dopplung)
+      [ "$mroot" != "mysql" ] && {
+        ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'localhost' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+        ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'localhost' = PASSWORD('$mrpwd')\"" "${blau}";
+        ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'localhost' WITH GRANT OPTION\"" "${blau}";
+        ausf "$mysqlbef -u root -e\"CREATE USER IF NOT EXISTS 'mysql'@'%' IDENTIFIED BY '$mrpwd'\"" "${blau}";
+        ausf "$mysqlbef -u root -e\"SET PASSWORD FOR 'mysql'@'%' = PASSWORD('$mrpwd')\"" "${blau}";
+        ausf "$mysqlbef -u root -e\"GRANT ALL ON *.* TO 'mysql'@'%' WITH GRANT OPTION\"" "${blau}";
+      };
       ausf "$mysqlbef -u root -e\"FLUSH PRIVILEGES\"" "${blau}";
       test "$mpwd"||echo Bitte gleich Passwort für mysql-Benutzer "$musr" eingeben:
     $mysqlbef -u"$musr" -p"$mpwd" -e'\q' 2>/dev/null;
@@ -2977,9 +2996,28 @@ dbinhalt() {
   # MariaDB-Client installieren falls fehlend
   mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null);
   if [ -z "$mysqlbef" ]; then
-    printf "${blau}MariaDB-Client fehlt – installiere...${reset}\n";
+    printf "${blau}MariaDB fehlt – installiere und richte ein...${reset}\n";
     instmaria;
+    richtmariadbein;  # vollständige Einrichtung (Benutzer, my.cnf, Firewall)
     mysqlbef=$(which mariadb 2>/dev/null||which mysql 2>/dev/null||echo mysql);
+  fi;
+  # MariaDB-Dienst starten falls nicht aktiv
+  _db_laeuft=0;
+  for _svc in mariadb mysql; do
+    systemctl is-active "$_svc" >/dev/null 2>&1 && { _db_laeuft=1; break; };
+  done;
+  if [ "$_db_laeuft" = 0 ]; then
+    printf "${blau}MariaDB läuft nicht – starte Dienst...${reset}\n";
+    for _svc in mariadb mysql; do
+      systemctl enable "$_svc" 2>/dev/null||	rue;
+      systemctl start  "$_svc" 2>/dev/null && sleep 3 && {
+        systemctl is-active "$_svc" >/dev/null 2>&1 && { _db_laeuft=1; break; };
+      };
+    done;
+    [ "$_db_laeuft" = 0 ] && {
+      printf "${rot}MariaDB konnte nicht gestartet werden – prüfe: systemctl status mariadb${reset}\n";
+      return 1;
+    };
   fi;
   datadir=$(sed -n '/^[[:space:]]*datadir[[:space:]]*=/{s;.*=[[:space:]]*\(.*\);\1;p}' /etc/my.cnf);
 #  for dt in $(VZ=/DATA/sql;for db in $(find $VZ -maxdepth 1 -name "*--*.sql" -not -name "mysql--*" -not -name "information_schema--*" -not -name "performance_schema--*" -printf "%f\n"|sed 's/^\(.*\)--.*/\1/'|sort -u); do ls $VZ/$db--*.sql -t|head -n1; done); do scp -p $dt linux8:/DATA/sql/; done
@@ -3072,7 +3110,7 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;     # Laufwerke in fstab eintragen
  [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog; # Paketverwaltungs-Variablen setzen
  [ $obteil = 0 -o $obprog = 1 ]&&proginst;         # Programme installieren + Git-Repos klonen
- [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 ]&&richtmariadbein; # MariaDB einrichten
+ [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 -o $obmysqli = 1 ]&&richtmariadbein; # MariaDB einrichten
  [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;         # Samba konfigurieren
  [ $obteil = 0 -o $obmust = 1 ]&&musterserver;     # Dateien vom Musterserver kopieren
  [ "$obmustneu" = 1 ]&&musterserver neu;
