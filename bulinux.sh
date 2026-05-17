@@ -335,8 +335,7 @@ if [ -n "$VLM" ]; then
         --routines --events --triggers \
         --single-transaction --skip-lock-tables --skip-add-locks --quick \
         --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry \
-        --add-drop-database \
-        --init-command=\"SET SESSION net_write_timeout=3600; SET SESSION net_read_timeout=3600;\"";
+        --add-drop-database";
       # ── awk-Filter (Fortschritt + DEFINER-Bereinigung) ───────────────
       _bu_awk_filter='
         /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
@@ -362,6 +361,9 @@ if [ -n "$VLM" ]; then
           --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
       }
       if [ "$obecht" ]; then
+        # Timeouts auf Quell-Server erhöhen (gilt für alle folgenden Dump-Verbindungen)
+        eval "$qssh 'mariadb --defaults-extra-file=/root/.mysqlrpwd \
+          -e \"SET GLOBAL net_write_timeout=3600; SET GLOBAL net_read_timeout=3600;\"'"
         [ -z "$_bu_wh_max" ] && _bu_wh_max=5;
         _bu_wh_try=0; _bu_wh_ok=; _bu_wh_anzahl=0;
         while [ "$_bu_wh_try" -le "$_bu_wh_max" ]; do
@@ -397,7 +399,6 @@ if [ -n "$VLM" ]; then
           printf "  Schreibe Dump nach ${blau}%s${reset} auf %s …\n" "$_bu_sqldump_f" "${QL:-lokal}";
           eval "$qssh 'mkdir -p \"$_bu_sqldump_dir\" && \
             mariadb-dump $_bu_dump_args \
-            --init-command=\\\"SET SESSION net_write_timeout=3600; SET SESSION net_read_timeout=3600;\\\" \
             --databases $(printf "%s " $_bu_dbs) > \"$_bu_sqldump_f\"'";
           if [ $? -eq 0 ]; then
             printf "  Importiere von ${blau}%s${reset} …\n" "$_bu_sqldump_f";
