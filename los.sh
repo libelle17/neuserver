@@ -1835,14 +1835,19 @@ sambaconf() {
 	[ ! -f "$zusmbconf" -a -f "$muster" ]&&{ echo cp -ai "$muster" "$zusmbconf";cp -ai "$muster" "$zusmbconf";};
 	S2="$instvz/awksmbap.inc"; # Samba-Abschnitte, wird dann ein Include für awksmb.sh (s.u)
     # Pfade für hardcodierte Shares anlegen und SELinux-Kontext setzen
-  for pfad in /opt/turbomed /srv/www/htdocs /obslaeuft; do
+  for pfad in /opt/turbomed /obslaeuft; do
     if [ ! -d "$pfad" ]; then
       mkdir -p "$pfad"
       printf "Verzeichnis $blau$pfad$reset angelegt.\n"
     fi
-    semanage fcontext -a -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||true
+    semanage fcontext -a -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||\
+      semanage fcontext -m -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||true
     restorecon -Rv "$pfad" 2>/dev/null||true
   done
+  # /srv/www: Äquivalenzregel statt direktem Label (verhindert ValueError)
+  semanage fcontext -a -e /var/www /srv/www 2>/dev/null||\
+    semanage fcontext -m -e /var/www /srv/www 2>/dev/null||true
+  restorecon -Rv /srv/www 2>/dev/null||true
   awk -v z=0 '
     function drucke(s1,s2,avail) {
       printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
@@ -1897,6 +1902,19 @@ sambaconf() {
     }
    ' $ftb >$S2;
 	AWKPATH="$instvz" awk -f $instvz/awksmb.sh "$zusmbconf" >"$instvz/$smbconf";
+  # Interfaces: nur tatsächlich vorhandene Netzwerke eintragen
+  _ifaces=$(ip -o -4 addr show | awk '$3=="inet"{
+    split($4,a,"/");
+    cmd="python3 -c \"import ipaddress; "\
+         "print(str(ipaddress.ip_interface(\047"a[1]"/"a[2]"\047).network))\""
+    if ((cmd | getline net) > 0) printf net" "
+    close(cmd)
+  }' 2>/dev/null);
+  [ -n "$_ifaces" ] && {
+    sed -i "s|^\(\s*interfaces\s*=\).*|\1 $_ifaces|" "$instvz/$smbconf";
+    sed -i "s|^\(\s*hosts allow\s*=\).*|\1 127.0.0.1 $_ifaces|" "$instvz/$smbconf";
+    printf "Samba interfaces dynamisch: ${blau}%s${reset}\n" "$_ifaces";
+  };
 	firewall samba;
 
 	if ! diff -q "$instvz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
@@ -1907,11 +1925,23 @@ sambaconf() {
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
 	fi;
-  # SELinux-Kontexte für Samba-Logverzeichnis sicherstellen
-  # (update-samba-security-profile kann /var/log falsch labeln)
+  # SELinux-Kontexte für Samba sicherstellen
+  restorecon -Rv /etc/samba/ 2>/dev/null||true   # smb.conf braucht samba_etc_t
+  setsebool -P samba_enable_home_dirs on 2>/dev/null||true
+  setsebool -P samba_export_all_rw on 2>/dev/null||true
   chcon -R -t samba_log_t /var/log/samba/ 2>/dev/null||true
   chcon -t auditd_log_t /var/log/audit/ 2>/dev/null||true
   chcon -t auditd_log_t /var/log/audit/audit.log 2>/dev/null||true
+  # systemd Drop-In: ExecStartPre-Fehler von update-samba-security-profile
+  # nicht den Start von smbd blockieren lassen
+  _smb_dropin="/etc/systemd/system/smb.service.d"
+  mkdir -p "$_smb_dropin"
+  if [ ! -f "$_smb_dropin/ignore-pre-failure.conf" ]; then
+    printf "[Service]\nExecStartPre=\nExecStartPre=-/usr/share/samba/update-samba-security-profile\n" \
+      > "$_smb_dropin/ignore-pre-failure.conf"
+    systemctl daemon-reload
+    printf "smb.service Drop-In angelegt: ${blau}ExecStartPre=-${reset}\n"
+  fi
 } # sambaconf
 
 firewall() {
