@@ -17,7 +17,17 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   ZmD=;
 };
 [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
-[ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ] && [ -z "$obhilfe" ] && { printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+# -u: Richtung umkehren – QL und ZL tauschen
+if [ "$obumg" ]; then
+  _tmp_ql="$QL"; QL="${ZL}"; ZL="$_tmp_ql"; unset _tmp_ql;
+  # DtZ neu berechnen: basiert auf Zielrechner (ZL) statt buhost
+  _zielh="${ZL:-$buhost}";
+  case "$_zielh" in *3|*7|*8) DATAZIEL=DATA/DATA;; *) DATAZIEL=DATA;; esac;
+  DtZ=$DATAZIEL;
+fi;
+# Abort-Check: ohne -u braucht linux1 ein ZL; mit -u braucht es ein QL
+[ -z "$obumg" ] && [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ] && [ -z "$obhilfe" ] && { printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+[ "$obumg" ] && [ -z "$QL" ] && [ -z "$obhilfe" ] && { printf "${rot}Mit -u: Quellrechner fehlt (z.B. bulinux.sh -u -e linux0)$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 # -----------------------------------------------------------------------
 # Inkrementeller Modus (Standard) vs. Vollabgleich:
@@ -29,6 +39,10 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 [ "$obforce" ] && _bu_vollabgleich=1;
 if [ "$sdneu" ]; then
   printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
+elif [ "$obumg" ]; then
+  printf "${blau}Umgekehrt${reset} (-u): ${blau}%s${reset} → ${blau}%s${reset}" "${QL:-lokal}" "${ZL:-lokal}";
+  [ "$_bu_vollabgleich" ] && printf " (Vollabgleich)" || printf " (delta)";
+  printf "\n";
 elif [ "$_bu_vollabgleich" ]; then
   printf "${blau}Vollabgleich${reset} (-f)\n";
 elif [ "$obdberg" ]; then

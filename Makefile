@@ -478,6 +478,7 @@ shlist:
 		for D in $$(sed '/^#/d' "$$L");do \
 		  printf "$(SUDC)cp -au \""$$D"\" \""$$Z/"\"\n";\
 			$(SUDC)cp -au "$$D" "$$Z/";\
+ 			echo "$$D"|grep -qE '\.sh$$'&&$(SUDC)chmod +x "$$Z/$$D"||true;\
 			grep -qm1 "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
 		done;:
 
@@ -563,6 +564,7 @@ shziel:
             BNAME=$$(basename $$D);\
             printf " $${rot}$(SUDC)cp→mv $$D → $$Z/$$PF/$$BNAME; $$reset\n";\
             $(SUDC)cp -a $$D $$Z/$$PF/.$$BNAME.new && $(SUDC)mv $$Z/$$PF/.$$BNAME.new $$Z/$$PF/$$BNAME;\
+            echo "$$BNAME"|grep -qE '\.sh$$'&&$(SUDC)chmod +x "$$Z/$$PF/$$BNAME"||true;\
           };\
         fi;\
         ;;\
