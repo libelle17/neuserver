@@ -84,7 +84,8 @@ commandline() {
         dt2|-nur-dt2) obdt2=1;;           # nur /DATA-Verzeichnisse, keine DB
         db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
         wh|-wh) _bu_wh_max="${2:-5}"; shift;;
-        dberg|-dberg) obdberg=1;;  # nur DB-Ergebnisvergleich anzeigen  # DB-Dump Wiederholungen bei Verbindungsverlust
+        dberg|-dberg) obdberg=1;;  # nur DB-Ergebnisvergleich anzeigen
+        u|-u|-umg|-umgekehrt) obumg=1;;  # Richtung umkehren: Q↔Z  # DB-Dump Wiederholungen bei Verbindungsverlust
         z|-ziele) shift; ziele="$1";
           echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
         q|-quelle) shift; QL="$1";;
@@ -707,6 +708,7 @@ obkill=;
 obmehr=;
 obnv=;
 obhilfe=;
+obumg=;
 obdt=;
 obdt1=;
 obdt2=;
@@ -748,7 +750,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
   ;; *bulinux.sh)
     printf "%b\n" \
-    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-dt1|-dt2|-db|-dberg] [-e] [-f] [-v] [-wh [n]] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-dt1|-dt2|-db|-dberg] [-u] [-e] [-f] [-v] [-wh [n]] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
     " ${blau}Zielhost${reset}          Zielrechner (z.B. linux0, linux7); leer wenn lokal" \
     " ${blau}-dt${reset}               Dateitransfer (dt1+dt2); Datenbank wird ausgelassen" \
     " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
@@ -763,6 +765,7 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
+    " ${blau}-u${reset}                 Richtung umkehren: statt Q→Z wird Z→Q kopiert (z.B. Rückspiegelung)" \
     " ${blau}-wh [n]${reset}           bei Verbindungsverlust: bis zu n mal wiederholen (Standard: 5); ohne -wh: auch 5" \
     " ${blau}-dberg${reset}            nur Datenbankvergleich anzeigen (ohne Transfer); nutzbar nach Import zur Kontrolle" \
     " ${blau}-h / -? / --help${reset}  diese Hilfe anzeigen";
