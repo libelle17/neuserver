@@ -432,9 +432,9 @@ kopiermt() { # mit test
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
     [ $obaltgepr ]&&attr="av"||attr="avu";
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL" $dblau 1;
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4 $ergae$AUSSCHL" $dblau 1;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" $4 -$attr $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4 $ergae$AUSSCHL$reset\n";
     fi;
     ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'" "" "" 1;[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
@@ -632,18 +632,12 @@ kopieros() {
       return 1;
     fi;
   else
-    # Verzeichnis – --chmod=D0700 verhindert /root-Beschädigung
+    # Verzeichnis – --chmod=D0700 setzt /root-Rechte direkt, kein ControlMaster nötig
     if [ "$ZL" ]; then
-      kopiermt "root/$1" "root" "" \
-        "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" \
-        "" "" 1;
-      ssh "$ZL" \
-        'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' \
-        2>/dev/null || true;
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
+      ssh "$ZL" 'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
     else
-      kopiermt "root/$1" "root" "" \
-        "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" \
-        "" "" 1;
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
       chown root:root /root; chmod 700 /root;
       [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
         chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
