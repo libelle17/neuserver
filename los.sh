@@ -11,7 +11,7 @@
 #
 # Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
 #                 -mariai|-marianeu|-smb|-must|-fritz|-firebird|
-#                 -teamviewer|-remotepc|-ks|-kl|-knl|-vsftp|-cron|-v|-h]
+#                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
 #
 # Voraussetzungen:
@@ -104,7 +104,6 @@ commandline() {
   obfb=0; # Firebird
   obtv=0; # Teamviewer
   obrpc=0; # RemotePC Fernwartung
-  obvsftp=0; # vsftpd einrichten
   obkonfigsp=0; # Konfiguration sichern
   obkonfiglad=0; # Konfiguration laden
   obkonfignl=0; # Konfiguration neu laden
@@ -119,7 +118,7 @@ commandline() {
 			h|-h|-hilfe|-help|?|-?)
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
-				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-vsftp ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-host ][-prompt ][-mt ][-prog ][-turbomed ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-mus ][-fritz ][-firebird ][-teamviewer ][-v ][-h ]$reset\n";
 				printf "  $blau-bs$reset: richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset: verhindert Suspend/Hibernate/Bildschirmschoner\n";
         printf "  $blau-host$reset: richtet den Hostnahmen im LAN ein\n";
@@ -138,7 +137,6 @@ commandline() {
         printf "  $blau-firebird$reset: richtet firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
         printf "  ${blau}-remotepc${reset}: installiert und richtet RemotePC ein\n";
-        printf "  ${blau}-vsftp${reset}: richtet vsftpd-FTP-Server ein (PAM, Firewall, SELinux, passive Ports)\n";
         printf "  $blau-cron$reset: sichert/überträgt crontab vom Quellserver\n";
         printf "  $blau-ks$reset: sichert Konfigurationsdateien im eigenen Repository\n";
         printf "  $blau-kl$reset: lädt Konfigurationsdateien\n";
@@ -172,7 +170,6 @@ commandline() {
           firebird) obfb=1;;
           teamviewer) obtv=1;;
           remotepc|rpc) obrpc=1;;
-          vsftp) obvsftp=1;;
           cron) obcron=1;;
         esac;;
 		esac;
@@ -200,7 +197,6 @@ commandline() {
     [ "$obfb" = 1 ]&&     printf "obfb: ${blau}1$reset\n"
     [ "$obtv" = 1 ]&&     printf "obtv: ${blau}1$reset\n"
     [ "$obrpc" = 1 ]&&    printf "obrpc: ${blau}1$reset\n"
-    [ "$obvsftp" = 1 ]&&  printf "obvsftp: ${blau}1$reset\n"
     [ "$obkonfigsp" = 1 ]&&printf "obkonfigsp: ${blau}1$reset\n"
     [ "$obkonfiglad" = 1 ]&&printf "obkonfiglad: ${blau}1$reset\n"
     [ "$obkonfignl" = 1 ]&&printf "obkonfignl: ${blau}1$reset\n"
@@ -268,6 +264,25 @@ konfig_sichern() {
     rm -rf "$KVZB/offen/.vim";
     cp -a "$HOME/.vim" "$KVZB/offen/.vim";
     printf "gesichert (offen): ${blau}.vim/${reset}\n";
+  };
+
+  # /srv/www/htdocs – Webserver-Dateien (PHP-Scripts etc.):
+  [ -d /srv/www/htdocs ] && {
+    rm -rf "$KVZB/offen/srv_www_htdocs";
+    mkdir -p "$KVZB/offen/srv_www_htdocs";
+    # rsync mit Ausschlüssen: kein Papierkorb, keine Pid-Dateien, keine Laufzeitdaten
+    rsync -a --delete \
+      --exclude="Papierkorb/" \
+      --exclude="*,Pid_*.html" \
+      --exclude="zaehler.txt" \
+      --exclude="=\.*" \
+      /srv/www/htdocs/ "$KVZB/offen/srv_www_htdocs/" 2>/dev/null;
+    printf "gesichert (offen): ${blau}srv_www_htdocs/${reset}\n";
+  };
+  # /srv/www/phppwd.php – Passwortdatei für Webserver (offen, aber nur root lesbar):
+  [ -f /srv/www/phppwd.php ] && {
+    cp -a /srv/www/phppwd.php "$KVZB/offen/";
+    printf "gesichert (offen): ${blau}phppwd.php${reset}\n";
   };
 
   # KDE kcminputrc – unkritisch:
@@ -1906,16 +1921,9 @@ sambaconf() {
       mkdir -p "$pfad"
       printf "Verzeichnis $blau$pfad$reset angelegt.\n"
     fi
-    # Kontext nur setzen/korrigieren wenn noch nicht samba_share_t:
-    _ctx=$(ls -Zd "$pfad" 2>/dev/null|awk '{print $1}')
-    case "$_ctx" in
-      *samba_share_t*) printf "SELinux-Kontext bereits korrekt: $blau$pfad$reset\n";;
-      *)
-        semanage fcontext -a -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||\
-          semanage fcontext -m -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||true
-        restorecon -Rv "$pfad" 2>/dev/null||true
-        ;;
-    esac
+    semanage fcontext -a -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||\
+      semanage fcontext -m -t samba_share_t "${pfad}(/.*)?" 2>/dev/null||true
+    restorecon -Rv "$pfad" 2>/dev/null||true
   done
   # /srv/www: Äquivalenzregel statt direktem Label (verhindert ValueError)
   semanage fcontext -a -e /var/www /srv/www 2>/dev/null||\
@@ -1992,17 +2000,13 @@ sambaconf() {
 
 	if ! diff -q "$instvz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
-		cp "$instvz/$smbconf" "$zusmbconf";   # kein -a: SELinux-Kontext der Quelle NICHT übernehmen
-    chmod 644 "$zusmbconf";
+		cp -a "$instvz/$smbconf" "$zusmbconf";
     [ -f /etc/samba/smbusers ] || touch /etc/samba/smbusers;
-    # SELinux-Kontext korrigieren BEVOR die Dienste (neu) gestartet werden,
-    # damit smbd die Datei lesen darf (samba_etc_t statt admin_home_t):
-    restorecon -v /etc/samba/smb.conf 2>/dev/null||chcon -t samba_etc_t "$zusmbconf" 2>/dev/null||true
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
 	fi;
-  # SELinux-Kontexte für gesamtes /etc/samba/ sicherstellen
+  # SELinux-Kontexte für Samba sicherstellen
   restorecon -Rv /etc/samba/ 2>/dev/null||true   # smb.conf braucht samba_etc_t
   setsebool -P samba_enable_home_dirs on 2>/dev/null||true
   setsebool -P samba_export_all_rw on 2>/dev/null||true
@@ -2040,7 +2044,7 @@ firewall() {
 			imaps) p1=993/tcp;p2="-";p3="-";p4=imaps;;
 			pop3) p1=110/tcp;p2="-";p3="-";p4=pop3;p5=pop3;;
 			pop3s) p1=995/tcp;p2="-";p3="-";p4=pop3s;;
-			vsftp) p1="21/tcp";p2=ftpd_full_access;p3=ftpd_use_cifs;p4="21/tcp,20/tcp,30000-30100/tcp";p5=ftp;;
+			vsftp) p1="20,21,990,40000:50000/tcp";p2="-";p3="-";p4="20/tcp,21/tcp,10090-10100/tcp";p5=vsftp;;
 			mysql) p1=3306;p2=mysql_connect_any;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
 			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
 			turbomed) p1="6001/tcp";p2="-";p3="-";p4="6001/tcp";p5="6001/tcp";;
@@ -3002,113 +3006,6 @@ turbomed() {
 	fi;
 } # turbomed
 
-# ============================================================
-# richtvsftp() – vsftpd-FTP-Server einrichten
-#   - vsftpd installieren
-#   - vsftpd.conf: local_umask und passive Ports korrigieren
-#   - /etc/pam.d/vsftpd anlegen (ohne pam_faillock/pam_shells)
-#   - SELinux: vsftpd.conf-Kontext und FTP-Zielverzeichnis
-#   - Firewall: Port 21, 20, 30000-30100 freigeben
-#   - SELinux-Booleans: ftpd_full_access, ftpd_use_cifs
-#   - faillock-Sperre fuer FTP-User zuruecksetzen
-#   - vsftpd starten und aktivieren
-# ============================================================
-richtvsftp() {
-  printf "${dblau}richtvsftp${reset}()\n";
-  setzinstprog;
-  doinst vsftpd;
-
-  vscf=/etc/vsftpd.conf;
-
-  # 1) vsftpd.conf: local_umask und passive Ports korrigieren
-  backup "$vscf";
-  # local_umask=777 ergibt Dateien ohne Zugriffsrechte -> auf 022 setzen
-  if grep -q "^local_umask=777" "$vscf" 2>/dev/null; then
-    sed -i 's/^local_umask=777/local_umask=022/' "$vscf";
-    printf "local_umask: ${rot}777${reset} -> ${gruen}022${reset} korrigiert.\n";
-  fi;
-  grep -q "^local_umask" "$vscf" 2>/dev/null || echo "local_umask=022" >>"$vscf";
-  # Passive Ports 30000-30100 setzen
-  grep -q "^pasv_enable" "$vscf" 2>/dev/null || echo "pasv_enable=YES" >>"$vscf";
-  if grep -q "^pasv_min_port" "$vscf" 2>/dev/null; then
-    sed -i 's/^pasv_min_port=.*/pasv_min_port=30000/' "$vscf";
-  else
-    echo "pasv_min_port=30000" >>"$vscf";
-  fi;
-  if grep -q "^pasv_max_port" "$vscf" 2>/dev/null; then
-    sed -i 's/^pasv_max_port=.*/pasv_max_port=30100/' "$vscf";
-  else
-    echo "pasv_max_port=30100" >>"$vscf";
-  fi;
-  printf "Passive-Mode-Ports: ${blau}30000-30100${reset} gesetzt.\n";
-
-  # 2) PAM-Konfiguration anlegen/korrigieren
-  #    Ohne pam_faillock (sperrt bei Fehlversuchen) und pam_shells (blockiert
-  #    User ohne Standardshell). Beide Probleme traten bei openSUSE 16.0 auf.
-  pamd=/etc/pam.d/vsftpd;
-  [ -f /etc/ftpusers ] || touch /etc/ftpusers;
-  if [ ! -f "$pamd" ]; then
-    printf "#%%PAM-1.0\nauth     required    pam_listfile.so item=user sense=deny file=/etc/ftpusers onerr=succeed\nauth     required    pam_unix.so\naccount  required    pam_unix.so\nsession  required    pam_unix.so\n" >"$pamd";
-    printf "PAM-Konfiguration ${blau}$pamd${reset} neu angelegt.\n";
-  else
-    # pam_shells deaktivieren falls vorhanden
-    grep -q "pam_shells" "$pamd" 2>/dev/null && {
-      sed -i.bak 's/^auth.*pam_shells/#&/' "$pamd";
-      printf "pam_shells in ${blau}$pamd${reset} deaktiviert.\n";
-    };
-    # common-auth durch direktes pam_unix ersetzen (entfernt pam_faillock)
-    grep -q "include.*common-auth" "$pamd" 2>/dev/null && {
-      sed -i.bak 's/^auth.*include.*common-auth.*/auth     required    pam_unix.so/' "$pamd";
-      printf "pam_faillock in ${blau}$pamd${reset} durch pam_unix.so ersetzt.\n";
-    };
-    printf "PAM-Konfiguration ${blau}$pamd${reset} geprueft.\n";
-  fi;
-
-  # 3) SELinux: Kontext von vsftpd.conf auf etc_t setzen
-  #    (Fehler: admin_home_t wenn Datei aus /root/ kopiert wurde)
-  if which semanage >/dev/null 2>&1; then
-    semanage fcontext -a -t etc_t /etc/vsftpd.conf 2>/dev/null || \
-      semanage fcontext -m -t etc_t /etc/vsftpd.conf 2>/dev/null || true;
-    restorecon -v /etc/vsftpd.conf 2>/dev/null || true;
-    printf "SELinux-Kontext: ${blau}/etc/vsftpd.conf${reset} -> ${blau}etc_t${reset}\n";
-  fi;
-
-  # 4) SELinux: Kontext fuer FTP-Zielverzeichnis (aus local_root in vsftpd.conf)
-  ftproot=$(grep "^local_root=" "$vscf" 2>/dev/null | cut -d= -f2);
-  [ -z "$ftproot" ] && ftproot=/srv/ftp;
-  if [ -d "$ftproot" ] && which semanage >/dev/null 2>&1; then
-    semanage fcontext -a -t public_content_rw_t "${ftproot}(/.*)?" 2>/dev/null || \
-      semanage fcontext -m -t public_content_rw_t "${ftproot}(/.*)?" 2>/dev/null || true;
-    restorecon -Rv "$ftproot" 2>/dev/null || true;
-    printf "SELinux-Kontext: ${blau}$ftproot${reset} -> ${blau}public_content_rw_t${reset}\n";
-  else
-    printf "FTP-Zielverzeichnis ${blau}$ftproot${reset} nicht gefunden - SELinux-Kontext uebersprungen.\n";
-  fi;
-
-  # 5) Firewall und SELinux-Booleans (Port 21, 20, 30000-30100; ftpd_full_access, ftpd_use_cifs)
-  firewall vsftp;
-
-  # 6) faillock-Sperre fuer FTP-User zuruecksetzen (Schutz vor Login-Blockade)
-  if which faillock >/dev/null 2>&1; then
-    for u in vsftp ftp ftpuser; do
-      id "$u" >/dev/null 2>&1 && {
-        faillock --user "$u" --reset 2>/dev/null;
-        printf "faillock fuer ${blau}$u${reset} zurueckgesetzt.\n";
-      };
-    done;
-  fi;
-
-  # 7) vsftpd starten und aktivieren
-  systemctl enable vsftpd 2>/dev/null;
-  systemctl restart vsftpd;
-  ausf "systemctl is-active vsftpd";
-  [ "$resu" = "active" ] && \
-    printf "${gruen}vsftpd laeuft.${reset}\n" || \
-    printf "${rot}vsftpd nicht gestartet - bitte pruefen mit: journalctl -u vsftpd${reset}\n";
-
-  printf "${dblau}Ende richtvsftp${reset}()\n";
-} # richtvsftp
-
 dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset(), immer: $immer\n";
@@ -3241,7 +3138,6 @@ echo osnr: $OSNR;
  [ $obteil = 0 -o "$obcron" = 1 ]&&cron;           # crontab vom Quellserver übernehmen
  [ $obteil = 0 -o $obtm = 1 ]&&turbomed;           # Turbomed-Praxissoftware einrichten
  [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;        # RemotePC installieren
- [ $obteil = 0 -o "$obvsftp" = 1 ]&&richtvsftp;    # vsftpd einrichten
  [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;  # Konfiguration verschlüsselt sichern
  [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;   # Konfiguration laden (nur fehlende)
  [ $obkonfignl = 1 ]&&konfig_laden neu;               # Konfiguration laden (alles überschreiben)

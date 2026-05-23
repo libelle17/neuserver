@@ -615,7 +615,9 @@ kopieros() {
       # SSH-ControlMaster VOR rsync öffnen (bleibt auch bei kaputten /root-Rechten aktiv)
       _ctrl="/tmp/.kopieros_ctrl_${ZL}_$$";
       # ControlMaster öffnen (kein ControlPersist – explizit schließen nach Nutzung)
-      ssh -M -S "$_ctrl" -fN -o StrictHostKeyChecking=no "$ZL" 2>/dev/null;
+      # -N = kein Befehl, -f = Hintergrund; kein ControlPersist – wird sofort danach beendet
+      ssh -o ControlMaster=yes -o ControlPath="$_ctrl" -o ControlPersist=no \
+        -fN -o StrictHostKeyChecking=no "$ZL" 2>/dev/null || true;
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
       # Fix über bestehenden Socket – keine neue Authentifizierung nötig
       ssh -S "$_ctrl" "$ZL" \
