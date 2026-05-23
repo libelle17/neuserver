@@ -632,23 +632,18 @@ kopieros() {
       return 1;
     fi;
   else
-    # Verzeichnis – ControlMaster vor rsync etablieren, Fix über bestehenden Socket
+    # Verzeichnis – --chmod=D0700 verhindert /root-Beschädigung
     if [ "$ZL" ]; then
-      # SSH-ControlMaster VOR rsync öffnen (bleibt auch bei kaputten /root-Rechten aktiv)
-      _ctrl="/tmp/.kopieros_ctrl_${ZL}_$$";
-      # ControlMaster öffnen (kein ControlPersist – explizit schließen nach Nutzung)
-      # -N = kein Befehl, -f = Hintergrund; kein ControlPersist – wird sofort danach beendet
-      ssh -o ControlMaster=yes -o ControlPath="$_ctrl" -o ControlPersist=no \
-        -fN -o StrictHostKeyChecking=no "$ZL" 2>/dev/null || true;
-      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
-      # Fix über bestehenden Socket – keine neue Authentifizierung nötig
-      ssh -S "$_ctrl" "$ZL" \
-        "chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }" \
+      kopiermt "root/$1" "root" "" \
+        "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" \
+        "" "" 1;
+      ssh "$ZL" \
+        'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' \
         2>/dev/null || true;
-      # ControlMaster sofort schließen – verhindert spätere Passwort-Prompts
-      ssh -S "$_ctrl" -O exit "$ZL" 2>/dev/null || true;
     else
-      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
+      kopiermt "root/$1" "root" "" \
+        "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" \
+        "" "" 1;
       chown root:root /root; chmod 700 /root;
       [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
         chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
