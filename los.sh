@@ -279,12 +279,6 @@ konfig_sichern() {
       /srv/www/htdocs/ "$KVZB/offen/srv_www_htdocs/" 2>/dev/null;
     printf "gesichert (offen): ${blau}srv_www_htdocs/${reset}\n";
   };
-  # /srv/www/phppwd.php – Passwortdatei für Webserver (offen, aber nur root lesbar):
-  [ -f /srv/www/phppwd.php ] && {
-    cp -a /srv/www/phppwd.php "$KVZB/offen/";
-    printf "gesichert (offen): ${blau}phppwd.php${reset}\n";
-  };
-
   # KDE kcminputrc – unkritisch:
   [ -f "$HOME/.config/kcminputrc" ] && {
     mkdir -p "$KVZB/offen/config";
@@ -336,6 +330,12 @@ konfig_sichern() {
     done;
   done;
 
+  # /srv/www/phppwd.php – enthält Passwort:
+  [ -f /srv/www/phppwd.php ] && {
+    cp -a /srv/www/phppwd.php "$TMPDIR_KRYPT/";
+    printf "vorgemerkt (verschlüsselt): ${blau}phppwd.php${reset}\n";
+    geaendert=1;
+  };
   # Alles verschlüsseln:
   if [ "$geaendert" ]; then
     ARCHIV="$TMPDIR_KRYPT/konfig_sensibel.tar";
