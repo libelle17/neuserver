@@ -339,15 +339,16 @@ kopiermt() { # mit test
     fi;
 #    printf "${blau}$diffbef$reset\n"
     # SD-Inhalt von Quelle und Ziel separat holen – ermöglicht Fallunterscheidung
+    # stat statt cat: SD ist .doc (Binär mit Null-Bytes) → cat in $() schlägt fehl
     if [ "$QL" ]; then
-      _sdkmt_q=$(eval "ssh $QL cat \"/$QVos/$SD\" 2>/dev/null");
-      _sdkmt_z=$(cat "/$ZVos/$SD" 2>/dev/null);
+      _sdkmt_q=$(eval "ssh $QL stat -c \"%s %Y\" \"/$QVos/$SD\" 2>/dev/null");
+      _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
     elif [ "$ZL" ]; then
-      _sdkmt_q=$(cat "/$QVos/$SD" 2>/dev/null);
-      _sdkmt_z=$(eval "ssh $ZL cat \"/$ZVos/$SD\" 2>/dev/null");
+      _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
+      _sdkmt_z=$(eval "ssh $ZL stat -c \"%s %Y\" \"/$ZVos/$SD\" 2>/dev/null");
     else
-      _sdkmt_q=$(cat "/$QVos/$SD" 2>/dev/null);
-      _sdkmt_z=$(cat "/$ZVos/$SD" 2>/dev/null);
+      _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
+      _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
     fi;
     if [ -z "$_sdkmt_q" ]; then
       # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
