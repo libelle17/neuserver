@@ -309,6 +309,23 @@ bu_db_erg() {
 # ═══════════════════════════════════════════════════════════════════════
 if _bu_ob_db && [ -z "$sdneu" ]; then
   _bu_ts_db=$(date +%s); _bu_hdr "db  Beginn";
+  # ── Lock AUF linux1 (Quellrechner): verhindert parallele DB-Exporte
+  # von beliebigen Rechnern – Lock via $qssh = lokal oder ssh linux1
+  _bu_lockfile="/tmp/bulinux_db_${LINEINS}.lock";
+  _bu_lock_info_str="${USER:-root}@${HOSTNAME:-$(hostname)} pid=$$ $(date +'%Y-%m-%d %H:%M:%S')";
+  # Atomic: set -C (noclobber) schlägt fehl wenn Datei schon existiert
+  if ! eval "$qssh '( set -C; printf "%s" "$_bu_lock_info_str" > "$_bu_lockfile" ) 2>/dev/null'"; then
+    _bu_lock_info=$(eval "$qssh 'cat "$_bu_lockfile" 2>/dev/null'");
+    printf "${rot}DB-Export läuft bereits auf %s${reset} (Lock: ${blau}%s${reset})\n" \
+      "${QL:-lokal}" "$_bu_lockfile";
+    printf "Gestartet von: ${blau}%s${reset}\n" "$_bu_lock_info";
+    printf "${rot}DB-Abschnitt übersprungen.${reset} Lock manuell löschen: ${blau}%s rm %s${reset}\n" \
+      "${QL:+ssh $QL}" "$_bu_lockfile";
+    _bu_fehler=1;
+  else
+    # Lock erhalten – Cleanup-Funktion für trap und normales Ende
+    _bu_db_unlock() { eval "$qssh 'rm -f \"$_bu_lockfile\" 2>/dev/null'" 2>/dev/null||true; };
+    trap '_bu_db_unlock' EXIT INT TERM;
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf);
 [ "$obforce" ] && testdat= || testdat=ibdata1;
 
@@ -469,6 +486,8 @@ if [ -n "$VLM" ]; then
   fi;
 fi;
   _bu_ftr "db  Ende  " $_bu_ts_db;
+    _bu_db_unlock;  # Lock auf Quellrechner freigeben
+  fi; # else: Lock erhalten und DB-Block ausgeführt
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
