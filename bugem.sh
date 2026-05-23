@@ -245,9 +245,10 @@ kopiermt() { # mit test
           [ "$ok" ]&&printf "brauchte $blau$iru$reset Durchläufe;\n";
         fi; 
       }
-      while :; do # rausfinden, ob nicht ein linker Teil des Verzeichnispfades schon gemountet ist
+      while :; do # rausfinden, ob ein linker Teil des Pfades auf dem Quellrechner gemountet ist
         [ "$testz" ]||break;
-        findmnt "$testz" -n >/dev/null&&{ ok=1;break;}
+        # Wichtig: Prüfung auf dem REMOTE-Rechner (via $hsh), nicht lokal!
+        eval "$hsh 'findmnt \"$testz\" -n >/dev/null'" 2>/dev/null&&{ ok=1;break;}
         testz=${testz%/*};
       done;
       [[ $ismnt && ! $ok ]]&&while :; do # wenn nicht, dann schauen, was zu mounten ist # [ $ismnt -a ! $ok ] => !: binary operator expected
@@ -561,11 +562,19 @@ kopieros() {
     return 0;
   fi;
   if [ "$_ist_datei" ]; then
-    # Einzeldatei – Schutzdatei in ~ vergleichen (Größe + Timestamp):
-    _sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
-    _sdz=$(eval "$zssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
+    # Einzeldatei – Schutzdatei in ~ vergleichen (gecacht pro Session)
+    if [ -z "$_kopieros_sd_geprueft" ]; then
+      _kopieros_sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
+      _kopieros_sdz=$(eval "$zssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
+      _kopieros_sd_geprueft=1;
+      if [ -z "$_kopieros_sdq" ]; then
+        printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden – überspringe sensitive Dateien$reset\n";
+      elif [ "$_kopieros_sdq" != "$_kopieros_sdz" ]; then
+        printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_kopieros_sdq$reset / Z: $blau$_kopieros_sdz$reset) – sensitive Dateien werden übersprungen\n";
+      fi;
+    fi;
+    _sdq="$_kopieros_sdq"; _sdz="$_kopieros_sdz";
     if [ -z "$_sdq" ]; then
-      printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden – überspringe $blau$1$reset\n";
       return 1;
     fi;
     if [ "$_sdq" = "$_sdz" ]; then

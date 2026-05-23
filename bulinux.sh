@@ -266,21 +266,23 @@ bu_db_erg() {
     _sql_rows="SELECT COALESCE(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema='$_db' AND table_type='BASE TABLE';"
     _rows_z=$(_bu_erg_sql_z "$_sql_rows");
     _rows_q=$(_bu_erg_sql_q "$_sql_rows");
-    # Zeitfeld: erstes Feld mit aktuellem MAX auf Quell-Seite (Q); Z-Seite immer anzeigen
+    # Zeitfeld: erst mit 4-Wochen-Filter, Fallback ohne Filter
     _col=; _ts_z=; _ts_q=;
+    for _sql_ts_filter in \
+      "MAX($_feld) IS NOT NULL AND MAX($_feld) >= DATE_SUB(NOW(),INTERVAL 4 WEEK)" \
+      "MAX($_feld) IS NOT NULL"; do
     while IFS='.' read -r _tbl _feld; do
       [ -z "$_tbl" ] && continue;
-      _sql_ts="SELECT CASE WHEN MAX($_feld) IS NOT NULL AND MAX($_feld) >= DATE_SUB(NOW(),INTERVAL 4 WEEK) THEN MAX($_feld) END FROM $_db.$_tbl;"
+      _sql_ts="SELECT CASE WHEN $_sql_ts_filter THEN MAX($_feld) END FROM $_db.$_tbl;"
       _ts_q=$(_bu_erg_sql_q "$_sql_ts");
-      # Nur Q muss aktuell sein (Quelle = autoritativer Stand)
       { [ -z "$_ts_q" ] || [ "$_ts_q" = "NULL" ]; } && continue;
-      # Z immer anzeigen (kann älter sein – das ist der Vergleich)
       _ts_z=$(_bu_erg_sql_z "$_sql_ts");
-      [ "$_ts_z" = "NULL" ] && _ts_z="(älter 4W)";
+      [ "$_ts_z" = "NULL" ] && _ts_z="(alt)";
       [ -z "$_ts_z" ] && _ts_z="-";
-      _col="$_tbl.$_feld"; break;
+      _col="$_tbl.$_feld"; break 2;
     done < <(_bu_erg_sql_q \
       "SELECT CONCAT(c.table_name,'.',c.column_name) FROM information_schema.columns c JOIN information_schema.tables t USING(TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME) WHERE c.table_schema='$_db' /* AND c.column_name REGEXP 'zeit|time|datum|^tag$|' */ AND t.table_type='BASE TABLE'AND c.data_type IN ('datetime','timestamp','date') ORDER BY c.table_name, c.ordinal_position;");
+    done; # for _sql_ts_filter
     if [ -n "$_col" ]; then
       printf "  %-16s | %-7s | %-8s | %-10s | %-10s | ${blau}%-12s${reset} | %-20s | %s\n" \
         "$_db" "${_tabs_z:--}" "${_tabs_q:--}" \
@@ -354,9 +356,9 @@ if [ -n "$VLM" ]; then
       _bu_awk_filter='
         /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
           db=$4; gsub(/`/,"",db);
-          if (db != lastdb) {
+          if (!(db in seen)) {
             printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr";
-            lastdb=db;
+            seen[db] = 1;
           }
         }
         /^\-\- Table structure for table/ {
