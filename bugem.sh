@@ -338,12 +338,33 @@ kopiermt() { # mit test
       return 1;
     fi;
 #    printf "${blau}$diffbef$reset\n"
-    ausf "$diffbef" "" "" 1;
-    if [ $ret/ != 0/ ]; then
+    # SD-Inhalt von Quelle und Ziel separat holen – ermöglicht Fallunterscheidung
+    if [ "$QL" ]; then
+      _sdkmt_q=$(eval "ssh $QL cat \"/$QVos/$SD\" 2>/dev/null");
+      _sdkmt_z=$(cat "/$ZVos/$SD" 2>/dev/null);
+    elif [ "$ZL" ]; then
+      _sdkmt_q=$(cat "/$QVos/$SD" 2>/dev/null);
+      _sdkmt_z=$(eval "ssh $ZL cat \"/$ZVos/$SD\" 2>/dev/null");
+    else
+      _sdkmt_q=$(cat "/$QVos/$SD" 2>/dev/null);
+      _sdkmt_z=$(cat "/$ZVos/$SD" 2>/dev/null);
+    fi;
+    if [ -z "$_sdkmt_q" ]; then
+      # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
-      printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n"
+      printf "${rot}Schutzdatei /$QVos/$SD auf Quelle nicht gefunden${reset} – überspringe $blau/$QVos$reset\n";
       return 1;
-    fi
+    elif [ -z "$_sdkmt_z" ]; then
+      # b) SD fehlt auf Ziel – frisches/neues Ziel, Kopie erlaubt
+      printf "${blau}Schutzdatei /$ZVos/$SD auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
+      # kein return 1 – Kopie wird fortgesetzt
+    elif [ "$_sdkmt_q" != "$_sdkmt_z" ]; then
+      # c) Beide vorhanden, aber verschieden
+      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
+      printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
+      return 1;
+    fi;
+    # SD identisch oder Ziel frisch → weiter
   }
   if [ "$7" -o \( -z "$QL" -a -z "$ZL" \) ]; then
   # keine Platzprüfung
