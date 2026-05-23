@@ -593,8 +593,27 @@ kopieros() {
       return 1;
     fi;
   else
-    # Verzeichnis – bisheriges Verhalten mit kopiermt:
-    kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
+    # Verzeichnis – Pull-Modus: rsync läuft AUF dem Ziel, Rechtekorrektur in gleicher Session
+    if [ "$ZL" ]; then
+      # Quellrechner ermitteln: QL gesetzt = Remote-Quelle, sonst buhost
+      _kopieros_src="${QL:-$buhost}";
+      # Einzige SSH-Session: rsync zieht Daten, dann sofort chown/chmod
+      eval "$zssh 'ionice -c2 nice -n10 rsync --rsh=ssh -avu
+        --no-owner --no-group --no-perms
+        --rsync-path="ionice -c2 nice -n10 rsync"
+        --exclude=".*.swp" --exclude={Papierkorb/}
+        "\"${_kopieros_src}:/root/$1/\"" /root/
+        ; chown root:root /root; chmod 700 /root;
+        [ -d /root/.ssh ] && { chown root:root /root/.ssh;
+          chmod 700 /root/.ssh;
+          chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }'";
+    else
+      # Lokal: kopiermt + direkte Korrektur
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
+      chown root:root /root; chmod 700 /root;
+      [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
+        chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
+    fi;
   fi;
 }
 
