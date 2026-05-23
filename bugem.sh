@@ -594,7 +594,7 @@ kopieros() {
     fi;
   else
     # Verzeichnis – bisheriges Verhalten mit kopiermt:
-    kopiermt "root/$1" "root" "" "--no-owner --no-group --exclude='.*.swp'" "" "" 1;
+    kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
   fi;
 }
 
