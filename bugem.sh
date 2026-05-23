@@ -593,15 +593,17 @@ kopieros() {
       return 1;
     fi;
   else
-    # Verzeichnis – Pull-Modus in einer SSH-Session: rsync + chown auf Ziel
+    # Verzeichnis – ControlMaster vor rsync etablieren, Fix über bestehenden Socket
     if [ "$ZL" ]; then
-      _kopieros_src="${QL:-$buhost}";
-      # Einzeiliger Command-String – kein eval-Zeilenumbruch-Problem
-      _kopieros_cmd="ionice -c2 nice -n10 rsync --rsh=ssh -avu --no-owner --no-group --no-perms --rsync-path='ionice -c2 nice -n10 rsync' --exclude='.*.swp' --exclude={Papierkorb/} ${_kopieros_src}:/root/${1%/}/ /root/; chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }";
-      printf "${dblau}ssh %s: %s${reset}\n" "$ZL" "$_kopieros_cmd";
-      [ "$obecht" ] && ssh "$ZL" "$_kopieros_cmd";
+      # SSH-ControlMaster VOR rsync öffnen (bleibt auch bei kaputten /root-Rechten aktiv)
+      _ctrl="/tmp/.kopieros_ctrl_${ZL}";
+      ssh -M -S "$_ctrl" -fN -o ControlPersist=60s -o StrictHostKeyChecking=no "$ZL" 2>/dev/null;
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
+      # Fix über bestehenden ControlMaster – braucht keine neue Authentifizierung
+      ssh -S "$_ctrl" "$ZL" \
+        "chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }" \
+        2>/dev/null || true;
     else
-      # Lokal: kopiermt + direkte Korrektur
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
       chown root:root /root; chmod 700 /root;
       [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
