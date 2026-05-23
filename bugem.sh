@@ -568,17 +568,34 @@ kopieros() {
       _kopieros_sdz=$(eval "$zssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
       _kopieros_sd_geprueft=1;
       if [ -z "$_kopieros_sdq" ]; then
-        printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden – überspringe sensitive Dateien$reset\n";
+        # a) Fehlt auf Quelle
+        printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden${reset} – sensitive Dateien werden übersprungen\n";
+      elif [ -z "$_kopieros_sdz" ]; then
+        # b) Fehlt auf Ziel – wird bei erster Datei ausgegeben (s.u.), hier kein Fehler
+        true;
       elif [ "$_kopieros_sdq" != "$_kopieros_sdz" ]; then
-        printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_kopieros_sdq$reset / Z: $blau$_kopieros_sdz$reset) – sensitive Dateien werden übersprungen\n";
+        # c) Beide vorhanden, verschieden
+        printf "${rot}Schutzdatei in ~ verschieden${reset} (Q: $blau$_kopieros_sdq$reset / Z: $blau$_kopieros_sdz$reset) – sensitive Dateien werden übersprungen\n";
       fi;
     fi;
     _sdq="$_kopieros_sdq"; _sdz="$_kopieros_sdz";
     if [ -z "$_sdq" ]; then
-      return 1;
+      # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
+      return 1;  # Meldung bereits in Cache-Block ausgegeben
     fi;
-    if [ "$_sdq" = "$_sdz" ]; then
-      # Schutzdatei identisch – Kopie durchführen:
+    if [ -z "$_sdz" ]; then
+      # b) SD fehlt auf Ziel – Ziel frisch/neu, Kopie trotzdem erlaubt
+      if [ -z "$_kopieros_sd_geprueft_b" ]; then
+        printf "${blau}Schutzdatei /root/$SD auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
+        _kopieros_sd_geprueft_b=1;
+      fi;
+      # SD fehlt auf Ziel → Kopie erlaubt (kein return 1)
+    elif [ "$_sdq" != "$_sdz" ]; then
+      # c) Beide vorhanden aber verschieden – gecachte Meldung reicht
+      return 1;  # Meldung bereits in Cache-Block ausgegeben
+    fi;
+    if [ "$_sdq" = "$_sdz" ] || [ -z "$_sdz" ]; then
+      # Schutzdatei identisch (oder Ziel frisch) – Kopie durchführen:
 			ausf "$kopbef -avu --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
 			# .ssh-Rechte auf Ziel absichern (SSH-Key-Auth darf nicht brechen):
 			# /root Eigentümer + Rechte wiederherstellen (rsync kann sie verändern)
@@ -596,13 +613,16 @@ kopieros() {
     # Verzeichnis – ControlMaster vor rsync etablieren, Fix über bestehenden Socket
     if [ "$ZL" ]; then
       # SSH-ControlMaster VOR rsync öffnen (bleibt auch bei kaputten /root-Rechten aktiv)
-      _ctrl="/tmp/.kopieros_ctrl_${ZL}";
-      ssh -M -S "$_ctrl" -fN -o ControlPersist=60s -o StrictHostKeyChecking=no "$ZL" 2>/dev/null;
+      _ctrl="/tmp/.kopieros_ctrl_${ZL}_$$";
+      # ControlMaster öffnen (kein ControlPersist – explizit schließen nach Nutzung)
+      ssh -M -S "$_ctrl" -fN -o StrictHostKeyChecking=no "$ZL" 2>/dev/null;
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
-      # Fix über bestehenden ControlMaster – braucht keine neue Authentifizierung
+      # Fix über bestehenden Socket – keine neue Authentifizierung nötig
       ssh -S "$_ctrl" "$ZL" \
         "chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }" \
         2>/dev/null || true;
+      # ControlMaster sofort schließen – verhindert spätere Passwort-Prompts
+      ssh -S "$_ctrl" -O exit "$ZL" 2>/dev/null || true;
     else
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --exclude='.*.swp'" "" "" 1;
       chown root:root /root; chmod 700 /root;
