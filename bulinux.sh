@@ -317,10 +317,15 @@ if [ -n "$VLM" ]; then
   _bu_ver_q=$(eval "$qssh \
     'mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null'" 2>/dev/null \
     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
-  _bu_ver_z=$(mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null \
-    | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
-  printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (lokal): " \
-    "${_bu_ver_q:-unbekannt}" "${QL:-lokal}" "${_bu_ver_z:-unbekannt}";
+  if [ -n "$ZL" ]; then
+    _bu_ver_z=$(ssh "$ZL" "mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null" 2>/dev/null \
+      | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
+  else
+    _bu_ver_z=$(mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null \
+      | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
+  fi;
+  printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (%s): " \
+    "${_bu_ver_q:-unbekannt}" "${QL:-lokal}" "${_bu_ver_z:-unbekannt}" "${ZL:-lokal}";
 
   if [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
     # ── Gleiche Version: schneller datadir-Sync ────────────────────────
@@ -376,10 +381,15 @@ if [ -n "$VLM" ]; then
         }
         { gsub(/ DEFINER=`[^`]*`@`[^`]*`/, ""); gsub(/ SQL SECURITY DEFINER/, ""); print }
       ';
-      # ── mariadb Import-Funktion (Funktion statt Variable → kein Wordsplit-Problem) ──
+      # ── mariadb Import-Funktion – ZL=remote oder lokal ──────────────────
       _bu_mariadb_import() {
-        mariadb --defaults-extra-file=/root/.mysqlrpwd \
-          --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
+        if [ -n "$ZL" ]; then
+          ssh "$ZL" "mariadb --defaults-extra-file=/root/.mysqlrpwd --force \
+            --init-command='SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;'";
+        else
+          mariadb --defaults-extra-file=/root/.mysqlrpwd --force \
+            --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
+        fi;
       }
       if [ "$obecht" ]; then
         # Timeouts auf Quell-Server erhöhen (gilt für alle folgenden Dump-Verbindungen)
@@ -390,10 +400,19 @@ if [ -n "$VLM" ]; then
         while [ "$_bu_wh_try" -le "$_bu_wh_max" ]; do
           [ "$_bu_wh_try" -gt 0 ] && printf "${blau}DB-Dump Wiederholung %s/%s …${reset}\n" "$_bu_wh_try" "$_bu_wh_max";
           set -o pipefail;
-          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
-            "mariadb-dump $_bu_dump_args --databases $(printf '%s ' $_bu_dbs)" \
-          | awk "$_bu_awk_filter" \
-          | _bu_mariadb_import;
+          if [ -n "$ZL" ]; then
+            # Von linux1 (lokal) nach linux7 (remote): lokal dumpen, remote importieren
+            mariadb-dump $_bu_dump_args \
+              --databases $(printf '%s ' $_bu_dbs) \
+            | awk "$_bu_awk_filter" \
+            | _bu_mariadb_import;
+          else
+            # Von linux0/linux7 (lokal) nach linux1 (Quelle via SSH): remote dumpen, lokal importieren
+            ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$QL" \
+              "mariadb-dump $_bu_dump_args --databases $(printf '%s ' $_bu_dbs)" \
+            | awk "$_bu_awk_filter" \
+            | _bu_mariadb_import;
+          fi;
           _bu_ps=("${PIPESTATUS[@]}"); set +o pipefail;
           if { [ "${_bu_ps[0]}" = 0 ] || [ "${_bu_ps[0]}" = 2 ]; } \
                && [ "${_bu_ps[1]}" = 0 ] && [ "${_bu_ps[2]}" = 0 ]; then
@@ -418,9 +437,15 @@ if [ -n "$VLM" ]; then
           _bu_sqldump_f="$_bu_sqldump_dir/dump_$(date +%Y%m%d_%H%M%S).sql";
           printf "${rot}Pipe-Import fehlgeschlagen – Fallback: Dump-Datei${reset}\n";
           printf "  Schreibe Dump nach ${blau}%s${reset} auf %s …\n" "$_bu_sqldump_f" "${QL:-lokal}";
-          eval "$qssh 'mkdir -p \"$_bu_sqldump_dir\" && \
-            mariadb-dump $_bu_dump_args \
-            --databases $(printf "%s " $_bu_dbs) > \"$_bu_sqldump_f\"'";
+          if [ -n "$ZL" ]; then
+            mkdir -p "$_bu_sqldump_dir" && \
+              mariadb-dump $_bu_dump_args \
+                --databases $(printf "%s " $_bu_dbs) > "$_bu_sqldump_f";
+          else
+            eval "$qssh 'mkdir -p \"$_bu_sqldump_dir\" && \
+              mariadb-dump $_bu_dump_args \
+              --databases $(printf "%s " $_bu_dbs) > \"$_bu_sqldump_f\"'";
+          fi;
           if [ $? -eq 0 ]; then
             printf "  Importiere von ${blau}%s${reset} …\n" "$_bu_sqldump_f";
             eval "$qssh 'cat \"$_bu_sqldump_f\"'" \
