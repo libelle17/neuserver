@@ -339,13 +339,13 @@ kopiermt() { # mit test
     fi;
 #    printf "${blau}$diffbef$reset\n"
     # SD-Inhalt von Quelle und Ziel separat holen – ermöglicht Fallunterscheidung
-    # stat statt cat: SD ist .doc (Binär mit Null-Bytes) → cat in $() schlägt fehl
+    # stat statt cat: SD ist .doc (Binär) – ssh mit korrektem Quoting
     if [ "$QL" ]; then
-      _sdkmt_q=$(eval "ssh $QL stat -c \"%s %Y\" \"/$QVos/$SD\" 2>/dev/null");
+      _sdkmt_q=$(ssh "$QL" "stat -c \"%s %Y\" \"/$QVos/$SD\" 2>/dev/null");
       _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
     elif [ "$ZL" ]; then
       _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
-      _sdkmt_z=$(eval "ssh $ZL stat -c \"%s %Y\" \"/$ZVos/$SD\" 2>/dev/null");
+      _sdkmt_z=$(ssh "$ZL" "stat -c \"%s %Y\" \"/$ZVos/$SD\" 2>/dev/null");
     else
       _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
       _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
@@ -360,7 +360,7 @@ kopiermt() { # mit test
       printf "${blau}Schutzdatei /$ZVos/$SD auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
       # kein return 1 – Kopie wird fortgesetzt
     elif [ "$_sdkmt_q" != "$_sdkmt_z" ]; then
-      # c) Beide vorhanden, aber verschieden
+      # c) Beide vorhanden, aber verschieden – immer blockieren
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
       return 1;
@@ -596,7 +596,7 @@ kopieros() {
         # b) Fehlt auf Ziel – wird bei erster Datei ausgegeben (s.u.), hier kein Fehler
         true;
       elif [ "$_kopieros_sdq" != "$_kopieros_sdz" ]; then
-        # c) Beide vorhanden, verschieden
+        # c) Beide vorhanden, verschieden – immer blockieren
         printf "${rot}Schutzdatei in ~ verschieden${reset} (Q: $blau$_kopieros_sdq$reset / Z: $blau$_kopieros_sdz$reset) – sensitive Dateien werden übersprungen\n";
       fi;
     fi;
