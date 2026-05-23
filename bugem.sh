@@ -581,10 +581,12 @@ kopieros() {
       # Schutzdatei identisch – Kopie durchführen:
 			ausf "$kopbef -avu --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
 			# .ssh-Rechte auf Ziel absichern (SSH-Key-Auth darf nicht brechen):
+			# /root Eigentümer + Rechte wiederherstellen (rsync kann sie verändern)
 			if [ "$ZL" ]; then
-			  eval "$zssh 'chmod 700 /root; [ -d /root/.ssh ] && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys 2>/dev/null'";
+			  eval "$zssh 'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }'";
 			else
-			  chmod 700 /root; [ -d /root/.ssh ] && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys 2>/dev/null;
+			  chown root:root /root; chmod 700 /root;
+			  [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
 			fi;
     else
       printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
@@ -592,7 +594,7 @@ kopieros() {
     fi;
   else
     # Verzeichnis – bisheriges Verhalten mit kopiermt:
-    kopiermt "root/$1" "root" "" "--exclude='.*.swp'" "" "" 1;
+    kopiermt "root/$1" "root" "" "--no-owner --no-group --exclude='.*.swp'" "" "" 1;
   fi;
 }
 
