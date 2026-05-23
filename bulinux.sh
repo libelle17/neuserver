@@ -49,14 +49,17 @@ elif [ "$obdberg" ]; then
   printf "${blau}Datenbankvergleich${reset} (-dberg)\n";
 elif [ "$obdb" ] && [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; then
   printf "${blau}Nur Datenbank${reset} (-db)\n";
-elif [ "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdb" ]; then
-  printf "${blau}Nur Konfigdateien+MO${reset} (-dt1)\n";
-elif [ "$obdt2" ] && [ -z "$obdt1" ] && [ -z "$obdb" ]; then
-  printf "${blau}Nur /DATA${reset} (-dt2)\n";
+elif [ "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdt3" ] && [ -z "$obdb" ]; then
+  printf "${blau}Nur Konfigdateien${reset} (-dt1)\n";
+elif [ "$obdt2" ] && [ -z "$obdt1" ] && [ -z "$obdt3" ] && [ -z "$obdb" ]; then
+  printf "${blau}Nur Windows-Shares${reset} (-dt2)\n";
+elif [ "$obdt3" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdb" ]; then
+  printf "${blau}Nur /DATA${reset} (-dt3)\n";
 else
   printf "${blau}Inkrementeller Abgleich${reset} (delta";
   [ "$obdt1" ] && printf ", dt1";
   [ "$obdt2" ] && printf ", dt2";
+  [ "$obdt3" ] && printf ", dt3";
   [ "$obdb" ]  && printf ", db";
   printf ")\n";
 fi;
@@ -72,12 +75,14 @@ _bu_ftr() { printf "${blau}── %s: %s  Dauer: %s ────${reset}\n" "$1"
 bukopierfn() { [ "$_bu_vollabgleich" ] && kopiermt "$@" || kopiermt_delta "$@"; }
 # -----------------------------------------------------------------------
 # dt1-Block: Konfigdateien + MO (nicht DATA)
-_bu_ob_dt1() { [ -z "$obdberg" ] && { [ -n "$obdt1" ] || { [ -z "$obdb" ] && [ -z "$obdt2" ]; }; }; }
-# dt2-Block: /DATA-Verzeichnisse
-_bu_ob_dt2() { [ -z "$obdberg" ] && { [ -n "$obdt2" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ]; }; }; }
-# db-Block: Datenbank
-_bu_ob_db()  { [ -n "$obdb"  ] || { [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; }; }
-if _bu_ob_dt1; then  # dt1: Konfigdateien + MO
+# dt1-Block: Konfigdateien
+_bu_ob_dt1() { [ -z "$obdberg" ] && { [ -n "$obdt1" ] || { [ -z "$obdb" ] && [ -z "$obdt2" ] && [ -z "$obdt3" ]; }; }; }
+# dt2-Block: Windows-Shares (/mnt/wser, /mnt/anmmw)
+_bu_ob_dt2() { [ -z "$obdberg" ] && { [ -n "$obdt2" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ] && [ -z "$obdt3" ]; }; }; }
+# dt3-Block: /DATA-Verzeichnisse
+_bu_ob_dt3() { [ -z "$obdberg" ] && { [ -n "$obdt3" ] || { [ -z "$obdb" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ]; }; }; }
+_bu_ob_db()  { [ -n "$obdb"  ] || { [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$obdt2" ] && [ -z "$obdt3" ]; }; }
+if _bu_ob_dt1; then  # dt1: Konfigdateien
   _bu_ts_dt1=$(date +%s); _bu_hdr "dt1 Beginn";
 # auf Rechner mit kleinen Platten weniger kopieren
 case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
@@ -107,8 +112,6 @@ kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
   kopiermt "etc/postfix/$D" ... "" "" "" "" 1
 done;
-# Webserver-Dateien (PHP-Scripts, Konfiguration) – ohne Papierkorb und Pid-Dateien
-kopiermt "srv/www/htdocs" ... ",Papierkorb/" "--exclude='*,Pid_*.html'" "" "" 1
 # selbst erstellte Scripte
 V=/root/bin/;
 altverb=$verb;
@@ -134,8 +137,10 @@ ausf "$zssh 'mountpoint -q /$DtZ||{ mountpoint -q /$Dt||mount /$Dt;}'" $blau;
 # falls die gemountet sind ...
 if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
-	_bu_ob_dt1 && {
-	  # dt1-B: MO-Daten (von Windows-Share, nicht /DATA)
+	_bu_ob_dt1 && _bu_ftr "dt1 Ende  " $_bu_ts_dt1;
+	_bu_ob_dt2 && { _bu_ts_dt2=$(date +%s); _bu_hdr "dt2 Beginn"; };
+	_bu_ob_dt2 && {
+	  # dt2: Windows-Shares (/mnt/wser, /mnt/anmmw)
     mountpoint -q /mnt/wser/mosich||mount /mnt/wser/mosich
     mountpoint -q /mnt/wser/mosich&&{
       mouvz=$(find /mnt/wser/mosich -maxdepth 1 -name "2*" -type d | sort -r | head -1);
@@ -160,9 +165,9 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
 	if ssh linux1 mountpoint -q /mnt/anmmw; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
 	fi;
-	}; # Ende dt1-B MO
-	_bu_ob_dt1 && _bu_ftr "dt1 Ende  " $_bu_ts_dt1;
-	_bu_ob_dt2 && { _bu_ts_dt2=$(date +%s); _bu_hdr "dt2 Beginn"; };
+	}; # Ende dt2 Windows-Shares
+	_bu_ob_dt2 && _bu_ftr "dt2 Ende  " $_bu_ts_dt2;
+	_bu_ob_dt3 && { _bu_ts_dt3=$(date +%s); _bu_hdr "dt3 Beginn"; };
 # kopiermt() { # mit test
   # $1 = Verzeichnis auf Quelle
   # $2 = Verzeichnis auf Ziel
@@ -175,7 +180,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
 #  ... dann Mail-Verzeichisse kopieren,
- if _bu_ob_dt2; then
+ if _bu_ob_dt3; then
 # for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
  for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
   if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
@@ -217,8 +222,8 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
- fi; # _bu_ob_dt2 Mail+DATA
- _bu_ob_dt2 && _bu_ftr "dt2 Ende  " $_bu_ts_dt2;
+ fi; # _bu_ob_dt3 Mail+DATA
+ _bu_ob_dt3 && _bu_ftr "dt3 Ende  " $_bu_ts_dt3;
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
 # -----------------------------------------------------------------------
 # MariaDB-Synchronisation

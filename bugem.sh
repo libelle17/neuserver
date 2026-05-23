@@ -80,8 +80,9 @@ commandline() {
         nz|-nurzweidrei) nurzweidrei=1;;
         v|-verbose) verb=1;;
         dt|-nurdt|-nur-dateien) obdt=1;;  # Dateitransfer (dt1+dt2), keine DB
-        dt1|-nur-dt1) obdt1=1;;           # nur Konfigdateien+MO, keine DATA, keine DB
-        dt2|-nur-dt2) obdt2=1;;           # nur /DATA-Verzeichnisse, keine DB
+        dt1|-nur-dt1) obdt1=1;;           # nur Konfigdateien, keine DB
+        dt2|-nur-dt2) obdt2=1;;           # nur Windows-Shares (/mnt/wser, /mnt/anmmw)
+        dt3|-nur-dt3) obdt3=1;;           # nur /DATA-Verzeichnisse, keine DB
         db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
         wh|-wh) _bu_wh_max="${2:-5}"; shift;;
         dberg|-dberg) obdberg=1;;  # nur DB-Ergebnisvergleich anzeigen
@@ -109,7 +110,8 @@ commandline() {
 		[ $sdneu ]&&printf "sdneu: $blau$sdneu$reset => Schutzdatei $SD wird verteilt\n";
 		[ "$obdt" ]&&printf "obdt: ${blau}$obdt${reset} => Dateitransfer (keine DB)\n";
 		[ "$obdt1" ]&&printf "obdt1: ${blau}$obdt1${reset} => nur Konfigdateien+MO\n";
-		[ "$obdt2" ]&&printf "obdt2: ${blau}$obdt2${reset} => nur /DATA-Verzeichnisse\n";
+		[ "$obdt2" ]&&printf "obdt2: ${blau}$obdt2${reset} => nur Windows-Shares\n";
+		[ "$obdt3" ]&&printf "obdt3: ${blau}$obdt3${reset} => nur /DATA-Verzeichnisse\n";
 		[ "$obdb" ]&&printf "obdb: ${blau}$obdb${reset} => nur Datenbank\n";
 		[ "$_bu_wh_max" ]&&printf "wh: ${blau}$_bu_wh_max${reset} => DB-Dump Wiederholungen\n";
 		printf "SD: $blau$SD$reset\n";
@@ -770,6 +772,7 @@ obumg=;
 obdt=;
 obdt1=;
 obdt2=;
+obdt3=;
 obdb=;
 obdberg=;
 _bu_wh_max=;
@@ -808,15 +811,18 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-v${reset} bewirkt gesprächigere Ausgabe";
   ;; *bulinux.sh)
     printf "%b\n" \
-    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-dt1|-dt2|-db|-dberg] [-u] [-e] [-f] [-v] [-wh [n]] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
+    "$blau$0$reset, Syntax: $blau"$(basename $0)" [-dt|-dt1|-dt2|-dt3|-db|-dberg] [-u] [-e] [-f] [-v] [-wh [n]] [-h] [SD[=/Pfad/zur/SD]] <zielhost>$reset" \
     " ${blau}Zielhost${reset}          Zielrechner (z.B. linux0, linux7); leer wenn lokal" \
     " ${blau}-dt${reset}               Dateitransfer (dt1+dt2); Datenbank wird ausgelassen" \
     " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
-    " ${blau}-dt2${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
+    " ${blau}-dt2${reset}              nur Windows-Shares (/mnt/wser, /mnt/anmmw); kein DB-Transfer" \
+    " ${blau}-dt3${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
     " ${blau}-dt1${reset}              nur Konfigdateien+MO (nicht /DATA); kein DB-Transfer" \
-    " ${blau}-dt2${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
+    " ${blau}-dt2${reset}              nur Windows-Shares (/mnt/wser, /mnt/anmmw); kein DB-Transfer" \
+    " ${blau}-dt3${reset}              nur /DATA-Verzeichnisse; kein DB-Transfer" \
     " ${blau}-dt1 -db${reset}          Konfigdateien+MO UND Datenbank (kein /DATA)" \
-    " ${blau}-dt2 -db${reset}          /DATA UND Datenbank (keine Konfigdateien)" \
+    " ${blau}-dt2 -db${reset}          Windows-Shares UND Datenbank" \
+    " ${blau}-dt3 -db${reset}          /DATA UND Datenbank (keine Konfigdateien)" \
     " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
     " ${blau}SD${reset}                Schutzdatei ${blau}$SD${reset} auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
     " ${blau}SD=/Pfad/Datei${reset}    wie SD, aber mit abweichendem Dateinamen/-pfad" \
