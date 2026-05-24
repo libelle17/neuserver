@@ -22,7 +22,24 @@ if [ ! -f "$SQL" ]; then
   echo "Kopieren abgeschlossen."
 fi
 
-echo "=== quelle-Import-Wiederaufnahme ==="
+# ── Erstlauf: Datenbank anlegen falls fehlend oder leer ─────────────────
+DB_EXISTS=$(${MARIADB} -BN -e \
+  "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='quelle';" 2>/dev/null||echo 0)
+N_EXIST=$(${MARIADB} -BN -e \
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='quelle' AND table_type='BASE TABLE';" \
+  2>/dev/null||echo 0)
+if [ "${DB_EXISTS:-0}" -eq 0 ]; then
+  echo "Datenbank quelle fehlt – lege an..."
+  ${MARIADB} -e "CREATE DATABASE IF NOT EXISTS \`quelle\` \
+    DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_german2_ci;" 2>/dev/null
+fi
+if [ "${N_EXIST:-0}" -eq 0 ]; then
+  echo "Erstlauf (0 Tabellen vorhanden) – importiere vollständig."
+else
+  echo "Wiederaufnahme ($N_EXIST Tabellen bereits vorhanden)."
+fi
+
+echo "=== quelle-Import ==="
 echo "Dump: $SQL ($(du -sh "$SQL" | cut -f1))"
 
 # ── 1. Tabellen aus Dump-Datei in Reihenfolge ────────────────────────────────
