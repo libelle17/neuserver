@@ -336,13 +336,13 @@ VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/m
 if [ -n "$VLM" ]; then
   # Versionen ermitteln (major.minor)
   _bu_ver_q=$(eval "$qssh \
-    'mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null'" 2>/dev/null \
+    '{ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; }'" 2>/dev/null \
     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   if [ -n "$ZL" ]; then
-    _bu_ver_z=$(ssh "$ZL" "mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null" 2>/dev/null \
+    _bu_ver_z=$(ssh "$ZL" "{ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; }" 2>/dev/null \
       | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   else
-    _bu_ver_z=$(mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null \
+    _bu_ver_z=$({ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; } \
       | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   fi;
   printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (%s): " \
