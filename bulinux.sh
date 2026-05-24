@@ -16,7 +16,8 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   QmD="$QL:";
   ZmD=;
 };
-[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
+# Ziel-Reset nur ohne -u (mit -u wird ZL als Quelle nach dem Tausch gebraucht):
+[ -z "$obumg" ] && [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 # -u: Richtung umkehren – QL und ZL tauschen
 if [ "$obumg" ]; then
   _tmp_ql="$QL"; QL="${ZL}"; ZL="$_tmp_ql"; unset _tmp_ql;
