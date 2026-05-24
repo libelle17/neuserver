@@ -119,15 +119,15 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-mt ][-prog ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
         printf "  $blau-host$reset:      richtet den Hostnamen im LAN ein\n";
         printf "  $blau-prompt$reset:    richtet die Eingabeaufforderung ein\n";
-        printf "  -- Laufwerke & Programme --\n";
-        printf "  $blau-mt$reset:        konfiguriert /etc/fstab zum Mounten der Laufwerke\n";
+        printf "  -- Programme & Laufwerke --\n";
         printf "  $blau-prog$reset:      lädt notwendige Programme aus dem Repository und von github\n";
+        printf "  $blau-mt$reset:        konfiguriert /etc/fstab zum Mounten der Laufwerke (benötigt -prog: exfatprogs)\n";
         printf "  -- Datenbank --\n";
         printf "  $blau-mariau$reset:    richtet mariadb ein (Benutzer/Konfiguration)\n";
         printf "  $blau-maria$reset:     richtet mariadb ein und lädt ggf. Datenbankinhalt aus /DATA/sql\n";
@@ -3135,34 +3135,37 @@ echo a|read -e 2>/dev/null; obbash=$(awk 'BEGIN{print ! '$?'}');
 test "$(id -u)" -eq 0||{ printf "Wechsle zu ${blau}root$reset, bitte ggf. ${blau}dessen$reset Passwort eingeben für Befehl ${blau}su -c $meingespfad \"$gespar\"$reset: ";su -c "$meingespfad $gespar";exit;};
 echo Starte mit los.sh...
 # Reihenfolge der Funktionsaufrufe:
-# $obteil=0: alle Funktionen; $obteil=1: nur die mit gesetztem ob*-Flag
+# $obteil=0: alle Funktionen in sinnvoller Reihenfolge; $obteil=1: nur die mit gesetztem ob*-Flag
+# ── Basis-System ────────────────────────────────────────────────────────
 [ $obteil = 0 -o $obbs = 1 ]&&bildschirm;         # Bildschirm/Keyboard einrichten
 [ $obteil = 0 -o $obbw = 1 ]&&bleibwach;           # Suspend/Hibernate deaktivieren
-variablen;                                          # Variablen aus vars/configure laden
-echo osnr: $OSNR;
- [ $obteil = 0 -o $obhost = 1 ]&&setzhost;         # Hostname setzen
- [ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;      # Benutzer/Samba einrichten
- setzpfad;                                          # /root/bin in PATH aufnehmen
- [ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;     # Shell-Prompt konfigurieren
- [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;        # Fritzbox einbinden
- [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;     # Laufwerke in fstab eintragen
- [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog; # Paketverwaltungs-Variablen setzen
- [ $obteil = 0 -o $obprog = 1 ]&&proginst;         # Programme installieren + Git-Repos klonen
- [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 -o $obmysqli = 1 ]&&richtmariadbein; # MariaDB einrichten
- [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;         # Samba konfigurieren
- [ $obteil = 0 -o $obmust = 1 ]&&musterserver;     # Dateien vom Musterserver kopieren
- [ "$obmustneu" = 1 ]&&musterserver neu;
- [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
- [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;       # TeamViewer installieren
- [ $obteil = 0 -o "$obcron" = 1 ]&&cron;           # crontab vom Quellserver übernehmen
- [ $obteil = 0 -o $obtm = 1 ]&&turbomed;           # Turbomed-Praxissoftware einrichten
- [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;        # RemotePC installieren
- [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;  # Konfiguration verschlüsselt sichern
- [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;   # Konfiguration laden (nur fehlende)
- [ $obkonfignl = 1 ]&&konfig_laden neu;               # Konfiguration laden (alles überschreiben)
- [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } } # Datenbankinhalt importieren
- [ $obteil = 0 ]&&speichern;                        # Konfiguration in Dateien schreiben
- [                $obfb = 1 ]&&firebird;            # Firebird-Datenbank einrichten
+[ $obteil = 0 -o $obhost = 1 ]&&setzhost;          # Hostname setzen
+[ $obteil = 0 -o $obprompt = 1 ]&&setzprompt;      # Shell-Prompt konfigurieren
+# ── Programme & Laufwerke ────────────────────────────────────────────────
+[ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog; # Paketverwaltungs-Variablen setzen
+[ $obteil = 0 -o $obprog = 1 ]&&proginst;          # Programme installieren + Git-Repos klonen (inkl. exfatprogs)
+[ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;      # Laufwerke in fstab eintragen (benötigt exfatprogs aus -prog)
+# ── Datenbank ────────────────────────────────────────────────────────────
+[ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 -o $obmysqli = 1 ]&&richtmariadbein; # MariaDB einrichten
+[ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } } # Datenbankinhalt importieren
+# ── Netzwerk & Dienste ───────────────────────────────────────────────────
+[ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;       # Benutzer/Samba einrichten
+[ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;          # Samba konfigurieren
+[ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;         # Fritzbox einbinden
+[ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
+# ── Praxis-Software ──────────────────────────────────────────────────────
+[ $obteil = 0 -o $obtm = 1 ]&&turbomed;            # Turbomed-Praxissoftware einrichten
+[ $obteil = 0 -o $obmust = 1 ]&&musterserver;      # Dateien vom Musterserver kopieren
+[ "$obmustneu" = 1 ]&&musterserver neu;
+# ── Weitere Tools ────────────────────────────────────────────────────────
+[ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;        # TeamViewer installieren
+[ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;         # RemotePC installieren
+[ $obteil = 0 -o $obfb = 1 ]&&firebird;            # Firebird-Datenbank einrichten
+# ── Konfiguration ────────────────────────────────────────────────────────
+[ $obteil = 0 -o "$obcron" = 1 ]&&cron;            # crontab vom Quellserver übernehmen
+[ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;   # Konfiguration verschlüsselt sichern
+[ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;    # Konfiguration laden (nur fehlende)
+[ $obteil = 0 ]&&speichern;                         # Konfiguration in Dateien schreiben
 printf "${dblau}Ende von $0$reset\n";
 
 if false; then
