@@ -41,6 +41,14 @@ fi;
 # [ "$(date +%u)" = 7 ] && _bu_vollabgleich=1 || \
    _bu_vollabgleich=;
 [ "$obforce" ] && _bu_vollabgleich=1;
+# ── Skript-Versionen (Beginn jedes Laufs) ───────────────────────────
+printf "Skript-Änderungsdaten: ";
+for _f in "$MUPR" "${MUPR%/*}/bugem.sh"; do
+  [ -f "$_f" ] || continue;
+  _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
+  printf "%s:%s  " "$(basename $_f)" "${_vts:-?}";
+done;
+printf "\n";
 if [ "$sdneu" ]; then
   printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
 elif [ "$obumg" ]; then
@@ -312,6 +320,14 @@ bu_db_erg() {
 # MariaDB-Synchronisation
 # ═══════════════════════════════════════════════════════════════════════
 if _bu_ob_db && [ -z "$sdneu" ]; then
+  # ── Versionen der Skript-Dateien (am Anfang sichtbar) ────────────
+  printf "Skript-Änderungsdaten: ";
+  for _f in "$MUPR" "${MUPR%/*}/bugem.sh"; do
+    [ -f "$_f" ] || continue;
+    _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
+    printf "%s:%s  " "$(basename $_f)" "${_vts:-?}";
+  done;
+  printf "\n";
   _bu_ts_db=$(date +%s); _bu_hdr "db  Beginn";
   # ── Lock AUF linux1 (Quellrechner): verhindert parallele DB-Exporte
   # von beliebigen Rechnern – Lock via $qssh = lokal oder ssh linux1
@@ -496,13 +512,6 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
-# ── Versionen der Skript-Dateien ─────────────────────────────────────
-printf "Skript-Änderungsdaten:\n";
-for _f in "$MUPR" "${MUPR%/*}/bugem.sh" "${MUPR%/*}/los.sh"; do
-  [ -f "$_f" ] || continue;
-  _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
-  printf "  %-20s %s\n" "$(basename $_f)" "${_vts:-?}";
-done;
 exit; # Ende
 
 
