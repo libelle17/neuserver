@@ -2002,12 +2002,20 @@ sambaconf() {
 
 	if ! diff -q "$instvz/$smbconf" "$zusmbconf" ||[ $zustarten = 1 ]; then  
 		backup "$etcsamba/smb" "$zusmbconf"
-		cp -a "$instvz/$smbconf" "$zusmbconf";
+    cp -a "$instvz/$smbconf" "$zusmbconf";
+    # ↓ NEU: directory mask 0660→0770 (Verzeichnisse brauchen x-Bit!)
+    sed -i 's/^\([[:space:]]*directory mask[[:space:]]*=[[:space:]]*\)0*660[[:space:]]*$/\10770/' "$zusmbconf"
+    printf "Samba: ${blau}directory mask${reset} 0660→${blau}0770${reset} korrigiert.\n"    
     [ -f /etc/samba/smbusers ] || touch /etc/samba/smbusers;
 		for serv in smbd smb nmbd nmb; do
 			systemctl list-units --full -all 2>/dev/null|grep "\<$serv.service"&& systemctl restart $serv 2>/dev/null;
 		done;
-	fi;
+  fi;
+  # ↓ NEU: bestehende Verzeichnisse ohne x-Bit reparieren
+  find /DATA -type d ! -perm -u+x 2>/dev/null | while read d; do
+    chmod a+X "$d"
+    printf "  ${blau}$d${reset}: Execute-Bit ergänzt\n"
+  done
   # SELinux-Kontexte für Samba sicherstellen
   restorecon -Rv /etc/samba/ 2>/dev/null||true   # smb.conf braucht samba_etc_t
   setsebool -P samba_enable_home_dirs on 2>/dev/null||true

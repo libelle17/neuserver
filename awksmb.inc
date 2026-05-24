@@ -22,7 +22,7 @@ N[18]="time server"; 				  		I[18]="Yes";
 N[19]="disable spoolss";		  		I[19]="Yes";
 Na[0]="comment";									Ia[0]="";
 Na[1]="path";											Ia[1]="";
-Na[2]="directory mask";						Ia[2]="0660";
+Na[2]="directory mask";						Ia[2]="0770";
 Na[3]="browseable";								Ia[3]="Yes";
 Na[4]="read only";								Ia[4]="no";
 Na[5]="vfs objects";							Ia[5]="recycle";

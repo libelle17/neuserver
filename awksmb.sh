@@ -92,7 +92,8 @@ FS="=";
 		for(i in Na) {
 			if (trn==Na[i]) {
 				# i==0: comment, i==1:path, i==2:directory mask
-				if (tri==Ia[i]||(i==0&&tri!="")||(i==1&&tri=Pfad)||(i==2&&tri!="")) {
+#				if (tri==Ia[i]||(i==0&&tri!="")||(i==1&&tri=Pfad)||(i==2&&tri!="")) KLA
+        if (tri==Ia[i]||(i==0&&tri!="")||(i==1&&tri=Pfad)) {
 #					print "# belassen:"
 					print $0;
 				} else {
