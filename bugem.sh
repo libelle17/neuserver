@@ -341,16 +341,18 @@ kopiermt() { # mit test
     fi;
 #    printf "${blau}$diffbef$reset\n"
     # SD-Inhalt von Quelle und Ziel separat holen – ermöglicht Fallunterscheidung
-    # stat statt cat: SD ist .doc (Binär) – ssh mit korrektem Quoting
+    # stat statt cat: SD ist .doc (Binär) – Backslash aus Pfad entfernen vor SSH
+    _sdkmt_qvos=$(printf "%s" "$QVos" | sed "s/\\\\//g");
+    _sdkmt_zvos=$(printf "%s" "$ZVos" | sed "s/\\\\//g");
     if [ "$QL" ]; then
-      _sdkmt_q=$(ssh "$QL" "stat -c \"%s %Y\" \"/$QVos/$SD\" 2>/dev/null");
-      _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
+      _sdkmt_q=$(ssh "$QL" "stat -c \"%s %Y\" \"/$_sdkmt_qvos/$SD\" 2>/dev/null");
+      _sdkmt_z=$(stat -c "%s %Y" "/$_sdkmt_zvos/$SD" 2>/dev/null);
     elif [ "$ZL" ]; then
-      _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
-      _sdkmt_z=$(ssh "$ZL" "stat -c \"%s %Y\" \"/$ZVos/$SD\" 2>/dev/null");
+      _sdkmt_q=$(stat -c "%s %Y" "/$_sdkmt_qvos/$SD" 2>/dev/null);
+      _sdkmt_z=$(ssh "$ZL" "stat -c \"%s %Y\" \"/$_sdkmt_zvos/$SD\" 2>/dev/null");
     else
-      _sdkmt_q=$(stat -c "%s %Y" "/$QVos/$SD" 2>/dev/null);
-      _sdkmt_z=$(stat -c "%s %Y" "/$ZVos/$SD" 2>/dev/null);
+      _sdkmt_q=$(stat -c "%s %Y" "/$_sdkmt_qvos/$SD" 2>/dev/null);
+      _sdkmt_z=$(stat -c "%s %Y" "/$_sdkmt_zvos/$SD" 2>/dev/null);
     fi;
     if [ -z "$_sdkmt_q" ]; then
       # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
@@ -377,24 +379,28 @@ kopiermt() { # mit test
   else
     # Platz ausrechnen:
 #    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'" "" "" 1; rest=${resu:-0}; # *1024 => Bytes
+    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print $4*1}'" "" "" 1; rest=${resu:-0};
+    # Variablen auf reine Ganzzahl bereinigen (Locale-Punkte, Leerzeichen entfernen):
+    _int() { printf "%s" "${1:-0}" | tr -cd '0-9'; };
+    rest=$(_int "$rest"); rest=${rest:-0};
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-    if test $rest -gt 0; then
-      # je nach dem, von wo aus der Befehl aufgerufen wird und ob es sich um ein Verzeichnis oder eine Datei handelt
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
+    if [ "${rest:-0}" -gt 0 ] 2>/dev/null; then
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print $1*1}'" "" "" 1; schonda=${resu:-0};
+      schonda=$(_int "$schonda"); schonda=${schonda:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0}; # mit doppelten " ging's nicht von beiden Seiten
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print $1*1}'" "" "" 1; zukop=${resu:-0};
+      zukop=$(_int "$zukop"); zukop=${zukop:-0};
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-      rest=$(expr $rest - $zukop + $schonda);
+      rest=$(( rest - zukop + schonda ));
       [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
          E=$(echo $E|sed 's/\\/\\ /g');
          case $E in /*) zQ=/${E#/};zZ=$zQ;;*) zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};;esac;
-         echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ 
-         [ "$verb" ]&&printf "E: $blau$E$reset\n";
-         [ "$verb" ]&&printf "ZVos: $blau$ZVos$reset\n";
-         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print \$1*1}'" "" "" 1; papz=${resu:-0};
-         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print \$1*1}'" "" "" 1; papq=${resu:-0};
-         rest=$(expr $rest - $papz + $papq);
+         echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ;
+         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print $1*1}'" "" "" 1; papz=${resu:-0};
+         papz=$(_int "$papz"); papz=${papz:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print $1*1}'" "" "" 1; papq=${resu:-0};
+         papq=$(_int "$papq"); papq=${papq:-0};
+         rest=$(( rest - papz + papq ));
       done;
       echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "Nach Kopie verfügbar: '$blau'%'"'"'15d'$reset' kB\n", $1}';
     fi;
