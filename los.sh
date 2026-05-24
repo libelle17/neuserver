@@ -288,6 +288,7 @@ konfig_sichern() {
 
   # ---- 2) Sensible Dateien – verschlüsselt sichern ----
   TMPDIR_KRYPT=$(mktemp -d);
+  crontab -l > "$instvz/crontabakt"
   geaendert=;
   for f in \
     "$HOME/.fbcredentials" \
@@ -299,6 +300,7 @@ konfig_sichern() {
     "$HOME/.mysqlpwd" \
     "$HOME/.mysqlrpwd" \
     "$HOME/.sturm" \
+    "$instvz/crontabakt" \
     ; do
     [ -f "$f" ] && {
       cp "$f" "$TMPDIR_KRYPT/";

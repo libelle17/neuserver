@@ -198,8 +198,10 @@ ELG=/var/log/cronf.log
 -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bunacht.sh -e 
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 # -10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/butm.sh # auskommentiert 1.1.26
--20 14,22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -e
--20 15,23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -e
+-20 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -dt1 -db -e
+-20 15 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -dt1 -db -e
+-20 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -e -f
+-20 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bulinux.sh -e -f
 # -05 0 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * /usr/bin/ionice -c3 $RBI/verhdop.sh $RBI/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
