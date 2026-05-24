@@ -95,7 +95,6 @@ GCCOK::=$(shell expr $(MAXGCCNR) \>\= $(MINGCCNR))
 # DISTR::=$(shell which apt >/dev/null 2>&1&&echo 1||{ which zypper >/dev/null 2>&1&&echo 2||{ which dnf >/dev/null 2>&1||which yum >/dev/null 2>&1&&echo 3||{ which urpmi.update >/dev/null 2>&1&&echo 4||{ which pacman >/dev/null 2>&1&&echo 5||echo 0;};};};})
 # #	osnr=0 # 1=Mint, 2=Ubuntu, 3=Debian, 4=SUSE, 5=Fedora, 6=Fedoraalt, 7=Mageia, 8=Manjaro
 -include vars # wird durch install.sh generiert; DPROG und GDAT dürfen nur nachher verwendet werden
-INSTVZ::=$(shell cat instvz 2>/dev/null|tr -d '"'||echo /root/neuserver)
 ifeq ($(GCCOK),0)
 	# wenn minimal notwendige Version nicht verfügbar ist, dann diese neu als maximal installierbare definieren und später installieren
   ifeq ($(shell expr $(OSNR) \<\= 3),1)
@@ -298,22 +297,18 @@ endef
 # ssh-add ~/.ssh/id_rsa_git
 # xclip -sel clip < ~/.ssh/id_rsa_git.pub
 # auf http://github.com -> view profile and more -> settings -> SSH and GPG keys -> New SSH key <Titel> <key> einfuegen
-
 git: README.md
 # @git config --global user.name "Gerald Schade"
 # @git config --global user.email "gerald.schade@gmx.de"
 	@$(call machvers);
 	@printf " Copying files from/ Kopiere Dateien von: %b%s%b (Version %b%s%b) -> git (%b%s%b)\n" \
-	  $(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
-	  "$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA)
+		$(blau) "$(PWD)" $(reset) $(blau) $$(cat versdt) $(reset) $(blau) \
+		"$$(F1=.git/FETCH_HEAD;test -f $$F1&&{ cut -f2-< $$F1|sed 's/^\s*//';:;};[ -d .git ]&&cat .git/./config|sed -n '/url =/p')" $(reset) $(BA) 
 	-cp -au Makefile Makefile.roh
 	@[ -d .git ]||{ \
-	  curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
+		curl -u "$(DPROG)" https://api.github.com/user/repos -d "{\"name\":\"$(DPROG)\"}" $(DN); git init;git add $(GDAT:vgb.cpp=) versdt README.md;\
 	}
 	$(call setz_gitv,".")
-	-[ "$(DPROG)" = "neuserver" ]&&sh $(INSTVZ)/los.sh -ks||true;
-	-[ "$(DPROG)" = "neuserver" ]&&git add konfig/ .gitignore 2>/dev/null||true;
-# Commit auch wenn nichts geändert (--allow-empty):
 	-git config --global push.default simple;\
 	git add -u;\
 	git commit --allow-empty -m "Version $$(cat versdt)";\
@@ -378,9 +373,9 @@ endif
 	-@if ! test -f instvz; then printf \"$$(pwd)\" >instvz; fi; # wird in kons.cpp verwendet
 	-$(CC) $(DEBUG)$(DEPFLAGS) $(CFLAGS) -c $< $(BFA);
 	-@sed -i 's/versdt //g;s/gitvdt //g' $(DEPDIR)/*.Td
-	-@if grep -q "error:\|Fehler:" fehler.txt 2>/dev/null; then vi +0/"error:\|Fehler:\|Warnung:\|warning:" fehler.txt; else rm -f fehler.txt; fi;
+	-@if grep -q "error:\|Fehler:" fehler.txt 2>/dev/null; then [ -t 1 ] && vi +0/"error:\|Fehler:\|Warnung:\|warning:" fehler.txt || cat fehler.txt; else rm -f fehler.txt; fi;
 #	-@$(shell $(POSTCOMPILE))
-	@if grep -q "error:\|Fehler:" fehler.txt 2>/dev/null; then false; fi;
+	@if test -s fehler.txt; then false; fi;
 
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
@@ -478,7 +473,6 @@ shlist:
 		for D in $$(sed '/^#/d' "$$L");do \
 		  printf "$(SUDC)cp -au \""$$D"\" \""$$Z/"\"\n";\
 			$(SUDC)cp -au "$$D" "$$Z/";\
- 			echo "$$D"|grep -qE '\.sh$$'&&$(SUDC)chmod +x "$$Z/$$D"||true;\
 			grep -qm1 "$$D" "$(AUNF)"||printf "printf \"Loesche/Deleting $$Z/$$D...\\\\n\";$(SUDC)rm -r $$Z/$$D;hash -r;\n" >>"$(AUNF)";\
 		done;:
 
@@ -535,10 +529,6 @@ shziel:
 	if test -f ziele; then \
 	 for D in $$(cat ziele);do \
     case $$D in \
-      los.sh) \
-	     if ! test -f instvz; then printf \"$$(pwd)\" >instvz; fi;\
-       grep -q '^instvz=' los.sh&&{ grep -q ^instvz=$$(cat instvz)$$ los.sh||sed -i '/^instvz=/{s:.*:instvz='$$(cat instvz)':}' los.sh;};\
-       zwi=zeit.tmp;zw="qverz=";touch -r $$D $$zwi;sed -i '/^[ ]*'$$zw'/s:'$$zw'.*:'$$zw$$(pwd)':' $$D; touch -r $$zwi $$D; rm $$zwi;;\
     esac; \
     case $$D in \
       [*\]) \
