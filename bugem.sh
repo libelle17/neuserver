@@ -354,6 +354,7 @@ kopiermt() { # mit test
     fi;
     if [ -z "$_sdkmt_q" ]; then
       # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
+      which mail >/dev/null 2>&1 && \
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
       printf "${rot}Schutzdatei /$QVos/$SD auf Quelle nicht gefunden${reset} – überspringe $blau/$QVos$reset\n";
       return 1;
@@ -363,6 +364,7 @@ kopiermt() { # mit test
       # kein return 1 – Kopie wird fortgesetzt
     elif [ "$_sdkmt_q" != "$_sdkmt_z" ]; then
       # c) Beide vorhanden, aber verschieden – immer blockieren
+      which mail >/dev/null 2>&1 && \
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
       printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
       return 1;
