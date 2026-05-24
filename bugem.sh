@@ -379,16 +379,16 @@ kopiermt() { # mit test
   else
     # Platz ausrechnen:
 #    ausf "$zssh 'df /${ZVos%%/*}|sed -n \"/\//s/[^ ]* *[^ ]* *[^ ]* *\([^ ]*\).*/\1/p\"'"; rest=${resu:-0}; # die vierte Spalte der df-Ausgabe
-    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print $4*1}'" "" "" 1; rest=${resu:-0};
+    ausf "$zssh 'df /${ZVos%%/*}'| awk '/\//{print \$4*1}'" "" "" 1; rest=${resu:-0};
     # Variablen auf reine Ganzzahl bereinigen (Locale-Punkte, Leerzeichen entfernen):
     _int() { printf "%s" "${1:-0}" | tr -cd '0-9'; };
     rest=$(_int "$rest"); rest=${rest:-0};
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if [ "${rest:-0}" -gt 0 ] 2>/dev/null; then
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print $1*1}'" "" "" 1; schonda=${resu:-0};
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       schonda=$(_int "$schonda"); schonda=${schonda:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
-      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print $1*1}'" "" "" 1; zukop=${resu:-0};
+      ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0};
       zukop=$(_int "$zukop"); zukop=${zukop:-0};
       echo $zukop|LC_ALL=de_DE.UTF-8 awk '{printf "zukopieren          : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       rest=$(( rest - zukop + schonda ));
@@ -396,9 +396,9 @@ kopiermt() { # mit test
          E=$(echo $E|sed 's/\\/\\ /g');
          case $E in /*) zQ=/${E#/};zZ=$zQ;;*) zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};;esac;
          echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ;
-         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print $1*1}'" "" "" 1; papz=${resu:-0};
+         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0'|awk '{print \$1*1}'" "" "" 1; papz=${resu:-0};
          papz=$(_int "$papz"); papz=${papz:-0};
-         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print $1*1}'" "" "" 1; papq=${resu:-0};
+         ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0'|awk '{print \$1*1}'" "" "" 1; papq=${resu:-0};
          papq=$(_int "$papq"); papq=${papq:-0};
          rest=$(( rest - papz + papq ));
       done;
