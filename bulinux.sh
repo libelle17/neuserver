@@ -374,7 +374,16 @@ if [ -n "$VLM" ]; then
       [ -d "${VLM}_2" ] && { rm -rf "${VLM}_2"; printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM"; };
       [ -d "${VLM}_1" ] && { mv "${VLM}_1" "${VLM}_2"; printf "  ${blau}%s_1 → %s_2${reset} (Vorversion)\n" "$VLM" "$VLM"; };
       $zssh "systemctl stop mariadb"; $zssh "systemctl disable mariadb";
-      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
+      if [ "$obumg" ]; then
+        # -u: direkt in Datadir kopieren (nicht in _1), Rotation überspringen
+        printf "${blau}Kopiere Datadir direkt nach %s (wegen -u)${reset}\n" "$VLM";
+        kopiermt "$VLM/" "$VLM" "" "$OBDEL" $testdat 86400 1 1;
+      else
+        kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
+      fi;
+      # my.cnf und Eigentümer sicherstellen bevor Start:
+      $zssh "[ -f /etc/my.cnf ] || { cp ${INSTVZ:-/root/neuserver}/my.cnf /etc/my.cnf 2>/dev/null; restorecon /etc/my.cnf 2>/dev/null; }";
+      $zssh "chown -R mysql:mysql $VLM 2>/dev/null; restorecon -Rv $VLM 2>/dev/null||true";
       $zssh "systemctl start mariadb"; $zssh "systemctl enable mariadb";
     else
       printf "Simulation: %s_3..9 löschen, %s_1 → %s_2\n" "$VLM" "$VLM" "$VLM";
