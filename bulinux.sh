@@ -16,14 +16,10 @@ MUPR=$(readlink -f $0); # Mutterprogramm
   QmD="$QL:";
   ZmD=;
 };
-# Ziel-Reset nur ohne -u (mit -u wird ZL als Quelle nach dem Tausch gebraucht):
-[ -z "$obumg" ] && [ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
+[ "$buhost"/ != "$LINEINS"/ -a "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;ZmD=;}
 # -u: Richtung umkehren – QL und ZL tauschen
 if [ "$obumg" ]; then
   _tmp_ql="$QL"; QL="${ZL}"; ZL="$_tmp_ql"; unset _tmp_ql;
-  # QmD/ZmD wurden vor dem Tausch gesetzt – jetzt nachführen:
-  QmD=$QL:; QmD=${QmD#:};
-  ZmD=$ZL:; ZmD=${ZmD#:};
   # DtZ neu berechnen: basiert auf Zielrechner (ZL) statt buhost
   _zielh="${ZL:-$buhost}";
   case "$_zielh" in *3|*7|*8) DATAZIEL=DATA/DATA;; *) DATAZIEL=DATA;; esac;
@@ -41,14 +37,6 @@ fi;
 # [ "$(date +%u)" = 7 ] && _bu_vollabgleich=1 || \
    _bu_vollabgleich=;
 [ "$obforce" ] && _bu_vollabgleich=1;
-# ── Skript-Versionen (Beginn jedes Laufs) ───────────────────────────
-printf "Skript-Änderungsdaten: ";
-for _f in "$MUPR" "${MUPR%/*}/bugem.sh"; do
-  [ -f "$_f" ] || continue;
-  _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
-  printf "%s:%s  " "$(basename $_f)" "${_vts:-?}";
-done;
-printf "\n";
 if [ "$sdneu" ]; then
   printf "${blau}Schutzdatei-Verteilung${reset}: ${blau}%s${reset}\n" "$SD";
 elif [ "$obumg" ]; then
@@ -320,14 +308,6 @@ bu_db_erg() {
 # MariaDB-Synchronisation
 # ═══════════════════════════════════════════════════════════════════════
 if _bu_ob_db && [ -z "$sdneu" ]; then
-  # ── Versionen der Skript-Dateien (am Anfang sichtbar) ────────────
-  printf "Skript-Änderungsdaten: ";
-  for _f in "$MUPR" "${MUPR%/*}/bugem.sh"; do
-    [ -f "$_f" ] || continue;
-    _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
-    printf "%s:%s  " "$(basename $_f)" "${_vts:-?}";
-  done;
-  printf "\n";
   _bu_ts_db=$(date +%s); _bu_hdr "db  Beginn";
   # ── Lock AUF linux1 (Quellrechner): verhindert parallele DB-Exporte
   # von beliebigen Rechnern – Lock via $qssh = lokal oder ssh linux1
@@ -352,13 +332,13 @@ VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/m
 if [ -n "$VLM" ]; then
   # Versionen ermitteln (major.minor)
   _bu_ver_q=$(eval "$qssh \
-    '{ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; }'" 2>/dev/null \
+    'mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null'" 2>/dev/null \
     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   if [ -n "$ZL" ]; then
-    _bu_ver_z=$(ssh "$ZL" "{ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; }" 2>/dev/null \
+    _bu_ver_z=$(ssh "$ZL" "mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null" 2>/dev/null \
       | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   else
-    _bu_ver_z=$({ mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null; } \
+    _bu_ver_z=$(mariadbd --version 2>/dev/null || mysqld --version 2>/dev/null \
       | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1,2);
   fi;
   printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (%s): " \
@@ -374,16 +354,7 @@ if [ -n "$VLM" ]; then
       [ -d "${VLM}_2" ] && { rm -rf "${VLM}_2"; printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM"; };
       [ -d "${VLM}_1" ] && { mv "${VLM}_1" "${VLM}_2"; printf "  ${blau}%s_1 → %s_2${reset} (Vorversion)\n" "$VLM" "$VLM"; };
       $zssh "systemctl stop mariadb"; $zssh "systemctl disable mariadb";
-      if [ "$obumg" ]; then
-        # -u: direkt in Datadir kopieren (nicht in _1), Rotation überspringen
-        printf "${blau}Kopiere Datadir direkt nach %s (wegen -u)${reset}\n" "$VLM";
-        kopiermt "$VLM/" "$VLM" "" "$OBDEL" $testdat 86400 1 1;
-      else
-        kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
-      fi;
-      # my.cnf und Eigentümer sicherstellen bevor Start:
-      $zssh "[ -f /etc/my.cnf ] || { cp ${INSTVZ:-/root/neuserver}/my.cnf /etc/my.cnf 2>/dev/null; restorecon /etc/my.cnf 2>/dev/null; }";
-      $zssh "chown -R mysql:mysql $VLM 2>/dev/null; restorecon -Rv $VLM 2>/dev/null||true";
+      kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
       $zssh "systemctl start mariadb"; $zssh "systemctl enable mariadb";
     else
       printf "Simulation: %s_3..9 löschen, %s_1 → %s_2\n" "$VLM" "$VLM" "$VLM";
@@ -521,6 +492,13 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
+# ── Versionen der Skript-Dateien ─────────────────────────────────────
+printf "Skript-Änderungsdaten:\n";
+for _f in "$MUPR" "${MUPR%/*}/bugem.sh" "${MUPR%/*}/los.sh"; do
+  [ -f "$_f" ] || continue;
+  _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
+  printf "  %-20s %s\n" "$(basename $_f)" "${_vts:-?}";
+done;
 exit; # Ende
 
 
