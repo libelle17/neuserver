@@ -7,7 +7,7 @@ ZL=; # dann werden die cifs-Laufwerke verwendet
 # nurdrei=1;
 # nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
-dopweg.sh
+/root/bin/dopweg.sh
 find /DATA/Patientendokumente/dok -iname "zulöschen*" -delete
 obOBDEL=--delete
 wirt=$buhost;
