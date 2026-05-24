@@ -20,6 +20,9 @@ MUPR=$(readlink -f $0); # Mutterprogramm
 # -u: Richtung umkehren – QL und ZL tauschen
 if [ "$obumg" ]; then
   _tmp_ql="$QL"; QL="${ZL}"; ZL="$_tmp_ql"; unset _tmp_ql;
+  # QmD/ZmD wurden vor dem Tausch gesetzt – jetzt nachführen:
+  QmD=$QL:; QmD=${QmD#:};
+  ZmD=$ZL:; ZmD=${ZmD#:};
   # DtZ neu berechnen: basiert auf Zielrechner (ZL) statt buhost
   _zielh="${ZL:-$buhost}";
   case "$_zielh" in *3|*7|*8) DATAZIEL=DATA/DATA;; *) DATAZIEL=DATA;; esac;
@@ -374,18 +377,18 @@ if [ -n "$VLM" ]; then
       printf "Datenbanken: ${blau}%s${reset}\n" "$(printf '%s ' $_bu_dbs)";
       # ── Parameter für mariadb-dump (nur einmal definiert) ────────────
       _bu_dump_args="--defaults-extra-file=/root/.mysqlrpwd \
-        --default-character-set=UTF8 -c -K \
+        --default-character-set=utf8mb4 -c -K \
         --routines --events --triggers \
         --single-transaction --skip-lock-tables --skip-add-locks --quick \
         --ignore-table=faxeinp.tmph --ignore-table=mysql.transaction_registry \
-        --add-drop-database";
+        --add-drop-table";
       # ── awk-Filter (Fortschritt + DEFINER-Bereinigung) ───────────────
       _bu_awk_filter='
         /^\/\/ \-\- Current Database:/ || /^\-\- Current Database:/ {
           db=$4; gsub(/`/,"",db);
-          if (db != lastdb) {
+          if (!(db in seen)) {
             printf "\n  \033[34mDatenbank: %-20s\033[0m\n", db > "/dev/stderr";
-            lastdb=db;
+            seen[db] = 1;
           }
         }
         /^\-\- Table structure for table/ {
@@ -421,6 +424,7 @@ if [ -n "$VLM" ]; then
             # Von linux1 (lokal) nach linux7 (remote): lokal dumpen, remote importieren
             mariadb-dump $_bu_dump_args \
               --databases $(printf '%s ' $_bu_dbs) \
+              2> >(grep -v "^$\|Warning\|warning" >&2) \
             | awk "$_bu_awk_filter" \
             | _bu_mariadb_import;
           else
@@ -491,6 +495,13 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
+# ── Versionen der Skript-Dateien ─────────────────────────────────────
+printf "Skript-Änderungsdaten:\n";
+for _f in "$MUPR" "${MUPR%/*}/bugem.sh" "${MUPR%/*}/los.sh"; do
+  [ -f "$_f" ] || continue;
+  _vts=$(stat -c "%y" "$_f" 2>/dev/null | cut -d. -f1);
+  printf "  %-20s %s\n" "$(basename $_f)" "${_vts:-?}";
+done;
 exit; # Ende
 
 
