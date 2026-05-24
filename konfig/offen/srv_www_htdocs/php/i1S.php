@@ -1,10 +1,10 @@
-<?php 
+'<?php 
     IF ($_SESSION['obGw']) {
       IF ($_SESSION['Gw']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Gw";
@@ -12,10 +12,10 @@
     }
     IF ($_SESSION['obTaille']) {
       IF ($_SESSION['Taille']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Taille";
@@ -23,10 +23,10 @@
     }
     IF ($_SESSION['obBewegung']) {
       IF ($_SESSION['Bewegung']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Bewegung";
@@ -34,10 +34,10 @@
     }
     IF ($_SESSION['obRR']) {
       IF ($_SESSION['RR']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."RR";
@@ -45,10 +45,10 @@
     }
     IF ($_SESSION['obOAU']) {
       IF ($_SESSION['OAU']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."OAU";
@@ -56,10 +56,10 @@
     }
     IF ($_SESSION['obHbA1c']) {
       IF ($_SESSION['HbA1c']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."HbA1c";
@@ -67,10 +67,10 @@
     }
     IF ($_SESSION['obUzu, Fqmin(6)=0/a']) {
       IF ($_SESSION['Uzu, Fqmin(6)=0/a']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Uzu, Fqmin(6)=0/a";
@@ -78,10 +78,10 @@
     }
     IF ($_SESSION['obHypo']) {
       IF ($_SESSION['Hypo']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hypo";
@@ -89,10 +89,10 @@
     }
     IF ($_SESSION['obHyper']) {
       IF ($_SESSION['Hyper']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hyper";
@@ -100,10 +100,10 @@
     }
     IF ($_SESSION['obNeuSt']) {
       IF ($_SESSION['NeuSt']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."NeuSt";
@@ -111,10 +111,10 @@
     }
     IF ($_SESSION['obFuß']) {
       IF ($_SESSION['Fuß']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Fuß";
@@ -122,10 +122,10 @@
     }
     IF ($_SESSION['obBeruf']) {
       IF ($_SESSION['Beruf']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Beruf";
@@ -133,10 +133,10 @@
     }
     IF ($_SESSION['obAuto']) {
       IF ($_SESSION['Auto']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Auto";
@@ -144,10 +144,10 @@
     }
     IF ($_SESSION['obKeto']) {
       IF ($_SESSION['Keto']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Keto";
@@ -155,10 +155,10 @@
     }
     IF ($_SESSION['obK+']) {
       IF ($_SESSION['K+']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."K+";
@@ -166,10 +166,10 @@
     }
     IF ($_SESSION['obChol']) {
       IF ($_SESSION['Chol']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Chol";
@@ -177,10 +177,10 @@
     }
     IF ($_SESSION['obHDL']) {
       IF ($_SESSION['HDL']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."HDL";
@@ -188,10 +188,10 @@
     }
     IF ($_SESSION['obLDL']) {
       IF ($_SESSION['LDL']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."LDL";
@@ -199,10 +199,10 @@
     }
     IF ($_SESSION['obTG']) {
       IF ($_SESSION['TG']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TG";
@@ -210,10 +210,10 @@
     }
     IF ($_SESSION['obGGT']) {
       IF ($_SESSION['GGT']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GGT";
@@ -221,10 +221,10 @@
     }
     IF ($_SESSION['obGPT']) {
       IF ($_SESSION['GPT']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GPT";
@@ -232,10 +232,10 @@
     }
     IF ($_SESSION['obFerr']) {
       IF ($_SESSION['Ferr']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Ferr";
@@ -243,10 +243,10 @@
     }
     IF ($_SESSION['obDigo']) {
       IF ($_SESSION['Digo']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Digo";
@@ -254,10 +254,10 @@
     }
     IF ($_SESSION['obDigit']) {
       IF ($_SESSION['Digit']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Digit";
@@ -265,10 +265,10 @@
     }
     IF ($_SESSION['obUrin']) {
       IF ($_SESSION['Urin']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Urin";
@@ -276,10 +276,10 @@
     }
     IF ($_SESSION['obAlb/U']) {
       IF ($_SESSION['Alb/U']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Alb/U";
@@ -287,10 +287,10 @@
     }
     IF ($_SESSION['obKrea']) {
       IF ($_SESSION['Krea']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Krea";
@@ -298,10 +298,10 @@
     }
     IF ($_SESSION['obGFR']) {
       IF ($_SESSION['GFR']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GFR";
@@ -309,10 +309,10 @@
     }
     IF ($_SESSION['obAugen-US']) {
       IF ($_SESSION['Augen-US']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Augen-US";
@@ -320,10 +320,10 @@
     }
     IF ($_SESSION['obRR-Vgl']) {
       IF ($_SESSION['RR-Vgl']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."RR-Vgl";
@@ -331,10 +331,10 @@
     }
     IF ($_SESSION['obBZ-Vgl']) {
       IF ($_SESSION['BZ-Vgl']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."BZ-Vgl";
@@ -342,10 +342,10 @@
     }
     IF ($_SESSION['obSchul']) {
       IF ($_SESSION['Schul']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Schul";
@@ -353,10 +353,10 @@
     }
     IF ($_SESSION['obTSH']) {
       IF ($_SESSION['TSH']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TSH";
@@ -364,10 +364,10 @@
     }
     IF ($_SESSION['obfT4 [pmol/l]']) {
       IF ($_SESSION['fT4 [pmol/l]']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."fT4 [pmol/l]";
@@ -375,10 +375,10 @@
     }
     IF ($_SESSION['obfT3']) {
       IF ($_SESSION['fT3']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."fT3";
@@ -386,10 +386,10 @@
     }
     IF ($_SESSION['obSchuleintr']) {
       IF ($_SESSION['Schuleintr']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Schuleintr";
@@ -397,10 +397,10 @@
     }
     IF ($_SESSION['obHb']) {
       IF ($_SESSION['Hb']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hb";
@@ -408,10 +408,10 @@
     }
     IF ($_SESSION['obVit B12']) {
       IF ($_SESSION['Vit B12']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Vit B12";
@@ -419,10 +419,10 @@
     }
     IF ($_SESSION['obFolsre']) {
       IF ($_SESSION['Folsre']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Folsre";
@@ -430,10 +430,10 @@
     }
     IF ($_SESSION['obLeuko']) {
       IF ($_SESSION['Leuko']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Leuko";
@@ -441,10 +441,10 @@
     }
     IF ($_SESSION['obCRP']) {
       IF ($_SESSION['CRP']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."CRP";
@@ -452,10 +452,10 @@
     }
     IF ($_SESSION['obCK']) {
       IF ($_SESSION['CK']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."CK";
@@ -463,10 +463,10 @@
     }
     IF ($_SESSION['obA.P.']) {
       IF ($_SESSION['A.P.']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."A.P.";
@@ -474,10 +474,10 @@
     }
     IF ($_SESSION['obCarotis']) {
       IF ($_SESSION['Carotis']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Carotis";
@@ -485,10 +485,10 @@
     }
     IF ($_SESSION['obCar alle']) {
       IF ($_SESSION['Car alle']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Car alle";
@@ -496,10 +496,10 @@
     }
     IF ($_SESSION['obImpf']) {
       IF ($_SESSION['Impf']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Impf";
@@ -507,10 +507,10 @@
     }
     IF ($_SESSION['obColo']) {
       IF ($_SESSION['Colo']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Colo";
@@ -518,10 +518,10 @@
     }
     IF ($_SESSION['obPros']) {
       IF ($_SESSION['Pros']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Pros";
@@ -529,10 +529,10 @@
     }
     IF ($_SESSION['obGyn']) {
       IF ($_SESSION['Gyn']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Gyn";
@@ -540,10 +540,10 @@
     }
     IF ($_SESSION['obADL']) {
       IF ($_SESSION['ADL']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."ADL";
@@ -551,10 +551,10 @@
     }
     IF ($_SESSION['obTUG']) {
       IF ($_SESSION['TUG']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TUG";
@@ -562,10 +562,10 @@
     }
     IF ($_SESSION['obgar:']) {
       IF ($_SESSION['gar:']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."gar:";
@@ -573,10 +573,10 @@
     }
     IF ($_SESSION['obArzteintrag']) {
       IF ($_SESSION['Arzteintrag']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Arzteintrag";
@@ -584,10 +584,10 @@
     }
     IF ($_SESSION['obePA runterladen']) {
       IF ($_SESSION['ePA runterladen']) {
-        $stil=cave;
+        $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."ePA runterladen";
