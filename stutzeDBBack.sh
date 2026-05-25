@@ -17,10 +17,11 @@ vorgaben() {
   # Tag im Monat, mit dem eine Datei auf jeden Fall behalten werden soll
   beh1="-01-";
   # Grenze an Tagen zurück, ab der nur noch 4 Dateien im Monat aufgehoben werden sollen
-  gr2=15;
+  gr2=7;
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
+  gr3=2;
   Ausspar="-dp-office-";
 }
 
