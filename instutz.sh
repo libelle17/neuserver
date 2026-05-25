@@ -36,10 +36,11 @@ commandline() {
 
 zeit() {
   # dieses Programm soll nicht mit vielleicht falsch eingestelltem Datum laufen => Internet-Zeit holen
-  bef="ntpdate ptbtime1.ptb.de";
+  # bef="ntpdate ptbtime1.ptb.de";
+  bef="/sbin/chronyd -q 'server ptbtime1.ptb.de iburst maxsamples 1'&&/sbin/hwclock --systohc"
   [ "$verb" ]&&{ eval "$bef"||exit;:;}||{ eval "$bef" >/dev/null 2>&1||exit;};
   # auch die Bios-Uhr korrigieren
-  /sbin/hwclock --systohc 
+  # /sbin/hwclock --systohc 
   # jetzt in Sekunden umrechnen
   jsec=$(date +%s);
 } # zeit
