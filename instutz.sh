@@ -47,9 +47,19 @@ zeit() {
 
 # Zeittifferenz zwischen jetzt und der Zeit im ersten Parameter
 ddiff() {
-  dsec=$(date -d "$1" +%s);
+  dsec=$(date -d "$1" +%s 2>/dev/null);
+  if [ -z "$dsec" ]; then
+    [ "$verb" ]&&printf "${rot}Ungültiges Datum '$1' bei Datei $dt – wird übersprungen${reset}\n";
+    datediff="";
+    return 1;
+  fi
   datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 #  echo Name: $nanf, Datum: $datum, datediff: $datediff
+}
+
+ddiff_falsch() {
+  dsec=$(date -d "$1" +%s);
+  datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 } # ddiff
 
 vgbstarr;
@@ -69,7 +79,7 @@ for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
   [ "$Ausspar" ]&&case $Ausspar in *$nanf*)[ "$verb" ]&&echo "$Ausspar in *$nanf* => continue";continue;; esac;
   # datediff mit dem Alter von $datum [d] belegen
-  ddiff $datum;
+  ddiff $datum || continue;     # neu: bei ungültigem Datum Datei überspringen
   # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
   for runde in 0 1 2; do
     # Mindestalter der Datei [d], damit sie für diese Runde verwertet wird

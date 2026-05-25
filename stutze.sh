@@ -34,12 +34,24 @@ ermittledatum() {
   gname=$nanf--$muende;
   # datum = zunächst String hinter dem ersten --
   datum=${dt#*--};
+  datum=${datum%%.*};          # Punkt-Extension abschneiden
+  datum=${datum:0:10};         # auf JJJJ-MM-TT begrenzen
   # jahr = in datum alles bis zum ersten -
+  jahr=${datum:0:4};
+  # monat = zunächst alles ab dem ersten - in datum 
+  monat=${datum:5:2};
+  # tag = alles ab dem ersten - in monat
+  tag=${datum:8:2};
+}
+
+ermittledatum_falsch() {
+  nanf=${dt%--*};
+  gname=$nanf--$muende;
+  datum=${dt#*--};
   jahr=${datum%%-*};
   # datum = dann alles bis zum letzten - in datum
   datum=${datum%-*};
 #  ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
-  # monat = zunächst alles ab dem ersten - in datum 
   monat=${datum#*-};
   # tag = alles ab dem ersten - in monat
   tag=${monat#*-};
