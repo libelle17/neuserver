@@ -7,6 +7,9 @@ vgbstarr() {
 	lila="\033[1;35m";
 	reset="\033[0m"; # Farben zurücksetzen
   mgroe=0;
+  # Standardvorgabe: pro Tag nur die jüngste Datei behalten, wenn älter als 3 Tage;
+  # kann in vorgaben() des aufrufenden Scripts überschrieben werden
+  gr3=3;
 } # vgbstarr
 
 # Befehlszeilenparameter auswerten
@@ -126,8 +129,10 @@ for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '
         # Runde 3: pro Tag nur die jüngste Datei behalten
         # den Folgetag berechnen, um den Suchrahmen auf genau diesen Tag einzugrenzen
         ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
-        # schauen, ob es am gleichen Tag bereits eine jüngere Datei des gleichen Gegenstandes gibt
-        befehl="find \"$Vz\" -maxdepth 1 -newermt \"$datum\" -not -newermt \"$ndat\" -name \"$gname\" -print -quit";
+        # schauen, ob es am gleichen Tag bereits eine jüngere Datei des gleichen Gegenstandes gibt;
+        # -newer mit dem Dateipfad vergleicht den echten mtime-Zeitstempel, damit werden
+        # weder die Datei selbst noch ältere Dateien des gleichen Tages fälschlich gefunden
+        befehl="find \"$Vz\" -maxdepth 1 -newer \"$Vz/$dt\" -not -newermt \"$ndat\" -name \"$gname\" -print -quit";
         [ "$verb" ]&&echo "Runde 3 befehl: $befehl"
         juenger=$(eval $befehl)
         # wenn eine jüngere Datei des gleichen Tages gefunden wurde ...
