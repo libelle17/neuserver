@@ -20,6 +20,8 @@ vorgaben() {
   gr2=15;
   # Tage im Monat, mit denen eine Datei auf jeden Fall behalten werden soll
   beh2="-01-08-15-22-";
+  # Grenze an Tagen zurück, ab der pro Tag nur noch die jüngste Datei aufgehoben werden soll
+  gr3=2;
   # die mit den Namen zwischen den Bindestrichen beginnenden Dateien nicht aussortieren
   Ausspar="-dp-" # "-dp-office-";
   # Mindestgroesse, wenn nicht angegeben, dann 0
@@ -34,29 +36,14 @@ ermittledatum() {
   gname=$nanf--$muende;
   # datum = zunächst String hinter dem ersten --
   datum=${dt#*--};
-  datum=${datum%%.*};          # Punkt-Extension abschneiden
-  datum=${datum:0:10};         # auf JJJJ-MM-TT begrenzen
-  # jahr = in datum alles bis zum ersten -
+  # Dateiendung (alles ab dem ersten Punkt) entfernen, damit das Datum sauber extrahiert werden kann
+  datum=${datum%%.*};
+  # datum auf genau JJJJ-MM-TT begrenzen (erste 10 Zeichen)
+  datum=${datum:0:10};
+  # jahr, monat, tag direkt per Substring aus dem normierten Datum lesen
   jahr=${datum:0:4};
-  # monat = zunächst alles ab dem ersten - in datum 
   monat=${datum:5:2};
-  # tag = alles ab dem ersten - in monat
   tag=${datum:8:2};
-}
-
-ermittledatum_falsch() {
-  nanf=${dt%--*};
-  gname=$nanf--$muende;
-  datum=${dt#*--};
-  jahr=${datum%%-*};
-  # datum = dann alles bis zum letzten - in datum
-  datum=${datum%-*};
-#  ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
-  monat=${datum#*-};
-  # tag = alles ab dem ersten - in monat
-  tag=${monat#*-};
-  # monat = dann alles bis zum letzten in monat
-  monat=${monat%-*};
 }
 
 . /root/bin/instutz.sh

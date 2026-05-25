@@ -48,6 +48,7 @@ zeit() {
 # Zeittifferenz zwischen jetzt und der Zeit im ersten Parameter
 ddiff() {
   dsec=$(date -d "$1" +%s 2>/dev/null);
+  # wenn date das Datum nicht auflösen konnte, Fehler melden und abbrechen
   if [ -z "$dsec" ]; then
     [ "$verb" ]&&printf "${rot}Ungültiges Datum '$1' bei Datei $dt – wird übersprungen${reset}\n";
     datediff="";
@@ -55,11 +56,6 @@ ddiff() {
   fi
   datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 #  echo Name: $nanf, Datum: $datum, datediff: $datediff
-}
-
-ddiff_falsch() {
-  dsec=$(date -d "$1" +%s);
-  datediff=$(awk 'BEGIN {print int(('$jsec'-'$dsec')/86400)}');
 } # ddiff
 
 vgbstarr;
@@ -78,53 +74,74 @@ for dt in $(find "$Vz" -maxdepth 1 -name "*$muende" -not -size -$mgroe -printf '
   [ "$verb" ]&&printf "$blau$dt$reset => Datum: $rot$datum$reset, nanf: $nanf\n"
   # wenn Ausspar diesem Namen gleicht, Datei ignorieren
   [ "$Ausspar" ]&&case $Ausspar in *$nanf*)[ "$verb" ]&&echo "$Ausspar in *$nanf* => continue";continue;; esac;
-  # datediff mit dem Alter von $datum [d] belegen
-  ddiff $datum || continue;     # neu: bei ungültigem Datum Datei überspringen
-  # runde = Zahl der verschiedenen Aufhebhäufigkeiten pro Monat (gr1, gr2)
-  for runde in 0 1 2; do
+  # datediff mit dem Alter von $datum [d] belegen; bei ungültigem Datum Datei überspringen
+  ddiff $datum || continue;
+  # runde = Zahl der verschiedenen Aufhebhäufigkeiten (gr0..gr3)
+  for runde in 0 1 2 3; do
     # Mindestalter der Datei [d], damit sie für diese Runde verwertet wird
     vgr=$(eval 'echo $gr'"$runde");
     # Tage im Monat oder Monate im Jahr, mit denen die Datei in dieser Runde auf jeden Fall behalten wird
+    # (Runde 3 benötigt kein Behaltemuster, dort wird die jüngste Datei des Tages ermittelt)
     vbeh=$(eval 'echo $beh'"$runde");
-    # falls kein Mindestalter oder keine Tage/Monate angegeben, diese Runde überspringen
-    [ "$vgr" -a "$vbeh" ]||continue;
-#    echo "!!!!!!!!!!! vbeh: $vbeh, Runde: $runde"
-#    echo datediff: $datediff
-#    echo vgr: $vgr
-#    echo tag: $tag
-#    echo vbeh: $vbeh
-# Variablen je nach Runde/Prüfzeitraum setzen
-    [ $runde = 0 ]&&{ tagomonat=$monat;ttit=Monat;pruefanf=$jahr-01-01;}||{ tagomonat=$tag;ttit=Tag;pruefanf=$jahr-$monat-01;}
+    # falls kein Mindestalter angegeben, diese Runde überspringen
+    [ "$vgr" ]||continue;
+    # für Runden 0-2: auch ohne Behaltemuster überspringen
+    [ $runde -lt 3 ]&&{ [ "$vbeh" ]||continue; };
+# Variablen je nach Runde/Prüfzeitraum setzen (nur für Runden 0-2)
+    [ $runde -eq 0 ]&&{ tagomonat=$monat;ttit=Monat;pruefanf=$jahr-01-01;}
+    [ $runde -eq 1 -o $runde -eq 2 ]&&{ tagomonat=$tag;ttit=Tag;pruefanf=$jahr-$monat-01;}
     # wenn die Datei also älter als dieses Mindestalter ist ...
     if test $datediff -gt $vgr; then
-      # wenn der Monatstag der Datei ..
-      case $vbeh in 
-       # $vbeh gleicht ..
-       *-$tagomonat-*)
-        # dann Datei behalten
-        [ "$verb" ]&&echo "Runde $runde, behalte: $dt, da $ttit $tagomonat in $vbeh";
-        ;;
-       *)
-        [ "$verb" ]&&echo "Runde $runde loesche vielleicht: $dt, da $ttit $tagomonat nicht in $vbeh";
-        # ansonsten ...
+      if [ $runde -lt 3 ]; then
+        # Runden 0-2: Datei anhand des Tages-/Monatsmusters prüfen
+        # wenn der Monatstag der Datei ..
+        case $vbeh in 
+         # $vbeh gleicht ..
+         *-$tagomonat-*)
+          # dann Datei behalten
+          [ "$verb" ]&&echo "Runde $runde, behalte: $dt, da $ttit $tagomonat in $vbeh";
+          ;;
+         *)
+          [ "$verb" ]&&echo "Runde $runde loesche vielleicht: $dt, da $ttit $tagomonat nicht in $vbeh";
+          # ansonsten ...
 #        echo "find $Vz -newermt $jahr-$monat-01 -not -newermt $datum -name "$nanf--????-??-??*.sql*" -print -quit;"
-        # schauen, ob es im gleichen Monat/Jahr schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
-        befehl="find \"$Vz\" -maxdepth 1 -newermt \"$pruefanf\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
-        [ "$verb" ]&&echo befehl: $befehl
-        aelter=$(eval $befehl)
-        # wenn also die Variable befüllt ...
-        if test "$aelter"; then
-          # [ "$verb" ]&&echo $dt $nanf $datum $jahr $monat $tag $datediff;
-          [ "$verb" ]&&echo "   Runde $runde, älter: $aelter, loesche/verschiebe: $dt";
-          # dann die Datei in das Zu-Löschen-Verzeichnis schieben
+          # schauen, ob es im gleichen Monat/Jahr schon eine ältere Datei gibt (die aufgehoben wird), diese dann in die Variable $aelter drucken
+          befehl="find \"$Vz\" -maxdepth 1 -newermt \"$pruefanf\" -not -newermt \"$datum\" -name \"$gname\" -print -quit";
+          [ "$verb" ]&&echo befehl: $befehl
+          aelter=$(eval $befehl)
+          # wenn also die Variable befüllt ...
+          if test "$aelter"; then
+            # [ "$verb" ]&&echo $dt $nanf $datum $jahr $monat $tag $datediff;
+            [ "$verb" ]&&echo "   Runde $runde, älter: $aelter, loesche/verschiebe: $dt";
+            # dann die Datei in das Zu-Löschen-Verzeichnis schieben
+            mv -i "$Vz/$dt" "$Zvz/"
+            # und nicht weiter prüfen
+            break;
+          else
+            # ansonsten auch aufheben, obwohl der Tag nicht stimmt (weil dann die mit dem aufzuhebenden Tag wohl fehlt)
+            [ "$verb" ]&&echo "Runde $runde nichts älter, behalte: $dt";
+          fi;;
+        esac;
+      else
+        # Runde 3: pro Tag nur die jüngste Datei behalten
+        # den Folgetag berechnen, um den Suchrahmen auf genau diesen Tag einzugrenzen
+        ndat=$(date -d "$datum +1 day" +%Y-%m-%d);
+        # schauen, ob es am gleichen Tag bereits eine jüngere Datei des gleichen Gegenstandes gibt
+        befehl="find \"$Vz\" -maxdepth 1 -newermt \"$datum\" -not -newermt \"$ndat\" -name \"$gname\" -print -quit";
+        [ "$verb" ]&&echo "Runde 3 befehl: $befehl"
+        juenger=$(eval $befehl)
+        # wenn eine jüngere Datei des gleichen Tages gefunden wurde ...
+        if test "$juenger"; then
+          [ "$verb" ]&&echo "   Runde 3, jünger am gleichen Tag: $juenger, loesche/verschiebe: $dt";
+          # dann diese ältere Datei des Tages in das Zu-Löschen-Verzeichnis schieben
           mv -i "$Vz/$dt" "$Zvz/"
           # und nicht weiter prüfen
           break;
         else
-          # ansonsten auch aufheben, obwohl der Tag nicht stimmt (weil dann die mit dem aufzuhebenden Tag wohl fehlt)
-          [ "$verb" ]&&echo "Runde $runde nichts älter, behalte: $dt";
-        fi;;
-      esac;
+          # ansonsten ist dies die jüngste Datei des Tages => aufheben
+          [ "$verb" ]&&echo "Runde 3 keine jüngere Datei des gleichen Tages, behalte: $dt";
+        fi;
+      fi;
     else
       # ... sonst wird die Datei heute noch nicht untersucht.
       [ "$verb" ]&&echo "$dt: mit $datediff Tagen jünger als $vgr (Runde $runde)";
