@@ -2935,6 +2935,31 @@ cron() {
 } # cron
 
 tu_turbomed() {
+# 25.5.26:
+if false; then
+md ~/tm
+cd ~/tm
+scp -p sturm@szn4:c://users//sturm//downloads//CGM_TURBOMED_Version_26.2.2.6959_LINUX.zip .
+7z x *
+rm -rf /opt/turbomed
+find TMLinux/TMWin -name "TM_*" -exec dos2unix {} \;
+sh ./TMLinux/TMWin/linux/bin/TM_setup -iw
+zypper in glibc-32bit libstdc++6-32bit
+grep -q 'ia32_emulation=1' /etc/default/grub || sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 ia32_emulation=1"/' /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+reboot
+echo "/opt/FastObjects_t7_14.0/runtime/lib" > /etc/ld.so.conf.d/fastobjects.conf
+ldconfig
+printf '[Unit]\nDescription=FastObjects Database Server\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=/opt/FastObjects_t7_14.0/runtime/bin/ptserver -config=/opt/turbomed/linux/config/ptserver.cfg\nWorkingDirectory=/opt/FastObjects_t7_14.0/runtime/bin\nRestart=always\nUser=root\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/poetd.service
+semanage fcontext -a -t bin_t "/opt/FastObjects_t7_14.0/runtime/bin(/.*)?"
+restorecon -Rv /opt/FastObjects_t7_14.0/runtime/bin/
+systemctl enable poetd;
+systemctl start poetd;
+mkdir /opt/turbomed/PraxisDB-wser # wser, oder
+mkdir /opt/turbomed/PraxisDB     # linux1, oder
+mkdir /opt/turbomed/PraxisDB-res # virtuell
+fi;
+
 # auch: GDT.ini nach c:\turbomed\Formulare\Karteikarte kopieren
 	printf "${dblau}tu_turbomed$reset($1 $2)\n";
 	echo Installations-Verzeichnis: $outDir;
