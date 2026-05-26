@@ -166,23 +166,24 @@ ELG=/var/log/cronf.log
 # -27 5 * * * /usr/bin/termine >>$NLG 2>>$ELG
 -15 23 * * * $RBI/rett.sh >>$NLG 2>>$ELG
 # -15 22 * * * $RBI/copydat.sh >> $NLG 2>>$ELG # scheint schon von irgendwo anders aus aufgerufen zu werden
--55 4 * * * /usr/sbin/ntpdate ptbtime1.ptb.de >>$NLG 2>>$ELG
+# -55 4 * * * /usr/sbin/ntpdate ptbtime1.ptb.de >>$NLG 2>>$ELG
+-55 4 * * * /sbin/chronyd -q 'server ptbtime1.ptb.de iburst maxsamples 1'&&/sbin/hwclock --systohc >>$NLG 2>>$ELG
 # Zeit aufs Bios schreiben
--0 5 * * * /sbin/hwclock --systohc >>$NLG 2>>$ELG
+# -0 5 * * * /sbin/hwclock --systohc >>$NLG 2>>$ELG
 # Mails in mysql-Datenbank eintragen und Faxe des diabetologie-Kontos (weitergeleitet durch entspr. Einstellung der Faxfunktion der Fritzbox) auf p: speichern
 
 # folgendes am 7.9.16 inaktiviert, auch 23.2.17
--1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG }
--52 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG }
+-1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG; }
+-52 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG; }
 -3,11,19,27,35,39,47,55 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -1,33 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&$RBI/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 -52 6 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&$RBI/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 
 # ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
--*/2 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/getmail_gmx7.sh >>$NLG 2>>$ELG }
+-*/2 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/getmail_gmx7.sh >>$NLG 2>>$ELG; }
 # -*/4 7-22 * * * pgrep -c -f "getmail -rgmx7rc" || /usr/bin/getmail -rgmx7rc
 # -*/4 7-22 * * *     getmail_mnet.sh # -*/4 7-22 * * * pgrep -c -f "getmail -rmnetrc" || /usr/bin/getmail -rmnetrc >>$VL/getmail-Aufruf_mnetrc.log 2>&1
--0 3,11-22/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/getmail_alle.sh >>$NLG 2>>$ELG }
+-0 3,11-22/2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ $RBI/getmail_alle.sh >>$NLG 2>>$ELG; }
 # -0 3,11,13,15 * * * pgrep -c -f "getmail -rbuchrc" || /usr/bin/getmail -rbuchhrc -rfreenetrc -rgmx1rc -rgmx2rc -rgmx3rc -rgmx4rc -rgmx5rc -rgmx6rc -rgmx7rc -rgooglerc -rgoogle2rc -rlrzrc -rmnetrc -rvrwebrc -rweb_rc -rwebrc
 # Faxe von der Fritzbox abholen (wenn Abspeichern in /mnt/diabfb/FRITZ/faxbox funktioniert) und in MySQL eintragen (ab 2020 in autofax)
 # -*/2 * * * * $RBI/faxord >>$NLG 2>>$ELG
@@ -192,7 +193,7 @@ ELG=/var/log/cronf.log
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 $RBI/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 $RBI/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente
--* * * * * /usr/bin/ionice -c3 $RBI/zusalat.sh
+-* * * * * /usr/bin/ionice -c3 /root/bin/zusalat.sh
 # Medical-Office-Dateisicherungen
 -20 14,19 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bumo.sh -e 
 -20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 nice -n19 $RBI/verhdop.sh $RBI/bunacht.sh -e 
@@ -232,25 +233,25 @@ ELG=/var/log/cronf.log
 */2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 find /DATA/Patientendokumente -maxdepth 1 -type f -mtime +10000 -exec touch {} \;
 0 8 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && /usr/bin/ionice -c3 rsync -avu /opt/turbomed/labor/backup/ /DATA/Patientendokumente/Labor/ >/dev/null
 */10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && test -d /custo && /usr/bin/ionice -c3 rsync -avu /custo/ /DATA/Patientendokumente/Datenbanken >/dev/null
-10 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null }
+10 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null; }
 0 1 * * * /usr/bin/ionice -c3 /usr/bin/find /tmp -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * /usr/bin/ionice -c3 /usr/bin/nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
-40 05 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/weckalle.sh }
-10 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,192.168.178.45,192.168.178.95>/dev/null }
+40 05 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/weckalle.sh; }
+10 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:DE:80:0E:41:E2,D0:50:99:68:0C:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE,04:D4:C4:EE:98:F1,04:D4:C4:EE:98:0B,04:D4:C4:EE:97:50,04:D4:C4:EE:88:07,192.168.178.45,192.168.178.95>/dev/null; }
 # * * * * 1-5 /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
 0 2 * * * /usr/bin/python3 /root/bin/doppelteimporte.py --delete --no-color >> /var/log/doppelteimporte.log 2>&1
-# */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';" }
--5 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutzeTMBack.sh }
--5 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutze.sh }
--5 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutzeDBBack.sh }
+# */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"; }
+-5 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutzeTMBack.sh; }
+-5 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutze.sh; }
+-5 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/stutzeDBBack.sh; }
 # * * * * * /usr/bin/ionice -c3 /root/bin/stutzMOSich.sh
 
--35 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/komprsql.sh }
+-35 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/komprsql.sh; }
 0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
 -33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
 # muss noch geaendert werden, damit er nicht nach den Zugangsdaten fraegt:
--0 9 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /usr/bin/auffaell > /dev/null 2>&1 }
-*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
-*/2 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
-*/1 * * * * /usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
+-0 9 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /usr/bin/auffaell > /dev/null 2>&1; }
+*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
+*/1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
+*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
