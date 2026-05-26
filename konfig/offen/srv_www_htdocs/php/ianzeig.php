@@ -568,7 +568,7 @@ function gibaus()
 //  echo "3 session telnr ".$_SESSION['telnr']." telnr: ".$telnr."<br>"; // 1.11.20
     if ($_SESSION['obtelnr']) {
       if ($_SESSION['telnr']) {
-        $stil=cave;
+        $stil='cave';
         $text=$_SESSION['tel']." überprüfen";
       } else {
         $stil=unauff;
@@ -581,7 +581,7 @@ function gibaus()
     }
     if (!$_SESSION['kdmp']) {
       if ($_SESSION['dmpa']&&$_SESSION['dmpk']<>'hier'&&!$_SESSION['dmpf']) {
-        $stil=cave;
+        $stil='cave';
       } else {
         $stil=unauff;
       }
