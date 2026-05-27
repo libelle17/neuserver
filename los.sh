@@ -1007,6 +1007,28 @@ done; # nochmal
   awk '/^[^#;]/ && !/ swap / && $2 != "none" {print $2}' "$ftb" | while read mtp; do
     [ -d "$mtp" ] || { mkdir -p "$mtp"; printf "Verzeichnis angelegt: $blau$mtp$reset\n"; };
   done;
+  # ── Samba/CIFS-Shares: wser/mosich und wser/indamed ─────────────────
+  for _mnt in /mnt/wser/mosich /mnt/wser/indamed; do
+    [ -d "$_mnt" ] || { mkdir -p "$_mnt";
+      printf "Verzeichnis angelegt: ${blau}%s${reset}\n" "$_mnt"; };
+  done;
+  _wser_cred="/root/.wser";
+  if grep -qF "//wser/mosich" "$ftb" 2>/dev/null; then
+    printf "wser-Shares bereits in ${blau}%s${reset} eingetragen\n" "$ftb";
+  else
+    if [ "$obecht" ]; then
+      printf "\n# Samba wser-Shares (hinzugefügt von los.sh -mt)\n" >> "$ftb";
+      printf "//wser/mosich\t/mnt/wser/mosich\tcifs\tnofail,credentials=%s\t0\t2\n" \
+        "$_wser_cred" >> "$ftb";
+      printf "//wser/indamed\t/mnt/wser/indamed\tcifs\tnofail,credentials=%s\t0\t2\n" \
+        "$_wser_cred" >> "$ftb";
+      printf "${gruen}wser-Shares in %s eingetragen${reset}\n" "$ftb";
+    else
+      printf "Simulation: wser-Shares würden in %s eingetragen\n" "$ftb";
+      printf "  //wser/mosich /mnt/wser/mosich cifs nofail,credentials=%s 0 2\n" "$_wser_cred";
+      printf "  //wser/indamed /mnt/wser/indamed cifs nofail,credentials=%s 0 2\n" "$_wser_cred";
+    fi;
+  fi;
   mount -a -t nobind,nocifs,nonfs,nonfs4 2>/dev/null||true;
   grep "^//" /etc/fstab 2>/dev/null | grep cifs | while read mline; do
     srv=$(echo "$mline"|sed 's|//\([^/]*\)/.*|\1|');
