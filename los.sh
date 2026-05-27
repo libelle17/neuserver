@@ -3198,6 +3198,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o "$obcron" = 1 ]&&cron;            # crontab vom Quellserver übernehmen
 [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;   # Konfiguration verschlüsselt sichern
 [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;    # Konfiguration laden (nur fehlende)
+[ "$obkonfignl" = 1 ]&&konfig_laden neu;               # Konfiguration neu laden (überschreibt)
 [ $obteil = 0 ]&&speichern;                         # Konfiguration in Dateien schreiben
 printf "${dblau}Ende von $0$reset\n";
 
