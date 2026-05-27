@@ -300,15 +300,23 @@ konfig_sichern() {
   crontab -l > "$instvz/crontabakt"
   geaendert=;
   for f in \
+    "$HOME/.7zpassw" \
+    "$HOME/.bashrc" \
     "$HOME/.fbcredentials" \
-    "$HOME/.tr64cred" \
+    "$HOME/.dircolors" \
+    "$HOME/.gpgpass" \
+    "$HOME/.gitconfig" \
     "$HOME/.loscred" \
     "$HOME/.mariadbpwd" \
     "$HOME/.mariadbrpwd" \
     "$HOME/.modbpwd" \
     "$HOME/.mysqlpwd" \
     "$HOME/.mysqlrpwd" \
+    "$HOME/.netrwhist" \
     "$HOME/.sturm" \
+    "$HOME/.tr64cred" \
+    "$HOME/.wser" \
+    "$HOME/.wget-hsts" \
     "$instvz/crontabakt" \
     ; do
     [ -f "$f" ] && {
