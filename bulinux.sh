@@ -119,6 +119,7 @@ kopieros ".modbpwd"
 # Passwort für cifs-Mounts
 kopiermt home/schade/.wincredentials ... "" "" "" "" 1
 kopieros ".sturm"
+kopieros ".wser"
 # Konfigurationsdateien für postfix-Mailprogramm
 kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
