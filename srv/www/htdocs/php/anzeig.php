@@ -1,4 +1,5 @@
 <?php 
+
 class zutun_cls 
 {
   public static $basen; // =ltrim(basename("..".$_SERVER['PHP_SELF']));
@@ -104,7 +105,7 @@ function getdb($conn,$pat_id)
     unset($_SESSION['behseit']);
     $sqlaktiv="SELECT AktZeit az FROM aktiv WHERE pat_id=".$pat_id." AND person IN ('B','b') AND DATE(AktZeit)=DATE(now()) ORDER BY aktzeit DESC;";
     //$ergeb=$conn->query($sqlaktiv);
-    $ergeb=self::abfrage($conn,$sqlakiv);
+    $ergeb=self::abfrage($conn,$sqlaktiv);
     if ($ergeb->num_rows >0) {
       while($row=$ergeb->fetch_assoc()) {
         $_SESSION['behseit']=new DateTime($row['az']); // obbeha seit
