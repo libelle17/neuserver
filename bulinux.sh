@@ -219,18 +219,19 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
       #  ... aus /etc/my.cnf das mariadb-Datenverzeichnis auslesen
       VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf)
       [ "$obforce" ]&&testdat=||testdat=ibdata1;
-      # Zeitstempel für inkrementelles Backup aktualisieren (nur bei fehlerfreiem Lauf)
-      if [ -z "$_bu_fehler" ]; then
-        bustate_update "$ZL";
-      else
-        printf "${rot}Backup hatte Fehler – Zeitstempel wird nicht aktualisiert!${reset}\n";
-        printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
-      fi;
+       # bustate_update: am dt3-Ende (nach finalem Sweep) – nicht hier im sql-Zweig
     else
 			printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
 		fi;
 	fi;
  done;
+ # Zeitstempel nach vollständigem dt3-Lauf aktualisieren (gilt für -e und -f)
+ if [ "$obecht" ] && [ -z "$_bu_fehler" ]; then
+   bustate_update "$ZL";
+ elif [ "$obecht" ]; then
+   printf "${rot}dt3 hatte Fehler – Zeitstempel nicht aktualisiert!${reset}\n";
+   printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
+ fi;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;

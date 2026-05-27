@@ -9,19 +9,17 @@
 #   bustate_update <zielhost>           – Zeitstempel nach Backup aktualisieren
 #   bustate_changed <qverz> <zh> <out>  – geänderte Dateien seit letztem Backup finden
 #
-# Zeitstempeldateien liegen auf dem QUELLRECHNER (linux1) in /var/run/bustate/
+# Zeitstempeldateien liegen auf dem QUELLRECHNER (linux1) in /var/lib/bustate/
+# (persistente Ablage – überlebt Neustarts; /var/run/ wäre tmpfs)
 # und bekommen den Zielrechner als Suffix: bu_linux0.ts, bu_linux7.ts …
 # Bei Erstanlage wird der Timestamp auf 1970-01-01 gesetzt → Erstlauf-Marker.
-
-BUSTATE_DIR="/var/run/bustate"
-
+BUSTATE_DIR="/var/lib/bustate"
 # -----------------------------------------------------------------------
 bustate_tsfile() {
   # Gibt Pfad zur Zeitstempeldatei auf dem Quellrechner zurück.
   # $1 = Zielrechner (z.B. linux0, linux7), leer = lokal
   printf "%s/bu_%s.ts" "$BUSTATE_DIR" "${1:-lokal}"
 } # bustate_tsfile
-
 # -----------------------------------------------------------------------
 bustate_init() {
   # Legt Verzeichnis und Zeitstempeldatei auf dem Quellrechner an,
@@ -31,7 +29,6 @@ bustate_init() {
   tsf=$(bustate_tsfile "${1:-${ZL:-lokal}}")
   eval "$qssh 'mkdir -p \"$BUSTATE_DIR\" && { [ -f \"$tsf\" ] || touch -t 197001010000 \"$tsf\"; }'" 2>/dev/null
 } # bustate_init
-
 # -----------------------------------------------------------------------
 bustate_update() {
   # Setzt Zeitstempel auf aktuelle Zeit (nach erfolgreichem Backup).
@@ -48,7 +45,6 @@ bustate_update() {
     printf "Simulation: ${blau}touch %s${reset} auf ${blau}%s${reset}\n" "$tsf" "${QL:-lokal}"
   fi
 } # bustate_update
-
 # -----------------------------------------------------------------------
 bustate_changed() {
   # Findet alle Dateien/Symlinks unter $1, die seit dem letzten Backup
@@ -67,10 +63,8 @@ bustate_changed() {
   bustate_erstlauf=
   bustate_count=0
   > "$outfile"
-
   # Zeitstempeldatei anlegen falls noch nicht vorhanden
   bustate_init "$zielhost"
-
   # Erstlauf erkennen: Timestamp ≤ 86400 s nach Epoche (= 1. Jan 1970)
   local tsf tsage
   tsf=$(bustate_tsfile "$zielhost")
@@ -82,15 +76,12 @@ bustate_changed() {
       "$quellverz" "$zielhost"
     return 0
   fi
-
   # Geänderte Dateien/Symlinks finden; Pfade relativ zu $quellverz ausgeben
   eval "$qssh 'find \"$quellverz\" -newer \"$tsf\" \( -type f -o -type l \) -print 2>/dev/null'" \
     | sed "s|^${quellverz}/||" \
     | grep -v '^$' \
     | LC_ALL=C sort > "$outfile"
-
   bustate_count=$(wc -l < "$outfile" | tr -d ' ')
-
   if [ "$verb" ]; then
     local tsdate
     tsdate=$(eval "$qssh 'date -r \"$tsf\" +\"%d.%m.%Y %T\" 2>/dev/null'")
