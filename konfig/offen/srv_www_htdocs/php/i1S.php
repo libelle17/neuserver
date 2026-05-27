@@ -4,7 +4,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Gw";
@@ -15,7 +15,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Taille";
@@ -26,7 +26,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Bewegung";
@@ -37,7 +37,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."RR";
@@ -48,7 +48,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."OAU";
@@ -59,7 +59,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."HbA1c";
@@ -70,7 +70,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Uzu, Fqmin(6)=0/a";
@@ -81,7 +81,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hypo";
@@ -92,7 +92,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hyper";
@@ -103,7 +103,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."NeuSt";
@@ -114,7 +114,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Fuß";
@@ -125,7 +125,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Beruf";
@@ -136,7 +136,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Auto";
@@ -147,7 +147,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Keto";
@@ -158,7 +158,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."K+";
@@ -169,7 +169,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Chol";
@@ -180,7 +180,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."HDL";
@@ -191,7 +191,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."LDL";
@@ -202,7 +202,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TG";
@@ -213,7 +213,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GGT";
@@ -224,7 +224,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GPT";
@@ -235,7 +235,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Ferr";
@@ -246,7 +246,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Digo";
@@ -257,7 +257,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Digit";
@@ -268,7 +268,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Urin";
@@ -279,7 +279,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Alb/U";
@@ -290,7 +290,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Krea";
@@ -301,7 +301,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."GFR";
@@ -312,7 +312,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Augen-US";
@@ -323,7 +323,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."RR-Vgl";
@@ -334,7 +334,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."BZ-Vgl";
@@ -345,7 +345,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Schul";
@@ -356,7 +356,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TSH";
@@ -367,7 +367,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."fT4 [pmol/l]";
@@ -378,29 +378,18 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."fT3";
       echo "<button class='".$stil."' name='fT3'>".$text."</button>";
-    }
-    IF ($_SESSION['obSchuleintr']) {
-      IF ($_SESSION['Schuleintr']) {
-        $stil='cave';
-        $text = "&Oslash ";
-      } ELSE {
-        $stil=unauff;
-        $text="";
-      }
-      $text=$text."Schuleintr";
-      echo "<button class='".$stil."' name='Schuleintr'>".$text."</button>";
     }
     IF ($_SESSION['obHb']) {
       IF ($_SESSION['Hb']) {
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Hb";
@@ -411,7 +400,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Vit B12";
@@ -422,7 +411,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Folsre";
@@ -433,7 +422,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Leuko";
@@ -444,7 +433,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."CRP";
@@ -455,7 +444,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."CK";
@@ -466,7 +455,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."A.P.";
@@ -477,7 +466,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Carotis";
@@ -488,7 +477,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Car alle";
@@ -499,7 +488,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Impf";
@@ -510,7 +499,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Colo";
@@ -521,7 +510,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Pros";
@@ -532,7 +521,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Gyn";
@@ -543,7 +532,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."ADL";
@@ -554,7 +543,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."TUG";
@@ -565,7 +554,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."gar:";
@@ -576,7 +565,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."Arzteintrag";
@@ -587,7 +576,7 @@
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
-        $stil=unauff;
+        $stil='unauff';
         $text="";
       }
       $text=$text."ePA runterladen";
