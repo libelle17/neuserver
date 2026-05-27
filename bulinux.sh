@@ -191,21 +191,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
   # $8 = ob ohne Schutzdateivergleich
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
-#  ... dann Mail-Verzeichisse kopieren,
  if _bu_ob_dt3; then
-# for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
- for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
-  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
-   qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
-	 $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
-     [ "$sdneu" ]||echo inbox: "$inbox";
-     # eine Woche
-     [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
-		 bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
-		 break;
-   done;
-  fi;
- done;
 #  ... sodann die folgenden Verzeichisse: 
 # for A in sql; do
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att mariatrans sql; do
@@ -224,6 +210,20 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
 			printf "Simulation: los.sh mysqli auf $ZL falls mariadb läuft\n";
 		fi;
 	fi;
+ done;
+#  ... dann Mail-Verzeichisse kopieren,
+# for uverz in $(find /$Dt/Mail/Thunderbird/Profiles -mindepth 1 -maxdepth 1 -type d); do
+ for uverz in Praxis Schade Kothny Hammerschmidt Beraterinnen; do
+  if test $uverz = Praxis -o ! "$obkurz"; then # wegen Speicherplatz auf linux7
+   qverz=$Dt/Mail/Thunderbird/Profiles/$uverz;
+	 $qssh "find /$qverz -iname INBOX" |while IFS= read -r inbox; do
+     [ "$sdneu" ]||echo inbox: "$inbox";
+     # eine Woche
+     [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
+		 bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
+		 break;
+   done;
+  fi;
  done;
  # Zeitstempel nach vollständigem dt3-Lauf aktualisieren (gilt für -e und -f)
  if [ "$obecht" ] && [ -z "$_bu_fehler" ]; then
