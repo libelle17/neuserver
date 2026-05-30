@@ -193,13 +193,33 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
  if _bu_ob_dt3; then
- # Schreibschutz auf Zielverzeichnisse aufheben:
+# Schreibschutz-Zustand merken und +i aufheben:
+# ── chattr: +i-Zustand merken und aufheben ──────────────────────────────
+ _bu_chattr_dirs=;
  if [ "$obecht" ]; then
-   $zssh "find /$DtZ -mindepth 1 -maxdepth 1 -type d | xargs -r chattr -i" 2>/dev/null||true;
-   printf "${blau}chattr -i auf /$DtZ/*${reset}\n";
+   _bu_chattr_tmp=$(mktemp);
+   $zssh "find /$DtZ -mindepth 1 -maxdepth 1 -type d 2>/dev/null" > "$_bu_chattr_tmp";
+   while IFS= read -r _d; do
+     [ -z "$_d" ] && continue;
+     if $zssh "lsattr -d \"$_d\" 2>/dev/null" | grep -q '^....i'; then
+       _bu_chattr_dirs="${_bu_chattr_dirs:+${_bu_chattr_dirs}
+}$_d";
+     fi;
+   done < "$_bu_chattr_tmp";
+   rm -f "$_bu_chattr_tmp";
+   if [ "$_bu_chattr_dirs" ]; then
+     printf "${blau}chattr -i${reset} (war gesetzt, wird nach dt3 wiederhergestellt):\n";
+     while IFS= read -r _d; do
+       [ -z "$_d" ] && continue;
+       $zssh "chattr -i \"$_d\"" && printf "  -i: ${blau}%s${reset}\n" "$_d";
+     done <<< "$_bu_chattr_dirs";
+   else
+     printf "${blau}Keine +i-Verzeichnisse unter /$DtZ${reset}\n";
+   fi;
  else
-   printf "Simulation: chattr -i auf /$DtZ/*\n";
+   printf "Simulation: chattr-Zustand unter /$DtZ prüfen und ggf. -i setzen\n";
  fi;
+ # ── Ende chattr -i ─────────────────────────────────────────────────────── 
 #  ... sodann die folgenden Verzeichisse: 
 # for A in sql; do
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att mariatrans sql; do
@@ -244,12 +264,19 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
  # Schreibschutz auf Zielverzeichnisse aufheben:
+ # ── chattr: +i wiederherstellen wo es vorher gesetzt war ─────────────────
  if [ "$obecht" ]; then
-   $zssh "find /$DtZ -mindepth 1 -maxdepth 1 -type d | xargs -r chattr -i" 2>/dev/null||true;
-   printf "${blau}chattr -i auf /$DtZ/*${reset}\n";
+   if [ "$_bu_chattr_dirs" ]; then
+     printf "${blau}chattr +i${reset} wiederherstellen:\n";
+     while IFS= read -r _d; do
+       [ -z "$_d" ] && continue;
+       $zssh "chattr +i \"$_d\"" && printf "  +i: ${blau}%s${reset}\n" "$_d";
+     done <<< "$_bu_chattr_dirs";
+   fi;
  else
-   printf "Simulation: chattr -i auf /$DtZ/*\n";
+   printf "Simulation: chattr +i ggf. wiederherstellen\n";
  fi;
+ # ── Ende chattr +i ───────────────────────────────────────────────────────
  fi; # _bu_ob_dt3 Mail+DATA
  _bu_ob_dt3 && _bu_ftr "dt3 Ende  " $_bu_ts_dt3;
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
