@@ -193,6 +193,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
   # vorher müssen ggf. Quellrechner in $QL (z.Zt. nur: leer oder linux1ur) und Zielrechner in $ZL hinterlegt sein
 
  if _bu_ob_dt3; then
+ # Schreibschutz auf Zielverzeichnisse aufheben:
+ if [ "$obecht" ]; then
+   $zssh "find /$DtZ -mindepth 1 -maxdepth 1 -type d | xargs -r chattr -i" 2>/dev/null||true;
+   printf "${blau}chattr -i auf /$DtZ/*${reset}\n";
+ else
+   printf "Simulation: chattr -i auf /$DtZ/*\n";
+ fi;
 #  ... sodann die folgenden Verzeichisse: 
 # for A in sql; do
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att mariatrans sql; do
@@ -236,6 +243,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
  bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
+ # Schreibschutz auf Zielverzeichnisse aufheben:
+ if [ "$obecht" ]; then
+   $zssh "find /$DtZ -mindepth 1 -maxdepth 1 -type d | xargs -r chattr -i" 2>/dev/null||true;
+   printf "${blau}chattr -i auf /$DtZ/*${reset}\n";
+ else
+   printf "Simulation: chattr -i auf /$DtZ/*\n";
+ fi;
  fi; # _bu_ob_dt3 Mail+DATA
  _bu_ob_dt3 && _bu_ftr "dt3 Ende  " $_bu_ts_dt3;
 fi; # if $qssh "mountpoint -q /$Dt 2>/dev/null" && { $zssh "mountpoint -q /$DtZ 2>/dev/null" || $zssh "test -d /$DtZ 2>/dev/null"; }; then
