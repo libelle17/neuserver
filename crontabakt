@@ -249,9 +249,10 @@ ELG=/var/log/cronf.log
 -35 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 $RBI/komprsql.sh; }
 0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
 -*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
+-*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/hatrans.sh; }
 -33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
 # muss noch geaendert werden, damit er nicht nach den Zugangsdaten fraegt:
 -0 9 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /usr/bin/auffaell > /dev/null 2>&1; }
-*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
 */2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
+*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
 */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
