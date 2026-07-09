@@ -97,7 +97,7 @@ _bu_ob_db()  { [ -n "$obdb"  ] || { [ -z "$obdt" ] && [ -z "$obdt1" ] && [ -z "$
 if _bu_ob_dt1; then  # dt1: Konfigdateien
   _bu_ts_dt1=$(date +%s); _bu_hdr "dt1 Beginn";
 # auf Rechner mit kleinen Platten weniger kopieren
-case "$ZL" in *3|*7|*8)oburz=1;; *)obkurz=;;esac;
+case "$ZL" in *3|*7|*8)obkurz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
 kopiermt "var/spool" ... "" "" "" "" 1
 # Editoreinstellungen
