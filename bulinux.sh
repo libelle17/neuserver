@@ -116,6 +116,8 @@ kopieros ".mysqlpwd"
 kopieros ".mysqlrpwd"
 # Passwort für MO-Datenbank-Superuser
 kopieros ".modbpwd"
+# Zugangsdaten für DBVerb.frm (zentrale Freigabe statt Registry-Cache pro PC)
+kopieros "dbverbfreigabe"
 # Passwort für cifs-Mounts
 kopiermt home/schade/.wincredentials ... "" "" "" "" 1
 kopieros ".sturm"
