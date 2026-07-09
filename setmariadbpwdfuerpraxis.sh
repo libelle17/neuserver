@@ -49,7 +49,9 @@ ausf() {
 printf "${gruen}== 1) dbverb.cfg ==${schwarz}\n"
 if [ "$obecht" ]; then
 	tmp=$(mktemp /root/dbverbfreigabe/dbverb.cfg.XXXXXX)
-	printf 'uid=praxis\npwd=%s\n' "$NEUPWD" > "$tmp"
+	# CRLF noetig: VB6s "Line Input #" erkennt reines LF nicht als Zeilenende
+	# und liest die Datei sonst als eine einzige Zeile (s. Korrektur 09.07.2026)
+	printf 'uid=praxis\r\npwd=%s\r\n' "$NEUPWD" > "$tmp"
 	chown root:praxis "$tmp"
 	chmod 640 "$tmp"
 	mv -f "$tmp" /root/dbverbfreigabe/dbverb.cfg
