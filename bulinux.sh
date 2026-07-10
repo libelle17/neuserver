@@ -100,6 +100,27 @@ if _bu_ob_dt1; then  # dt1: Konfigdateien
 case "$ZL" in *3|*7|*8)obkurz=1;; *)obkurz=;;esac;
 # Faxprotokolle und alte Faxe, Linux-Mails
 kopiermt "var/spool" ... "" "" "" "" 1
+# ── Crontab-Plausibilitaetscheck ─────────────────────────────────────────
+# Der obige rsync von /var/spool kopiert nebenbei auch die lebende Crontab
+# (/var/spool/cron/tabs/root) von der Quelle. Am 07.07.2026 wurde genau diese
+# Datei auf linux0/linux7 durch eine zeitgleiche Stoerung (dieselbe, die auch
+# Postfix und cron.log lahmlegte) auf nur noch 4 Zeilen verstuemmelt - ohne
+# dass das damals auffiel, weil der rsync selbst fehlerfrei durchlief. Deshalb
+# hier zusaetzlich pruefen und im Zweifel direkt von der Quelle neu installieren:
+_bu_cron_soll=$(eval "$qssh 'crontab -l 2>/dev/null'" | wc -l);
+if [ -n "$ZL" ]; then _bu_cron_ist=$(ssh "$ZL" 'crontab -l 2>/dev/null' | wc -l);
+else _bu_cron_ist=$(crontab -l 2>/dev/null | wc -l); fi;
+if [ "$_bu_cron_soll" -gt 20 ] && [ "$_bu_cron_ist" -lt $(( _bu_cron_soll / 2 )) ]; then
+  printf "${rot}Crontab-Warnung: Ziel %s hat nur %s von %s Zeilen nach var/spool-Sync${reset}\n" \
+    "${ZL:-lokal}" "$_bu_cron_ist" "$_bu_cron_soll";
+  if [ "$obecht" ]; then
+    if [ -n "$ZL" ]; then eval "$qssh 'crontab -l'" | ssh "$ZL" 'crontab -';
+    else eval "$qssh 'crontab -l'" | crontab -; fi;
+    printf "${blau}Crontab auf %s neu installiert (%s Zeilen erwartet).${reset}\n" "${ZL:-lokal}" "$_bu_cron_soll";
+  else
+    printf "Simulation: Crontab auf %s waere direkt von der Quelle neu installiert worden.\n" "${ZL:-lokal}";
+  fi;
+fi;
 # Editoreinstellungen
 kopieros ".vim"
 # Berechtigungen zum Mounten der Fritz-Box als cifs-Laufwerk

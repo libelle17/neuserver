@@ -29,28 +29,39 @@
 #      Server doch noch/wieder laeuft)
 #   2. Fragt (falls -e ohne -f) interaktiv nach, bevor etwas veraendert wird
 #   3. Setzt den Hostnamen auf <alter-hostname>
-#   4. Vergibt <alte-ip> zusaetzlich zur eigenen Adresse - persistent ueber
+#   4. Prueft die eigene Crontab auf Plausibilitaet und installiert sie im
+#      Zweifel aus /root/crontabakt neu (s. Warnung unten - Grund fuer diesen
+#      Schritt). Wichtig, da die HOST=linux1-Bedingungen in der (auf allen drei
+#      Servern identischen) Crontab erst nach dem Hostnamenwechsel greifen.
+#   5. Vergibt <alte-ip> zusaetzlich zur eigenen Adresse - persistent ueber
 #      NetworkManager (bleibt nach Reboot erhalten) und sofort per
 #      "ip addr replace" plus Gratuitous ARP (arping -A), damit Switches/
 #      Clients im LAN die neue Zuordnung ohne Wartezeit uebernehmen.
 #      Bewusst KEINE Fritzbox-DHCP-Reservierung noetig - das funktioniert
 #      auch wenn die Fritzbox gerade nicht erreichbar ist.
-#   5. Korrigiert ggf. die auf linux7 historisch abweichende Pfadtiefe von
+#   6. Korrigiert ggf. die auf linux7 historisch abweichende Pfadtiefe von
 #      /DATA (dort liegen die gespiegelten Praxisdaten unter /DATA/DATA,
 #      s. bul1.sh: DATAZIEL=DATA/DATA fuer linux7) in der Samba-[daten]-Freigabe,
 #      erkannt anhand des tatsaechlichen Datenbestands, nicht am Hostnamen.
-#   6. Startet Samba (smb/nmb). Das ist bewusst der EINZIGE Zeitpunkt, zu dem
+#   7. Startet Samba (smb/nmb). Das ist bewusst der EINZIGE Zeitpunkt, zu dem
 #      das geschieht - im Ruhezustand bleibt Samba auf den Reserveservern aus
 #      (Schutzgedanke gegen ein sich über Windows/wser ausbreitendes
 #      Verschluesselungsvirus).
-#   7. Weist nur auf die MariaDB-Aktualitaet hin (siehe unten) - promotet NICHTS
+#   8. Weist nur auf die MariaDB-Aktualitaet hin (siehe unten) - promotet NICHTS
 #      automatisch.
-#   8. Best-effort per TR-064 (.tr64cred, Format wie fb.sh: "user:pass"): benennt
+#   9. Best-effort per TR-064 (.tr64cred, Format wie fb.sh: "user:pass"): benennt
 #      den Host-Eintrag in der Fritz!Box kosmetisch um. Fehler werden ignoriert,
 #      da nicht alle Fritz!Box-Firmwares SetHostNameByIP unterstuetzen und dieser
 #      Schritt fuer den eigentlichen Netzbetrieb nicht erforderlich ist.
 #
-# WICHTIG zu Schritt 7 (Stand 09.07.2026): Der frueher hier vorgesehene
+# WICHTIG zu Schritt 4 (Stand 10.07.2026): Am 07.07.2026 wurde auf linux0/linux7
+# durch eine kurze Stoerung waehrend des taeglichen bulinux.sh-Laufs (dessen
+# var/spool-Sync die lebende Crontab von linux1 kopiert) die dortige Crontab
+# auf wenige Zeilen verstuemmelt - unbemerkt, weil der Sync selbst fehlerfrei
+# durchlief. Deshalb hier vor der eigentlichen Uebernahme sicherheitshalber
+# gegenpruefen, statt sich auf ein "sieht aktiv aus" zu verlassen.
+#
+# WICHTIG zu Schritt 8 (Stand 09.07.2026): Der frueher hier vorgesehene
 # automatische Weg, den auf /var/lib/mysql_1 rotierenden rsync-Schnappschuss
 # (aus bulinux.sh, Zweig "gleiche Version") in die laufende Standby-Datenbank
 # zu uebernehmen, wurde bewusst NICHT automatisiert und wird auch nicht mehr
@@ -168,7 +179,26 @@ else
   printf "Simulation: hostnamectl set-hostname %s\n" "$alterhost"
 fi
 
-# 4) IP-Adresse zusaetzlich vergeben: persistent (NetworkManager) + sofort (ip addr) + Gratuitous ARP
+# 4) Crontab-Plausibilitaetscheck: erst nach dem Hostnamenwechsel greifen die
+# HOST=linux1-Bedingungen der (auf allen drei Servern identischen) Crontab -
+# eine verstuemmelte Crontab wuerde das aber lautlos verhindern (s. Warnung
+# im Skriptkopf). Referenz: /root/crontabakt (Backup, wird per bulinux.sh
+# dt1-Phase alle paar Stunden aktualisiert verteilt).
+_ue_cron_ist=$(crontab -l 2>/dev/null | wc -l);
+_ue_cron_soll=0; [ -f /root/crontabakt ] && _ue_cron_soll=$(wc -l </root/crontabakt);
+printf "${dblau}Crontab-Check${reset}: %s Zeilen aktuell, %s Zeilen in /root/crontabakt\n" "$_ue_cron_ist" "$_ue_cron_soll";
+if [ "$_ue_cron_soll" -gt 20 ] && [ "$_ue_cron_ist" -lt $(( _ue_cron_soll / 2 )) ]; then
+  printf "${rot}Crontab sieht verstuemmelt aus (%s statt ~%s Zeilen)${reset}\n" "$_ue_cron_ist" "$_ue_cron_soll";
+  if [ -n "$obecht" ]; then
+    crontab /root/crontabakt && printf "${blau}Crontab aus /root/crontabakt neu installiert.${reset}\n";
+  else
+    printf "Simulation: crontab /root/crontabakt (Neuinstallation aus Backup)\n";
+  fi;
+else
+  printf "${gruen}Crontab plausibel.${reset}\n";
+fi;
+
+# 5) IP-Adresse zusaetzlich vergeben: persistent (NetworkManager) + sofort (ip addr) + Gratuitous ARP
 if [ -n "$obecht" ]; then
   if [ -n "$con" ]; then
     printf "${blau}nmcli connection modify \"%s\" +ipv4.addresses %s/24${reset}\n" "$con" "$alteip"
@@ -189,7 +219,7 @@ else
   printf "Simulation: nmcli connection modify \"%s\" +ipv4.addresses %s/24; ip addr replace %s/24 dev %s; arping -A\n" "${con:-?}" "$alteip" "$alteip" "$iface"
 fi
 
-# 5) /DATA-Pfadtiefe pruefen und ggf. Samba-Freigabe korrigieren
+# 6) /DATA-Pfadtiefe pruefen und ggf. Samba-Freigabe korrigieren
 # (anhand des tatsaechlichen Datenbestands, nicht anhand des Hostnamens -
 # damit das Skript auch fuer kuenftige, aehnlich abweichend eingerichtete
 # Reserveserver richtig funktioniert)
@@ -216,7 +246,7 @@ if [ ! -d /DATA/Patientendokumente ] && [ -d /DATA/DATA/Patientendokumente ]; th
   fi
 fi
 
-# 6) Samba starten (bewusst der einzige Aktivierungszeitpunkt)
+# 7) Samba starten (bewusst der einzige Aktivierungszeitpunkt)
 if [ -n "$obecht" ]; then
   printf "${blau}Samba starten${reset}\n"
   systemctl enable --now smb 2>/dev/null || systemctl enable --now smbd 2>/dev/null
@@ -226,7 +256,7 @@ else
   printf "Simulation: systemctl enable --now smb nmb (bzw. smbd nmbd)\n"
 fi
 
-# 7) MariaDB-Aktualitaet nur anzeigen - keine automatische Promotion (s. Warnung oben)
+# 8) MariaDB-Aktualitaet nur anzeigen - keine automatische Promotion (s. Warnung oben)
 printf "${dblau}MariaDB-Hinweis${reset}: Live-Datenbankstand NICHT automatisch aktualisiert.\n"
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf 2>/dev/null)
 if [ -n "$VLM" ] && [ -d "$VLM" ]; then
@@ -234,7 +264,7 @@ if [ -n "$VLM" ] && [ -d "$VLM" ]; then
 fi
 printf "  Bitte vor Produktivbetrieb pruefen: ${blau}bulinux.sh -dberg${reset} (Vergleich gegen %s falls erreichbar)\n" "$alterhost"
 
-# 8) Best-effort: Fritzbox-Hosteintrag kosmetisch umbenennen (TR-064)
+# 9) Best-effort: Fritzbox-Hosteintrag kosmetisch umbenennen (TR-064)
 credfile="$HOME/.tr64cred"
 if [ -f "$credfile" ]; then
   if [ -n "$obecht" ]; then
