@@ -1970,6 +1970,12 @@ sambaconf() {
   semanage fcontext -a -e /var/www /srv/www 2>/dev/null||\
     semanage fcontext -m -e /var/www /srv/www 2>/dev/null||true
   restorecon -Rv /srv/www 2>/dev/null||true
+  # Patientenlaufzettel: plz/vorb/behand/fertig brauchen Schreibzugriff fuer httpd
+  # (anzeig.php kopiert/verschiebt Dateien dorthin, u.a. "Beh.fertig"), sonst
+  # scheitert das lautlos mit "Permission denied" (AVC-Fix vom 10.7.2026):
+  semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null||\
+    semanage fcontext -m -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null||true
+  restorecon -Rv /srv/www/htdocs/plz /srv/www/htdocs/vorb /srv/www/htdocs/behand /srv/www/htdocs/fertig 2>/dev/null||true
   awk -v z=0 '
     function drucke(s1,s2,avail) {
       printf " A[%i]=\"[%s]\"; P[%i]=\"%s\"; avail[%i]=%i;\n",z,s1,z,s2,z,avail;
