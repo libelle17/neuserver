@@ -409,9 +409,22 @@ if [ -n "$VLM" ]; then
   printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (%s): " \
     "${_bu_ver_q:-unbekannt}" "${QL:-lokal}" "${_bu_ver_z:-unbekannt}" "${ZL:-lokal}";
 
-  if [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
-    # ── Gleiche Version: schneller datadir-Sync ────────────────────────
-    printf "${blau}gleich → rsync datadir${reset}\n";
+  # Der physische Datadir-rsync (unten) ist nur crash-konsistent, wenn die
+  # Quelle waehrend des Kopierens NICHT produktiv beschrieben wird - das ist
+  # nur bei -u der Fall (Rueckspiegelung von einem Reserveserver in einen
+  # frisch aufgesetzten/gestoppten linux1; dessen Quelle, der Reserveserver,
+  # laeuft dabei nicht produktiv). Im normalen taeglichen Lauf ist die Quelle
+  # das laufende linux1 - ein rsync von dessen InnoDB-Datenverzeichnis ist
+  # dann NICHT konsistent. Analyse vom 09.07.2026: genau so entstand auf
+  # linux0/linux7 ein Schnappschuss, der nach Uebernahme mit "InnoDB:
+  # Tablespace ... was not found" nicht mehr startete (mariadb blieb down),
+  # und weil Quell-/Zielversion praktisch immer gleich war, lief seitdem nur
+  # noch dieser folgenlose Schnappschuss statt einer echten Aktualisierung
+  # der laufenden Standby-Datenbank. Deshalb zusaetzlich zur Versionsgleichheit
+  # verlangen, dass -u gesetzt ist:
+  if [ "$obumg" ] && [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
+    # ── Gleiche Version UND -u (Rueckspiegelung): schneller datadir-Sync ──
+    printf "${blau}gleich, -u → rsync datadir${reset}\n";
     if [ "$obecht" ]; then
       for _i in $(seq 9 -1 3); do
         [ -d "${VLM}_${_i}" ] && { rm -rf "${VLM}_${_i}"; printf "  ${blau}%s_%s${reset} gelöscht\n" "$VLM" "$_i"; };
@@ -436,8 +449,13 @@ if [ -n "$VLM" ]; then
     fi;
 
   else
-    # ── Verschiedene Versionen: mariadb-dump/import ────────────────────
-    printf "${rot}verschieden → mariadb-dump${reset}\n";
+    # ── Normaler Lauf (Quelle produktiv) oder verschiedene Version:
+    #    mariadb-dump/import - konsistent dank --single-transaction ──────
+    if [ "$obumg" ]; then
+      printf "${rot}verschieden → mariadb-dump${reset}\n";
+    else
+      printf "${rot}mariadb-dump (kein -u - Quelle laeuft produktiv, rsync waere nicht konsistent)${reset}\n";
+    fi;
     _bu_dbs=$(eval "$qssh \
       'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
        -e \"SHOW DATABASES\" 2>/dev/null'" \
