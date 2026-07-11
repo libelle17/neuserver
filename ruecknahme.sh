@@ -33,10 +33,17 @@
 #   2. Fragt (falls -e ohne -f) interaktiv nach, bevor etwas veraendert wird
 #      (mit dem Hinweis auf die kurze Praxis-Unterbrechung durch Schritt 3)
 #   3. Stoppt Samba UND MariaDB auf dem Reserveserver, BEVOR irgendetwas
-#      kopiert wird - der "-u"-Datenbankzweig von bulinux.sh kopiert bei
-#      gleicher MariaDB-Version das Datenverzeichnis der Quelle direkt (per
-#      rsync) in die laufende Zieldatenbank; das ist nur crash-konsistent,
-#      wenn die Quelle waehrend des Kopierens nicht mehr beschrieben wird.
+#      kopiert wird - damit waehrend der Rueckholung kein bewegliches Ziel
+#      entsteht und die Praxis-Bedienung dort sauber endet statt einfach
+#      unter dem laufenden Betrieb weggezogen zu werden.
+#   3b. Sichert linux1s AKTUELLEN (noch ungesyncten) Datenbankstand per
+#      mariadb-dump nach /DATA/sql/vor_ruecknahme_<Zeitstempel>/ (Rechte
+#      700/600), BEVOR er gleich ueberschrieben wird. Noetig, weil
+#      mariadb-dump/Import beim Rueckholen die Datenbank immer komplett
+#      konsistent durch den Stand von $reserveserver ersetzt (kein Zeilen-
+#      Merge) - rein lokale, nie gesicherte Aenderungen auf linux1 (z.B. kurz
+#      vor dessen Ausfall) wuerden sonst kommentarlos verloren gehen. Dieser
+#      Dump ist die einzige Moeglichkeit, so etwas danach manuell zu retten.
 #   4. Holt per bulinux.sh -u -e -f <reserveserver> alle Datenaenderungen
 #      (Konfig, Windows-Freigaben, DATA, MariaDB) vom (jetzt gestoppten)
 #      Reserveserver zurueck auf dieses (lokale) linux1. Bricht bei Fehlern
@@ -55,10 +62,17 @@
 # Revert um 18:40 Uhr, der um 18:53 Uhr wieder rueckgaengig gemacht wurde) -
 # das duerfte die Erinnerung an fruehere Fehlschlaege mit "-u" erklaeren. Die
 # Kernlogik (Quelle/Ziel-Tausch, DtZ-Neuberechnung) wurde am 11.07.2026 per
-# Simulation verifiziert und ist korrekt; das Quiescing in Schritt 3 wurde
-# an diesem Tag ergaenzt, weil die bloss theoretische Korrektheit der
-# Quelle/Ziel-Logik allein nicht vor einer inkonsistenten Kopie schuetzt,
-# wenn die Quelle waehrenddessen weiterlaeuft.
+# Simulation verifiziert und ist korrekt. Ausserdem stellte sich bei der
+# Analyse eines realistischen Szenarios (auf linux1 UND Reserveserver wird
+# zwischen den Backups unabhaengig voneinander weitergearbeitet) heraus, dass
+# der zwischenzeitlich fuer -u genutzte dateibasierte MariaDB-Datadir-Kopierweg
+# selbst bei gestoppter Quelle einen inkonsistenten Mischzustand ueber mehrere
+# Tabellen hinweg erzeugen konnte (rsync -u ueberspringt neuere Zieldateien
+# pro Datei einzeln, was bei InnoDB nichts Verlaessliches ueber den
+# logischen Datenstand aussagt). Deshalb nutzt bulinux.sh seit demselben Tag
+# fuer die Datenbank immer den mariadb-dump/Import-Weg (konsistent, aber ohne
+# Zeilen-Merge) - Schritt 3b faengt den dadurch moeglichen Verlust rein
+# lokaler linux1-Aenderungen ab.
 #
 # WICHTIG: Dieses Skript geht NICHT davon aus, dass linux1 seine eigene
 # IP/seinen eigenen Hostnamen verloren hat - es wird davon ausgegangen, dass
@@ -135,21 +149,42 @@ if [ -n "$obecht" ] && [ -z "$obforce" ]; then
   [ "$antwort" = "ja" ] || { printf "Abgebrochen.\n"; exit 1; }
 fi
 
-# 3) Reserveserver VOR der Rueckholung stoppen (Samba + MariaDB): der
-# "-u"-Datenbankzweig von bulinux.sh kopiert bei gleicher MariaDB-Version das
-# Datenverzeichnis der Quelle direkt (per rsync) in die laufende Zieldatenbank
-# - das ist nur crash-konsistent, wenn die Quelle waehrend des Kopierens NICHT
-# mehr beschrieben wird (s. Analyse vom 09./10.07.2026 in bulinux.sh/
-# uebernahme.sh zur selben Problematik in der anderen Richtung). Deshalb hier
-# zuerst Samba (verhindert neue Windows-Schreibzugriffe) und MariaDB
-# (verhindert weitere DB-Schreibzugriffe) auf dem Reserveserver stoppen -
-# NICHT erst danach wie in einer frueheren Version dieses Skripts.
-printf "${dblau}Reserveserver stoppen${reset}: Samba+MariaDB auf %s (Konsistenz fuer die Rueckholung)\n" "$reserveserver"
+# 3) Reserveserver VOR der Rueckholung stoppen (Samba + MariaDB): verhindert,
+# dass waehrend der Rueckholung noch neue Aenderungen auf dem Reserveserver
+# entstehen (bewegliches Ziel) und beendet die Praxis-Bedienung dort sauber,
+# statt sie einfach unter dem laufenden Betrieb wegzuziehen.
+printf "${dblau}Reserveserver stoppen${reset}: Samba+MariaDB auf %s (kein bewegliches Ziel waehrend der Rueckholung)\n" "$reserveserver"
 if [ -n "$obecht" ]; then
   ssh "$reserveserver" "systemctl stop smb 2>/dev/null; systemctl stop smbd 2>/dev/null; systemctl stop nmb 2>/dev/null; systemctl stop nmbd 2>/dev/null; systemctl stop mariadb 2>/dev/null";
   printf "${gruen}%s gestoppt.${reset}\n" "$reserveserver";
 else
   printf "Simulation: auf %s systemctl stop smb nmb mariadb\n" "$reserveserver";
+fi
+
+# 3b) Sicherungsdump von linux1s AKTUELLEM (noch ungesyncten) Datenbankstand,
+# BEVOR bulinux.sh -u ihn gleich unwiderruflich ueberschreibt. mariadb-dump/
+# Import ersetzt beim Rueckholen IMMER die komplette Datenbank konsistent
+# durch den Stand von $reserveserver (kein Zeilen-Merge moeglich) - falls auf
+# linux1 nach dem letzten Backup zu $reserveserver noch produktiv
+# weitergearbeitet wurde (z.B. kurz vor dessen Ausfall), gehen solche
+# Aenderungen sonst kommentarlos verloren. Dieser Dump ist die einzige
+# Moeglichkeit, so etwas danach noch manuell zu retten. Enthaelt ggf.
+# Patientendaten - deshalb strikte Rechte (700/600) und niemals Inhalt in
+# Log-/Bildschirmausgabe.
+_re_dumpdir="/DATA/sql/vor_ruecknahme_$(date +%Y%m%d_%H%M%S)";
+printf "${dblau}Sicherungsdump${reset} von linux1s aktuellem Datenbankstand nach %s\n" "$_re_dumpdir"
+if [ -n "$obecht" ]; then
+  mkdir -p "$_re_dumpdir" && chmod 700 "$_re_dumpdir";
+  _re_dbs=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SHOW DATABASES" 2>/dev/null | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
+  for _re_db in $_re_dbs; do
+    mariadb-dump --defaults-extra-file=/root/.mysqlrpwd --default-character-set=utf8mb4 -c -K \
+      --routines --events --triggers --single-transaction --skip-lock-tables --skip-add-locks --quick \
+      "$_re_db" > "$_re_dumpdir/$_re_db.sql" 2>>"$_re_dumpdir/dump.log";
+  done;
+  chmod 600 "$_re_dumpdir"/*.sql "$_re_dumpdir"/dump.log 2>/dev/null;
+  printf "${gruen}Sicherungsdump abgeschlossen: %s${reset} (%s Datenbanken)\n" "$_re_dumpdir" "$(printf '%s\n' $_re_dbs | wc -l)";
+else
+  printf "Simulation: mariadb-dump aller lokalen Datenbanken nach %s\n" "$_re_dumpdir";
 fi
 
 # 4) Datenrueckholung: bulinux.sh -u zieht ALLES (Konfig, Windows-Freigaben,

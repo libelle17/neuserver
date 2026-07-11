@@ -426,7 +426,6 @@ if _bu_ob_db && [ -z "$sdneu" ]; then
     _bu_db_unlock() { eval "$qssh 'rm -f \"$_bu_lockfile\" 2>/dev/null'" 2>/dev/null||true; };
     trap '_bu_db_unlock' EXIT INT TERM;
 VLM=$(sed -n 's/^[[:space:]]*datadir[[:space:]]*=[[:space:]]*\(.*\)/\1/p' /etc/my.cnf);
-[ "$obforce" ] && testdat= || testdat=ibdata1;
 
 if [ -n "$VLM" ]; then
   # Versionen ermitteln (major.minor)
@@ -443,53 +442,25 @@ if [ -n "$VLM" ]; then
   printf "MariaDB Quelle ${blau}%s${reset} (%s), Ziel ${blau}%s${reset} (%s): " \
     "${_bu_ver_q:-unbekannt}" "${QL:-lokal}" "${_bu_ver_z:-unbekannt}" "${ZL:-lokal}";
 
-  # Der physische Datadir-rsync (unten) ist nur crash-konsistent, wenn die
-  # Quelle waehrend des Kopierens NICHT produktiv beschrieben wird - das ist
-  # nur bei -u der Fall (Rueckspiegelung von einem Reserveserver in einen
-  # frisch aufgesetzten/gestoppten linux1; dessen Quelle, der Reserveserver,
-  # laeuft dabei nicht produktiv). Im normalen taeglichen Lauf ist die Quelle
-  # das laufende linux1 - ein rsync von dessen InnoDB-Datenverzeichnis ist
-  # dann NICHT konsistent. Analyse vom 09.07.2026: genau so entstand auf
-  # linux0/linux7 ein Schnappschuss, der nach Uebernahme mit "InnoDB:
-  # Tablespace ... was not found" nicht mehr startete (mariadb blieb down),
-  # und weil Quell-/Zielversion praktisch immer gleich war, lief seitdem nur
-  # noch dieser folgenlose Schnappschuss statt einer echten Aktualisierung
-  # der laufenden Standby-Datenbank. Deshalb zusaetzlich zur Versionsgleichheit
-  # verlangen, dass -u gesetzt ist:
-  if [ "$obumg" ] && [ -n "$_bu_ver_q" ] && [ -n "$_bu_ver_z" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
-    # ── Gleiche Version UND -u (Rueckspiegelung): schneller datadir-Sync ──
-    printf "${blau}gleich, -u → rsync datadir${reset}\n";
-    if [ "$obecht" ]; then
-      for _i in $(seq 9 -1 3); do
-        [ -d "${VLM}_${_i}" ] && { rm -rf "${VLM}_${_i}"; printf "  ${blau}%s_%s${reset} gelöscht\n" "$VLM" "$_i"; };
-      done;
-      [ -d "${VLM}_2" ] && { rm -rf "${VLM}_2"; printf "  ${blau}%s_2${reset} gelöscht\n" "$VLM"; };
-      [ -d "${VLM}_1" ] && { mv "${VLM}_1" "${VLM}_2"; printf "  ${blau}%s_1 → %s_2${reset} (Vorversion)\n" "$VLM" "$VLM"; };
-      $zssh "systemctl stop mariadb"; $zssh "systemctl disable mariadb";
-      if [ "$obumg" ]; then
-        # -u: direkt in Datadir kopieren (nicht in _1), Rotation überspringen
-        printf "${blau}Kopiere Datadir direkt nach %s (wegen -u)${reset}\n" "$VLM";
-        kopiermt "$VLM/" "$VLM" "" "$OBDEL" $testdat 86400 1 1;
-      else
-        kopiermt "$VLM/" "${VLM}_1" "" "$OBDEL" $testdat 86400 1 1;
-      fi;
-      # my.cnf und Eigentümer sicherstellen bevor Start:
-      $zssh "[ -f /etc/my.cnf ] || { cp ${INSTVZ:-/root/neuserver}/my.cnf /etc/my.cnf 2>/dev/null; restorecon /etc/my.cnf 2>/dev/null; }";
-      $zssh "chown -R mysql:mysql $VLM 2>/dev/null; restorecon -Rv $VLM 2>/dev/null||true";
-      $zssh "systemctl start mariadb"; $zssh "systemctl enable mariadb";
-    else
-      printf "Simulation: %s_3..9 löschen, %s_1 → %s_2\n" "$VLM" "$VLM" "$VLM";
-      printf "Simulation: systemctl stop/start mariadb, kopiermt %s/ %s_1\n" "$VLM" "$VLM";
-    fi;
-
-  else
-    # ── Normaler Lauf (Quelle produktiv) oder verschiedene Version:
-    #    mariadb-dump/import - konsistent dank --single-transaction ──────
-    if [ "$obumg" ]; then
-      printf "${rot}verschieden → mariadb-dump${reset}\n";
-    else
-      printf "${rot}mariadb-dump (kein -u - Quelle laeuft produktiv, rsync waere nicht konsistent)${reset}\n";
-    fi;
+  # Der frueher hier vorhandene physische Datadir-rsync (bei gleicher Version)
+  # wurde am 11.07.2026 entfernt: Er ist selbst bei gestoppter Quelle nicht
+  # sicher, sobald Quelle UND Ziel unabhaengig voneinander weitergeschrieben
+  # wurden (z.B. -u-Rueckspiegelung nach einer Uebernahmezeit, s. ruecknahme.sh) -
+  # rsync -u ueberspringt dann pro Datei einzeln neuere Zieldateien, was bei
+  # InnoDB zu einem inkonsistenten Mischzustand ueber mehrere Tabellen hinweg
+  # fuehren kann (Dateizeitstempel sagen nichts Verlaessliches ueber den
+  # logischen Datenstand aus). mariadb-dump/import ersetzt dagegen IMMER die
+  # gesamte Datenbank konsistent durch den Stand der Quelle (--single-transaction),
+  # auch wenn dabei rein lokale, nie gesicherte Aenderungen auf dem Ziel verloren
+  # gehen koennten - das ist die kontrolliertere, vorhersehbare Alternative.
+  # Siehe auch die Analyse vom 09.07.2026 zum urspruenglichen Crash-Konsistenz-
+  # Problem dieses Wegs.
+  # "if true": bewusst kein echtes Verzweigungskriterium mehr (s.o.) - so
+  # bleibt die Einrueckung/Struktur des Blocks unveraendert, statt riskant
+  # neu zu formatieren:
+  if true; then
+    # ── mariadb-dump/import - konsistent dank --single-transaction ──────
+    printf "${rot}mariadb-dump${reset}\n";
     _bu_dbs=$(eval "$qssh \
       'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
        -e \"SHOW DATABASES\" 2>/dev/null'" \
