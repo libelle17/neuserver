@@ -86,6 +86,8 @@ commandline() {
         db|-nurdb|-nur-db) obdb=1;;       # nur Datenbank, keine Dateien
         wh|-wh) _bu_wh_max="${2:-5}"; shift;;
         dberg|-dberg) obdberg=1;;  # nur DB-Ergebnisvergleich anzeigen
+        dbrsync|-dbrsync) ;;  # 11.07.2026: veraltet/No-Op - Datadir-rsync ist bei "-u" jetzt Standard (s. bulinux.sh), Flag nur noch aus Kompatibilitaet akzeptiert
+        dbdump|-dbdump) obdbdump=1;;  # erzwingt den langsameren, aber unabhaengig von der MariaDB-Version funktionierenden mariadb-dump-Weg statt des seit 11.07.2026 bei "-u" defaultmaessigen Datadir-rsync
         u|-u|-umg|-umgekehrt) obumg=1;;  # Richtung umkehren: Q↔Z  # DB-Dump Wiederholungen bei Verbindungsverlust
         z|-ziele) shift; ziele="$1";
           echo "$ziele"|egrep -q "^[0-9 ]*$"||{ printf "Kann Kopierziele: $blau$ziele$reset nicht auflösen. Breche ab.\n";exit;};;
@@ -440,7 +442,13 @@ kopiermt() { # mit test
 #    obdat 1: obsub und /Pfad/zum/qv = Datei
 #    ZVos=/ Pfad/zum/zv / oder / Pfad/zum/zv/qv /, falls obsub # zum Vergleich einer Datei darin
 #    ZVofs=/ Pfad/zum/zv/ oder / Pfad/zum/zv/qv, falls obdat
-    [ $obaltgepr ]&&attr="av"||attr="avu";
+    # X = Extended Attributes/SELinux-Kontext mitkopieren (Bugfix 11.07.2026
+    # nach einem Korruptionsvorfall bei MariaDB-Datadir-rsync, s. bulinux.sh:
+    # ohne -X bekommen frisch kopierte Dateien auf Enforcing-Systemen den
+    # generischen Kontext des Zielpfads statt des vom jeweiligen Dienst
+    # (z.B. smbd) erwarteten - fuehrt sonst zu schwer diagnostizierbaren
+    # Zugriffsfehlern statt klarer Fehlermeldungen):
+    [ $obaltgepr ]&&attr="avX"||attr="avuX";
     if [ "$obecht" ]; then
       ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4 $ergae$AUSSCHL" $dblau 1;
     else
@@ -558,7 +566,7 @@ kopiermt_delta() {
   _ZVofs_real=$(printf '%s' "$ZVofs_d" | sed 's/\\ / /g');
   _Quelle="${QmD}/${_QVofs_real}";
   [ "$QL" ] && _Quelle="\"$_Quelle\"";
-  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -av ${4:+$4} ${_ergae:+$_ergae}";
+  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -avX ${4:+$4} ${_ergae:+$_ergae}";
   _ret=0;
   if [ "$obecht" ]; then
     ausf "$_bef" "$dblau" 1;
@@ -628,7 +636,7 @@ kopieros() {
     fi;
     if [ "$_sdq" = "$_sdz" ] || [ -z "$_sdz" ]; then
       # Schutzdatei identisch (oder Ziel frisch) – Kopie durchführen:
-			ausf "$kopbef -avu --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
+			ausf "$kopbef -avuX --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
 			# .ssh-Rechte auf Ziel absichern (SSH-Key-Auth darf nicht brechen):
 			# /root Eigentümer + Rechte wiederherstellen (rsync kann sie verändern)
 			if [ "$ZL" ]; then
@@ -783,6 +791,7 @@ obdt2=;
 obdt3=;
 obdb=;
 obdberg=;
+obdbdump=;
 _bu_wh_max=;
 sdneu=;
 nurdrei=;

@@ -97,22 +97,28 @@ rot="\033[1;31m";
 gruen="\033[0;32m";
 reset="\033[0m";
 
-reserveserver=""
+reserveserver="linux0"  # Default (11.07.2026): erste Praeferenz ist immer linux0 - Parameter bleibt trotzdem ueberschreibbar (z.B. linux7)
 obecht=
 obforce=
 verb=
+obdbdump=
+obnurdb=
 
 while [ $# -gt 0 ]; do
   case "$1" in
     -e|-echt) obecht=1;;
     -f|-force) obforce=1;;
     -v|-verbose) verb=1;;
+    -dbdump) obdbdump=1;;    # erzwingt mariadb-dump statt des seit 11.07.2026 defaultmaessigen Datadir-rsync (z.B. falls die MariaDB-Versionen von linux1 und Reserveserver zufaellig auseinanderlaufen)
+    -nurdb) obnurdb=1;;      # nur Datenbank zurueckholen, keine Dateien (DATA/Windows-Freigaben/Konfig) - fuer schnelle, gezielte Testlaeufe
     -h|-hilfe|-help|--help)
-      printf "Aufruf: %s <reserveserver> [-e] [-f] [-v]\n" "$(basename "$0")"
+      printf "Aufruf: %s <reserveserver> [-e] [-f] [-v] [-dbdump] [-nurdb]\n" "$(basename "$0")"
       printf "  -e  echter Lauf (ohne: nur Simulation/Anzeige)\n"
       printf "  -f  ueberspringt die Rueckfrage\n"
       printf "  -v  ausfuehrliche Ausgabe\n"
-      printf "Beispiel: %s linux0 -e -f\n" "$(basename "$0")"
+      printf "  -dbdump   erzwingt mariadb-dump statt des schnelleren Datadir-rsync (Default seit 11.07.2026, sofern MariaDB-Versionen gleich sind)\n"
+      printf "  -nurdb    nur Datenbank, keine Dateien (fuer schnelle Testlaeufe)\n"
+      printf "Beispiel: %s -e -f\n" "$(basename "$0")"
       exit 0;;
     -*) printf "${rot}Unbekannte Option: %s${reset}\n" "$1"; exit 1;;
     *)
@@ -205,9 +211,12 @@ fi
 # -f (Vollabgleich) bewusst immer gesetzt, unabhaengig vom eigenen -f dieses
 # Skripts (der hier steuert nur die Rueckfrage) - nach einer Uebernahmezeit
 # soll die Rueckholung vollstaendig sein, nicht nur inkrementell.
-printf "${dblau}Datenrueckholung${reset}: bulinux.sh -u -e -f %s\n" "$reserveserver"
+_rn_extra="";
+[ -n "$obdbdump" ] && _rn_extra="$_rn_extra -dbdump";
+[ -n "$obnurdb" ] && _rn_extra="$_rn_extra -db";
+printf "${dblau}Datenrueckholung${reset}: bulinux.sh -u -e -f%s %s\n" "$_rn_extra" "$reserveserver"
 if [ -n "$obecht" ]; then
-  "$MDIR/bulinux.sh" -u -e -f ${verb:+-v} "$reserveserver";
+  "$MDIR/bulinux.sh" -u -e -f ${verb:+-v} $_rn_extra "$reserveserver";
   bu_ret=$?;
   if [ "$bu_ret" -ne 0 ]; then
     printf "${rot}bulinux.sh -u meldete einen Fehler (Exitcode %s) - breche ab, OHNE %s die Identitaet zu entziehen.${reset}\n" "$bu_ret" "$reserveserver";
@@ -216,7 +225,7 @@ if [ -n "$obecht" ]; then
   fi;
   printf "${gruen}Datenrueckholung abgeschlossen.${reset}\n";
 else
-  printf "Simulation: %s/bulinux.sh -u -e -f %s\n" "$MDIR" "$reserveserver";
+  printf "Simulation: %s/bulinux.sh -u -e -f%s %s\n" "$MDIR" "$_rn_extra" "$reserveserver";
 fi
 
 # 4b) Erst JETZT, nach erfolgreicher Datenruecknahme, MariaDB auf dem

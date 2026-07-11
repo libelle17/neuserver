@@ -455,10 +455,119 @@ if [ -n "$VLM" ]; then
   # gehen koennten - das ist die kontrolliertere, vorhersehbare Alternative.
   # Siehe auch die Analyse vom 09.07.2026 zum urspruenglichen Crash-Konsistenz-
   # Problem dieses Wegs.
-  # "if true": bewusst kein echtes Verzweigungskriterium mehr (s.o.) - so
-  # bleibt die Einrueckung/Struktur des Blocks unveraendert, statt riskant
-  # neu zu formatieren:
-  if true; then
+  # Bugfix/Umstellung 11.07.2026: Datadir-rsync ist jetzt der STANDARD-Weg,
+  # aber NUR im umgekehrten Modus (-u, s. ruecknahme.sh/rueckgabe.sh) - dort
+  # ist die Quelle immer ein Reserveserver im Ruhezustand, kein Problem, ihn
+  # kurz zu stoppen. Im normalen Modus (taegliche Cronjob-Sicherungen von
+  # linux1 zu den Reserveservern) bleibt mariadb-dump --single-transaction
+  # IMMER Pflicht, ganz unabhaengig von diesem Zweig - linux1 ist der
+  # produktive Praxisserver und darf fuer Routine-Sicherungen niemals
+  # gestoppt werden (s. Diskussion 11.07.2026). "-dbdump" erzwingt bei
+  # Bedarf auch im -u-Modus den langsameren, aber versionsunabhaengigen
+  # mariadb-dump-Weg.
+  if [ -n "$obumg" ] && [ -z "$obdbdump" ] && [ -n "$_bu_ver_q" ] && [ "$_bu_ver_q" = "$_bu_ver_z" ]; then
+    # ── STANDARD bei -u (11.07.2026): rohes Datadir-rsync statt mariadb-dump
+    # - deutlich schneller (kein SQL-Parsing/Reindex), aber nur sicher unter
+    # zwei Bedingungen: (1) Quelle und Ziel haben
+    # exakt dieselbe MariaDB-Major.Minor-Version (gleiches InnoDB-
+    # Dateiformat) - oben bereits geprueft; (2) MariaDB ist waehrend der
+    # gesamten Kopie auf BEIDEN Seiten komplett gestoppt (keine offenen
+    # Dateien, garantiert konsistenter, gecheckpointer Datenstand - kein
+    # bewegliches Ziel). Anders als der frueher entfernte rsync-Weg (s.
+    # Kommentar oben) NIE mit "-u"/Datei-Alters-Vergleich: hier wird immer
+    # ALLES unbedingt ueberschrieben (--delete, kein -u) - das vermeidet
+    # genau das Mosaik-Problem (Mischzustand aus alten und neuen Dateien),
+    # das damals zur Entfernung fuehrte. Ersetzt NICHT den Sicherungsdump
+    # in ruecknahme.sh Schritt 3b (der bleibt unabhaengig davon bestehen).
+    printf "${blau}rsync (Datadir, Standard bei -u)${reset}\n";
+    if [ "$obecht" ]; then
+      # Bugfix 11.07.2026 (nach einem echten Korruptionsfall): "systemctl
+      # stop mariadb" OHNE Erfolgskontrolle reicht nicht - bei grossem
+      # Buffer-Pool kann der Stop laenger dauern als erwartet bzw. haengen
+      # bleiben; rsync lief damals los, WAEHREND die Quelle noch dirty
+      # Pages flushte, wodurch Datendateien und ib_logfile0 aus
+      # unterschiedlichen Zeitpunkten kopiert wurden (InnoDB erkannte das
+      # beim naechsten Start als Korruption, mehrere .ibd-Dateien
+      # betroffen). Deshalb jetzt: stoppen UND aktiv per Poll-Schleife
+      # verifizieren, dass der Dienst wirklich "inactive"/"failed" ist,
+      # bevor rsync ueberhaupt startet - sonst abbrechen statt zu kopieren.
+      _bu_stop_warten() { # $1: ssh-Praefix ("" = lokal) oder Hostname fuer ssh, $2: Anzeigename
+        local _h="$1" _n="$2" _i _st;
+        if [ -n "$_h" ]; then ssh "$_h" "systemctl stop mariadb" 2>/dev/null; else systemctl stop mariadb 2>/dev/null; fi;
+        for _i in $(seq 1 60); do # bis zu 2 Minuten
+          if [ -n "$_h" ]; then _st=$(ssh "$_h" "systemctl is-active mariadb" 2>/dev/null); else _st=$(systemctl is-active mariadb 2>/dev/null); fi;
+          [ "$_st" = "inactive" -o "$_st" = "failed" ] && return 0;
+          sleep 2;
+        done;
+        printf "${rot}MariaDB auf %s liess sich nicht innerhalb 2 Minuten verifiziert stoppen (Status: %s)${reset}\n" "$_n" "${_st:-?}";
+        return 1;
+      };
+      printf "${dblau}MariaDB stoppen (verifiziert)${reset}: Quelle (%s) und Ziel (%s) fuer konsistente Kopie\n" "${QL:-lokal}" "${ZL:-lokal}";
+      if _bu_stop_warten "$QL" "${QL:-lokal (Quelle)}" && _bu_stop_warten "$ZL" "${ZL:-lokal (Ziel)}"; then
+        _bu_ddp=$(dirname "$VLM"); _bu_ddn=$(basename "$VLM");
+        # -X: SELinux-Kontext/Extended-Attributes mitkopieren (sonst bei
+        # Enforcing-Systemen "var_lib_t" statt "mysqld_db_t" - mysqld/
+        # mysql_upgrade haengt bzw. schlaegt dann fehl, s. Vorfall 11.07.2026);
+        # restorecon danach zusaetzlich als Netz, falls -X nicht vollstaendig
+        # greift (z.B. andere SELinux-Policy-Version auf Ziel).
+        printf "${dblau}rsync${reset}: %s:%s -> %s:%s (voll, --delete, kein -u, -X fuer SELinux-Kontext)\n" "${QL:-lokal}" "$VLM" "${ZL:-lokal}" "$VLM";
+        if [ -n "$ZL" ]; then
+          rsync -a -X --delete -e ssh "$_bu_ddp/$_bu_ddn/" "$ZL:$_bu_ddp/$_bu_ddn/";
+          _bu_rs_ret=$?;
+          ssh "$ZL" "command -v restorecon >/dev/null 2>&1 && restorecon -R '$_bu_ddp/$_bu_ddn' || true";
+        elif [ -n "$QL" ]; then
+          rsync -a -X --delete -e ssh "$QL:$_bu_ddp/$_bu_ddn/" "$_bu_ddp/$_bu_ddn/";
+          _bu_rs_ret=$?;
+          command -v restorecon >/dev/null 2>&1 && restorecon -R "$_bu_ddp/$_bu_ddn";
+        else
+          printf "${rot}Weder QL noch ZL gesetzt (beide lokal?) - Datadir-rsync hier nicht sinnvoll, breche ab${reset}\n";
+          false; _bu_rs_ret=$?;
+        fi;
+      else
+        _bu_rs_ret=1;
+      fi;
+      printf "${dblau}MariaDB starten${reset}: Quelle und Ziel\n";
+      eval "$qssh 'systemctl start mariadb'";
+      if [ -n "$ZL" ]; then ssh "$ZL" "systemctl start mariadb"; else systemctl start mariadb; fi;
+      if [ "$_bu_rs_ret" = 0 ]; then
+        printf "${blau}rsync erfolgreich${reset} - pruefe jetzt, ob das Ziel danach auch wirklich gesund ist ...\n";
+        sleep 3;
+        # Bugfix 11.07.2026 (nach demselben Korruptionsfall): rsync=0 heisst
+        # nur "Dateien uebertragen", NICHT "Ziel-MariaDB ist danach gesund".
+        # Ohne diese Pruefung lief der Aufrufer (z.B. ruecknahme.sh) frueher
+        # bis zum Ende durch, obwohl das Ziel in Wahrheit korrupt war und gar
+        # nicht (mehr) startete. Deshalb hier explizit auf dem ZIEL nach-
+        # fragen, nicht nur auf der Quelle.
+        if [ -n "$ZL" ]; then
+          _bu_ziel_dbs=$(ssh "$ZL" 'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SHOW DATABASES" 2>/dev/null');
+          _bu_ziel_err=$(ssh "$ZL" 'journalctl -u mariadb --since "3 minutes ago" --no-pager 2>/dev/null' | grep -iE "corrupt" | head -3);
+        else
+          _bu_ziel_dbs=$(mariadb --defaults-extra-file=/root/.mysqlrpwd -BN -e "SHOW DATABASES" 2>/dev/null);
+          _bu_ziel_err=$(journalctl -u mariadb --since "3 minutes ago" --no-pager 2>/dev/null | grep -iE "corrupt" | head -3);
+        fi;
+        _bu_ziel_dbs=$(printf '%s\n' "$_bu_ziel_dbs" | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
+        if [ -z "$_bu_ziel_dbs" ]; then
+          printf "${rot}Ziel-MariaDB antwortet nach dem Start nicht (leer/kein Zugriff) - vermutlich gescheitert${reset}\n"; _bu_fehler=1;
+        elif [ -n "$_bu_ziel_err" ]; then
+          printf "${rot}Ziel-MariaDB meldet frische Korruptionsfehler im Log:${reset}\n%s\n" "$_bu_ziel_err"; _bu_fehler=1;
+        else
+          printf "${gruen}Ziel-MariaDB laeuft und antwortet, keine frischen Korruptionsfehler im Log.${reset}\n";
+          _bu_dbs=$(eval "$qssh \
+            'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+             -e \"SHOW DATABASES\" 2>/dev/null'" \
+            | grep -vE '^(information_schema|performance_schema|sys|mysql)$');
+          bu_db_erg;
+        fi;
+      else
+        printf "${rot}rsync (bzw. der vorherige verifizierte Stop) fehlgeschlagen (Code %s)${reset}\n" "$_bu_rs_ret"; _bu_fehler=1;
+      fi;
+    else
+      printf "Simulation: MariaDB auf Quelle+Ziel stoppen (verifiziert), rsync -a -X --delete (kein -u) %s + restorecon, MariaDB auf beiden wieder starten\n" "$VLM";
+    fi;
+  else
+    if [ -n "$obumg" ] && [ -z "$obdbdump" ]; then
+      printf "${rot}Datadir-rsync (Standard bei -u) nicht moeglich - Versionen unterschiedlich oder unbekannt (Quelle %s / Ziel %s) - falle zurueck auf mariadb-dump${reset}\n" "${_bu_ver_q:-?}" "${_bu_ver_z:-?}";
+    fi;
     # ── mariadb-dump/import - konsistent dank --single-transaction ──────
     printf "${rot}mariadb-dump${reset}\n";
     _bu_dbs=$(eval "$qssh \

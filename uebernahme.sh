@@ -94,8 +94,8 @@ rot="\033[1;31m";
 gruen="\033[0;32m";
 reset="\033[0m";
 
-alterhost=""
-alteip=""
+alterhost="linux1"  # Default (11.07.2026): in der Praxis gibt es nur ein linux1 - Parameter bleibt trotzdem ueberschreibbar
+alteip="192.168.178.21"  # Default, s.o.
 obecht=
 obforce=
 verb=
@@ -110,7 +110,7 @@ while [ $# -gt 0 ]; do
       printf "  -e  echter Lauf (ohne: nur Simulation/Anzeige)\n"
       printf "  -f  ueberspringt Erreichbarkeitscheck und Rueckfrage (Notfall-Einzeiler)\n"
       printf "  -v  ausfuehrliche Ausgabe\n"
-      printf "Beispiel: %s linux1 192.168.178.21 -e -f\n" "$(basename "$0")"
+      printf "Beispiel: %s -e -f  (linux1/192.168.178.21 sind seit 11.07.2026 Default und koennen weggelassen werden)\n" "$(basename "$0")"
       exit 0;;
     -*) printf "${rot}Unbekannte Option: %s${reset}\n" "$1"; exit 1;;
     *)
@@ -124,7 +124,7 @@ done
 
 if [ -z "$alterhost" ] || [ -z "$alteip" ]; then
   printf "${rot}Aufruf: %s <alter-hostname> <alte-ip> [-e] [-f] [-v]${reset}\n" "$(basename "$0")"
-  printf "Beispiel: %s linux1 192.168.178.21 -e\n" "$(basename "$0")"
+  printf "Beispiel: %s -e  (linux1/192.168.178.21 sind Default)\n" "$(basename "$0")"
   exit 1
 fi
 
