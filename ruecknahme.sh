@@ -31,17 +31,34 @@
 # Was das Skript tut:
 #   1. Prueft, ob <reserveserver> erreichbar ist
 #   2. Fragt (falls -e ohne -f) interaktiv nach, bevor etwas veraendert wird
-#   3. Holt per bulinux.sh -u -e -f <reserveserver> alle Datenaenderungen
-#      (Konfig, Windows-Freigaben, DATA, MariaDB) vom Reserveserver zurueck
-#      auf dieses (lokale) linux1. Bricht bei Fehlern ab, BEVOR dem
-#      Reserveserver die Identitaet entzogen wird - sonst waeren
-#      zwischenzeitliche Aenderungen ggf. verloren.
-#   4. Erst wenn Schritt 3 fehlerfrei war: entfernt auf dem Reserveserver die
+#      (mit dem Hinweis auf die kurze Praxis-Unterbrechung durch Schritt 3)
+#   3. Stoppt Samba UND MariaDB auf dem Reserveserver, BEVOR irgendetwas
+#      kopiert wird - der "-u"-Datenbankzweig von bulinux.sh kopiert bei
+#      gleicher MariaDB-Version das Datenverzeichnis der Quelle direkt (per
+#      rsync) in die laufende Zieldatenbank; das ist nur crash-konsistent,
+#      wenn die Quelle waehrend des Kopierens nicht mehr beschrieben wird.
+#   4. Holt per bulinux.sh -u -e -f <reserveserver> alle Datenaenderungen
+#      (Konfig, Windows-Freigaben, DATA, MariaDB) vom (jetzt gestoppten)
+#      Reserveserver zurueck auf dieses (lokale) linux1. Bricht bei Fehlern
+#      ab, BEVOR dem Reserveserver die Identitaet entzogen wird - sonst
+#      waeren zwischenzeitliche Aenderungen ggf. verloren.
+#   5. Erst wenn Schritt 4 fehlerfrei war: entfernt auf dem Reserveserver die
 #      waehrend der Uebernahme geliehene IP (per NetworkManager + ip addr del),
 #      setzt dessen Hostnamen zurueck auf <reserveserver>, stellt eine evtl.
-#      von uebernahme.sh gesicherte smb.conf wieder her und schaltet dessen
-#      Samba wieder ab (Schutzgedanke wie in los.sh/uebernahme.sh - im
+#      von uebernahme.sh gesicherte smb.conf wieder her und deaktiviert Samba
+#      dort dauerhaft (Schutzgedanke wie in los.sh/uebernahme.sh - im
 #      Ruhezustand bleibt Samba auf den Reserveservern aus).
+#
+# WICHTIG (Stand 11.07.2026): Eine Analyse der bulinux.sh-Versionsgeschichte
+# (git log) zeigte, dass die -u-Funktion erst am 21.05.2026 eingefuehrt und
+# am 24.05.2026 mehrfach nachgebessert wurde (u.a. ein versehentlicher
+# Revert um 18:40 Uhr, der um 18:53 Uhr wieder rueckgaengig gemacht wurde) -
+# das duerfte die Erinnerung an fruehere Fehlschlaege mit "-u" erklaeren. Die
+# Kernlogik (Quelle/Ziel-Tausch, DtZ-Neuberechnung) wurde am 11.07.2026 per
+# Simulation verifiziert und ist korrekt; das Quiescing in Schritt 3 wurde
+# an diesem Tag ergaenzt, weil die bloss theoretische Korrektheit der
+# Quelle/Ziel-Logik allein nicht vor einer inkonsistenten Kopie schuetzt,
+# wenn die Quelle waehrenddessen weiterlaeuft.
 #
 # WICHTIG: Dieses Skript geht NICHT davon aus, dass linux1 seine eigene
 # IP/seinen eigenen Hostnamen verloren hat - es wird davon ausgegangen, dass
@@ -113,12 +130,29 @@ printf "${gruen}%s ist erreichbar.${reset}\n" "$reserveserver"
 
 # 2) Rueckfrage (nur bei -e ohne -f)
 if [ -n "$obecht" ] && [ -z "$obforce" ]; then
-  printf "${rot}Es werden jetzt Daten von %s zurueckgeholt, danach verliert %s die geliehene Identitaet (Hostname/IP/Samba). Fortfahren? (ja/NEIN): ${reset}" "$reserveserver" "$reserveserver"
+  printf "${rot}%s wird jetzt gestoppt (Samba+MariaDB), Daten werden zurueckgeholt, danach verliert %s die geliehene Identitaet. Kurze Praxis-Unterbrechung waehrend der Rueckholung. Fortfahren? (ja/NEIN): ${reset}" "$reserveserver" "$reserveserver"
   read -r antwort
   [ "$antwort" = "ja" ] || { printf "Abgebrochen.\n"; exit 1; }
 fi
 
-# 3) Datenrueckholung: bulinux.sh -u zieht ALLES (Konfig, Windows-Freigaben,
+# 3) Reserveserver VOR der Rueckholung stoppen (Samba + MariaDB): der
+# "-u"-Datenbankzweig von bulinux.sh kopiert bei gleicher MariaDB-Version das
+# Datenverzeichnis der Quelle direkt (per rsync) in die laufende Zieldatenbank
+# - das ist nur crash-konsistent, wenn die Quelle waehrend des Kopierens NICHT
+# mehr beschrieben wird (s. Analyse vom 09./10.07.2026 in bulinux.sh/
+# uebernahme.sh zur selben Problematik in der anderen Richtung). Deshalb hier
+# zuerst Samba (verhindert neue Windows-Schreibzugriffe) und MariaDB
+# (verhindert weitere DB-Schreibzugriffe) auf dem Reserveserver stoppen -
+# NICHT erst danach wie in einer frueheren Version dieses Skripts.
+printf "${dblau}Reserveserver stoppen${reset}: Samba+MariaDB auf %s (Konsistenz fuer die Rueckholung)\n" "$reserveserver"
+if [ -n "$obecht" ]; then
+  ssh "$reserveserver" "systemctl stop smb 2>/dev/null; systemctl stop smbd 2>/dev/null; systemctl stop nmb 2>/dev/null; systemctl stop nmbd 2>/dev/null; systemctl stop mariadb 2>/dev/null";
+  printf "${gruen}%s gestoppt.${reset}\n" "$reserveserver";
+else
+  printf "Simulation: auf %s systemctl stop smb nmb mariadb\n" "$reserveserver";
+fi
+
+# 4) Datenrueckholung: bulinux.sh -u zieht ALLES (Konfig, Windows-Freigaben,
 # DATA, MariaDB) von $reserveserver zurueck auf dieses lokale linux1.
 # -f (Vollabgleich) bewusst immer gesetzt, unabhaengig vom eigenen -f dieses
 # Skripts (der hier steuert nur die Rueckfrage) - nach einer Uebernahmezeit
@@ -137,7 +171,7 @@ else
   printf "Simulation: %s/bulinux.sh -u -e -f %s\n" "$MDIR" "$reserveserver";
 fi
 
-# 4) Reserveserver: geliehene IP entfernen, Hostname zurueck, Samba abschalten
+# 5) Reserveserver: geliehene IP entfernen, Hostname zurueck, Samba dauerhaft abschalten
 meineip=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}');
 printf "${dblau}Identitaet zurueckgeben${reset}: %s (geliehene IP: %s)\n" "$reserveserver" "${meineip:-unbekannt}";
 
@@ -167,7 +201,7 @@ if [ -n "$obecht" ]; then
     fi
   ';
 
-  printf "${blau}Samba auf %s abschalten${reset}\n" "$reserveserver";
+  printf "${blau}Samba auf %s dauerhaft deaktivieren${reset} (war in Schritt 3 schon gestoppt)\n" "$reserveserver";
   ssh "$reserveserver" "systemctl disable --now smb 2>/dev/null; systemctl disable --now smbd 2>/dev/null; systemctl disable --now nmb 2>/dev/null; systemctl disable --now nmbd 2>/dev/null";
 else
   printf "Simulation: auf %s IP-Alias %s entfernen, hostnamectl set-hostname %s, smb.conf-Backup wiederherstellen, Samba abschalten\n" "$reserveserver" "${meineip:-?}" "$reserveserver";
