@@ -32,10 +32,11 @@
 #   1. Prueft, ob <reserveserver> erreichbar ist
 #   2. Fragt (falls -e ohne -f) interaktiv nach, bevor etwas veraendert wird
 #      (mit dem Hinweis auf die kurze Praxis-Unterbrechung durch Schritt 3)
-#   3. Stoppt Samba UND MariaDB auf dem Reserveserver, BEVOR irgendetwas
-#      kopiert wird - damit waehrend der Rueckholung kein bewegliches Ziel
-#      entsteht und die Praxis-Bedienung dort sauber endet statt einfach
-#      unter dem laufenden Betrieb weggezogen zu werden.
+#   3. Stoppt Samba auf dem Reserveserver, BEVOR irgendetwas kopiert wird -
+#      damit waehrend der Rueckholung keine neuen Datei-Aenderungen entstehen
+#      (bewegliches Ziel) und die Praxis-Bedienung dort sauber endet statt
+#      einfach unter dem laufenden Betrieb weggezogen zu werden. MariaDB
+#      bleibt bewusst noch aktiv, s. Schritt 4b.
 #   3b. Sichert linux1s AKTUELLEN (noch ungesyncten) Datenbankstand per
 #      mariadb-dump nach /DATA/sql/vor_ruecknahme_<Zeitstempel>/ (Rechte
 #      700/600), BEVOR er gleich ueberschrieben wird. Noetig, weil
@@ -45,11 +46,15 @@
 #      vor dessen Ausfall) wuerden sonst kommentarlos verloren gehen. Dieser
 #      Dump ist die einzige Moeglichkeit, so etwas danach manuell zu retten.
 #   4. Holt per bulinux.sh -u -e -f <reserveserver> alle Datenaenderungen
-#      (Konfig, Windows-Freigaben, DATA, MariaDB) vom (jetzt gestoppten)
-#      Reserveserver zurueck auf dieses (lokale) linux1. Bricht bei Fehlern
-#      ab, BEVOR dem Reserveserver die Identitaet entzogen wird - sonst
-#      waeren zwischenzeitliche Aenderungen ggf. verloren.
-#   5. Erst wenn Schritt 4 fehlerfrei war: entfernt auf dem Reserveserver die
+#      (Konfig, Windows-Freigaben, DATA, MariaDB) vom Reserveserver zurueck
+#      auf dieses (lokale) linux1 - MariaDB dort ist zu diesem Zeitpunkt noch
+#      aktiv (s. Schritt 3), das brauchen SHOW DATABASES/mariadb-dump.
+#      Bricht bei Fehlern ab, BEVOR dem Reserveserver die Identitaet
+#      entzogen wird - sonst waeren zwischenzeitliche Aenderungen ggf.
+#      verloren.
+#   4b. Erst wenn Schritt 4 fehlerfrei war: stoppt MariaDB auf dem
+#      Reserveserver (im Ruhezustand dort nicht benoetigt).
+#   5. Entfernt auf dem Reserveserver die
 #      waehrend der Uebernahme geliehene IP (per NetworkManager + ip addr del),
 #      setzt dessen Hostnamen zurueck auf <reserveserver>, stellt eine evtl.
 #      von uebernahme.sh gesicherte smb.conf wieder her und deaktiviert Samba
@@ -149,16 +154,24 @@ if [ -n "$obecht" ] && [ -z "$obforce" ]; then
   [ "$antwort" = "ja" ] || { printf "Abgebrochen.\n"; exit 1; }
 fi
 
-# 3) Reserveserver VOR der Rueckholung stoppen (Samba + MariaDB): verhindert,
-# dass waehrend der Rueckholung noch neue Aenderungen auf dem Reserveserver
+# 3) Reserveserver VOR der Rueckholung stoppen (nur Samba): verhindert, dass
+# waehrend der Rueckholung noch neue Datei-Aenderungen auf dem Reserveserver
 # entstehen (bewegliches Ziel) und beendet die Praxis-Bedienung dort sauber,
 # statt sie einfach unter dem laufenden Betrieb wegzuziehen.
-printf "${dblau}Reserveserver stoppen${reset}: Samba+MariaDB auf %s (kein bewegliches Ziel waehrend der Rueckholung)\n" "$reserveserver"
+# Bugfix 11.07.2026: MariaDB bleibt hier bewusst NOCH aktiv (anders als
+# frueher) - Schritt 4 braucht per SSH erreichbares MariaDB auf der Quelle
+# fuer "SHOW DATABASES"/mariadb-dump; Konsistenz liefert --single-transaction
+# ohnehin schon, ein Stop hier fuehrte nur dazu, dass bulinux.sh -u
+# "Keine Datenbanken auf Quelle gefunden" meldete und die DB-Ruecknahme
+# stillschweigend ausfiel (bei einem echten Testlauf am 11.07.2026 entdeckt).
+# MariaDB wird stattdessen erst nach erfolgreicher Ruecknahme in Schritt 4b
+# gestoppt.
+printf "${dblau}Reserveserver stoppen${reset}: Samba auf %s (kein bewegliches Ziel waehrend der Rueckholung; MariaDB bleibt bis nach der Datenruecknahme aktiv)\n" "$reserveserver"
 if [ -n "$obecht" ]; then
-  ssh "$reserveserver" "systemctl stop smb 2>/dev/null; systemctl stop smbd 2>/dev/null; systemctl stop nmb 2>/dev/null; systemctl stop nmbd 2>/dev/null; systemctl stop mariadb 2>/dev/null";
+  ssh "$reserveserver" "systemctl stop smb 2>/dev/null; systemctl stop smbd 2>/dev/null; systemctl stop nmb 2>/dev/null; systemctl stop nmbd 2>/dev/null";
   printf "${gruen}%s gestoppt.${reset}\n" "$reserveserver";
 else
-  printf "Simulation: auf %s systemctl stop smb nmb mariadb\n" "$reserveserver";
+  printf "Simulation: auf %s systemctl stop smb nmb\n" "$reserveserver";
 fi
 
 # 3b) Sicherungsdump von linux1s AKTUELLEM (noch ungesyncten) Datenbankstand,
@@ -204,6 +217,17 @@ if [ -n "$obecht" ]; then
   printf "${gruen}Datenrueckholung abgeschlossen.${reset}\n";
 else
   printf "Simulation: %s/bulinux.sh -u -e -f %s\n" "$MDIR" "$reserveserver";
+fi
+
+# 4b) Erst JETZT, nach erfolgreicher Datenruecknahme, MariaDB auf dem
+# Reserveserver stoppen (s. Begruendung/Bugfix-Kommentar bei Schritt 3) -
+# wird dort im Ruhezustand nicht gebraucht.
+printf "${dblau}MariaDB stoppen${reset}: auf %s (nach erfolgreicher Ruecknahme nicht mehr benoetigt)\n" "$reserveserver"
+if [ -n "$obecht" ]; then
+  ssh "$reserveserver" "systemctl stop mariadb 2>/dev/null";
+  printf "${gruen}MariaDB auf %s gestoppt.${reset}\n" "$reserveserver";
+else
+  printf "Simulation: auf %s systemctl stop mariadb\n" "$reserveserver";
 fi
 
 # 5) Reserveserver: geliehene IP entfernen, Hostname zurueck, Samba dauerhaft abschalten

@@ -589,7 +589,13 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
-exit; # Ende
+# Bugfix 11.07.2026: "exit;" ohne Code gab bisher immer den Status des
+# letzten Befehls zurueck, nicht das waehrend des Laufs gesetzte
+# _bu_fehler-Flag - Aufrufer wie ruecknahme.sh, die bei Fehlern bewusst
+# NICHT weitermachen wollen (s. dortiger Schritt 4), sahen dadurch faelschlich
+# Exitcode 0 trotz z.B. "Keine Datenbanken auf Quelle gefunden".
+[ -n "$_bu_fehler" ] && exit 1;
+exit 0; # Ende
 
 
 

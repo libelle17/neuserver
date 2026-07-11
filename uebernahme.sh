@@ -29,6 +29,9 @@
 #      Server doch noch/wieder laeuft)
 #   2. Fragt (falls -e ohne -f) interaktiv nach, bevor etwas veraendert wird
 #   3. Setzt den Hostnamen auf <alter-hostname>
+#   3b. Hinterlegt /etc/notfallbetrieb mit der eigenen, urspruenglichen
+#      Identitaet (fuer bul1.sh/bunacht.sh/bumo.sh, s. dort - verhindert
+#      Sicherung auf sich selbst waehrend der Notfallzeit)
 #   4. Prueft die eigene Crontab auf Plausibilitaet und installiert sie im
 #      Zweifel aus /root/crontabakt neu (s. Warnung unten - Grund fuer diesen
 #      Schritt). Wichtig, da die HOST=linux1-Bedingungen in der (auf allen drei
@@ -177,6 +180,20 @@ if [ -n "$obecht" ]; then
   hostnamectl set-hostname "$alterhost"
 else
   printf "Simulation: hostnamectl set-hostname %s\n" "$alterhost"
+fi
+
+# 3b) Notfall-Marker hinterlegen: haelt die EIGENE, urspruengliche Identitaet
+# dieses Rechners fest (z.B. "linux0"), damit bul1.sh (u.a. fuer bunacht.sh/
+# bumo.sh) waehrend der Notfallzeit erkennen kann, dass "linux1" nur geliehen
+# ist, und sich selbst als Sicherungsziel herausfiltern kann - sonst wuerde
+# z.B. bunacht.sh nachts versuchen, /DATA auf die eigene, gerade verlassene
+# Identitaet zu sichern. Wird von ruecknahme.sh beim Rueckgeben der Identitaet
+# wieder entfernt.
+if [ -n "$obecht" ]; then
+  printf "${blau}Notfall-Marker setzen${reset}: /etc/notfallbetrieb (eigene Identitaet: %s)\n" "$jetzt"
+  echo "$jetzt" > /etc/notfallbetrieb
+else
+  printf "Simulation: /etc/notfallbetrieb mit eigener Identitaet '%s' anlegen\n" "$jetzt"
 fi
 
 # 4) Crontab-Plausibilitaetscheck: erst nach dem Hostnamenwechsel greifen die
