@@ -1681,6 +1681,8 @@ proginst() {
 #  doinst libcapi20-2;
   doinst libcapi20-3;
   doinst capi4linux-devel;
+  doinst libcapi20-devel; # fuer fbfax: capi20.h (11.7.26: fehlte auf frisch installiertem OpenSUSE 16.0, capi20.h nicht gefunden)
+  doinst termcap-devel; # fuer labimp/fbfax/anrliste/autofax: -ltermcap (11.7.26: fehlte auf frisch installiertem OpenSUSE 16.0, ld: cannot find -ltermcap)
   # curlftpfs liegt im filesystems-Repository
   if [ $OSNR -eq 4 ]; then
     _osnver=$(grep ^VERSION_ID= /etc/os-release 2>/dev/null|cut -d'"' -f2);
@@ -1690,6 +1692,25 @@ proginst() {
     }
   fi
   doinst curlftpfs; # fuer autofax
+
+  # Build-Abhaengigkeiten fuer labimp/fbfax/anrliste/autofax (aus deren vars-Dateien,
+  # nachgetragen 11.7.26 nach Fehlern bei Neubau auf frisch installiertem OpenSUSE 16.0):
+  doinst libmariadb-devel;       # mysql_config (labimp/anrliste/autofax)
+  doinst libtiff-devel;          # -ltiff (alle vier)
+  doinst boost-devel;
+  doinst libboost_iostreams-devel;
+  doinst libboost_locale-devel;
+  doinst libacl-devel;           # -lacl (alle vier)
+  doinst libcurl-devel;          # -lcurl (fbfax/anrliste/autofax)
+  doinst ncurses-devel;          # -lncursesw (alle vier)
+  doinst spandsp-devel;          # fuer fbfax
+  doinst glib2-devel;            # fuer fbfax
+  doinst libsoup-devel;          # fuer fbfax (libsoup 3.0; falls zusaetzlich libsoup2-devel
+                                  # installiert ist, waehlt das Makefile ggf. faelschlich 2.4 -
+                                  # dann "make SOUPVERS=libsoup-3.0 install")
+  doinst libsndfile-devel;       # fuer fbfax
+  doinst qpdf-devel;             # fuer autofax
+  doinst libgssdp-devel;         # fuer fbfax
 
 # fuer fbfax:
 # zypper addrepo https://download.opensuse.org/repositories/openSUSE:Leap:15.2/standard/openSUSE:Leap:15.2.repo
