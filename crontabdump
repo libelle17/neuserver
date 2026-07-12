@@ -209,33 +209,18 @@ ELG=/var/log/cronf.log
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente
 -* * * * * /usr/bin/ionice -c3 /root/bin/zusalat.sh
 # Medical-Office-Dateisicherungen
-# Umgestellt 12.7.2026: statt Push von linux1 ziehen linux0/linux7 jetzt
-# selbst von linux1 (bumo.sh/bunacht.sh erkennen das automatisch am eigenen
-# Hostnamen, s. bul1.sh/QL-Umschaltung). linux7 30 Min. nach linux0 versetzt,
-# damit nicht beide gleichzeitig auf linux1 zugreifen (vorher sequentiell in
-# einem einzigen Skriptlauf von linux1 aus); Kollision mit den
-# bulinux.sh-Slots (14:20/15:20 linux0/linux7, s. unten) und dem unbewachten
-# 3:00-Uhr-Cluster (permissselten.sh u.a.) bewusst vermieden.
--20 14,19 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bumo.sh -e
--50 14,19 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bumo.sh -e
-# Entzerrung 8.7.2026 (Analyse /var/mail/root, s. auch Kommentar in bunacht.sh):
-# um 2:20 Uhr liefen bislang gleichzeitig/kurz vorher mariadb-dump (2:15),
-# copytoshz.sh (2:15), berein (2:00) und doppelteimporte.py (2:00) - diese
-# Speicher-/IO-Konkurrenz war ein naheliegender Mitverursacher der rsync-OOM-
-# Fehler ("error allocating core memory buffers") am 29./31.5.2026. Die
-# genannten Jobs wurden auf 1:10-1:55 Uhr vorgezogen, permissselten.sh auf
-# 3:00 Uhr verschoben; bunacht.sh selbst startet unverändert um 2:20 Uhr, hat
-# jetzt aber ein freies Zeitfenster für sich.
-# Umgestellt 12.7.2026 auf Pull von linux0/linux7 (s. Kommentar bei bumo.sh
-# oben) - linux7 wieder 30 Min. versetzt, vor dem 3:00-Uhr-Cluster.
--20 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bunacht.sh -e
--50 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bunacht.sh -e
+# Umgestellt 13.7.2026: statt acht einzelner fester Cron-Zeiten fuer
+# bumo.sh/bunacht.sh/bulinux.sh (Mittag/Nacht je linux0/linux7 versetzt,
+# davor s. Git-Historie) jetzt EIN 5-Minuten-Poll auf wecklauf.sh. Das
+# Skript wird nur in den vorgesehenen Zeitfenstern aktiv (Mittag: nur
+# bumo.sh; Nacht: bumo.sh, bulinux.sh -f, bunacht.sh nacheinander), setzt
+# davor den naechsten rtcwake-Alarm und schaltet den Rechner am Ende nur ab,
+# wenn er offenbar frisch per rtcwake gestartet wurde (s. Kommentare in
+# wecklauf.sh). Laeuft dadurch auch, wenn linux0/linux7 schon vorher von
+# Hand eingeschaltet waren und einfach an blieben.
+-*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux7/ ]&&/root/bin/wecklauf.sh -e >>$NLG 2>>$ELG
 # -44 21 * * * HOST=$(hostname);case ${HOST\%\%.*}/ in linux[03]/)eval ionice -c3 nice -n19 bu${HOST\%\%.*}.sh;;esac
 # -10,40 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ != linux1 ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/butm.sh # auskommentiert 1.1.26
--20 14 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -dt1 -db -e
--20 15 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -dt1 -db -e
--20 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -e -f
--20 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&ionice -c3 nice -n19 /root/bin/verhdop.sh /root/bin/bulinux.sh -e -f
 # -05 0 * * * /usr/bin/ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3.sh >>$NLG 2>>$ELG
 # -20 13 * * * /usr/bin/ionice -c3 /root/bin/verhdop.sh /root/bin/dobulinux3_m.sh >>$NLG 2>>$ELG
 #-* * * * * rm $VL/messages
