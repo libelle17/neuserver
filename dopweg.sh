@@ -1,6 +1,12 @@
 #/bin/bash
-echo Lösche Fehlimporte
-find /DATA/Patientendokumente/dok -iname "*(30)*" | awk '
+# -e: echt umbenennen/löschen; ohne -e (Standard): Trockenlauf, zeigt nur an,
+# was geschehen würde. Wird obecht vom aufrufenden Mutterskript (bumo.sh)
+# durchgereicht - läuft bumo.sh auf linux0/linux7, wird dieses Skript dort
+# per ssh auf linux1 ausgeführt, da die Fehlimporte an der Quelle liegen.
+obecht=;
+[ "$1" = "-e" ] && obecht=1;
+[ "$obecht" ] && echo "Lösche Fehlimporte" || echo "Lösche Fehlimporte (Trockenlauf, -e für Echtlauf)"
+find /DATA/Patientendokumente/dok -iname "*(30)*" | awk -v obecht="$obecht" '
 {
     fullpath = $0
     n = split(fullpath, parts, "/")
@@ -53,10 +59,19 @@ find /DATA/Patientendokumente/dok -iname "*(30)*" | awk '
                 # Vergleiche Änderungsdatum und Größe
                 if (file_mtime == base_mtime && file_size == base_size) {
                     rename_cmd = "mv \"" oldname "\" \"" newname "\""
-                    print rename_cmd
-                    system(rename_cmd)
+                    if (obecht) {
+                        print rename_cmd
+                        system(rename_cmd)
+                    } else {
+                        print "[Simulation] " rename_cmd
+                    }
                 }
             }
         }
     }
 }'
+if [ "$obecht" ]; then
+  find /DATA/Patientendokumente/dok -iname "zulöschen*" -delete
+else
+  find /DATA/Patientendokumente/dok -iname "zulöschen*" -printf "[Simulation] rm \"%p\"\n"
+fi
