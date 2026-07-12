@@ -35,7 +35,7 @@ done;
 
 blau="\033[1;34m"; rot="\033[1;31m"; reset="\033[0m";
 LOG=/var/log/wecklauf.log;
-log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG"; }
+log() { printf '%s %b\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG"; }
 
 # Wartungsschalter: wenn diese Datei existiert, macht wecklauf.sh gar nichts
 # (kein Alarm, keine Skripte, kein Abschalten) - z.B. fuer manuelle Eingriffe.
