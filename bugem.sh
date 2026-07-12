@@ -354,11 +354,11 @@ kopiermt() { # mit test
     _sdkmt_qvos=$(printf "%s" "$QVos" | sed "s/\\\\//g");
     _sdkmt_zvos=$(printf "%s" "$ZVos" | sed "s/\\\\//g");
     if [ "$QL" ]; then
-      _sdkmt_q=$(ssh "$QL" "sha256sum \"/$_sdkmt_qvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
+      _sdkmt_q=$(ssh $(_backup_sshopts "$QL") "$QL" "sha256sum \"/$_sdkmt_qvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
       _sdkmt_z=$(sha256sum "/$_sdkmt_zvos/$SD" 2>/dev/null|cut -d' ' -f1);
     elif [ "$ZL" ]; then
       _sdkmt_q=$(sha256sum "/$_sdkmt_qvos/$SD" 2>/dev/null|cut -d' ' -f1);
-      _sdkmt_z=$(ssh "$ZL" "sha256sum \"/$_sdkmt_zvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
+      _sdkmt_z=$(ssh $(_backup_sshopts "$ZL") "$ZL" "sha256sum \"/$_sdkmt_zvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
     else
       _sdkmt_q=$(sha256sum "/$_sdkmt_qvos/$SD" 2>/dev/null|cut -d' ' -f1);
       _sdkmt_z=$(sha256sum "/$_sdkmt_zvos/$SD" 2>/dev/null|cut -d' ' -f1);
@@ -649,7 +649,7 @@ kopieros() {
     # Verzeichnis – --chmod=D0700 setzt /root-Rechte direkt, kein ControlMaster nötig
     if [ "$ZL" ]; then
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
-      ssh "$ZL" 'chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
+      ssh $(_backup_sshopts "$ZL") "$ZL" 'chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
     else
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
       chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null;
@@ -723,9 +723,20 @@ gutenacht() {
   fi;
 } # gutenacht
 
+# eingeschraenkter Key fuer den Push-Kanal linux1->linux0/linux7 (bumo.sh/bunacht.sh):
+# statt des normalen root-Keys, damit ein kompromittiertes linux1 dort keine freie
+# Shell bekommt (s. backup_ssh_wrapper.sh, Anleitung_Ransomware_Vorsorge_und_Notfall.md).
+# Wirkt nur beim ZIEL linux0/linux7 - der Pull-Kanal (bulinux.sh auf linux0/linux7
+# Richtung linux1) ist davon nicht betroffen und nutzt weiter den normalen Zugriff.
+_backup_sshopts() {
+  case "$1" in
+    linux0|linux7) printf -- "-i /root/.ssh/id_ed25519_backup -o IdentitiesOnly=yes ";;
+  esac
+} # _backup_sshopts
+
 machssh() {
-[ "$QL" ]&&{ qssh="ssh $QL";pruefpc "$QL" "machssh";:;}||qssh="sh -c";
-[ "$ZL" ]&&{ zssh="ssh $ZL";pruefpc "$ZL" "machssh";:;}||zssh="sh -c";
+[ "$QL" ]&&{ qssh="ssh $(_backup_sshopts "$QL")$QL";pruefpc "$QL" "machssh";:;}||qssh="sh -c";
+[ "$ZL" ]&&{ zssh="ssh $(_backup_sshopts "$ZL")$ZL";pruefpc "$ZL" "machssh";:;}||zssh="sh -c";
 # [ "$QL" ]&&qssh="ssh $QL"||qssh="sh -c";
 # [ "$ZL" ]&&zssh="ssh $ZL"||zssh="sh -c";
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
