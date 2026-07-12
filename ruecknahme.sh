@@ -259,6 +259,9 @@ if [ -n "$obecht" ]; then
   printf "${blau}hostnamectl set-hostname %s (auf %s)${reset}\n" "$reserveserver" "$reserveserver";
   ssh "$reserveserver" "hostnamectl set-hostname '$reserveserver'";
 
+  printf "${blau}Notfall-Marker entfernen${reset}: /etc/notfallbetrieb auf %s (s. uebernahme.sh Schritt 3b)\n" "$reserveserver";
+  ssh "$reserveserver" "rm -f /etc/notfallbetrieb";
+
   printf "${blau}smb.conf-Sicherung von uebernahme.sh wiederherstellen, falls vorhanden${reset}\n";
   ssh "$reserveserver" '
     _b=$(ls -t /etc/samba/smb.conf.vor_uebernahme_* 2>/dev/null | head -1);
@@ -272,7 +275,7 @@ if [ -n "$obecht" ]; then
   printf "${blau}Samba auf %s dauerhaft deaktivieren${reset} (war in Schritt 3 schon gestoppt)\n" "$reserveserver";
   ssh "$reserveserver" "systemctl disable --now smb 2>/dev/null; systemctl disable --now smbd 2>/dev/null; systemctl disable --now nmb 2>/dev/null; systemctl disable --now nmbd 2>/dev/null";
 else
-  printf "Simulation: auf %s IP-Alias %s entfernen, hostnamectl set-hostname %s, smb.conf-Backup wiederherstellen, Samba abschalten\n" "$reserveserver" "${meineip:-?}" "$reserveserver";
+  printf "Simulation: auf %s IP-Alias %s entfernen, hostnamectl set-hostname %s, /etc/notfallbetrieb entfernen, smb.conf-Backup wiederherstellen, Samba abschalten\n" "$reserveserver" "${meineip:-?}" "$reserveserver";
 fi
 
 printf "\n${dblau}Fertig.${reset}";

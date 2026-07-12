@@ -545,19 +545,40 @@ konfig_laden() {
 # ============================================================
 schutzdatei_verteilen() {
   printf "${dblau}schutzdatei_verteilen${reset}()\n";
-  _sd="$instvz/Schutzdatei_bitte_belassen.doc";
-  [ -f "$_sd" ] || {
-    printf "${rot}Schutzdatei nicht gefunden: ${blau}$_sd${reset}\n";
-    return 1;
-  };
+  # Alle drei Referenzdateien aus SDLISTE in bugem.sh (bewusst unterschiedliche
+  # Namen/Typen, s. Anleitung_Ransomware_Vorsorge_und_Notfall.md):
+  _sdliste="Schutzdatei_bitte_belassen.doc Auch_eine_Schutzdatei_bitte_belassen.jpg zusätzliche_Schutzdatei_bitte_belassen.pdf";
+  _obgef=;
+  for _sdname in $_sdliste; do
+    _sd="$instvz/$_sdname";
+    [ -f "$_sd" ] || {
+      printf "${rot}Schutzdatei nicht gefunden: ${blau}$_sd${reset}\n";
+      continue;
+    };
+    _obgef=1;
 
-  # Timestamp aus git-Log wiederherstellen (nach git clone falsch):
-  _sdts=$(git -C "$instvz" log -1 --format="%ai" -- \
-    "Schutzdatei_bitte_belassen.doc" 2>/dev/null);
-  [ "$_sdts" ] && {
-    touch -d "$_sdts" "$_sd";
-    printf "Schutzdatei Timestamp: ${blau}$_sdts${reset}\n";
-  };
+    # Timestamp aus git-Log wiederherstellen (nach git clone falsch; fuer den
+    # eigentlichen Ransomware-Vergleich in bugem.sh nicht mehr entscheidend, da der
+    # jetzt inhaltsbasiert per SHA-256 prueft, aber schadet nicht):
+    _sdts=$(git -C "$instvz" log -1 --format="%ai" -- "$_sdname" 2>/dev/null);
+    [ "$_sdts" ] && {
+      touch -d "$_sdts" "$_sd";
+      printf "Schutzdatei ${blau}$_sdname${reset} Timestamp: ${blau}$_sdts${reset}\n";
+    };
+
+    # Nach /var/spool/ kopieren:
+    cp -a "$_sd" /var/spool/ 2>/dev/null && \
+      printf "Schutzdatei ${blau}$_sdname${reset} nach ${blau}/var/spool/${reset} kopiert.\n" || \
+      printf "${rot}Kopie von $_sdname nach /var/spool/ fehlgeschlagen${reset}\n";
+
+    # Nach /DATA/rett/ falls /DATA gemountet:
+    if mountpoint -q /DATA 2>/dev/null; then
+      mkdir -p /DATA/rett/;
+      cp -a "$_sd" /DATA/rett/ 2>/dev/null && \
+        printf "Schutzdatei ${blau}$_sdname${reset} nach ${blau}/DATA/rett/${reset} kopiert.\n";
+    fi;
+  done;
+  [ "$_obgef" ] || { printf "${rot}Keine der Schutzdateien gefunden, breche ab.${reset}\n"; return 1; };
 
   # git-Hooks anlegen damit Timestamp nach jedem pull/checkout korrekt ist:
   _hooksdir="$instvz/.git/hooks";
@@ -566,12 +587,15 @@ schutzdatei_verteilen() {
       [ -f "$_hooksdir/$_hook" ] && continue; # nicht überschreiben falls schon vorhanden
       cat >"$_hooksdir/$_hook" <<'HOOKEOF'
 #!/bin/sh
-sd="$(git rev-parse --show-toplevel)/Schutzdatei_bitte_belassen.doc"
-ts_file="$(git rev-parse --show-toplevel)/Schutzdatei_timestamp.txt"
-[ -f "$sd" ] || exit 0
-[ -f "$ts_file" ] && ts=$(cat "$ts_file") || \
-  ts=$(git log -1 --format="%ai" -- Schutzdatei_bitte_belassen.doc 2>/dev/null)
-	[ "$ts" ] && touch -d "$ts" "$sd"
+IFS='
+'
+toplevel="$(git rev-parse --show-toplevel)"
+for sdname in "Schutzdatei_bitte_belassen.doc" "Auch_eine_Schutzdatei_bitte_belassen.jpg" "zusätzliche_Schutzdatei_bitte_belassen.pdf"; do
+  sd="$toplevel/$sdname"
+  [ -f "$sd" ] || continue
+  ts=$(git log -1 --format="%ai" -- "$sdname" 2>/dev/null)
+  [ "$ts" ] && touch -d "$ts" "$sd"
+done
 HOOKEOF
       chmod +x "$_hooksdir/$_hook";
       printf "git-Hook angelegt: ${blau}$_hooksdir/$_hook${reset}\n";
@@ -583,16 +607,9 @@ HOOKEOF
     git -C "$instvz" config core.hooksPath .githooks;
 	fi;
 
-  # Nach /var/spool/ kopieren:
-  cp -a "$_sd" /var/spool/ 2>/dev/null && \
-    printf "Schutzdatei nach ${blau}/var/spool/${reset} kopiert.\n" || \
-    printf "${rot}Kopie nach /var/spool/ fehlgeschlagen${reset}\n";
-
-  # Nach /DATA/rett/ falls /DATA gemountet:
+  # neuserver-Repository nach /DATA/rett/ sichern (unabhaengig von der Schleife oben,
+  # einmal fuers ganze Repository):
   if mountpoint -q /DATA 2>/dev/null; then
-    mkdir -p /DATA/rett/;
-    cp -a "$_sd" /DATA/rett/ 2>/dev/null && \
-      printf "Schutzdatei nach ${blau}/DATA/rett/${reset} kopiert.\n";
     # neuserver-Repository nach /DATA/rett/ sichern
     # Passwort- und Schlüsseldateien ausschließen (werden verschlüsselt via -ks gesichert):
     rsync -avu \
@@ -612,6 +629,28 @@ HOOKEOF
     printf "neuserver nach ${blau}/DATA/rett/neuserver/${reset} gesichert.\n";
   fi;
 } # schutzdatei_verteilen
+
+# ============================================================
+# Verteilt die im Repo gepflegten Kopien der Windows-PowerShell-Skripte
+# (mokopr.ps1, morueck.ps1, spiegele.ps1) nach /DATA/down/, von wo aus sie
+# per \\linux1\daten\down von den Windows-Rechnern/Task Scheduler genutzt
+# werden. Repo = Quelle der Wahrheit, /DATA/down = Ausführungsort.
+# ============================================================
+ps1_verteilen() {
+  printf "${dblau}ps1_verteilen${reset}()\n";
+  if ! mountpoint -q /DATA 2>/dev/null; then
+    printf "${rot}/DATA nicht gemountet - ps1_verteilen übersprungen.${reset}\n";
+    return 1;
+  fi;
+  mkdir -p /DATA/down/;
+  for _ps1 in mokopr.ps1 morueck.ps1 spiegele.ps1; do
+    _src="$instvz/$_ps1";
+    [ -f "$_src" ] || { printf "${rot}$_src nicht gefunden - übersprungen${reset}\n"; continue; };
+    cp -a "$_src" /DATA/down/ 2>/dev/null && \
+      printf "${blau}$_ps1${reset} nach ${blau}/DATA/down/${reset} kopiert.\n" || \
+      printf "${rot}Kopie von $_ps1 nach /DATA/down/ fehlgeschlagen${reset}\n";
+  done;
+} # ps1_verteilen
 
 
 # ============================================================
@@ -1875,29 +1914,115 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
   done;
   konfig_laden;
   schutzdatei_verteilen;
+  ps1_verteilen;
+  postfix;
   cd $VORVZ;
 } # proginst
 
 postfix() {
-# in /etc/postfix/master.cf eintragen oder unkommentieren:
-#  tlsmgr unix - - n 1000? 1 tlsmgr
-# in /etc/postfix/main.cf eintragen oder unkommentieren:
-#  inet_protocols = all
-#  relayhost = [smtp.gmail.com]:587
-#  smtp_sasl_auth_enable = yes
-#  smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
-#  smtp_use_tls = yes
-#  smtp_tls_security_level = may
-#  smtp_tls_CAfile = /etc/ssl/ca-bundle.pem
-#  smtp_tls_CApath = /etc/postfix/ssl/cacerts
-#  smtp_tls_session_cache_database = btree:/var/lib/postfix/smtp_tls_session_cache
-#  relay_domains = $mydestination hash:/etc/postfix/relay # ohne Komma
-#  # always_bcc = mailarchive@localhost
-# in sasl_passwd ergänzen:
-#  [smtp.gmail.com]:587 meine.mail@gmail.com:meinpasswort
-# systemctl restart postfix
-# mail schicken mit: echo "Inhalt"|mail -s "Titel" an.wen@provider.com
- echo postfix muss noch geschrieben werden;
+# richtet Postfix so ein, dass er ueber den M-net-Smarthost versendet (SASL/STARTTLS,
+# Port 587) statt direkt zuzustellen - Direktversand wird von GMX & Co. wegen des
+# dynamisch aussehenden PTR-Eintrags der Praxis-IP abgelehnt (Stand 12.7.2026,
+# s. Anleitung_Ransomware_Vorsorge_und_Notfall.md). Notwendig u.a. fuer die
+# Ransomware-Verdachtswarnung aus bugem.sh (SDMAILEMPF).
+	printf "${dblau}postfix$reset()\n";
+
+	doinst mailx; # stellt das 'mail'-Kommando bereit, das bugem.sh fuer die Warnmail nutzt
+
+	MAINCF=/etc/postfix/main.cf;
+	[ -f "$MAINCF" ] || { printf "${rot}$MAINCF nicht gefunden, breche postfix() ab.${reset}\n"; return 1; };
+
+	# main.cf enthaelt dieselben Parameter teils doppelt (einmal frueh/wirkungslos,
+	# einmal in der spaeteren SASL-/TLS-Sektion) - Postfix nimmt den LETZTEN Eintrag.
+	# Statt auf Zeilennummern zu vertrauen: alle bestehenden Eintraege entfernen und
+	# sauber, garantiert wirksam ans Ende schreiben (idempotent, mehrfach lauffaehig):
+	for _p in relayhost smtp_sasl_auth_enable smtp_sasl_security_options smtp_sasl_password_maps smtp_tls_security_level; do
+		sed -i "/^${_p}[[:space:]]*=/d" "$MAINCF";
+	done;
+	sed -i "/^# Ausgehende Mail ueber M-net-Smarthost/d" "$MAINCF";
+	{
+		echo "";
+		echo "# Ausgehende Mail ueber M-net-Smarthost (von postfix() in los.sh eingerichtet):";
+		echo "relayhost = [mail.mnet-online.de]:587";
+		echo "smtp_sasl_auth_enable = yes";
+		echo "smtp_sasl_security_options = noanonymous";
+		echo "smtp_sasl_password_maps = lmdb:/etc/postfix/sasl_passwd";
+		# "encrypt" (statt "may") wuerde auch die interne LAN-Zustellung an die
+		# anderen Praxis-Server blockieren, da deren smtpd kein TLS anbietet
+		# (Fehler "TLS is required, but was not offered", live erlebt 12.7.2026):
+		echo "smtp_tls_security_level = may";
+	} >> "$MAINCF";
+
+	# --- LAN-interne Zustellung zwischen linux1/linux0/linux7 einrichten ---
+	# Noetig z.B. fuer HylaFAX-Benachrichtigungen, die root@<anderer-Server>
+	# adressieren (2 Monate lang unbemerkt fehlgeschlagen, s. Anleitung_Ransomware_
+	# Vorsorge_und_Notfall.md). Erfordert: (1) eigenen Kurz-/FQDN-Namen als lokal
+	# bekannt machen, (2) Port 25 auf der LAN-Adresse annehmen (inet_interfaces +
+	# Firewall), (3) die JEWEILS ANDEREN Server per transport_maps direkt per LAN-IP
+	# ansprechen statt sie (mit ungueltiger, nicht vollqualifizierter Adresse) ueber
+	# den M-net-Relay zu schicken.
+	declare -A _serverip=( [linux1]=192.168.178.21 [linux0]=192.168.178.20 [linux7]=192.168.178.27 );
+	declare -A _serverfqdn=( [linux1]=linux1.fritz.box [linux0]=linux0.fritz.box [linux7]=linux7.site );
+	_eigenkurz=$(hostname); _eigenkurz=${_eigenkurz%%.*}; # z.B. "linux7.site" -> "linux7"
+	_eigenip="${_serverip[$_eigenkurz]}";
+	if [ -n "$_eigenip" ]; then
+		_eigenfqdn="${_serverfqdn[$_eigenkurz]}";
+		if ! grep "^mydestination" "$MAINCF" | grep -q "\b${_eigenkurz}\b"; then
+			sed -i "s/^mydestination = .*/&, ${_eigenkurz}, ${_eigenfqdn}/" "$MAINCF";
+		fi;
+		sed -i "s/^inet_interfaces = .*/inet_interfaces = 127.0.0.1, ${_eigenip}/" "$MAINCF";
+		grep -q "^inet_interfaces" "$MAINCF" || echo "inet_interfaces = 127.0.0.1, ${_eigenip}" >> "$MAINCF";
+		firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="192.168.178.0/24" port protocol="tcp" port="25" accept' 2>/dev/null;
+		firewall-cmd --reload 2>/dev/null;
+		TRANSPORT=/etc/postfix/transport;
+		touch "$TRANSPORT";
+		for _peer in "${!_serverip[@]}"; do
+			[ "$_peer" = "$_eigenkurz" ] && continue; # sich selbst auslassen - sonst Mail-Loop ("loops back to myself")!
+			_peerip="${_serverip[$_peer]}"; _peerfqdn="${_serverfqdn[$_peer]}";
+			for _name in "$_peer" "$_peerfqdn"; do
+				grep -qs "^${_name}[[:space:]]" "$TRANSPORT" || printf "%s\tsmtp:[%s]\n" "$_name" "$_peerip" >> "$TRANSPORT";
+			done;
+		done;
+		postmap "$TRANSPORT";
+		printf "LAN-Mailzustellung fuer ${blau}${_eigenkurz}${reset} (${blau}${_eigenip}${reset}) eingerichtet.\n";
+	else
+		printf "${rot}Hostname \"$_eigenkurz\" nicht in der Server-Liste (linux1/linux0/linux7) - LAN-Mailzustellung nicht eingerichtet, nur myhostname als lokal bekannt.${reset}\n";
+	fi;
+
+	# Absender auf eine bei M-net tatsaechlich autorisierte Adresse umschreiben
+	# (das SMTP-Auth-Konto darf nicht als beliebiger Absender senden):
+	SC=/etc/postfix/sender_canonical;
+	grep -qs "^root	gschade@dachau-mail.de" "$SC" || printf "root\tgschade@dachau-mail.de\n" >> "$SC";
+	postmap "$SC";
+
+	# SASL-Zugangsdaten aus /root/mnetrc uebernehmen (M-net-Account, dort im
+	# [retriever]-Block hinterlegt; wird auch fuer SMTP-Auth akzeptiert):
+	if [ -f /root/mnetrc ]; then
+		python3 - <<'PYEOF'
+import configparser
+cfg = configparser.ConfigParser()
+cfg.read('/root/mnetrc')
+user = cfg['retriever']['username'].strip().strip('"').strip("'")
+pw = cfg['retriever']['password'].strip().strip('"').strip("'")
+with open('/etc/postfix/sasl_passwd', 'w') as f:
+    f.write(f"[mail.mnet-online.de]:587\t{user}:{pw}\n")
+PYEOF
+		chmod 600 /etc/postfix/sasl_passwd;
+		postmap /etc/postfix/sasl_passwd;
+		chmod 600 /etc/postfix/sasl_passwd.lmdb 2>/dev/null || chmod 600 /etc/postfix/sasl_passwd.db 2>/dev/null;
+		printf "sasl_passwd aus ${blau}/root/mnetrc${reset} erstellt.\n";
+	else
+		printf "${rot}/root/mnetrc nicht gefunden - sasl_passwd NICHT angelegt, Mailversand wird fehlschlagen!${reset}\n";
+	fi;
+
+	# SELinux-Kontext der Postfix-Lockdateien korrigieren (verhindert sonst dauerhaftes
+	# Fehlschlagen der 'error'/'showq'-Hilfsprozesse mit "Permission denied"; auf
+	# Systemen ohne SELinux ist restorecon nicht vorhanden, dann einfach ueberspringen):
+	command -v restorecon >/dev/null 2>&1 && restorecon -Rv /var/spool/postfix/pid 2>/dev/null;
+
+	postfix check && systemctl restart postfix && \
+		printf "${blau}postfix neu gestartet, Relay ueber mail.mnet-online.de aktiv.${reset}\n" || \
+		printf "${rot}postfix-Konfiguration fehlerhaft - bitte 'postfix check' von Hand pruefen!${reset}\n";
 } # postfix
 
 bildschirm() {
@@ -2554,6 +2679,7 @@ musterserver() {
 
   fi; # [ "$muwrz" ]
   schutzdatei_verteilen;
+  ps1_verteilen;
 } # musterserver
 
 #holt Datei $1 entweder aus "/DATA/down /DATA/daten/down" ($q0) oder $srv0 oder $2 auf /root/Downloads (=$Dw); $3 = potentieller hol-Name

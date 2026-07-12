@@ -9,7 +9,9 @@ dblau="\033[0;34;1;47m";
 rot="\033[1;31m";
 reset="\033[0m";
 kopbef="ionice -c2 nice -n10 rsync";
-SD="Schutzdatei_bitte_belassen.doc"
+SD="Schutzdatei_bitte_belassen.doc" # Default fuer Einzeldatei-Modus "SD=<Pfad>"
+SDLISTE=("Schutzdatei_bitte_belassen.doc" "Auch_eine_Schutzdatei_bitte_belassen.jpg" "zusätzliche_Schutzdatei_bitte_belassen.pdf") # bewusst unterschiedliche Anfangsbuchstaben (S/A/z), muessen alle an Quelle+Ziel inhaltlich uebereinstimmen, bevor kopiert wird
+SDMAILEMPF="diabetologie@dachau-mail.de gerald.schade@gmx.de geraldschade@gmx.de" # Empfaenger der Ransomware-Verdachtswarnung, bei Bedarf weitere anhaengen (Leerzeichen-getrennt)
 LINEINS=linux1;
 maxz=0;
 
@@ -58,11 +60,15 @@ commandline() {
 	while [ $# -gt 0 ]; do
    case "$1" in 
      SD=*) sdneu=2; SDQ=${1##*SD=};SD=${SDQ##*/};;
-     SD) sdneu=1; SDQ=$(readlink -f $0);SDQ=${SDQ%/*}/$SD;
-         [ ! -f "$SD" ]&&{ 
-           printf "Option '${blau}SD$reset' angegeben, aber $blau$SD$reset nicht in "$blau$(readlink -f $0)$reset" gefunden, ${rot}breche ab$reset.\n";
-           exit 3;
-         };;
+     SD) sdneu=1; SDQV=();
+         for _sd in "${SDLISTE[@]}"; do
+           [ ! -f "$_sd" ]&&{
+             printf "Option '${blau}SD$reset' angegeben, aber $blau$_sd$reset nicht in "$blau$(readlink -f $0)$reset" gefunden, ${rot}breche ab$reset.\n";
+             exit 3;
+           };
+           _sdq=$(readlink -f $0); _sdq=${_sdq%/*}/$_sd;
+           SDQV+=("$_sdq");
+         done;;
      -*|/*)
       para=${1#[-/]};
       case $para in
@@ -313,68 +319,69 @@ kopiermt() { # mit test
       # SD nur lokal verteilen (nicht auf Quell-Rechner):
       # Quell-Daten sollen vor der ersten Sicherung manuell geprüft und
       # SD dort separat per "bulinux.sh SD" auf dem Quellrechner verteilt werden.
-      if [ -z "$ZL" ]; then
-        tu2="mkdir -p /$ZVos; cp -a \"$SDQ\" /$ZVos/$SD";  # kein Quoting
-      else
-        _sd_zvos="${_ZVofs_real%/}";
-        tu2="$zssh 'mkdir -p \"/$_sd_zvos\"';\
-          scp -p \"$SDQ\" \"$ZL:/$_sd_zvos/$SD\"";
-      fi;
-      # obimmer=1: SD-Verteilung läuft auch ohne -e
-      ausf "$tu2" "$blau" "" 1;
+      # sdneu=1 (Option "SD" ohne "="): ganze SDLISTE verteilen; sdneu=2 (Option "SD=<Pfad>"): nur die eine angegebene Datei
+      if [ "$sdneu" = 1 ]; then _sd_quellen=("${SDQV[@]}"); _sd_namen=("${SDLISTE[@]}");
+      else _sd_quellen=("$SDQ"); _sd_namen=("$SD"); fi;
+      for _sdi in "${!_sd_namen[@]}"; do
+        _sd_q="${_sd_quellen[$_sdi]}"; _sd_n="${_sd_namen[$_sdi]}";
+        if [ -z "$ZL" ]; then
+          tu2="mkdir -p /$ZVos; cp -a \"$_sd_q\" \"/$ZVos/$_sd_n\"";  # kein Quoting
+        else
+          _sd_zvos="${_ZVofs_real%/}";
+          tu2="$zssh 'mkdir -p \"/$_sd_zvos\"';\
+            scp -p \"$_sd_q\" \"$ZL:/$_sd_zvos/$_sd_n\"";
+        fi;
+        # obimmer=1: SD-Verteilung läuft auch ohne -e
+        ausf "$tu2" "$blau" "" 1;
+      done;
     return 0;
   }
-# Schutzdatei ggf. vergleichen, beim Kopieren einzelner Dateien hierauf verzichten
-  [ "$SD" -a ! "$obdat" -a ! "$8" ]&&{
+# Schutzdateien ggf. vergleichen (Inhalt per SHA-256, alle aus SDLISTE muessen passen), beim Kopieren einzelner Dateien hierauf verzichten
+  [ ! "$obdat" -a ! "$8" -a "${#SDLISTE[@]}" -gt 0 ]&&for SD in "${SDLISTE[@]}"; do
     if [ "$QL" ]; then
       PZiel=$QL;
-      diffbef="ssh $QL cat \"/$QVos/$SD\" 2>/dev/null| diff - /$ZVos/$SD 2>/dev/null";
     elif [ "$ZL" ]; then
       PZiel=$ZL;
-      diffbef="ssh $ZL cat \"/$ZVos/$SD\" 2>/dev/null| diff - /$QVos/$SD 2>/dev/null";
     else
       PZiel=;
-      diffbef="diff /$QVos/$SD /$ZVos/$SD 2>/dev/null";
     fi;
     AND="$QL";[ "$AND" ]||AND=$ZL;
-    [ "$PZiel" ]&&if ! ping -c1 -W100 "$AND" >/dev/null 2>&1; then 
+    [ "$PZiel" ]&&if ! ping -c1 -W100 "$AND" >/dev/null 2>&1; then
       printf "$rot$AND$reset nicht anpingbar! Kehre zurueck!\n";
       return 1;
     fi;
-#    printf "${blau}$diffbef$reset\n"
-    # SD-Inhalt von Quelle und Ziel separat holen – ermöglicht Fallunterscheidung
-    # stat statt cat: SD ist .doc (Binär) – Backslash aus Pfad entfernen vor SSH
+    # SD-Inhalt von Quelle und Ziel separat holen (SHA-256) – ermöglicht Fallunterscheidung; Backslash aus Pfad entfernen vor SSH
     _sdkmt_qvos=$(printf "%s" "$QVos" | sed "s/\\\\//g");
     _sdkmt_zvos=$(printf "%s" "$ZVos" | sed "s/\\\\//g");
     if [ "$QL" ]; then
-      _sdkmt_q=$(ssh "$QL" "stat -c \"%s %Y\" \"/$_sdkmt_qvos/$SD\" 2>/dev/null");
-      _sdkmt_z=$(stat -c "%s %Y" "/$_sdkmt_zvos/$SD" 2>/dev/null);
+      _sdkmt_q=$(ssh "$QL" "sha256sum \"/$_sdkmt_qvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
+      _sdkmt_z=$(sha256sum "/$_sdkmt_zvos/$SD" 2>/dev/null|cut -d' ' -f1);
     elif [ "$ZL" ]; then
-      _sdkmt_q=$(stat -c "%s %Y" "/$_sdkmt_qvos/$SD" 2>/dev/null);
-      _sdkmt_z=$(ssh "$ZL" "stat -c \"%s %Y\" \"/$_sdkmt_zvos/$SD\" 2>/dev/null");
+      _sdkmt_q=$(sha256sum "/$_sdkmt_qvos/$SD" 2>/dev/null|cut -d' ' -f1);
+      _sdkmt_z=$(ssh "$ZL" "sha256sum \"/$_sdkmt_zvos/$SD\" 2>/dev/null"|cut -d' ' -f1);
     else
-      _sdkmt_q=$(stat -c "%s %Y" "/$_sdkmt_qvos/$SD" 2>/dev/null);
-      _sdkmt_z=$(stat -c "%s %Y" "/$_sdkmt_zvos/$SD" 2>/dev/null);
+      _sdkmt_q=$(sha256sum "/$_sdkmt_qvos/$SD" 2>/dev/null|cut -d' ' -f1);
+      _sdkmt_z=$(sha256sum "/$_sdkmt_zvos/$SD" 2>/dev/null|cut -d' ' -f1);
     fi;
     if [ -z "$_sdkmt_q" ]; then
       # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
       which mail >/dev/null 2>&1 && \
-      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
+      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fehlte die Schutzdatei\n${Q:-$LINEINS:}/$QVos/$SD.\nDa so etwas auch durch Ransomware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" $SDMAILEMPF
       printf "${rot}Schutzdatei /$QVos/$SD auf Quelle nicht gefunden${reset} – überspringe $blau/$QVos$reset\n";
       return 1;
     elif [ -z "$_sdkmt_z" ]; then
-      # b) SD fehlt auf Ziel – frisches/neues Ziel, Kopie erlaubt
+      # b) SD fehlt auf Ziel – frisches/neues Ziel, Kopie erlaubt (weitere Schutzdateien der Liste werden noch geprüft)
       printf "${blau}Schutzdatei /$ZVos/$SD auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
       # kein return 1 – Kopie wird fortgesetzt
     elif [ "$_sdkmt_q" != "$_sdkmt_z" ]; then
-      # c) Beide vorhanden, aber verschieden – immer blockieren
+      # c) Beide vorhanden, Inhalt (SHA-256) weicht ab – immer blockieren
       which mail >/dev/null 2>&1 && \
-      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein Unterschied zwischen\n${Q:-$LINEINS:}$SDHIER und\n$ZL$SDDORT.\nDer Fehler trat auf beim Befehl:\n$diffbef\nDa so etwas auch durch Ransomeware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" diabetologie@dachau-mail.de
-      printf "${rot}keine Übereinstimmung bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
+      printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein inhaltlicher Unterschied (SHA-256) bei der Schutzdatei zwischen\n${Q:-$LINEINS:}/$QVos/$SD und\n$ZL/$ZVos/$SD.\nDa so etwas auch durch Ransomware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" $SDMAILEMPF
+      printf "${rot}keine inhaltliche Übereinstimmung (SHA-256) bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
       return 1;
     fi;
-    # SD identisch oder Ziel frisch → weiter
-  }
+    # diese Schutzdatei identisch oder Ziel frisch → weiter mit der naechsten aus SDLISTE bzw. mit der Kopie
+  done;
   if [ "$7" -o \( -z "$QL" -a -z "$ZL" \) ]; then
   # keine Platzprüfung
     rest=1;
@@ -602,61 +609,50 @@ kopieros() {
     return 0;
   fi;
   if [ "$_ist_datei" ]; then
-    # Einzeldatei – Schutzdatei in ~ vergleichen (gecacht pro Session)
+    # Einzeldatei – Schutzdateien in ~ vergleichen (Inhalt per SHA-256, gecacht pro Session, alle aus SDLISTE muessen passen)
     if [ -z "$_kopieros_sd_geprueft" ]; then
-      _kopieros_sdq=$(eval "$qssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
-      _kopieros_sdz=$(eval "$zssh 'stat -c \"%s %Y\" /root/$SD 2>/dev/null'");
       _kopieros_sd_geprueft=1;
-      if [ -z "$_kopieros_sdq" ]; then
-        # a) Fehlt auf Quelle
-        printf "${rot}Schutzdatei /root/$SD auf Quelle nicht gefunden${reset} – sensitive Dateien werden übersprungen\n";
-      elif [ -z "$_kopieros_sdz" ]; then
-        # b) Fehlt auf Ziel – wird bei erster Datei ausgegeben (s.u.), hier kein Fehler
-        true;
-      elif [ "$_kopieros_sdq" != "$_kopieros_sdz" ]; then
-        # c) Beide vorhanden, verschieden – immer blockieren
-        printf "${rot}Schutzdatei in ~ verschieden${reset} (Q: $blau$_kopieros_sdq$reset / Z: $blau$_kopieros_sdz$reset) – sensitive Dateien werden übersprungen\n";
-      fi;
+      _kopieros_sd_status=ok; # ok | fehlt_quelle | abweichung
+      for _sd in "${SDLISTE[@]}"; do
+        _ksdq=$(eval "$qssh 'sha256sum /root/$_sd 2>/dev/null'"|cut -d' ' -f1);
+        _ksdz=$(eval "$zssh 'sha256sum /root/$_sd 2>/dev/null'"|cut -d' ' -f1);
+        if [ -z "$_ksdq" ]; then
+          # a) Fehlt auf Quelle
+          printf "${rot}Schutzdatei /root/$_sd auf Quelle nicht gefunden${reset} – sensitive Dateien werden übersprungen\n";
+          _kopieros_sd_status=fehlt_quelle;
+          break;
+        elif [ -z "$_ksdz" ]; then
+          # b) Fehlt auf Ziel – Ziel frisch, kein Fehler, weitere Schutzdateien der Liste noch prüfen
+          printf "${blau}Schutzdatei /root/$_sd auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
+        elif [ "$_ksdq" != "$_ksdz" ]; then
+          # c) Beide vorhanden, Inhalt (SHA-256) weicht ab – immer blockieren
+          printf "${rot}Schutzdatei /root/$_sd in ~ inhaltlich verschieden${reset} (Q: $blau$_ksdq$reset / Z: $blau$_ksdz$reset) – sensitive Dateien werden übersprungen\n";
+          _kopieros_sd_status=abweichung;
+          break;
+        fi;
+      done;
     fi;
-    _sdq="$_kopieros_sdq"; _sdz="$_kopieros_sdz";
-    if [ -z "$_sdq" ]; then
-      # a) SD fehlt auf Quelle – Quelle evtl. beschädigt
+    if [ "$_kopieros_sd_status" != ok ]; then
       return 1;  # Meldung bereits in Cache-Block ausgegeben
     fi;
-    if [ -z "$_sdz" ]; then
-      # b) SD fehlt auf Ziel – Ziel frisch/neu, Kopie trotzdem erlaubt
-      if [ -z "$_kopieros_sd_geprueft_b" ]; then
-        printf "${blau}Schutzdatei /root/$SD auf Ziel nicht vorhanden${reset} – Ziel frisch, kopiere\n";
-        _kopieros_sd_geprueft_b=1;
-      fi;
-      # SD fehlt auf Ziel → Kopie erlaubt (kein return 1)
-    elif [ "$_sdq" != "$_sdz" ]; then
-      # c) Beide vorhanden aber verschieden – gecachte Meldung reicht
-      return 1;  # Meldung bereits in Cache-Block ausgegeben
-    fi;
-    if [ "$_sdq" = "$_sdz" ] || [ -z "$_sdz" ]; then
-      # Schutzdatei identisch (oder Ziel frisch) – Kopie durchführen:
-			ausf "$kopbef -avuX --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
-			# .ssh-Rechte auf Ziel absichern (SSH-Key-Auth darf nicht brechen):
-			# /root Eigentümer + Rechte wiederherstellen (rsync kann sie verändern)
-			if [ "$ZL" ]; then
-			  eval "$zssh 'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }'";
-			else
-			  chown root:root /root; chmod 700 /root;
-			  [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
-			fi;
-    else
-      printf "${rot}Schutzdatei in ~ nicht identisch${reset} (Q: $blau$_sdq$reset / Z: $blau$_sdz$reset) – überspringe $blau$1$reset\n";
-      return 1;
-    fi;
+    # alle Schutzdateien identisch (oder auf Ziel frisch) – Kopie durchführen:
+		ausf "$kopbef -avuX --no-owner --no-group ${QmD}/root/$1 ${ZmD}/root/" "$dblau" 1;
+		# .ssh-Rechte auf Ziel absichern (SSH-Key-Auth darf nicht brechen):
+		# /root Eigentümer + Rechte wiederherstellen (rsync kann sie verändern)
+		if [ "$ZL" ]; then
+		  eval "$zssh 'chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }'";
+		else
+		  chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null;
+		  [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
+		fi;
   else
     # Verzeichnis – --chmod=D0700 setzt /root-Rechte direkt, kein ControlMaster nötig
     if [ "$ZL" ]; then
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
-      ssh "$ZL" 'chown root:root /root; chmod 700 /root; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
+      ssh "$ZL" 'chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
     else
       kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
-      chown root:root /root; chmod 700 /root;
+      chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null;
       [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
         chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
     fi;
@@ -841,8 +837,8 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-dt2 -db${reset}          Windows-Shares UND Datenbank" \
     " ${blau}-dt3 -db${reset}          /DATA UND Datenbank (keine Konfigdateien)" \
     " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
-    " ${blau}SD${reset}                Schutzdatei ${blau}$SD${reset} auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
-    " ${blau}SD=/Pfad/Datei${reset}    wie SD, aber mit abweichendem Dateinamen/-pfad" \
+    " ${blau}SD${reset}                Schutzdateien (${blau}${SDLISTE[*]}${reset}) auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
+    " ${blau}SD=/Pfad/Datei${reset}    verteilt nur die eine angegebene Datei (abweichender Name/Pfad möglich), statt der ganzen Liste" \
     " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
