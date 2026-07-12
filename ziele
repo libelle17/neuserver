@@ -5,6 +5,8 @@ alsres.sh
 alsserver.sh
 analdok.sh
 awkcron.sh
+backup_ssh_wrapper.sh
+massenaenderung_waechter.sh
 awkfdatei.sh
 awkmount.sh
 awksmb.sh
