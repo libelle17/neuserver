@@ -21,8 +21,11 @@ $LogDatei = Join-Path $PSScriptRoot "spiegele-log.txt"
 # Eigenes Log fuer die rohe Robocopy-Ausgabe: Start-Transcript faengt die
 # Konsolenausgabe nativer Programme wie robocopy.exe nicht zuverlaessig ab
 # (besonders bei nicht-interaktiven Laeufen ueber den Task Scheduler), daher
-# schreibt robocopy seine Detailzeilen (kopierte/fehlerhafte Dateien,
-# Zusammenfassungstabelle) per /LOG+ zusaetzlich direkt in diese Datei.
+# schreibt robocopy seine Detailzeilen (Fehler, Zusammenfassungstabelle) per
+# /LOG+ zusaetzlich direkt in diese Datei. /NFL /NDL unterdruecken dabei das
+# Auflisten jeder einzelnen unveraenderten Datei/jedes Verzeichnisses (bei
+# indamed ca. 1,4 Mio. Dateien - das blaeht das Log sonst auf >30 MB pro Lauf
+# auf), ECHTE Fehlerzeilen und die Zusammenfassung bleiben trotzdem erhalten.
 $RobocopyLogDatei = Join-Path $PSScriptRoot "spiegele-robocopy-log.txt"
 
 # Einfache Log-Rotation (Windows kennt kein eingebautes logrotate): wird die
@@ -146,7 +149,7 @@ function Spiegele-Verzeichnis {
         # nicht mehr vorhandene Quelldateien werden NICHT geloescht - falls doch
         # einmal eine Verschluesselung durchrutscht, bleibt so die letzte gute
         # Zielkopie zumindest von aktiver Loeschung verschont.
-        robocopy "$QuellVerz\" "$ZielVerz\" /copy:dat /s "/log+:$RobocopyLogDatei"
+        robocopy "$QuellVerz\" "$ZielVerz\" /copy:dat /s /nfl /ndl "/log+:$RobocopyLogDatei"
         if ($LASTEXITCODE -lt 8) {
             Write-Host "Robocopy erfolgreich (Exit-Code: $LASTEXITCODE)" -ForegroundColor Green
         } else {
