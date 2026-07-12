@@ -64,6 +64,16 @@ fragab() {
     for adr in $FritzboxAdressen;do
       FB=http://$adr:49000;
       printf "$blau$adr$reset, Action: $blau$Action $ParIn $Inhalt$reset, trying/versuche ${blau}ipv$ipv$reset";
+      # Analyse (Auswertung /var/mail/root + Live-Test, Stand 8.7.2026):
+      # Die in credfile hinterlegten Zugangsdaten sind nachweislich gueltig (per
+      # curl/TR-064 erfolgreich getestet) - trotzdem kamen alle 366 bisherigen
+      # "Unauthorized"-Fehler ausschliesslich in den Cron-Slots 5:40/6:10 Uhr vor.
+      # Das spricht fuer ein voruebergehendes Problem auf Fritzbox-Seite zu dieser
+      # Uhrzeit (z.B. naechtlicher Zwangs-Reconnect/Neustart des TR-064-Dienstes),
+      # nicht fuer falsche Zugangsdaten. Deshalb hier: bei "Unauthorized" erst bis
+      # zu 3x mit steigender Pause erneut versuchen, bevor (wie zuvor) via
+      # authorize() abgebrochen bzw. (falls Terminal vorhanden) neu abgefragt wird.
+      unauthzahl=0;
       while true; do
         befehl="curl -$ipv -k --anyauth -u \"$crede\" \\n\
               -H \"Content-Type: text/xml; charset=utf-8\" \\n\
@@ -72,13 +82,20 @@ fragab() {
               -d '$XML'";
         tufrag "$befehl" 1 "$FB$controlURL";
         [ $ret -ne 0 ]&&continue; # z.B. "fritz.box" konnte nicht aufgelöst werden
-        # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action 
+        # printf "Seifenaktion: "'SoapAction: '$serviceType'#'$Action
         [ "$erg" ]&&[ "$verb" ]&&printf "Return/Rueckgabe: \n$blau$erg$reset\n";
-        case "$erg" in 
-           *Unauthorized*) 
-             echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
-             obneu=1;
-             authorize;;
+        case "$erg" in
+           *Unauthorized*)
+             unauthzahl=$((unauthzahl+1));
+             if [ $unauthzahl -le 3 ]; then
+               printf "${rot}Berechtigungsfehler bei Fritzbox-Abfrage (Versuch $unauthzahl/3, evtl. voruebergehend) - warte $((unauthzahl*3))s und versuche erneut.${reset}\n";
+               sleep $((unauthzahl*3));
+             else
+               echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
+               obneu=1;
+               authorize;
+               unauthzahl=0;
+             fi;;
            *) break;;
         esac;
       done; # while true
@@ -246,10 +263,29 @@ authorize() {
 	credfile="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
 	crede=$(cat $credfile 2>/dev/null); # der Inhalt von crede
 	if [ -z "$crede" -o $obneu = 1 ]; then # falls Inhalt leer oder erneuert werden soll ...
+		# Analyse (Auswertung /var/mail/root, Stand 8.7.2026):
+		# fragab() setzt bei JEDER "Unauthorized"-Antwort der Fritzbox obneu=1 und
+		# ruft authorize() erneut auf - unabhängig davon, ob $crede ueberhaupt leer ist.
+		# Unter Cron (kein Terminal/stdin) liefert "read" hier sofort leer/EOF, wodurch
+		# bislang ein leeres "user:passwort" (nur ":") ins credfile geschrieben und die
+		# Fritzbox-Abfrage dauerhaft mit "Berechtigungsfehler ... crede: :" fehlschlug.
+		# Seit 25.5.2026 kam so an jedem Werktag (05:40 + 06:10 Uhr, s. crontab) diese
+		# Mail, zuletzt noch am 8.7.2026 - macht 366 Fehlermails in 6 Wochen, ohne dass
+		# die eigentliche Ursache (Zugangsdaten seit 24.5. von der Fritzbox abgelehnt)
+		# je behoben wurde, weil der Fehler nie sichtbar/eindeutig gemeldet wurde.
+		# Fix: interaktive Neuabfrage nur noch, wenn ein Terminal vorhanden ist; sonst
+		# sofort mit klarer Fehlermeldung abbrechen statt endlos mit leeren Credentials
+		# weiterzuprobieren bzw. das credfile zu zerstören.
+		if [ -t 0 ]; then
 		 printf "Please enter the fritz box user/Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 		 printf "Please enter the password for/Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 		 crede="$fbuser:$fbpwd";
 		 printf "$crede" >"$credfile";
+		else
+		 printf "${rot}Fritzbox weist die in $credfile hinterlegten Zugangsdaten zurück (Unauthorized) und es ist kein Terminal für eine Rückfrage vorhanden (z.B. Cron).${reset}\n" >&2;
+		 printf "${rot}Bitte einmal interaktiv \"$0 -neu\" ausführen und die aktuellen Fritzbox-Zugangsdaten eingeben. Breche ab.${reset}\n" >&2;
+		 exit 1;
+		fi;
 	fi;
 } # authorize
 

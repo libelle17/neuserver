@@ -1,5 +1,6 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhistcnt =7
+let g:netrw_dirhistcnt =8
+let g:netrw_dirhist_8='/root/dbverbfreigabe'
 let g:netrw_dirhist_7='/etc/samba'
 let g:netrw_dirhist_6='/DAT1/root/.getmail'
 let g:netrw_dirhist_5='/DATA/rett0/altesroot/.getmail'
@@ -9,4 +10,3 @@ let g:netrw_dirhist_2='/DATA/wrz/.getmail'
 let g:netrw_dirhist_1='/DATA/wrz/root/.getmail'
 let g:netrw_dirhist_0='/DATA/rett/mnt/DAT1/root/.getmail'
 let g:netrw_dirhist_9='/DATA/rett/root/.getmail'
-let g:netrw_dirhist_8='/DATA/rett0/altesroot/.getmail'
