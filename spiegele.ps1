@@ -18,18 +18,35 @@
 # jedem Lauf (-Append).
 $LogDatei = Join-Path $PSScriptRoot "spiegele-log.txt"
 
+# Eigenes Log fuer die rohe Robocopy-Ausgabe: Start-Transcript faengt die
+# Konsolenausgabe nativer Programme wie robocopy.exe nicht zuverlaessig ab
+# (besonders bei nicht-interaktiven Laeufen ueber den Task Scheduler), daher
+# schreibt robocopy seine Detailzeilen (kopierte/fehlerhafte Dateien,
+# Zusammenfassungstabelle) per /LOG+ zusaetzlich direkt in diese Datei.
+$RobocopyLogDatei = Join-Path $PSScriptRoot "spiegele-robocopy-log.txt"
+
 # Einfache Log-Rotation (Windows kennt kein eingebautes logrotate): wird die
 # Log-Datei zu gross, vor dem naechsten Start umbenennen (mit Zeitstempel
 # archivieren) und alte Archive jenseits von $LogAufbewahrenTage loeschen.
 $LogMaxBytes = 5MB
 $LogAufbewahrenTage = 30
-if ((Test-Path $LogDatei) -and (Get-Item $LogDatei).Length -gt $LogMaxBytes) {
-    $ArchivName = $LogDatei -replace '\.txt$', ("-{0}.txt" -f (Get-Date -Format "yyyyMMddHHmmss"))
-    Rename-Item -Path $LogDatei -NewName (Split-Path $ArchivName -Leaf)
+
+function Rotiere-Log {
+    param(
+        [string]$Pfad,
+        [string]$ArchivMuster
+    )
+    if ((Test-Path $Pfad) -and (Get-Item $Pfad).Length -gt $LogMaxBytes) {
+        $ArchivName = $Pfad -replace '\.txt$', ("-{0}.txt" -f (Get-Date -Format "yyyyMMddHHmmss"))
+        Rename-Item -Path $Pfad -NewName (Split-Path $ArchivName -Leaf)
+    }
+    Get-ChildItem -Path $PSScriptRoot -Filter $ArchivMuster -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$LogAufbewahrenTage) } |
+        Remove-Item -Force -ErrorAction SilentlyContinue
 }
-Get-ChildItem -Path $PSScriptRoot -Filter "spiegele-log-*.txt" -ErrorAction SilentlyContinue |
-    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$LogAufbewahrenTage) } |
-    Remove-Item -Force -ErrorAction SilentlyContinue
+
+Rotiere-Log -Pfad $LogDatei -ArchivMuster "spiegele-log-*.txt"
+Rotiere-Log -Pfad $RobocopyLogDatei -ArchivMuster "spiegele-robocopy-log-*.txt"
 
 Start-Transcript -Path $LogDatei -Append
 
@@ -129,11 +146,11 @@ function Spiegele-Verzeichnis {
         # nicht mehr vorhandene Quelldateien werden NICHT geloescht - falls doch
         # einmal eine Verschluesselung durchrutscht, bleibt so die letzte gute
         # Zielkopie zumindest von aktiver Loeschung verschont.
-        robocopy "$QuellVerz\" "$ZielVerz\" /copy:dat /s
+        robocopy "$QuellVerz\" "$ZielVerz\" /copy:dat /s "/log+:$RobocopyLogDatei"
         if ($LASTEXITCODE -lt 8) {
             Write-Host "Robocopy erfolgreich (Exit-Code: $LASTEXITCODE)" -ForegroundColor Green
         } else {
-            Write-Warning "Robocopy meldet Fehler (Exit-Code: $LASTEXITCODE)"
+            Write-Warning "Robocopy meldet Fehler (Exit-Code: $LASTEXITCODE) - Details siehe $RobocopyLogDatei"
         }
     } else {
         Write-Host "Schutzdateien stimmen NICHT ueberein - Spiegelung wird uebersprungen (moeglicher Ransomware-Verdacht)." -ForegroundColor Red
