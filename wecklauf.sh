@@ -1,24 +1,34 @@
 #!/bin/bash
-# wecklauf.sh - Nacht-/Mittagssicherung fuer linux0/linux7: wird per @reboot
-# gestartet, nachdem rtcwake den Rechner geweckt hat, fuehrt je nach
-# Tageszeit die Mittags- (nur bumo.sh) oder die Nachtsequenz (bumo.sh,
-# bulinux.sh, bunacht.sh) aus und schaltet den Rechner danach wieder ab.
+# wecklauf.sh - Nacht-/Mittagssicherung fuer linux0/linux7. Wird per Cron
+# ALLE 5 MINUTEN aufgerufen (nicht per @reboot!) und prueft selbst, ob die
+# aktuelle Uhrzeit in einem Toleranzfenster um die geplanten Weckzeiten
+# liegt. Vorteil gegenueber @reboot: laeuft auch dann, wenn der Rechner
+# schon vorher von Hand eingeschaltet wurde und einfach an blieb - nicht nur
+# unmittelbar nach einem frischen Boot.
 #
-# Sicherheitsprinzip (s. frueherer Ausfall bei linux7, bei dem irgendwann das
-# Abschalten nicht mehr funktionierte und die naechste Weckzeit verloren
-# ging): der naechste rtcwake-Alarm wird GANZ AM ANFANG gesetzt, VOR den
-# eigentlichen Sicherungslaeufen - damit ein haengender oder fehlschlagender
-# Lauf niemals das naechste Aufwachen verhindert (hoechstens das Abschalten
-# diesmal ausbleibt, was aber sichtbar/harmlos ist, da die Maschine dann
-# einfach an bleibt statt zu verschwinden). Jeder Sicherungslauf ist mit
-# "timeout" gegen unbegrenztes Haengen abgesichert; ohne -e wird alles nur
-# simuliert (rtcwake -n, kein shutdown, -e wird nicht an die Unterskripte
-# durchgereicht).
+# Sicherheitsprinzip 1 (s. frueherer Ausfall bei linux7, bei dem irgendwann
+# das Abschalten nicht mehr funktionierte und dadurch auch die naechste
+# Weckzeit verloren ging): der naechste rtcwake-Alarm wird GANZ AM ANFANG
+# gesetzt, VOR den eigentlichen Sicherungslaeufen - ein haengender oder
+# fehlschlagender Lauf kann so bestenfalls das Abschalten diesmal
+# verhindern (sichtbar/harmlos), nie aber das naechste Wecken.
 #
-# -e: echt (Alarm setzen, Skripte mit -e aufrufen, am Ende abschalten)
-# ohne -e: Trockenlauf (nur anzeigen, nichts schalten/abschalten)
+# Sicherheitsprinzip 2: abgeschaltet wird am Ende nur, wenn der Rechner
+# System-Uptime unterhalb $UPTIME_SCHWELLE_S hat, also offenbar gerade erst
+# gebootet wurde (vermutlich durch rtcwake). Laeuft er schon laenger, war
+# er vermutlich von Hand eingeschaltet/in Benutzung - dann wird zwar
+# trotzdem gesichert (s.o.), aber NICHT abgeschaltet, um ihn niemandem
+# unter den Fuessen wegzuschalten.
+#
+# Jeder Sicherungslauf ist mit "timeout" gegen unbegrenztes Haengen
+# abgesichert. Ohne -e wird alles nur simuliert (rtcwake -Ausgabe, kein
+# shutdown, kein Setzen von Merkerdateien, -e wird nicht an die
+# Unterskripte durchgereicht).
+#
+# -e: echt (Alarm setzen, Skripte mit -e aufrufen, ggf. am Ende abschalten)
+# ohne -e: Trockenlauf (nur anzeigen, nichts schalten/abschalten/merken)
 # -zeit "HH:MM": Testzeit statt der echten Uhrzeit verwenden (fuer Tests ohne
-#   auf die richtige Tageszeit warten zu muessen)
+#   auf die richtige Tageszeit warten zu muessen; Datum bleibt real)
 
 MUPR=$(readlink -f "$0");
 . "${MUPR%/*}/bul1.sh"; # LINEINS, buhost, EIGENHOST/EIGENNR, DATAZIEL festlegen
@@ -37,41 +47,62 @@ blau="\033[1;34m"; rot="\033[1;31m"; reset="\033[0m";
 LOG=/var/log/wecklauf.log;
 log() { printf '%s %b\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG"; }
 
+TOLERANZ_S=$((7 * 60)); # Toleranzfenster um die Zielzeiten, groesser als das 5-Minuten-Pollintervall
+UPTIME_SCHWELLE_S=$((10 * 60)); # nur abschalten, wenn seit weniger als 10 Min. gebootet
+GRACE_DATEI=/root/.kein_wecklauf;
+LETZTER_LAUF_DATEI=/root/.wecklauf_letzter_lauf_epoche; # zuletzt behandeltes Fenster (Ziel-Epoche)
+
 # Wartungsschalter: wenn diese Datei existiert, macht wecklauf.sh gar nichts
-# (kein Alarm, keine Skripte, kein Abschalten) - z.B. fuer manuelle Eingriffe.
-# Danach unbedingt wieder entfernen, sonst bleibt der Rechner naechstes Mal an!
-if [ -f /root/.kein_wecklauf ]; then
-  log "/root/.kein_wecklauf vorhanden - wecklauf.sh tut nichts (auch kein Alarm gesetzt!).";
-  exit 0;
+# (kein Alarm, keine Skripte, kein Abschalten). Reicht, sie IRGENDWANN vor
+# dem naechsten Fenster anzulegen (naechster Tick ist hoechstens 5 Min.
+# entfernt) - nicht nur vorab wie bei @reboot. Danach wieder entfernen,
+# sonst bleibt der Rechner dauerhaft von der Automatik ausgenommen.
+if [ -f "$GRACE_DATEI" ]; then
+  exit 0; # bewusst kein Log-Eintrag bei jedem 5-Minuten-Tick
 fi;
 
 case "$buhost" in
   linux0) MITTAG="14:18"; NACHT="21:45";;
   linux7) MITTAG="14:48"; NACHT="00:00";;
-  *) log "wecklauf.sh: unbekannter/nicht vorgesehener Host '$buhost' - breche ab."; exit 1;;
+  *) exit 0;; # anderer Host (z.B. linux1) - still beenden
 esac;
 
-_minuten() { local h=${1%%:*} m=${1##*:}; echo $((10#$h * 60 + 10#$m)); } # HH:MM -> Minuten seit Mitternacht
-_zyklabstand() { local d=$(( $1 - $2 )); d=${d#-}; [ "$d" -gt 720 ] && d=$((1440 - d)); echo "$d"; }
-_naechste_epoche() { # $1 = HH:MM -> naechste zukuenftige Epoche dieser Uhrzeit (heute oder morgen)
-  local heute; heute=$(date -d "today $1" +%s);
-  local jetzt; jetzt=$(date +%s);
-  if [ "$heute" -gt "$jetzt" ]; then echo "$heute"; else date -d "tomorrow $1" +%s; fi;
-}
+if [ "$testzeit" ]; then JETZT_EPOCHE=$(date -d "today $testzeit" +%s);
+else JETZT_EPOCHE=$(date +%s); fi;
 
-JETZT="${testzeit:-$(date +%H:%M)}";
-JETZT_MIN=$(_minuten "$JETZT");
-AB_MITTAG=$(_zyklabstand "$JETZT_MIN" "$(_minuten "$MITTAG")");
-AB_NACHT=$(_zyklabstand "$JETZT_MIN" "$(_minuten "$NACHT")");
-if [ "$AB_MITTAG" -le "$AB_NACHT" ]; then MODUS=mittag; NAECHSTER="$NACHT"; else MODUS=nacht; NAECHSTER="$MITTAG"; fi;
+# Naechstgelegenen Kandidaten unter {MITTAG,NACHT} x {gestern,heute,morgen}
+# suchen (deckt auch Mitternachts-Zeiten wie linux7s NACHT=00:00 robust ab,
+# ohne zyklische Minutenrechnung mit Sonderfaellen):
+BESTER_ABSTAND=; BESTE_EPOCHE=; BESTER_MODUS=;
+for tag in yesterday today tomorrow; do
+  for eintrag in "mittag:$MITTAG" "nacht:$NACHT"; do
+    modus=${eintrag%%:*}; zeit=${eintrag#*:};
+    kand=$(date -d "$tag $zeit" +%s 2>/dev/null) || continue;
+    abst=$(( kand - JETZT_EPOCHE )); abst=${abst#-};
+    if [ -z "$BESTER_ABSTAND" ] || [ "$abst" -lt "$BESTER_ABSTAND" ]; then
+      BESTER_ABSTAND=$abst; BESTE_EPOCHE=$kand; BESTER_MODUS=$modus;
+    fi;
+  done;
+done;
 
-NAECHSTE_EPOCHE=$(_naechste_epoche "$NAECHSTER");
-log "${blau}wecklauf.sh${reset} auf $buhost, Uhrzeit $JETZT (Modus: $MODUS), naechster Weckzeitpunkt: $NAECHSTER ($(date -d "@$NAECHSTE_EPOCHE" '+%Y-%m-%d %H:%M:%S'))";
+[ "$BESTER_ABSTAND" -gt "$TOLERANZ_S" ] && exit 0; # kein Fenster gerade - still beenden
 
-# Naechsten Alarm ZUERST setzen (s. Kommentar oben) - "-m no" setzt nur den
-# RTC-Alarm, ohne den Rechner in irgendeinen Energiesparmodus zu versetzen:
+LETZTER_LAUF=$(cat "$LETZTER_LAUF_DATEI" 2>/dev/null);
+[ "$LETZTER_LAUF" = "$BESTE_EPOCHE" ] && exit 0; # dieses Fenster schon behandelt - still beenden
+
+log "${blau}wecklauf.sh${reset} auf $buhost: Fenster erkannt (Modus: $BESTER_MODUS, Zielzeit $(date -d "@$BESTE_EPOCHE" '+%Y-%m-%d %H:%M:%S'), Abstand ${BESTER_ABSTAND}s)";
+# Als behandelt markieren, BEVOR die (evtl. lange) Sicherung laeuft, damit
+# der naechste 5-Minuten-Tick waehrenddessen nicht erneut auslöst:
+[ "$obecht" ] && echo "$BESTE_EPOCHE" > "$LETZTER_LAUF_DATEI";
+
+# Naechsten Alarm bestimmen (das jeweils andere Fenster, naechstes
+# Vorkommen NACH diesem) und ZUERST setzen (s. Kommentar oben):
+if [ "$BESTER_MODUS" = mittag ]; then NAECHSTE_ZEIT="$NACHT"; else NAECHSTE_ZEIT="$MITTAG"; fi;
+NAECHSTE_EPOCHE=$(date -d "today $NAECHSTE_ZEIT" +%s);
+[ "$NAECHSTE_EPOCHE" -le "$BESTE_EPOCHE" ] && NAECHSTE_EPOCHE=$(date -d "tomorrow $NAECHSTE_ZEIT" +%s);
+log "Naechster Alarm: $NAECHSTE_ZEIT ($(date -d "@$NAECHSTE_EPOCHE" '+%Y-%m-%d %H:%M:%S'))";
 if [ "$obecht" ]; then
-  rtcwake -m no -t "$NAECHSTE_EPOCHE" 2>&1 | tee -a "$LOG";
+  rtcwake -m no -t "$NAECHSTE_EPOCHE" 2>&1 | tee -a "$LOG"; # "-m no": nur Alarm setzen, kein Energiesparmodus
 else
   log "Simulation: rtcwake -m no -t $NAECHSTE_EPOCHE";
 fi;
@@ -80,14 +111,14 @@ _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
   local skript="$1"; shift;
   if [ "$obecht" ]; then
     log "${blau}Starte${reset} $skript $* -e";
-    timeout "${WECKLAUF_TIMEOUT:-5h}" "$skript" "$@" -e 2>&1 | tee -a "$LOG";
+    timeout "${WECKLAUF_TIMEOUT:-8h}" "$skript" "$@" -e 2>&1 | tee -a "$LOG";
     log "${blau}Ende${reset} $skript (Exitcode der timeout-Huelle: $?)";
   else
-    log "Simulation: timeout ${WECKLAUF_TIMEOUT:-5h} $skript $* -e";
+    log "Simulation: timeout ${WECKLAUF_TIMEOUT:-8h} $skript $* -e";
   fi;
 }
 
-case "$MODUS" in
+case "$BESTER_MODUS" in
   mittag)
     _lauf /root/bin/bumo.sh;
     ;;
@@ -98,9 +129,14 @@ case "$MODUS" in
     ;;
 esac;
 
-if [ "$obecht" ]; then
-  log "${rot}Schalte $buhost jetzt ab.${reset}";
-  shutdown -h now;
+UPTIME_S=$(awk '{print int($1)}' /proc/uptime 2>/dev/null);
+if [ -n "$UPTIME_S" ] && [ "$UPTIME_S" -lt "$UPTIME_SCHWELLE_S" ]; then
+  if [ "$obecht" ]; then
+    log "${rot}Uptime ${UPTIME_S}s < ${UPTIME_SCHWELLE_S}s (vermutlich durch rtcwake gestartet) - schalte $buhost jetzt ab.${reset}";
+    shutdown -h now;
+  else
+    log "Simulation: shutdown -h now (Uptime ${UPTIME_S}s < ${UPTIME_SCHWELLE_S}s)";
+  fi;
 else
-  log "Simulation: shutdown -h now";
+  log "${blau}Uptime ${UPTIME_S:-?}s >= ${UPTIME_SCHWELLE_S}s - Rechner laeuft schon laenger (vermutlich von Hand eingeschaltet/in Benutzung) - schalte NICHT ab.${reset}";
 fi;
