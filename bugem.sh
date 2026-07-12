@@ -659,6 +659,27 @@ kopieros() {
   fi;
 }
 
+# Backup-Heartbeat: schreibt/ersetzt eine Zeile in linux1:/DATA/Backup-Status_<Zielrechner>.txt,
+# eine Datei je Zielrechner, eine Zeile je aufrufendem Skript (bumo.sh/bunacht.sh/bulinux.sh).
+# $1 = Status (Standard: OK). Zielrechner: im Push-Modus $ZL, im Pull-Modus (ZL leer) der
+# eigene Rechner ($buhost). Die Datei liegt immer auf linux1 - im Pull-Modus also per ssh
+# auf $QL geschrieben, im Push-Modus lokal (da dann auf linux1 gelaufen wird).
+backupstatus() {
+  local _bs_status="${1:-OK}";
+  local _bs_skript="$(basename "${MUPR:-$0}")";
+  local _bs_ziel="${ZL:-$buhost}";
+  local _bs_datei="/DATA/Backup-Status_${_bs_ziel}.txt";
+  local _bs_zeile;
+  _bs_zeile="$(printf '%-12s %s  %s' "$_bs_skript" "$(date '+%Y-%m-%d %H:%M:%S')" "$_bs_status")";
+  local _bs_cmd="mkdir -p /DATA 2>/dev/null; touch \"$_bs_datei\" 2>/dev/null; { grep -v \"^$_bs_skript \" \"$_bs_datei\" 2>/dev/null; echo \"$_bs_zeile\"; } | sort -o \"$_bs_datei.neu\" -; mv \"$_bs_datei.neu\" \"$_bs_datei\"";
+  machssh;
+  if [ "$QL" ]; then
+    eval "$qssh '$_bs_cmd'" 2>/dev/null;
+  else
+    eval "$_bs_cmd" 2>/dev/null;
+  fi;
+} # backupstatus
+
 kopieretc() {
   kopiermt etc/$1 "etc/" "" "" "" "" 1
 }

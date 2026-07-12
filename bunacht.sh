@@ -47,6 +47,7 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
 #    kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
 #    kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
     kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
+    backupstatus "$([ $? -eq 0 ] && echo OK || echo FEHLER)";
 #    ZL=;
 #    ZmD=;
 #    mount /mnt/wser/indamed
@@ -62,5 +63,6 @@ else
   wirt=$QL;
   vz=$DATAZIEL;
   kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
+  backupstatus "$([ $? -eq 0 ] && echo OK || echo FEHLER)";
   EXGES="";
 fi;

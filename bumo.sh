@@ -45,6 +45,7 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
 #    kopiermt_delta "/DATA/Patientendokumente/dok/" "/$vz/Patientendokumente/dok/" "" "" "" ""; # ohne --iconv
 #    kopiermt_delta "/DATA/Patientendokumente/eingelesen/" "/$vz/Patientendokumente/eingelesen/" "" "" "" ""; # ohne --iconv
     kopiermt_delta "/DATA/Patientendokumente/" "/$vz/Patientendokumente/" "" "" "" ""; # kein --delete mehr (s. Analyse oben); ohne --iconv
+    backupstatus "$([ $? -eq 0 ] && echo OK || echo FEHLER)";
 #    ZL=;
 #    ZmD=;
 #    mount /mnt/wser/indamed
@@ -65,5 +66,6 @@ else
   wirt=$QL;
   vz=$DATAZIEL;
   kopiermt_delta "/DATA/Patientendokumente/" "/$vz/Patientendokumente/" "" "" "" ""; # ohne --iconv
+  backupstatus "$([ $? -eq 0 ] && echo OK || echo FEHLER)";
   EXGES="";
 fi;

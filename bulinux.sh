@@ -698,6 +698,7 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
+backupstatus "$([ -n "$_bu_fehler" ] && echo FEHLER || echo OK)";
 # Bugfix 11.07.2026: "exit;" ohne Code gab bisher immer den Status des
 # letzten Befehls zurueck, nicht das waehrend des Laufs gesetzte
 # _bu_fehler-Flag - Aufrufer wie ruecknahme.sh, die bei Fehlern bewusst

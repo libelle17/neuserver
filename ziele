@@ -7,6 +7,7 @@ analdok.sh
 awkcron.sh
 backup_ssh_wrapper.sh
 massenaenderung_waechter.sh
+wecklauf.sh
 awkfdatei.sh
 awkmount.sh
 awksmb.sh
