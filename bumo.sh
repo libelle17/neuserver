@@ -60,6 +60,7 @@ else
   # importiert nur dort) - deshalb per $qssh (normaler, uneingeschränkter
   # Root-Zugriff auf $LINEINS, s. bugem.sh/_backup_sshopts) auf $QL ausführen:
   printf "${blau}Vom Zielrechner aus aufgerufen ($buhost) - ziehe von ${QL}.${reset}\n";
+  machssh; # setzt $qssh/$zssh aus $QL/$ZL (sonst leer, da sonst nur lazy in kopiermt* gesetzt)
   eval "$qssh '/root/bin/dopweg.sh ${obecht:+-e}'";
   wirt=$QL;
   vz=$DATAZIEL;
