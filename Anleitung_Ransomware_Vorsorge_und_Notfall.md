@@ -13,7 +13,7 @@ Die bestehende linux0/linux7-Übernahme-Logik löst **Hardware-/Systemausfall**,
 **Korrektur/Ergänzung (Stand 12.7.2026, nach genauerer Durchsicht):** Diese Gefahr ist in der Praxis kleiner als hier ursprünglich angenommen, aus zwei Gründen, die schon vorher bestanden:
 - Samba läuft auf linux0/linux7 **im Normalbetrieb bewusst nicht** (nur während einer echten Übernahme aktiv) – der wahrscheinlichste Ausbreitungsweg (SMB von einem kompromittierten Windows-Rechner) ist damit für die Online-Backups weitgehend verschlossen.
 - Die eigentlichen Backup-Skripte (`bulinux.sh`, `bumo.sh`, `bunacht.sh`, alle über `bugem.sh`) verwenden einen **Schutzdatei-Mechanismus**: Vor jedem Kopiervorgang wird eine Gruppe unauffälliger Referenzdateien (`Schutzdatei_bitte_belassen.doc`, `Auch_eine_Schutzdatei_bitte_belassen.jpg`, `zusätzliche_Schutzdatei_bitte_belassen.pdf`) per SHA-256-Hash zwischen Quelle und Ziel verglichen; weicht auch nur eine ab, wird die Sicherung für das betroffene Verzeichnis **verweigert und eine Warnmail verschickt**, statt die gute Kopie stillschweigend zu überschreiben (relevant v. a. bei `bumo.sh`/`bunacht.sh`, die mit `--delete` arbeiten). Details siehe Abschnitt 6.
-- `gsbackup.sh` (älterer, separater Mechanismus für CIFS-Ziele) hat diese Prüfung **nicht** – falls dieses Skript noch aktiv im Einsatz ist, bleibt der ursprüngliche Kritikpunkt (rsync ohne Versionierung, kein Schutz vor Überschreiben) dort bestehen und sollte geprüft werden.
+- `gsbackup.sh` (älterer, separater Mechanismus für CIFS-Ziele) hat diese Prüfung **nicht** – **geprüft am 12.7.2026: kein aktiver (nicht-auskommentierter) Cron-Aufruf auf linux1, linux0 oder linux7 gefunden.** Der ursprüngliche Kritikpunkt (rsync ohne Versionierung, kein Schutz vor Überschreiben) ist damit gegenstandslos, solange das so bleibt.
 
 ---
 
@@ -65,16 +65,41 @@ Die bestehende linux0/linux7-Übernahme-Logik löst **Hardware-/Systemausfall**,
 
 ### 8. Notfallplan und -kontakte offline verfügbar halten
 
-- Diese Anleitung selbst, `uebernahme.sh`/`rueckgabe.sh` und die zugehörige Doku dürfen **nicht ausschließlich verschlüsselbar auf linux1/linux0/linux7 liegen**. Empfehlung: zusätzlich eine ausgedruckte oder auf einem USB-Stick/Cloud-Notiz außerhalb der Serverinfrastruktur abgelegte Kopie dieses Dokuments plus der wichtigsten Zugangsdaten/Notfallkontakte (analog zur bereits vorhandenen `Anleitung_MFA_Notfall_Uebernahme_Rueckgabe`-Logik, aber für den IT-technischen Ernstfall).
-- Kontaktliste bereithalten: IT-Forensik/Incident-Response-Dienstleister (falls noch keiner bekannt: jetzt vorab recherchieren, nicht erst im Ernstfall), Cyber-Versicherung (Police-Nummer + Hotline), Polizei/LKA-Cybercrime-Ansprechstelle des Bundeslandes, zuständige Landesdatenschutzbehörde, ggf. Ärztekammer.
+**Stand 12.7.2026: Kontaktliste unten mit recherchierten/bestätigten Daten gefüllt, weiterhin nicht ausgedruckt/extern hinterlegt (offen).**
+
+- Diese Anleitung selbst, `uebernahme.sh`/`rueckgabe.sh` und die zugehörige Doku dürfen **nicht ausschließlich verschlüsselbar auf linux1/linux0/linux7 liegen**. Empfehlung: zusätzlich eine ausgedruckte oder auf einem USB-Stick/Cloud-Notiz außerhalb der Serverinfrastruktur abgelegte Kopie dieses Dokuments plus der wichtigsten Zugangsdaten/Notfallkontakte (analog zur bereits vorhandenen `Anleitung_MFA_Notfall_Uebernahme_Rueckgabe`-Logik, aber für den IT-technischen Ernstfall). **Noch nicht umgesetzt** – die Liste unten steht bisher nur hier im Dokument, also selbst wieder auf verschlüsselbaren Servern.
+- **Praxis-Notfallnummern über die eigene (Gerald Schade, s. `Anleitung_MFA_Notfall_Uebernahme_Rueckgabe.md`) hinaus: keine vorhanden.**
+- **Praxissoftware-Hersteller (Medical Office): redomed, Inh. Helmut Holz.**
+  - Offizieller Kontakt (Homepage, Stand 12.7.2026): Martinsring 13, 94339 Leiblfing. Telefon/Support: **09427 / 90 19 10 0**, Fax: 09427 / 90 19 10 20, E-Mail: **support@redomed.de**. Bietet Fernwartung per TeamViewer an.
+  - Geschäftsführer/Inhaber: Herr Holz, E-Mail: **helmut.holz@redomed.de** (Telefon geschäftlich identisch mit obiger Support-Nummer).
+  - Mobil/privat: **+49 1511 6511336** – **kein offizieller Kontaktweg**, nur für den äußersten Notfall (z. B. wenn der reguläre Support-Kanal wegen des Vorfalls selbst nicht erreichbar ist), nicht routinemäßig nutzen.
+- **IT-Forensik/Incident-Response-Dienstleister:** recherchiert am 12.7.2026 über die offizielle BSI-Liste qualifizierter APT-Response-Dienstleister (Stand 01.06.2026, staatlich geprüfter Qualitätsstandard). **Auswahl bewusst offen gelassen** – Empfehlung: 1–2 davon vorab unverbindlich kontaktieren, um Eindruck/Konditionen zu bekommen, bevor man sich festlegt.
+  - **Corporate Trust Business Risk & Crisis Management GmbH** (München) – Tel. +49 89 599 88 75 80, info@corporate-trust.de
+  - **HvS-Consulting GmbH** (München) – Tel. +49 89 890 636 261, incidentresponse@hvs-consulting.de
+  - **msg systems ag – security advisors** (Ismaning/München) – 24/7-Hotline +49 89 413242320, dfir@msg.group (größte/etablierteste der vier, ggf. eher auf größere Mandanten ausgerichtet)
+  - **intersoft consulting services AG** (Hamburg, nicht Bayern) – 24/7-Hotline +49 180 622 124 6, it-forensik@intersoft-consulting.de – bietet zusätzlich Datenschutzrecht/DSGVO-Beratung aus einer Hand an
+- **Cyber-Versicherung:** aktuell **bewusst nicht** abgeschlossen (s. Punkt 9).
+- **Zentrale Ansprechstelle Cybercrime (ZAC) Bayern** beim Bayerischen Landeskriminalamt – Erstanlaufstelle der Polizei für Unternehmen/Praxen bei Cybercrime-Vorfällen, auch beratend *vor* einem Vorfall:
+  - Online-Meldung: https://www.zac-formular.polizei.bayern.de/
+  - Telefon: **+49 89 1212-3300**, E-Mail: **zac@polizei.bayern.de**
+  - Adresse: Maillingerstraße 15, 80636 München
+- **Zuständige Datenschutzbehörde:** s. Punkt 10 (BayLDA).
+- **Ärztekammer/KV** – zwei unterschiedliche Stellen, je nach Situation:
+  - **Ärztekammer** (Standesrecht/Schweigepflicht): vor allem relevant, wenn Hinweise auf tatsächlichen **Datenabfluss** vorliegen (nicht nur Verschlüsselung vor Ort) – berührt dann ggf. § 203 StGB. Bayerische Landesärztekammer, München, allgemeine Beratung auch präventiv möglich.
+  - **KV (Kassenärztliche Vereinigung Bayerns)**: relevant, wenn Abrechnung/Praxisbetrieb durch den Vorfall gestört ist (Fristen, Ersatzverfahren) – kein Bezug zur Schweigepflicht.
 
 ### 9. Cyber-Versicherung prüfen
 
-- Falls noch nicht vorhanden: für eine Arztpraxis mit Patientendaten sinnvoll. Deckt oft auch Forensik-Dienstleister und Betriebsunterbrechung ab. Vorab prüfen, welche Auflagen die Police an die IT-Sicherheit stellt (sonst im Schadensfall Deckungslücke).
+**Entscheidung (Stand 12.7.2026): aktuell bewusst nicht abgeschlossen.** Falls sich das später ändert: für eine Arztpraxis mit Patientendaten grundsätzlich sinnvoll, deckt oft auch Forensik-Dienstleister und Betriebsunterbrechung ab – dann vorab prüfen, welche Auflagen die Police an die IT-Sicherheit stellt (sonst im Schadensfall Deckungslücke).
 
 ### 10. Rechtliche Vorbereitung (Gesundheitsdaten!)
 
-- Da Patientendaten betroffen sind (Art. 9 DSGVO – besondere Kategorien), ist ein Ransomware-Vorfall mit Zugriff/Verschlüsselung dieser Daten in aller Regel eine **meldepflichtige Datenschutzverletzung** (Art. 33 DSGVO, 72-Stunden-Frist ab Kenntnis) und ggf. Informationspflicht gegenüber Betroffenen (Art. 34 DSGVO). Es lohnt sich, jetzt schon zu wissen, welche Landesdatenschutzbehörde zuständig ist und wie deren Meldeformular aussieht, statt das im Stress erst zu suchen.
+- Da Patientendaten betroffen sind (Art. 9 DSGVO – besondere Kategorien), ist ein Ransomware-Vorfall mit Zugriff/Verschlüsselung dieser Daten in aller Regel eine **meldepflichtige Datenschutzverletzung** (Art. 33 DSGVO, 72-Stunden-Frist ab Kenntnis) und ggf. Informationspflicht gegenüber Betroffenen (Art. 34 DSGVO).
+- **Zuständige Behörde (Sitz Dachau, Bayern): Bayerisches Landesamt für Datenschutzaufsicht (BayLDA)** – zuständig für nicht-öffentliche Stellen (Arztpraxen, Unternehmen, Selbstständige), recherchiert und bestätigt am 12.7.2026:
+  - **Online-Meldeformular (empfohlen, da schnellere Bearbeitung):** https://www.lda.bayern.de/de/datenpanne.html – liefert nach Absenden sofort eine eigene Vorgangs-ID mit Zeitstempel als Nachweis der 72h-Frist; unterstützt auch Folgemeldungen zum selben Vorgang.
+  - Telefon: **+49 981 180093-0** (Mo–Fr 8:00–12:00 Uhr), Fax: +49 981 180093-800
+  - Adresse: Promenade 18, 91522 Ansbach; E-Mail: poststelle@lda.bayern.de (nur PDF-Anhänge)
+  - Für technische/kriminalpolizeiliche Seite parallel **ZAC Bayern** kontaktieren (s. Punkt 8) – das BayLDA selbst verweist bei Cybercrime-Fällen auch dorthin.
 
 ---
 
@@ -103,11 +128,11 @@ Die bestehende linux0/linux7-Übernahme-Logik löst **Hardware-/Systemausfall**,
 
 ### Schritt 5: Melden (rechtliche Pflichten nicht vergessen)
 
-- **Landesdatenschutzbehörde:** binnen 72 Stunden nach Kenntnis melden (Art. 33 DSGVO), da Gesundheitsdaten wahrscheinlich betroffen sind – auch wenn zu diesem Zeitpunkt noch nicht alle Details geklärt sind (Nachmeldung ist möglich).
+- **BayLDA:** binnen 72 Stunden nach Kenntnis melden (Art. 33 DSGVO), da Gesundheitsdaten wahrscheinlich betroffen sind – auch wenn zu diesem Zeitpunkt noch nicht alle Details geklärt sind (Nachmeldung ist möglich). Online-Formular: https://www.lda.bayern.de/de/datenpanne.html (liefert sofort eine Vorgangs-ID als Fristnachweis), telefonisch +49 981 180093-0 (Mo–Fr 8–12 Uhr). Details s. Teil A, Punkt 10.
 - **Betroffene Patienten:** prüfen, ob Informationspflicht nach Art. 34 DSGVO greift (hohes Risiko für Rechte/Freiheiten der Betroffenen – bei Gesundheitsdaten im Zweifel eher ja).
-- **Polizei/LKA:** Strafanzeige bei der Cybercrime-Kompetenzstelle des zuständigen Landeskriminalamts.
+- **ZAC Bayern (Polizei):** Zentrale Ansprechstelle Cybercrime beim Bayerischen LKA, https://www.zac-formular.polizei.bayern.de/, Tel. +49 89 1212-3300. Details s. Teil A, Punkt 8.
 - **BSI:** freiwillige Meldung möglich und sinnvoll (Lagebild, ggf. Unterstützung).
-- **Ärztekammer/KV:** je nach Landesrecht ggf. informieren, insbesondere wenn die Schweigepflicht (§ 203 StGB) berührt sein könnte (z. B. bei Datenabfluss, nicht nur Verschlüsselung).
+- **Ärztekammer:** falls Hinweise auf tatsächlichen Datenabfluss vorliegen (nicht nur Verschlüsselung) – berührt dann ggf. die Schweigepflicht (§ 203 StGB). **KV Bayerns:** falls Abrechnung/Praxisbetrieb durch den Vorfall gestört ist (Fristen, Ersatzverfahren) – anderer Grund, andere Stelle, s. Teil A, Punkt 8.
 
 ### Schritt 6: Wiederherstellung – sauber statt schnell
 
@@ -131,7 +156,7 @@ Die bestehende linux0/linux7-Übernahme-Logik löst **Hardware-/Systemausfall**,
 3. Beweise sichern (Screenshots, Logs, Dateiliste).
 4. Nicht zahlen, keine Drittanbieter-Tools ungeprüft ausführen.
 5. Forensik-/IR-Dienstleister + Versicherung kontaktieren.
-6. Meldung: Datenschutzbehörde (72h), ggf. Patienten, Polizei/LKA, ggf. BSI/Ärztekammer.
+6. Meldung: BayLDA (72h, lda.bayern.de/de/datenpanne.html), ggf. Patienten, ZAC Bayern (Polizei), ggf. BSI/Ärztekammer/KV.
 7. Sauber neu aufsetzen statt nur bereinigen, nur aus nachweislich sauberem Backup wiederherstellen.
 8. Alle Zugangsdaten wechseln, Einfallstor schließen, erst dann wieder ans Netz.
 9. Nachbereitung + dieses Dokument aktualisieren.
