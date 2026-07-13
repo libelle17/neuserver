@@ -2020,6 +2020,19 @@ PYEOF
 	# Systemen ohne SELinux ist restorecon nicht vorhanden, dann einfach ueberspringen):
 	command -v restorecon >/dev/null 2>&1 && restorecon -Rv /var/spool/postfix/pid 2>/dev/null;
 
+	# inet_interfaces haengt jetzt an der LAN-IP statt nur an 127.0.0.1 (s. oben) -
+	# beim Booten startet Postfix aber oft schon, BEVOR die IP per DHCP zugewiesen
+	# ist ("no local interface found"), das System bleibt dann ohne Mailversand.
+	# Fix: erst nach vollstaendiger Netzwerkinitialisierung starten (live erlebt
+	# nach einem Neustart von linux7 am 13.7.2026):
+	mkdir -p /etc/systemd/system/postfix.service.d;
+	cat > /etc/systemd/system/postfix.service.d/network-online.conf <<-EOF
+		[Unit]
+		After=network-online.target
+		Wants=network-online.target
+	EOF
+	systemctl daemon-reload;
+
 	postfix check && systemctl restart postfix && \
 		printf "${blau}postfix neu gestartet, Relay ueber mail.mnet-online.de aktiv.${reset}\n" || \
 		printf "${rot}postfix-Konfiguration fehlerhaft - bitte 'postfix check' von Hand pruefen!${reset}\n";
