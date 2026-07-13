@@ -327,12 +327,18 @@ kopiermt() { # mit test
         if [ -z "$ZL" ]; then
           tu2="mkdir -p /$ZVos; cp -a \"$_sd_q\" \"/$ZVos/$_sd_n\"";  # kein Quoting
         else
-          _sd_zvos="${_ZVofs_real%/}";
+          # ZVos statt _ZVofs_real: Letzteres wird erst weiter unten in
+          # kopiermt() berechnet und ist hier (fruehes return 0) noch leer -
+          # das fuehrte dazu, dass die Schutzdatei per scp immer im
+          # Wurzelverzeichnis des Remote-Ziels statt im jeweiligen
+          # Backup-Unterverzeichnis landete.
+          _sd_zvos="$ZVos";
           tu2="$zssh 'mkdir -p \"/$_sd_zvos\"';\
             scp -p \"$_sd_q\" \"$ZL:/$_sd_zvos/$_sd_n\"";
         fi;
-        # obimmer=1: SD-Verteilung läuft auch ohne -e
-        ausf "$tu2" "$blau" "" 1;
+        # wie ueberall sonst: nur bei -e (obecht) tatsaechlich ausfuehren,
+        # sonst Simulation (geplante mkdir/cp/scp-Befehle nur anzeigen)
+        ausf "$tu2" "$blau";
       done;
     return 0;
   }
@@ -869,8 +875,8 @@ if [ \( "${0##*/}" != buint.sh -a "${0##*/}" != bumo.sh -a "${0##*/}" != bunacht
     " ${blau}-dt2 -db${reset}          Windows-Shares UND Datenbank" \
     " ${blau}-dt3 -db${reset}          /DATA UND Datenbank (keine Konfigdateien)" \
     " ${blau}-db${reset}               nur Datenbank; Dateitransfer wird ausgelassen" \
-    " ${blau}SD${reset}                Schutzdateien (${blau}${SDLISTE[*]}${reset}) auf alle Zielverz. verteilen (kein Datei-/DB-Transfer)" \
-    " ${blau}SD=/Pfad/Datei${reset}    verteilt nur die eine angegebene Datei (abweichender Name/Pfad möglich), statt der ganzen Liste" \
+    " ${blau}SD${reset}                Schutzdateien (${blau}${SDLISTE[*]}${reset}) auf alle Zielverz. verteilen (kein Datei-/DB-Transfer); braucht -e fuer echten Lauf" \
+    " ${blau}SD=/Pfad/Datei${reset}    verteilt nur die eine angegebene Datei (abweichender Name/Pfad möglich), statt der ganzen Liste; braucht -e fuer echten Lauf" \
     " ${blau}-e${reset}                echter Lauf (ohne: Simulation)" \
     " ${blau}-f${reset}                Vollabgleich erzwingen (ohne: inkrementell)" \
     " ${blau}-v${reset}                gesprächigere Ausgabe" \
