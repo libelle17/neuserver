@@ -202,8 +202,19 @@ kopiermt() { # mit test
   QVos=${QVofs%/}; # letzten Slash entfernen
   case $QVofs in */)obsub=;;*)obsub=1;;esac;
   machssh;
-  [ "$obsub" ]&&{ eval "$qssh '[ -f \"/$QVos\" ]'&&obdat=1||obdat=";}; # obdat=1 heisst, /$QVos ist eine Datei
-  [ "$obsub" ]&&{ $qssh "[ -f \"/$QVos\" ]"&&obdat=1||obdat=;}; # das geht nicht mit zsh
+  if [ "$obsub" ]; then
+    eval "$qssh '[ -f \"/$QVos\" ]'"&&obdat=1||obdat=; # obdat=1 heisst, /$QVos ist eine Datei
+    $qssh "[ -f \"/$QVos\" ]"&&obdat=1||obdat=; # das geht nicht mit zsh
+  else
+    # Trailing-Slash in $1 heisst eindeutig Verzeichnis - obdat MUSS hier
+    # zurueckgesetzt werden, sonst bleibt der Wert vom vorherigen
+    # kopiermt()-Aufruf stehen (obdat ist global). Folgefehler: ein
+    # Verzeichnisaufruf direkt nach einem Einzeldatei-Aufruf wuerde faelschlich
+    # als obdat=1 behandelt, wodurch z.B. im SD-Modus die Kurzschluss-Rueckkehr
+    # (nur Canary-Dateien ablegen) uebersprungen und stattdessen die volle
+    # Kopierlogik fuer das ganze Verzeichnis angestossen wird.
+    obdat=;
+  fi;
   if [ -z "$2" -o "$2" = "..." ]; then ZVofs=${QVofs%/*}/; [ "$ZVofs" = "$QVofs/" ]&&ZVofs=""; else # letzteres für QVofs ohne /
   ZVofs=$(echo ${2#/}|sed 's/\([^\\]\) /\1\\ /g'); fi; # Zielverzeichnis ohne führenden slash, mit "\ " statt " "
 	ZVos=${ZVofs%/}; ZVofs=$ZVos/;
