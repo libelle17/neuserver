@@ -1,6 +1,22 @@
 #!/bin/bash
 # dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
+# bulinux.sh - Hauptsicherungsskript: kopiert Konfigdateien (dt1), MO/
+# Windows-Shares ueber mnt/wser+mnt/anmmw (dt2) und die /DATA-Verzeichnisse
+# (dt3), sowie MariaDB-Sync (db) - Standardmodus macht alles zusammen.
+#
+# Zwei Aufrufarten (wie bumo.sh/bunacht.sh):
+#   - auf linux1 (Quelle) selbst, mit explizitem <zielhost>-Parameter: pusht
+#     dorthin.
+#   - direkt auf dem Zielrechner aufgerufen (buhost != linux1, kein
+#     Zielhost-Parameter noetig): zieht stattdessen von linux1 (Pull).
+#   -u kehrt die Push/Pull-Richtung explizit um (z.B. fuer Ruecksicherung).
+#
+# Inkrementell per kopiermt_delta (Standard) oder Vollabgleich per kopiermt
+# (-f). SD/SD=... verteilt nur Schutzdateien (Ransomware-Fruehwarnung, s.
+# bugem.sh), ohne echten Datei-/DB-Transfer und ohne Zielhost-Zwang.
+# Vollstaendige, aktuelle Parameterliste: bulinux.sh -h (Hilfetext weiter
+# unten im Skript, dynamisch ausgegeben - hier nicht duplizieren, sonst
+# laeuft er auseinander).
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
@@ -30,7 +46,10 @@ if [ "$obumg" ]; then
   DtZ=$DATAZIEL;
 fi;
 # Abort-Check: ohne -u braucht linux1 ein ZL; mit -u braucht es ein QL
-[ -z "$obumg" ] && [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ] && [ -z "$obhilfe" ] && { printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
+# Ausnahme SD/SD=...: Schutzdateien werden primär lokal auf dem Quellrechner
+# verteilt (kein Zielhost noetig); ein Zielhost bleibt trotzdem moeglich,
+# falls dort z.B. Aenderungsdatum oder Inhalt nicht (mehr) passen sollten.
+[ -z "$obumg" ] && [ "$buhost"/ = "$LINEINS"/ -a -z "$ZL" ] && [ -z "$obhilfe" ] && [ -z "$sdneu" ] && { printf "${rot}Kein Ziel angegeben. Breche ab$reset.\n";exit;}
 [ "$obumg" ] && [ -z "$QL" ] && [ -z "$obhilfe" ] && { printf "${rot}Mit -u: Quellrechner fehlt (z.B. bulinux.sh -u -e linux0)$reset.\n";exit;}
 # kopiermt "opt/turbomed" ... "" "$OBDEL" PraxisDB/objects.dat 1800
 # -----------------------------------------------------------------------
@@ -202,16 +221,22 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
         printf "Simulation: mkdir -p /$DtZ/MO/INDAMED\n";
       fi;
       bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1 || _bu_fehler=1
-      kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "" "" 0 1 1
+      # --no-xattrs: Quelle ist ein CIFS-Mount ohne SELinux-Kontext, das
+      # -X aus dem kopiermt()-Standard versucht trotzdem, das security.selinux-
+      # xattr auf dem Ziel zu entfernen/setzen und scheitert dabei staendig mit
+      # "Permission denied" (rsync exit 23) - Inhalt kommt zwar trotzdem an,
+      # aber unnoetiger Fehlerlaerm im Log
+      kopiermt mnt/wser/mosich/my.ini /$DtZ/MO/Sich/ "" "--no-xattrs" "" 0 1 1
       bukopierfn mnt/wser/indamed/ /$DtZ/MO/INDAMED/ ",dat/,redomed/,Backup/" "" "" 0 1 || _bu_fehler=1
-      mostat=$(ssh linux1 ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb|head -n1);
+      mostat=$($qssh "ls -t /mnt/wser/indamed/dat/MOSTAT*.gdb"|head -n1);
       if test -n "$mostat"; then
-        kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1
+        # --no-xattrs: gleicher Grund wie bei my.ini oben (CIFS-Quelle ohne SELinux-Kontext)
+        kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "--no-xattrs" "" 0 1
       fi
       bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
       bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
     }
-	if ssh linux1 mountpoint -q /mnt/anmmw; then
+	if $qssh "mountpoint -q /mnt/anmmw"; then
 		kopiermt mnt/anmmw/users/sturm/Documents/Outlook-Dateien /$DtZ/Mail/out "" "" diabetologie@dachau-mail.de.pst 43200 1
 	fi;
 	}; # Ende dt2 Windows-Shares
@@ -289,10 +314,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
    done;
   fi;
  done;
- # Zeitstempel nach vollständigem dt3-Lauf aktualisieren (gilt für -e und -f)
- if [ "$obecht" ] && [ -z "$_bu_fehler" ]; then
+ # Zeitstempel nach vollständigem dt3-Lauf aktualisieren (gilt für -e und -f,
+ # aber NICHT im SD-Modus - da wurden ja keine echten Nutzdaten synchronisiert,
+ # nur Schutzdateien verteilt; ein Update wuerde kuenftigen inkrementellen
+ # Laeufen vorgaukeln, der Stand sei bereits vollstaendig gesichert)
+ if [ "$obecht" ] && [ -z "$_bu_fehler" ] && [ -z "$sdneu" ]; then
    bustate_update "$ZL";
- elif [ "$obecht" ]; then
+ elif [ "$obecht" ] && [ -z "$sdneu" ]; then
    printf "${rot}dt3 hatte Fehler – Zeitstempel nicht aktualisiert!${reset}\n";
    printf "Nächster Lauf prüft ggf. mehr Dateien.\n";
  fi;
@@ -698,7 +726,7 @@ fi;
 fi; # MariaDB-Block
 #  ... und kopieren:
 _bu_ftr "Gesamt Ende" $_bu_start;
-[ "$obecht" ] && backupstatus "$([ -n "$_bu_fehler" ] && echo FEHLER || echo OK)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
+[ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ -n "$_bu_fehler" ] && echo FEHLER || echo OK)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 # Bugfix 11.07.2026: "exit;" ohne Code gab bisher immer den Status des
 # letzten Befehls zurueck, nicht das waehrend des Laufs gesetzte
 # _bu_fehler-Flag - Aufrufer wie ruecknahme.sh, die bei Fehlern bewusst

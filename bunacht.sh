@@ -1,4 +1,26 @@
 #!/bin/bash
+# bunacht.sh - Nachtsicherung: einziger verbliebener voller kopiermt(...,
+# --delete)-Lauf ueber den kompletten /DATA-Baum, einmal naechtlich per
+# wecklauf.sh (Nacht-Fenster) auf linux0/linux7. Zieht auf Ziel-Seite geloeschte
+# Quelldateien nach - bumo.sh (Mittag, 2x taeglich) kopiert nur noch
+# inkrementell OHNE --delete, s. Analyse-Kommentar dort zu den rsync-OOM-
+# Vorfaellen 29./31.5.2026 (moeglicherweise durch parallel um 02:20 Uhr
+# laufende weitere Cron-Jobs mitverursacht, s. Kommentar unten).
+#
+# Zwei Aufrufarten (wie bulinux.sh/bumo.sh):
+#   - auf $LINEINS (linux1) selbst: pusht auf alle Hosts aus $ziele (Default
+#     "0 7" = linux0/linux7), per Push-Schleife weiter unten.
+#   - direkt auf einem Zielrechner aufgerufen (buhost != linux1): zieht
+#     stattdessen einmalig von $QL (=linux1) auf sich selbst (Pull).
+#
+# Parameter (per bugem.sh commandline() geparst, source davor beachten):
+#   -e            echter Lauf (ohne: nur Simulation/Anzeige)
+#   -z "<nummern>" Zielrechner-Nummern statt Default "0 7" (z.B. -z "0")
+#   SD / SD=/Pfad Nur Schutzdateien verteilen, kein echter Datentransfer,
+#                 kein Backup-Status-Heartbeat
+#   -v            gespraechigere Ausgabe
+# (weitere von bugem.sh geparste Flags wie -f/-dt1/-db wirken sich auf
+# bunacht.sh nicht aus, da es immer nur den einen /DATA-Pfad kopiert)
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost=linux1 festlegen
 ziele="0 7"; # Vorgaben für Ziel-Servernummern: linux1ur, linux3 usw., abwandelbar durch Befehlszeilenparameter -z
@@ -47,7 +69,7 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
 #    kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
 #    kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
     kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
-    _bs_ret=$?; [ "$obecht" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
+    _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
 #    mount /mnt/wser/indamed
@@ -63,6 +85,6 @@ else
   wirt=$QL;
   vz=$DATAZIEL;
   kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
-  _bs_ret=$?; [ "$obecht" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
+  _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;

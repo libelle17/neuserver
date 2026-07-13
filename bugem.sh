@@ -323,8 +323,13 @@ kopiermt() { # mit test
   done;
   EX="$3$EXAKT$EXFEST";
   [ "$verb" ]&&printf "EX: $blau$EX$reset\n"
-# falls nur die Schutzdatei überall etabliert werden soll
-# beim Kopieren einzelner Dateien hierauf verzichten
+# falls nur die Schutzdatei überall etabliert werden soll: weder die
+# eigentliche Datei kopieren noch (bei Einzeldatei-Zielen) eine
+# Schutzdatei platzieren - ZVos ist bei "..."-Spiegelungen einzelner
+# Dateien der volle Dateipfad, kein Verzeichnis (mkdir -p wuerde dort
+# faelschlich einen gleichnamigen Ordner anlegen bzw. an einer
+# bestehenden Datei scheitern)
+  [ "$sdneu" -a "$obdat" ]&&return 0;
   [ "$sdneu" -a ! "$obdat" ]&&{
       # scp wird hier auch lokal verwendet, da es besser mit "\ " umgehen kann als cp
       # SD nur lokal verteilen (nicht auf Quell-Rechner):

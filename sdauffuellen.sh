@@ -46,7 +46,8 @@ for eltern in "${ELTERNLISTE[@]}"; do
   fi
   for verz in "$eltern"/*/; do
     verz="${verz%/}"
-    [ "$verz" = "$vorlage" ] && continue
+    # Vorlage NICHT ueberspringen: sie diente oben nur als Existenznachweis
+    # fuer SDLISTE[0] - fehlen ihr jpg/pdf, sollen auch die ergaenzt werden.
     for sd in "${SDLISTE[@]}"; do
       [ -f "$verz/$sd" ] && continue
       [ -f "$MASTER/$sd" ] || continue
