@@ -9,6 +9,7 @@ Auch_eine_Schutzdatei_bitte_belassen.jpg
 backup_ssh_wrapper.sh
 massenaenderung_waechter.sh
 sdauffuellen.sh
+efibootmgr_bereinigen.sh
 zusätzliche_Schutzdatei_bitte_belassen.pdf
 wecklauf.sh
 awkfdatei.sh
