@@ -118,6 +118,18 @@ _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
   fi;
 }
 
+# Schutzdateien auf linux1 (Quelle) vor dem Pull auffuellen - vermeidet
+# "Schutzdatei fehlte auf Quelle"-Warnmails durch neu entstandene
+# Verzeichnisse (z.B. neues Mail-Profil, neuer Jahresordner unter
+# Patientendokumente/eingelesen). Laeuft ueber den normalen, uneinge-
+# schraenkten Key (kein $QL/$ZL=linux0/linux7 hier), s. sdauffuellen.sh.
+if [ "$obecht" ]; then
+  log "${blau}Starte${reset} ssh linux1 sdauffuellen.sh -e";
+  ssh linux1 '/root/bin/sdauffuellen.sh -e' 2>&1 | tee -a "$LOG";
+else
+  log "Simulation: ssh linux1 /root/bin/sdauffuellen.sh -e";
+fi;
+
 case "$BESTER_MODUS" in
   mittag)
     _lauf /root/bin/bumo.sh;
