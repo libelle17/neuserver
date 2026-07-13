@@ -1936,9 +1936,15 @@ postfix() {
 	# einmal in der spaeteren SASL-/TLS-Sektion) - Postfix nimmt den LETZTEN Eintrag.
 	# Statt auf Zeilennummern zu vertrauen: alle bestehenden Eintraege entfernen und
 	# sauber, garantiert wirksam ans Ende schreiben (idempotent, mehrfach lauffaehig):
-	for _p in relayhost smtp_sasl_auth_enable smtp_sasl_security_options smtp_sasl_password_maps smtp_tls_security_level; do
+	for _p in relayhost smtp_sasl_auth_enable smtp_sasl_security_options smtp_sasl_password_maps smtp_tls_security_level myorigin; do
 		sed -i "/^${_p}[[:space:]]*=/d" "$MAINCF";
 	done;
+	# myorigin MUSS auf einen in mydestination enthaltenen Namen zeigen, sonst
+	# wird z.B. Cron-Mail an "root" (unqualifiziert) faelschlich als externe
+	# Adresse behandelt und ueber den M-net-Relay hinausgeschickt statt lokal
+	# zugestellt zu werden - live erlebt 13.7.2026 (myorigin stand noch auf der
+	# dynamischen mnet-PTR-Adresse, Massen-Bounces "No route to host"):
+	echo "myorigin = \$myhostname" >> "$MAINCF";
 	sed -i "/^# Ausgehende Mail ueber M-net-Smarthost/d" "$MAINCF";
 	{
 		echo "";
