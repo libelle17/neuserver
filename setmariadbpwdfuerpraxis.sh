@@ -11,6 +11,8 @@
 #      impgl, labimp, labpath, pznbdt, termine) ueber deren eigene -cmpwd-Option --
 #      dabei wird NUR die Konfiguration aktualisiert, keine weitere Programmlogik ausgefuehrt.
 #      fbfax braucht keinen Datenbankzugriff und wird ausgelassen.
+#   5) /srv/www/phppwd.php (Zugangsdaten fuer die PHP-Seiten unter /srv/www/htdocs/php/,
+#      u.a. anzeig.php/ianzeig.php/dmpspei.php/tragein2.php -- Patientenlaufzettel)
 #
 # Ohne -e: Simulation (zeigt nur, was getan wuerde). Mit -e: echter Lauf.
 #
@@ -110,6 +112,21 @@ for p in $CPPROGS; do
 		printf "Waere: ${blau}%s -cmpwd *** -krf${schwarz}\n" "$bin"
 	fi
 done
+
+printf "${gruen}== 5) /srv/www/phppwd.php ==${schwarz}\n"
+if [ "$obecht" ]; then
+	# PHP-Single-Quote-String: nur \ und ' muessen escaped werden
+	php_escaped=${NEUPWD//\\/\\\\}
+	php_escaped=${php_escaped//\'/\\\'}
+	tmp=$(mktemp /srv/www/phppwd.php.XXXXXX)
+	printf '<?php\n$user = "praxis";\n$pwt = '\''%s'\'';\n?>\n' "$php_escaped" > "$tmp"
+	chown root:root "$tmp"
+	chmod 644 "$tmp"
+	mv -f "$tmp" /srv/www/phppwd.php
+	printf "${blau}/srv/www/phppwd.php geschrieben.${schwarz}\n"
+else
+	printf "Waere: ${blau}/srv/www/phppwd.php neu schreiben (user=praxis, neues Passwort)${schwarz}\n"
+fi
 
 if [ "$obecht" ]; then
 	printf "${gruen}Fertig.${schwarz} Alle Stellen aktualisiert. Die laufenden (installierten) Programme lesen\n"
