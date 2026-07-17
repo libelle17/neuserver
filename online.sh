@@ -29,22 +29,32 @@ for pc in $linux_pcs; do pruef "$pc" linux & done
 for pc in $win_pcs;   do pruef "$pc" windows & done
 wait
 
+lila="\033[1;35m"; reset="\033[0m"
+
+zeig_zeile() {
+  local name="$1" ip="$2" mac="$3"
+  local zeile; zeile=$(printf "%-10s %-16s %s" "$name" "$ip" "$mac")
+  if [ "$name" = "$eigenname" ]; then
+    printf "${lila}%s${reset}\n" "$zeile"
+  else
+    printf "%s\n" "$zeile"
+  fi
+}
+
 echo "=== Linux-Server ==="
 printf "%-10s %-16s %s\n" "NAME" "IP" "MAC"
-for f in "$TMP"/linux-*; do
-  [ -f "$f" ] || continue
+for f in $(ls "$TMP"/linux-* 2>/dev/null | sort); do
   IFS=$'\t' read -r _ name ip mac < "$f"
-  printf "%-10s %-16s %s\n" "$name" "$ip" "$mac"
-done | sort
+  zeig_zeile "$name" "$ip" "$mac"
+done
 
 echo
 echo "=== Windows-PCs ==="
 printf "%-10s %-16s %s\n" "NAME" "IP" "MAC"
-for f in "$TMP"/windows-*; do
-  [ -f "$f" ] || continue
+for f in $(ls "$TMP"/windows-* 2>/dev/null | sort); do
   IFS=$'\t' read -r _ name ip mac < "$f"
-  printf "%-10s %-16s %s\n" "$name" "$ip" "$mac"
-done | sort
+  zeig_zeile "$name" "$ip" "$mac"
+done
 
 echo
 lc=$(ls "$TMP"/linux-* 2>/dev/null | wc -l)
