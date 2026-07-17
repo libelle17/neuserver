@@ -18,7 +18,7 @@ pruef() {
   local mac
   if [ "$pc" = "$eigenname" ]; then
     # eigene MAC steht nicht in der ARP-Tabelle - stattdessen lokale Schnittstelle abfragen
-    mac=$(ip -o link show | awk '!/ lo:/{print $(NF-2); exit}')
+    mac=$(ip -o link show | awk '!/ lo:/{for(i=1;i<=NF;i++) if ($i=="link/ether") {print $(i+1); exit}}')
   else
     mac=$(ip neigh show "$ip" 2>/dev/null | awk '{print $5; exit}')
   fi
