@@ -468,7 +468,7 @@ wecken() {
         for pc in $pcs; do
           case "$pc" in 
            ??:??:??:??:??:??) 
-            sql="INSERT INTO mac(mac) '"$pc"'";;
+            sql="INSERT INTO mac(mac) VALUES('"$pc"')";;
            *)
             case "$pc" in
               ??:*)         par=mac;; 

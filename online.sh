@@ -9,11 +9,19 @@ win_pcs="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+eigenname=$(hostname -s)
+
 pruef() {
   local pc="$1" gruppe="$2" out
   out=$(ping -c1 -W1 "$pc" 2>/dev/null) || return
   local ip=$(echo "$out" | sed -n '1s/^PING [^ ]* (\([0-9.]*\)).*/\1/p')
-  local mac=$(ip neigh show "$ip" 2>/dev/null | awk '{print $5; exit}')
+  local mac
+  if [ "$pc" = "$eigenname" ]; then
+    # eigene MAC steht nicht in der ARP-Tabelle - stattdessen lokale Schnittstelle abfragen
+    mac=$(ip -o link show | awk '!/ lo:/{print $(NF-2); exit}')
+  else
+    mac=$(ip neigh show "$ip" 2>/dev/null | awk '{print $5; exit}')
+  fi
   printf "%s\t%s\t%s\t%s\n" "$gruppe" "$pc" "${ip:--}" "${mac:--}" > "$TMP/$gruppe-$pc"
 }
 
