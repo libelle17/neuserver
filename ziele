@@ -80,6 +80,7 @@ logrotate.conf
 los.sh
 lwwarn.sh
 machtha.sh
+maria.sh
 mountvirt.sh
 mountwser.sh
 nampruef.sh
