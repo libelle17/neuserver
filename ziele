@@ -11,7 +11,6 @@ massenaenderung_waechter.sh
 sdauffuellen.sh
 efibootmgr_bereinigen.sh
 zusätzliche_Schutzdatei_bitte_belassen.pdf
-wecklauf.sh
 awkfdatei.sh
 awkmount.sh
 awksmb.sh
@@ -130,6 +129,8 @@ verhdop.sh
 vgl12.sh
 virtnamen.sh
 weckalle.sh
+wecklauf.sh
+weckpraxis.sh
 wecklin0.sh
 wegmailen.sh
 wiederherstell.sh
