@@ -1,6 +1,7 @@
 [/root/bin]
 7zdb.sh
 BDTkompr.sh
+aenderungsrate_erhebung.sh
 alsres.sh
 alsserver.sh
 analdok.sh
@@ -95,6 +96,7 @@ pruefimp.sh
 pruefimpn.sh
 quelle-resume.sh
 rett.sh
+rueckgabe.sh
 ruecknahme.sh
 runter.sh
 frühstückspause.sh
