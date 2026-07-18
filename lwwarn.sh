@@ -1,4 +1,12 @@
 #!/bin/zsh
+# lwwarn.sh - "Laufwerkswarnung": prüft den Füllstand von / und /DATA und
+# mailt an diabetologie@dachau-mail.de, sobald eine der Füllstands-Grenzen
+# 70/75/80/85/90/95% neu überschritten wird (pro Laufwerk nur einmal je
+# Grenzüberschreitung, dank Vergleich mit dem beim letzten Aufruf
+# gespeicherten Wert in der Protokolldatei $prot = Skriptname mit ".prot"
+# statt ".sh"). Rotiert dabei bis zu 5 alte Protokolldateien ($prot,
+# $prot1..$prot4). Aufruf ohne Parameter, typischerweise per Cron
+# regelmäßig.
 prot=${0%%sh}prot;                                  # Datei mit dem Stand des letzten Aufrufs = Name dieses Programms mit ".prot" statt ggf ".sh" hinten
 [ -f "$prot" ]&&zp=$(stat $prot -c %y|sed 's/\..*//'); # wenn diese Datei da, dann deren Änderungszeitpunkt ohne Sekundenbruchteile in $zp merken
 for iru in 1 2; do                                  # 1. Runde zum Prüfen und Melden, 2. zum Protokollieren

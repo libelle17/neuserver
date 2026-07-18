@@ -1,5 +1,11 @@
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# stutzeDBBack.sh - Generationen-Rotation für alte 7z-Datenbank-Archive
+# unter /DATA/DBBack (verschiebt Aussortiertes nach /DATA/DBBackloe statt
+# zu löschen). Definiert nur vorgaben()/ermittledatum() für den
+# gemeinsamen Rotations-Motor in instutz.sh (s. dessen Kopfkommentar) -
+# Muster "*_????????.7z", behält ab 60 Tagen nur noch 1/Jahr (Januar), ab
+# 30 Tagen 1/Monat (am 1.), ab 7 Tagen 4/Monat (1./8./15./22.); Namen mit
+# "-dp-office-" werden nie aussortiert. Aufruf: stutzeDBBack.sh [-v]
+# [-h|--hilfe].
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis

@@ -1,5 +1,26 @@
 #!/bin/bash
-# zeigt alle PraxisDB-Inhalte an
+# zeigpan.sh - "zeige PraxisDB an": zeigt den Zeitstempel/Zustand der
+# Turbomed-Datenbankdatei(en) "objects.*" auf allen bekannten Standorten,
+# um z.B. vor einer Entscheidung ("welcher Stand ist der aktuellste?")
+# einen schnellen Überblick zu bekommen. Aktiv ist nur der Teil bis zum
+# "exit;" weiter unten:
+#   1. Windows-Server (wser, linux1 und die $ziele-Nummern via
+#      virtnamen.sh): per SSH "dir ... objects.* /ON /Q /R|findstr objects".
+#   2. Linux-Server (dieselbe Liste): für jede der drei möglichen
+#      PraxisDB-Varianten (PraxisDB, PraxisDB-res, PraxisDB-wser) unter
+#      /opt/turbomed per SSH (oder lokal, falls $wirt der eigene Host ist)
+#      "find ... objects* -printf ...|sort", nur wenn das Verzeichnis
+#      existiert und der Host erreichbar ist.
+# Aufruf: zeigpan.sh [-nh|--nurhier] [-nl|--nurlinux] [-v|--verbose]
+#   -nh  nur den lokalen Host prüfen (kein Servern-Loop, $ziele bleibt leer)
+#   -nl  wird geparst (Parameter existiert), wirkt sich aber wegen des
+#        "exit;" auf den tatsächlich ausgeführten Teil NICHT mehr aus
+#
+# ALLES nach der Zeile "exit;" (der komplette Rest dieser Datei) ist TOTER
+# CODE - eine deutlich ältere, umfangreichere Fassung, die zusätzlich
+# virtuelle Windows-Server bei Bedarf per VBoxManage neu startete, CIFS-
+# Freigaben mit SMB-Versions-Fallback mountete und MySQL-Kennzahlen
+# (Patientenzahl, letzter Eintrag) abfragte - wird nie mehr erreicht.
 blau="\033[1;34m";
 gruen="\033[1;32m";
 dblau="\033[0;34;1;47m";

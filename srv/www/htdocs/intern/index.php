@@ -1,3 +1,9 @@
+<!-- intern/index.php - PHP-Lernübung ("Mischen von HTML und PHP", Tippfehler
+     im Original-Titel "Myschen"): zeigt einige $_SERVER-Werte, ein
+     bcadd()-Beispiel (Dezimalzahl-Addition mit beliebiger Genauigkeit) und
+     eine simple Summenberechnung; kein Teil der eigentlichen
+     Patientenlaufzettel-Anwendung. Aufruf: intern/index.php im Browser,
+     keine Parameter. -->
 <h1>Myschen von HTML und PHP</h1>
 <?php
 echo "PHP_SELF: ". $_SERVER['PHP_SELF'];

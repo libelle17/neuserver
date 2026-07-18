@@ -1,5 +1,14 @@
 #!/bin/zsh
-# kopiert von mobilen Platten auf z.B. /DATAW
+# rverb.sh - Rückrichtung zu den copy*.sh-Skripten: kopiert VON einer der
+# bekannten externen USB-Platten (erkannt über fdisk/blkid-Suche nach
+# Größe+NTFS oder Laufwerksbezeichnung "Seagate Expansion Drive"/
+# "My Passport"/"verbatim") ZURÜCK auf /DATA bzw. z.B. /DATAW - sinnvoll
+# z.B. für eine Wiederherstellung von einer mobilen Sicherungsplatte.
+# Mountet die externe Platte (unter /mnt/extern) und /DATA bei Bedarf, dann
+# rsync -avu je Unterpfad (down/cpp, down, Patientendokumente, turbomed,
+# eigene Dateien, shome/gerald, Mail/EML, sql, sowie /root/bin) von der
+# externen Platte auf $ZIEL (Vorgabe /DATA), protokolliert nach
+# /var/log/prot_rverb.sh.txt. Aufruf ohne Parameter.
 PROTD=/var/log/prot_`basename $0`.txt
 test -f "$PROTD"||{ sudo touch "$PROTD"&&sudo chmod 777 "$PROTD";};
 MP=/mnt/extern

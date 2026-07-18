@@ -1,7 +1,11 @@
 #!/bin/zsh
+# fpstatusmb.sh - ausführlichere Variante von fpstatus.sh: zusätzlich zu
+# mdstat/mdadm/mount auch blkid, fdisk -l, parted -l, lsscsi, lsblk und
+# hdparm -I für alle /dev/sd?-Geräte - insgesamt ein umfassender Überblick
+# über Platten, Partitionen und Software-RAID. Aufruf ohne Parameter.
 echo "cat /proc/mdstat | sed 's/$/\\\\r/g'"":"
 #cat /proc/mdstat | sed 's/$/\r/g'
-cat /proc/mdstat 
+cat /proc/mdstat
 echo "\n""mdadm --detail \`ls /dev/md? -d\`"":"
 mdadm --detail `ls /dev/md? -d`
 echo "\n""blkid"":"

@@ -1,4 +1,11 @@
 #!/bin/dash
+# copyverba.sh - neuere/schlankere Sicherung auf das externe USB-Laufwerk
+# "verbatim" (Mountpunkt /amnt/verbatim), beschränkt auf die Turbomed-
+# Unterverzeichnisse unter /opt/turbomed (PraxisDB bzw. PraxisDB-res, je
+# nachdem welches existiert, StammDB, labor, LaborStaber, KVDT, DruckDB,
+# Dictionary, Vorlagen, _TMVS, Zertifikate, Dokumente, Lizenz) - anders als
+# copyverb.sh (incopy.sh-basiert, sichert viel mehr Pfade) über die aus
+# bugem.sh gesourcte Funktion kopiermt(). Aufruf ohne Parameter.
 USB=verbatim
 logf=/var/log/$USB.log
 #ZoD=/amnt/seag

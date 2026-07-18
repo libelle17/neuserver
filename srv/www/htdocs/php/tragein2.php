@@ -1,4 +1,31 @@
-<?php 
+<?php
+// tragein2.php - Kernlogik des elektronischen Patienten-"Laufzettels":
+// verwaltet pro Patient (`$pat_id`) eine To-do-Liste ("zutun"-Tabelle,
+// Aufgaben mit Erledigt-/Gelöscht-Status und Reihenfolge) sowie den
+// Workflow-Status "wer bearbeitet den Patienten gerade" (anwesend/
+// Vorbereiter(in)/Behandler(in), Tabelle "aktiv" protokolliert jeden
+// Wechsel mit Zeitstempel+PC). Je nach gedrücktem Button wird eine
+// PHP-Datei mit dem Namen dieses Patienten-Laufzettels zwischen den
+// Status-Verzeichnissen plz/ (Anmeldung) -> vorb/ (bei Vorbereiter(in)) ->
+// behand/ (bei Behandler(in)) -> fertig/ kopiert/verschoben (per
+// copy()/rename()/unlink() auf $copyq/$zvorb/$zvorbakt/$zbehand/
+// $zbehandakt/$zfertig) - genau diese vier Verzeichnisse werden von
+// bulinux.sh (dt1-Block) neben htdocs/php/ eigens mitgesichert bzw. per
+// SELinux-Kontext behandelt. tausch()/dotausch() vertauschen zwei
+// Aufgaben in der Reihenfolge (Auf-/Ab-Pfeil-Buttons), inkl. Nachführen
+// der "pos"-Spalte in der Datenbank.
+//
+// WICHTIG (Einordnung, nicht abschließend geklärt): `$pat_id` wird in
+// dieser Datei an keiner Stelle selbst zugewiesen (kein $_GET/$_POST/
+// $_SESSION-Bezug dafür sichtbar) - es muss also von einer aufrufenden
+// Stelle VOR einem include dieser Datei gesetzt werden, ähnlich wie bei
+// i0S.php/i1S.php/i2S.php. anzeig.php und ianzeig.php binden tragein2.php
+// aber nicht ein (kein Treffer bei einer Suche nach "tragein2" in diesem
+// Repository außer einem Kommentar in setmariadbpwdfuerpraxis.sh, der
+// tragein2.php als Teil der Patientenlaufzettel-Anwendung nennt). Die
+// eigentliche einbindende Stelle dürfte eine der pro Patient dynamisch
+// erzeugten Dateien unter plz/vorb/behand/fertig sein, die in diesem
+// Repository nicht als Vorlage vorliegt.
 // session_destroy();
 function tausch(&$a,&$b) {
  $c=$a;
@@ -51,6 +78,9 @@ if ($conn->connect_error) {
 if ($conn->connect_error) {
  echo("Datenbankverbindung zu '".$pc."' als '".$user."' fehlgeschlagen: ".$conn->connect_error."<br>");
 } else {
+  // Tabellen bei Bedarf einmalig anlegen: "zutun" = die To-do-Zeilen je
+  // Patient/Tag; "aktiv" = Protokoll jedes Anwesend/Vorbereiter/Behandler-
+  // Statuswechsels (wer, wann, von welchem PC).
   $sql="CREATE TABLE if not exists `zutun` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, `Pat_ID` int(10) unsigned NOT NULL,`pos` int(10) unsigned NOT NULL,".
   "`Beschreib` varchar(200) COLLATE latin1_german2_ci NOT NULL,`AktZeit` datetime NOT NULL, `AktPC` varchar(20) COLLATE latin1_german2_ci NOT NULL,".
   "`Person` char(1) NOT NULL comment \"A=anwesend, A=anwesend an Behandler, V=Vorbereiter, v=Vorbereiter an Behandler, B=Behandler\",".
@@ -113,6 +143,11 @@ if (!isset($_SESSION['loeschen'])) $_SESSION['loeschen']=0;
 */
 $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
 
+// Ab hier: POST-Dispatch - genau EIN Zweig greift pro Aufruf, abhängig
+// davon, welcher Button im Formular weiter unten gedrückt wurde
+// (eintragen=neue Aufgabe, anwesend/obvorb/obbeha/anbeh=Statuswechsel,
+// alleloeschen/blenden=Listenverwaltung, erlknopfN/gelknopfN/aufknopfN/
+// abknopfN=Aktion auf Aufgabe Nr. N).
 if(isset($_POST['ma']))  $_SESSION['ma']=$_POST['ma'];
 if(isset($_POST['bh']))  $_SESSION['bh']=$_POST['bh'];
 if(isset($_POST['eintragen'])) {
@@ -344,6 +379,9 @@ if (isset($_SESSION['arr'])) {
 }
 $conn->close();
 
+// Ab hier: reine Ausgabe des Formulars (Aufgabenliste + Statusknöpfe
+// anwesend/Vorbereiter/Behandler/anbeh + Autocomplete-Feld mit je nach
+// Workflow-Phase unterschiedlicher <datalist> li0/li1/li2).
 echo "<a name='AnkerEing' href='#AnkerEing' accesskey='e'></a>";
 
 $stilaus="color:lightgray;background-color:white;";

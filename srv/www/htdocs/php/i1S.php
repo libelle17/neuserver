@@ -1,4 +1,22 @@
-<?php 
+<?php
+// i1S.php - wird von anzeig.php UND ianzeig.php per include eingebunden:
+// rendert für jedes DMP-Kriterium (dieselbe Liste wie i2S.php/i3S.php,
+// Gewicht/Taille/Bewegung/Blutdruck/Laborwerte/Fuß/Vorsorgeuntersuchungen
+// usw.) genau einen <button>, aber NUR, wenn das zugehörige "ob<Kriterium>"-
+// Flag in $_SESSION gesetzt ist (d.h. das Kriterium für diesen Patienten
+// überhaupt relevant/anzuzeigen ist); Beschriftung/Stil des Buttons
+// ("cave" mit vorangestelltem "&Oslash " bzw. "unauff") hängt zusätzlich
+// vom eigentlichen Kriteriums-Flag ohne "ob"-Präfix ab (s. i2S.php/i0S.php:
+// 1 = auffällig/zu erledigen, 0 = unauffällig/erledigt).
+// WICHTIG (Stand dieser Durchsicht): die einzige Stelle in diesem Repository,
+// die "ob<Kriterium>"-Flags wie $_SESSION['obGw'] setzt, ist i3S.php - und
+// i3S.php wird von KEINER anderen Datei eingebunden (s. dessen Kopfkommentar).
+// Ohne eine andere, hier nicht auffindbare Stelle, die diese "ob*"-Flags
+// setzt (z.B. datenbankgetrieben pro Patient/DMP-Programm), bleiben alle
+// $_SESSION['ob<Kriterium>'] undefiniert (falsy) - jede der IF-Bedingungen
+// unten wäre dann nie erfüllt, und es würde aktuell KEIN einziger Button
+// aus dieser Datei ausgegeben. "IF"/"ELSE" in Großschreibung ist in PHP
+// gültig (Schlüsselwörter sind case-insensitiv), aber unüblich.
     IF ($_SESSION['obGw']) {
       IF ($_SESSION['Gw']) {
         $stil='cave';

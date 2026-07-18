@@ -1,4 +1,14 @@
 #!/bin/bash
+# zeich.sh - benennt rekursiv Dateien/Verzeichnisse um, deren Namen
+# fehlerhaft kodierte Umlaute enthalten (einzelne Latin-1-Bytes \xc4 Ä,
+# \xfc ü, \xdc Ü, \xe4 ä, \xdf ß, \xf6 ö bzw. bereits doppelt-UTF-8-kodierte
+# Varianten davon) in korrektes UTF-8 um, und löscht danach die alte
+# (jetzt umbenannte) Quelldatei/-verzeichnis, falls "mv -u" sie nicht schon
+# ersetzt hat. Aufruf: zeich.sh [<Pfad>] - mit Pfad wird nur dieser
+# bearbeitet (einmalig); ohne Pfad werden fest einprogrammierte
+# Turbomed-Formularverzeichnisse (zuletzt aktiv: /opt/turbomed) NEUN Mal
+# hintereinander durchlaufen (offenbar um mehrfach verschachtelte
+# Fehlkodierungen schrittweise aufzulösen).
 umwandel() {
   find $1 -exec sh -c 'q="{}";z=$(echo "{}"|sed '\''s/\xc4/\xc3\x84/g;s/\xfc/\xc3\xbc/g;s/\xdc/\xc3\x9c/g;s/\xe4/\xc3\xa4/g;s/\xdf/\xc3\x9f/g;s/\xf6/\xc3\xb6/g;s/\xc3\x83\xc2\x84/\xc3\x84/g;s/\xc3\x83\xc2\xa4/\xc3\xa4/g;s/\xc3\x83\xc2\xb6/\xc3\xb6/g;s/\xc3\x83\xc2\x96/\xc3\x96/g;s/\xc3\x83\xc2\xbc/\xc3\xbc/g;s/\xc3\x83\xc2\x9c/\xc3\x9c/g;s/\xc3\x83\xc2\x9f/\xc3\x9f/g;'\'');[ "$q" != "$z" ]&&{ echo bennene um: "$q"=>"$z"; mv -u "$q" "$z" 2>/dev/null;[ -f "$q" ]&&{ echo loesche quelle \"$q\"; rm "$q";};[ -d "$q" ]&&{ echo loesche quelle \"$q\"; rmdir "$q";};}' \;
   # find $Q -exec sed 's/\xc4/\xc3\x84/g;s/\xfc/\xc3\xbc/g;s/\xdc/\xc3\x9c/g;s/\xe4/\xc3\xa4/g;s/\xdf/\xc3\x9f/g;s/\xf6/\xc3\xb6/g'

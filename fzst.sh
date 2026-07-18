@@ -1,4 +1,8 @@
 #!/bin/bash
+# fzst.sh - listet für eine Datenbank auf einem (per SSH erreichbaren)
+# Rechner alle nicht-leeren Tabellen mit ihrer (geschätzten) Zeilenzahl auf
+# (INFORMATION_SCHEMA.TABLES.TABLE_ROWS), sortiert nach Tabellenname.
+# Aufruf: fzst.sh <datenbank> <rechner>.
 if test $# != 2; then
   echo $0: Listet den Füllungszustand aller gefüllten Tabellen einer Datenbank eines Servers auf
   echo Gebrauch: "$0 <datenbank> <rechner>"

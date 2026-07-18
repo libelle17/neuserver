@@ -1,5 +1,13 @@
 #!/bin/bash
-# benennt den virtuellen Gast den Computers wirt ggf. um 
+# nampruef.sh - prüft für jeden virtuellen Windows-Gast (auf linux0/1/3/7/8,
+# via virtnamen.sh ermittelt: $gpc=Soll-PC-Name, $gast=VM-Name in
+# VirtualBox), ob dessen tatsächlicher Windows-Hostname noch zum Soll-Namen
+# passt, und benennt ihn sonst per WMIC um (mit anschließendem Neustart):
+# ermittelt dazu über VirtualBox-Guest-Properties die Netzwerk-Interfaces
+# des Gasts, sucht darunter eine 192.*-IP, löst per nmblookup (oder
+# ersatzweise per SSH-Hostname-Abfrage) den aktuellen NetBIOS-/Hostnamen auf
+# und vergleicht ihn mit $gpc. Aufruf: nampruef.sh [-v|v|--verbose] (Vorgabe
+# ohne Parameter: knappe Ausgabe).
 # gast=virtwin0;
 # wirt=linux0;
 user=sturm;

@@ -1,4 +1,13 @@
 #!/bin/zsh
+# copyseag.sh - vollständige Sicherung auf das externe USB-Laufwerk
+# "Seagate Expansion Drive" (Mountpunkt /amnt/SeagateExpansionDrive): sourct
+# incopy.sh (definiert datakopier/tukopier/tukopierol, s. dort) und ruft
+# damit nacheinander alle relevanten /DATA-Unterpfade (Patientendokumente,
+# eigene Dateien/*, shome/gerald/*, sql, gerade/ungera usw.), /opt/turbomed,
+# /var/spool/fax und /root/bin sowie ausgewählte /etc-Dateien und
+# /var/lib/mysql (mit --delete) ab. Endet mit "exit" vor zwei weiteren,
+# nie erreichten datakopier-Aufrufen (Mail, "") - toter Restcode. Aufruf
+# ohne Parameter.
 PNAME=Seagate\ Expansion\ Drive
 Z=/amnt/SeagateExpansionDrive
 . incopy.sh

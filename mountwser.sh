@@ -1,7 +1,14 @@
 #!/bin/bash
-ftb="/etc/fstab";
-cre="/home/schade/.wincredentials"
-crw="/home/schade/.wsercredentials"
+# mountwser.sh - mountet die CIFS-Freigaben \\WSER\INDAMED und
+# \\WSER\TMExport nach /mnt/wser/indamed bzw. /mnt/wser/tmexport, mit den
+# Zugangsdaten aus $crw (/home/schade/.wsercredentials). Da die SMB-
+# Protokollversion des Zielservers unbekannt ist, wird pro Freigabe
+# absteigend über eine Liste von SMB-Versionen (3.11 über 3.02/3.0/2.1/2.0
+# bis 1.0, je zweimal versucht) probiert, bis das Mounten klappt oder schon
+# gemountet ist. Inhaltlich nahezu identisch zu mountvirt.sh (einziger
+# Unterschied: ein Kommentar, von welchem Reserve-Host $cre vor Gebrauch per
+# scp geholt werden muss - hier linux1 statt linux1ur). Aufruf ohne
+# Parameter.
 # zur Funktionsfaehigkeit auf den Reservesystemen: scp -p linux1:/home/schade/.wincredentials /home/schade/
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

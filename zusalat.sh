@@ -1,4 +1,16 @@
 #!/bin/bash
+# zusalat.sh - "in Salat verwandeln" = per Passwort verschlüsseln, damit
+# Dokumente unverschlüsselt gefaxt/versendet werden können, ohne offen im
+# Faxordner zu liegen. Führt in dieser Reihenfolge aus: 1) PDFs in $F
+# (zufaxen), die noch mit dem festen Lese-Passwort verschlüsselt sind,
+# per qpdf wieder entschlüsseln (überschreibt die Datei); 2) Nicht-PDFs in
+# $Q (zusalat) per soffice (oder notfalls "convert") nach PDF wandeln,
+# Original nach $G (Patientendokumente) verschieben; 3) PDFs in $Q, die
+# noch nicht verschlüsselt sind, per qpdf mit Lese- und separatem
+# Schreib-Passwort verschlüsseln, dabei nach $G ablegen und das Original
+# zusätzlich nach $Z/$Z2 (ur-Verzeichnisse) kopieren/verschieben. Läuft
+# nur, wenn /DATA gemountet ist. Aufruf: zusalat.sh [-h|--hilfe] (ohne
+# Parameter: alle drei Schritte ausführen).
 blau="\033[1;34m"; # für Programmausgaben
 rot="\033[1;31m";
 lila="\033[1;35m";

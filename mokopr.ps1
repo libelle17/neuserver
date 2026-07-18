@@ -1,4 +1,27 @@
-﻿# Protokoll mitschreiben (Task Scheduler zeigt nur, ob powershell.exe selbst
+﻿# mokopr.ps1 - "Medical Office kopieren": sucht einen angeschlossenen
+# USB-Stick (per tukop()), vergleicht dort erst die Schutzdateien aus
+# $VglListe (Ransomware-Fruehwarnung, wie bei spiegele.ps1/morueck.ps1)
+# gegen das jeweilige Quellverzeichnis und robocopy't bei Uebereinstimmung
+# p:\dok, p:\datenbanken, \\wser\indamed, p:\eingelesen sowie \\wser\mo7z
+# auf den Stick (jeweils unter dessen Wurzel). Warnt zusaetzlich, wenn der
+# erkannte USB-Anschluss langsamer als USB 3.2 Gen 2 ist, und fragt
+# interaktiv nach, ob umgesteckt werden soll. Fuer \\wser\indamed wird nach
+# dem Kopieren zusaetzlich tumedoff() aufgerufen: aktualisiert serverseitig
+# per SSH ein 7z-Archiv von medoffDB und kopiert dieses auf den Stick.
+# Aufruf: interaktiv oder per Task Scheduler, ohne Parameter.
+#
+# HINWEIS zum Code-Zustand: dieses Skript ist erkennbar unfertiger/
+# experimenteller als spiegele.ps1/morueck.ps1 - es enthaelt Debug-
+# Write-Host-Reste, eine ungenutzte Alternativimplementierung
+# (Get-USB-Laufwerke_, s.u.) und - wichtig - nach dem "exit 0" auf Zeile
+# ~365 folgen zwei weitere, komplett EIGENSTAENDIGE Skriptfragmente
+# ("automatisches Backup und Cleanup" fuer mosich-7z-Archive, sowie ein
+# "Sync-NewestBackup.ps1"-Fragment) als TOTER CODE - sie werden wegen des
+# vorherigen "exit 0" nie erreicht und scheinen hier nur als Ablage/
+# Kopiervorlage fuer aehnliche eigenstaendige Skripte zu dienen, nicht als
+# Teil des tatsaechlichen Ablaufs dieser Datei.
+#
+# Protokoll mitschreiben (Task Scheduler zeigt nur, ob powershell.exe selbst
 # abgestuerzt ist, nicht was das Skript intern entschieden hat). Log-Rotation von
 # Hand, da Windows kein eingebautes logrotate kennt: ab 5 MB wird die alte Datei
 # mit Zeitstempel archiviert, Archive aelter als 30 Tage werden geloescht.

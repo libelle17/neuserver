@@ -1,5 +1,13 @@
 #!/bin/bash
-#wandelte Dateien mit pathologischen Laborwerten von xls zu csv-Dateien und verschiebt die Originale nach LaborAlt
+# xlstocsv.sh - wandelt "labor*.xls"-Dateien mit pathologischen Laborwerten
+# direkt unter /DATA/Patientendokumente per soffice in .csv um (setzt bei
+# Erfolg zusätzlich CR-Zeilenenden per sed), verschiebt danach die
+# Original-.xls nach LaborAlt und verteilt die neue .csv per Kopie in
+# KothnyLabor/WagnerLabor/HammerschmidtLabor sowie per Verschieben in
+# SchadeLabor (letzte Ablage "gewinnt" also, die anderen behalten nur
+# Kopien). Bereits vorhandene .csv-Zieldateien werden nicht überschrieben
+# (Meldung "gabs schon"). Aufruf: xlstocsv.sh [-v] (-v = ausführliche
+# Zwischenausgaben inkl. der aufgerufenen Befehle).
 St=/DATA/Patientendokumente;
 La="$St/LaborAlt";
 KL="$St"/KothnyLabor/;

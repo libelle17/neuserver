@@ -1,4 +1,10 @@
 #!/bin/bash
+# tr64.sh - fragt per TR-064-Login (Challenge/Response mit MD5, Zugangsdaten
+# aus ~/.fbcredentials) die Fritzbox-Systemmeldungen (syslog.lua, Tab "aus")
+# ab und gibt sie tabulatorgetrennt aus (Spalten aus dem Lua-Array-Format
+# der Fritzbox-Antwort herausgeparst). Der "if false"-Zweig ist eine
+# ältere, nicht mehr verwendete Login-Variante (login.lua statt
+# login_sid.lua) und bleibt inaktiv. Aufruf ohne Parameter.
 _BOXURL="http://fritz.box"
 . ~/.fbcredentials
 _USERNAME="$username";

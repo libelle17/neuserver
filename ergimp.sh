@@ -1,5 +1,19 @@
 #!/bin/dash
-# kopiert in p:\eingelesen\... fehlende Dokumente aus /DATA/turbomed/Dokumente und benennt differierend benannte um
+# ergimp.sh - "ergänze Import": kopiert nach /DATA/Patientendokumente/
+# eingelesen/<Jahr>/ fehlende Dokumente aus /DATA/turbomed/Dokumente
+# (Turbomeds Original-Briefablage), die laut Datenbank-Tabelle "briefe"
+# (Spalten pfad/name/dokgroe/dokaend) dort erwartet werden würden, aber
+# unter "eingelesen" noch fehlen - und benennt dabei ggf. abweichend
+# gespeicherte Dateien passend um. Je Datenbankzeile: fehlt die Datei
+# unter "eingelesen/<Jahr>", wird zunächst per Größe+Zeitfenster
+# (Dokudatum ±1 Tag) im Zielverzeichnis nach einer schon vorhandenen,
+# aber anders benannten Kopie gesucht (diff-Vergleich); ist sie inhaltlich
+# gleich, wird nur umbenannt (und ein evtl. anderer DB-Eintrag mit
+# demselben neuen Namen aussortiert), sonst wird die Originaldatei per
+# cp -ai neu hinzukopiert. Durchläuft dabei alle Jahre von 2007 (bzw.
+# aktuellem Jahr minus $Interv, Vorgabe 0) bis heute. Aufruf: ergimp.sh
+# (keine Kommandozeilenparameter; $Interv ist eine feste Konstante im
+# Skript).
 gruen="\033[0;32m"
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

@@ -1,4 +1,36 @@
 #!/bin/bash
+# briefautor.sh - ergänzt/korrigiert nachträglich die Spalten "autor" und
+# "quelldatum" der Tabelle quelle.briefe für importierte PDF-Briefe, indem
+# es Autor/Datum aus dem PDF-Inhalt oder aus Namensmustern des Dateinamens
+# heuristisch herausliest (Turbomeds Import selbst liefert diese Angaben
+# oft nicht oder nur unvollständig). $autoren wird dazu einmalig aus der
+# VB6-Quelldatei ZielDBFunktionen.bas herausgeparst (Liste bekannter
+# Ärzte-/MA-Kürzel als Regex-Alternative).
+#
+# Je Jahr (2004 bis heute) wird eine SQL-Abfrage gegen quelle.briefe
+# gebaut, die alle noch relevanten Kandidaten liefert (u.a. PDFs mit
+# bestimmten Namensmustern wie "CGM BMP gedruckt...", "GDT Import
+# Datei...", COVID-Zertifikate, Datumsmuster im Namen, oder solche, zu
+# denen es eine gleichnamige .doc(x)-Datei gibt). Für jede Ergebniszeile:
+#   - Existiert die Datei nicht mehr (stat schlägt fehl) -> dokgroe wird
+#     auf -1 gesetzt (Markierung "fehlt"), keine Auswertung.
+#   - Sonst wird der Dateiname/-inhalt gegen eine Reihe fest kodierter
+#     Fälle geprüft (jeweils mit eigener pdftotext+sed-Extraktionslogik):
+#     CGM-BMP-Ausdrucke, COVID-Zertifikate, GDT-Import-Dateien, Briefe mit
+#     gleichnamiger .doc-Datei (Autor/Datum aus deren Kopfzeilen), sowie
+#     unabhängig davon Datumsmuster im Dateinamen ("ÜW"-Quartalskürzel,
+#     JJJJ-MM-TT-artige Muster, 14-stellige Zeitstempel, TT-MM-JJJJ) und
+#     ein bekanntes Autorenkürzel am Namensende. Bei Abweichung vom
+#     bisherigen DB-Wert wird die Tabelle per UPDATE korrigiert.
+#   - Der "else"-Zweig (nach "if true; then...else...fi", derzeit also
+#     inaktiv, da die Bedingung fest auf "true" steht) ist eine ältere,
+#     einfachere Variante: sucht per pdftotext nur nach den vier fest
+#     hinterlegten Autorennamen (wd/gs/tk/ah) und setzt nur "autor".
+#
+# Aufruf: briefautor.sh [-v[v...]] [-l|--list]
+#   -v      ausführlichere Ausgabe, mehrfach angebbar für mehr Detailtiefe
+#   -l      nur auflisten/zählen (dann wird KEIN UPDATE ausgeführt, dank
+#           "if [ ! $nurauflisten ]" um die gesamte Auswertung je Zeile)
 abk=(wd gs tk ah)
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

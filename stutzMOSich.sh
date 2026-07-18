@@ -1,5 +1,15 @@
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# stutzMOSich.sh - Generationen-Rotation für Sicherungen unter
+# /mnt/wser/mosich (Medical-Office-Sicherungen, vermutlich Verzeichnisse
+# statt Dateien - Name besteht rein aus einem 14-stelligen Zeitstempel
+# JJJJMMTTHHMMSS), verschiebt Aussortiertes nach $Vz/loe. Definiert nur
+# vorgaben()/ermittledatum() für instutz.sh (s. dessen Kopfkommentar):
+# behält ab 365 Tagen 1/Jahr (Januar), ab 30 Tagen 1/Monat (am 1.), ab 7
+# Tagen 4/Monat (1./8./15./22.); Namen, die NICHT rein aus 14 Ziffern
+# bestehen, werden nie aussortiert (Ausspar-Logik ist hier umgedreht: über
+# ein Regex-Muster statt eines Teilstrings). Hinweis: "obvz=true" (Zeile
+# unten) wird von instutz.sh nirgends ausgewertet - toter Schalter, ohne
+# Wirkung auf den tatsächlichen Ablauf. Aufruf: stutzMOSich.sh [-v]
+# [-h|--hilfe].
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis

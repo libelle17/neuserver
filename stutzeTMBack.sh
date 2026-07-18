@@ -1,5 +1,11 @@
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# stutzeTMBack.sh - Generationen-Rotation für alte Turbomed-7z-Archive
+# unter /DATA/TMBack (verschiebt Aussortiertes nach /DATA/TMBackloe).
+# Definiert nur vorgaben()/ermittledatum() für den gemeinsamen Rotations-
+# Motor in instutz.sh (s. dessen Kopfkommentar) - Muster
+# "TM????????_??????.7z"; anders als stutze.sh/stutzeDBBack.sh OHNE
+# Jahres-Runde (kein gr0/beh0), stattdessen: ab 30 Tagen 1/Monat (am 1.),
+# ab 3 Tagen 4/Monat (1./8./15./22.), ab 1 Tag 1/Tag; kein Name ist von
+# der Aussortierung ausgenommen. Aufruf: stutzeTMBack.sh [-v] [-h|--hilfe].
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis

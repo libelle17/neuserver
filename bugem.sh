@@ -1,7 +1,53 @@
 #!/bin/bash
-# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle relevanten Datenen kopieren, aufgerufen aus bulinux.sh, butm.sh, buint.sh
-#im aufrufenden Programm soll QL und buhost (z.B. durch bul1.sh) und kann ZL (je ohne Doppelpunkt) definiert werden, sonst ZL als commandline-Parameter
+# bugem.sh - keine eigenständig ausführbare Datei, sondern die gemeinsame
+# Backup-Bibliothek, die von bumo.sh, bunacht.sh, butm.sh, buint.sh,
+# buwser.sh, budbaus.sh und bulinux.sh per ". bugem.sh" gesourct wird
+# (dash geht nicht: --exclude={,abc/,def/} wirkt dort nicht, deshalb
+# bash). Im aufrufenden Skript müssen VOR dem Sourcen $buhost (üblich
+# über bul1.sh) sowie optional $QL (Quellrechner) gesetzt sein; $ZL
+# (Zielrechner) wird meist erst per commandline() aus dem ersten
+# Nicht-Options-Parameter ermittelt. QL/ZL bestimmen Push/Pull-Richtung
+# und Lokal-/Fernzugriff über SSH in allen Kopierfunktionen.
+#
+# Stellt u.a. bereit:
+#   commandline()     Gemeinsame Parameterauswertung für alle bu*.sh
+#                     (-e/-v/-f/-k/-m/-mz/-z/-d/-u/-dt[123]/-db/-dberg/
+#                     SD[=Pfad]/... - die vollständige, für buint.sh/
+#                     butm.sh/bulinux.sh spezifische Parameterreferenz
+#                     wird weiter unten automatisch bei Aufruf ohne
+#                     Zielangabe bzw. mit -h ausgegeben, um Doppelpflege
+#                     zu vermeiden)
+#   ausf()/ausfd()    Wrapper, der einen Befehl ausführt (oder bei
+#                     fehlendem -e/$obecht nur simuliert/anzeigt) und
+#                     dessen Ergebnis/Exitcode einheitlich meldet
+#   kopiermt()        Kernfunktion: kopiert ein Verzeichnis oder eine
+#                     Datei per rsync zwischen Quelle/Ziel, inkl.
+#                     Alterskriterium-Prüfung (obalt()), Schutzdatei-
+#                     Vergleich (Ransomware-Kanarienvogel, s.
+#                     SDLISTE/SD/SDMAILEMPF), Platzprüfung auf dem Ziel
+#                     und automatischem Mounten von CIFS-Freigaben
+#   kopiermt_delta()  wie kopiermt(), aber inkrementell (nur seit dem
+#                     letzten Lauf geänderte Dateien, via bustate.sh) -
+#                     fällt bei -f/SD-Modus/--delete/Erstlauf auf
+#                     kopiermt() zurück
+#   kopieros()/kopieretc()  Spezialfälle für /root bzw. /etc (mit
+#                     Schutzdatei-Vergleich bzw. Rechte-Absicherung)
+#   backupstatus()    schreibt eine Heartbeat-Zeile nach
+#                     linux1:/DATA/Backup-Status_<Ziel>.txt
+#   pruefpc()/gutenacht()  weckt bei Bedarf einen Ziel-PC (weckalle.sh)
+#                     und merkt ihn in einer Datei $gewdat vor;
+#                     gutenacht() fährt am Ende alle so geweckten PCs
+#                     wieder herunter
+#   machssh()         setzt $qssh/$zssh (ssh-Aufruf oder lokales "sh -c")
+#                     aus $QL/$ZL, inkl. eingeschränktem Backup-Key für
+#                     linux0/linux7 (_backup_sshopts())
+#   testobvirt()      ermittelt $obvirt (0/1/2), ob/wie PraxisDB lokal,
+#                     nur virtuell oder unter -wser erreichbar ist
+#
+# Am Ende jedes Sourcens werden unbedingt Eigentümer/Rechte von
+# /root/.ssh zurückgesetzt (chown root:root + chmod 600 -R) - das ist
+# der Grund, warum uebernahme.sh/ruecknahme.sh/rueckgabe.sh bugem.sh
+# bewusst NICHT sourcen, s. deren Kopfkommentare.
 EXFEST=",Papierkorb/";
 blau="\033[1;34m";
 lila="\033[1;35m";
@@ -702,10 +748,17 @@ backupstatus() {
   fi;
 } # backupstatus
 
+# kopiert eine einzelne Datei/Verzeichnis $1 unterhalb von /etc per kopiermt()
 kopieretc() {
   kopiermt etc/$1 "etc/" "" "" "" "" 1
 }
 
+# pruefpc() - prüft, ob PC $1 per Ping erreichbar ist; wenn nicht (und $2
+# ungleich "kurz"), wird versucht ihn per weckalle.sh -grue zu wecken und
+# bis zu 100x im Sekundentakt erneut anzupingen. Bei Erfolg wird $1 in der
+# Datei $gewdat vermerkt (damit gutenacht() ihn am Skriptende wieder
+# herunterfahren kann) und zusätzlich bis zu 60s auf SSH-Erreichbarkeit
+# gewartet. $2 = aufrufender Kontext, nur für die Verbose-Ausgabe.
 pruefpc() {
   [ $verb ]&&printf "${blau}pruefpc()$reset \"$1\", aufgerufen aus \"$2\"\n";
   [ "$1" ]||break;
@@ -754,6 +807,9 @@ pruefpc() {
   return $retu;
 } # pruefpc
 
+# gutenacht() - fährt alle PCs, die pruefpc() während dieses Laufs geweckt
+# und in $gewdat vermerkt hat, per "ssh <pc> shutdown now" wieder herunter
+# und löscht $gewdat. Am Ende der bu*.sh-Läufe aufgerufen.
 gutenacht() {
   [ $verb ]&&printf "${blau}gutenacht()$reset\n";
   if [ "$gewdat" -a -f "$gewdat" ]; then 
@@ -777,6 +833,11 @@ _backup_sshopts() {
   esac
 } # _backup_sshopts
 
+# machssh() - setzt $qssh/$zssh auf den passenden Befehlspräfix für Quelle/
+# Ziel: "ssh [eingeschränkte Optionen] <host>" falls $QL/$ZL gesetzt ist
+# (und weckt den jeweiligen Host bei Bedarf per pruefpc()), sonst "sh -c"
+# für lokale Ausführung. Wird von kopiermt()/kopiermt_delta()/kopieros()
+# u.a. vor jedem Fernzugriff aufgerufen.
 machssh() {
 [ "$QL" ]&&{ qssh="ssh $(_backup_sshopts "$QL")$QL";pruefpc "$QL" "machssh";:;}||qssh="sh -c";
 [ "$ZL" ]&&{ zssh="ssh $(_backup_sshopts "$ZL")$ZL";pruefpc "$ZL" "machssh";:;}||zssh="sh -c";
@@ -785,6 +846,13 @@ machssh() {
 #  [ "$verb" ]&&printf "qssh: \'$blau$qssh$reset\', zssh: \'$blau$zssh$reset\'\n";
 } # machssh
 
+# testobvirt() - ermittelt (per $tush, muss vorher gesetzt sein, z.B. aus
+# virtnamen.sh) anhand von Existenz und Größe der objects.dat-Dateien unter
+# /opt/turbomed, ob PraxisDB dort lokal (obvirt=0), nur über die -res-
+# Variante/virtuelle Maschine (obvirt=1) oder über die -wser-Variante
+# (obvirt=2) erreichbar ist; bricht das Skript ab, wenn sich das nicht
+# eindeutig feststellen lässt. Setzt zugleich $ot/$otP/$otr/$otw/$resD/
+# $wserD für die aufrufenden Skripte (butm.sh/buint.sh).
 testobvirt() {
   ot=opt/turbomed;
   otP=/$ot/PraxisDB;

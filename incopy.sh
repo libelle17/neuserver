@@ -1,3 +1,20 @@
+# incopy.sh - keine eigenständig ausführbare Datei, sondern gemeinsame
+# Bibliothek zum Sourcen (". incopy.sh") aus den copy*.sh-Skripten
+# (copyseag.sh, copytoshz.sh, copyverb.sh, copywd.sh), NACHDEM dort $PNAME
+# (Anzeigename/Log-Name des externen Laufwerks) und $Z (Mountpunkt des
+# Zielverzeichnisses, z.B. /amnt/toshz) gesetzt wurden. Definiert:
+#   tukopier <Quelle> <Ziel> [bis zu 11 Exclude-Muster]
+#     rsync -avu --delete von <Quelle>/ nach <Ziel>, nur wenn $Z gemountet
+#     ist (sonst Abbruch der ganzen Shell per exit!); protokolliert Ende in
+#     $logf.
+#   tukopierol <...>  wie tukopier, aber mit --iconv=utf8,latin1 (für
+#     Ziel-Dateisysteme mit Latin-1-Namenskodierung, z.B. ältere NTFS-Mounts)
+#   datakopier <Unterpfad-unter-/DATA> [weitere Exclude-Muster]
+#     bequemer Wrapper um tukopier für Pfade unterhalb von /DATA, schließt
+#     dabei immer Papierkorb/ausgelagert/DBBackloe/TMBackloe/sqlloe/
+#     TMExportloe mit aus.
+# Beim Sourcen wird zusätzlich geprüft, ob $Z schon gemountet ist, und falls
+# nicht, aber als Blockgerät bekannt (lsblk), automatisch gemountet.
 logf=/var/log/$PNAME.log
 #Z=/mnt/seag
 Q=""

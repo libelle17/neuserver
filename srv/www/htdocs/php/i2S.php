@@ -1,4 +1,12 @@
-<?php 
+<?php
+// i2S.php - wird von anzeig.php per include eingebunden: initialisiert für
+// jedes DMP-Kriterium (Diabetes-Disease-Management-Programm-Checkliste -
+// Gewicht/Taille/Bewegung/Blutdruck/Laborwerte/Fuß/Impfungen/Vorsorge-
+// untersuchungen usw.) den zugehörigen $_SESSION-Schalter auf 1
+// (sichtbar/aktiv). Die Schlüssel entsprechen exakt den Feldnamen, die
+// i0S.php per POST umschaltet und die im Formular als Checkbox/Button-
+// Namen verwendet werden - Reihenfolge und Schreibweise müssen deshalb zu
+// i0S.php und dem Formular in anzeig.php passen.
  $_SESSION['Gw']=1;
  $_SESSION['Taille']=1;
  $_SESSION['Bewegung']=1;

@@ -1,4 +1,16 @@
 #!/bin/bash
+# fb.sh - generisches TR-064-Kommandozeilenwerkzeug für die Fritzbox: die
+# Blöcke controlURL=.../serviceType=.../Action=.../ParIn=... weiter unten
+# sind vorgefertigte Beispiele (WANCommonIFC1, Speicher-Info, Anrufliste,
+# CreateUrlSID, Geräteliste, Anruf auslösen, Filelinks) - wirksam ist nur
+# der jeweils LETZTE Block vor der eigentlichen Anfrage bzw. das, was per
+# -c/-s/-a überschrieben wird. Fragt bei Bedarf Fritzbox-Zugangsdaten ab
+# (~/.tr64cred) und führt die SOAP/TR-064-Anfrage per curl aus (erst
+# ipv6, dann ipv4); liefert die Antwort ein "*.lua"-Redirect, wird
+# zusätzlich diese URL abgerufen und nach $Ausgabe (neueurl.xml)
+# geschrieben. Aufruf: fb.sh [-neu] [-c <controlURL>] [-s <serviceType>]
+# [-a <Action>] (ohne Parameter: Vorgabe ist der zuletzt im Skript
+# gesetzte Block, aktuell X_AVM-DE_DialNumber mit fester Nummer "616380").
 blau="\e[1;34m";
 reset="\e[0m";
 FB="http://fritz.box:49000"

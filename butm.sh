@@ -1,10 +1,21 @@
 #!/bin/bash
-# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle sehr relevanten Datenen von aktiven Server linux1ur auf die Reserveserver kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn des das Verzeichnis /opt/turbomed/PraxisDB gibt, wird dieses für die Datenbank verwendet, sonst /amnt/virtwin/turbomed
-# wird auch aus butint.sh mit -nv aufgerufen (-> obnv), wenn dieses mit -m ("mehr") aufgerufen wird
-# das auf den Reserveservern verwendete Verzeichnis hängt davon ab, ob es auf linux1ur /opt/turbomed/PraxisDB gibt
-# mountvirt.sh -a
+# butm.sh - "Backup Up Turbomed": soll alle sehr relevanten Daten vom
+# aktiven Server linux1ur auf die Reserveserver kopieren, fuer z.B.
+# halbstündlichen Gebrauch (dash geht nicht: --exclude={,abc/,def/} wirkt
+# dort nicht, deshalb bash). Kopiert je nach $obvirt (per testobvirt()
+# aus bugem.sh ermittelt, ob/wo es /opt/turbomed/PraxisDB bzw. eine
+# "-wser"-Variante gibt) das komplette /opt/turbomed bzw. zusätzlich (bei
+# $obvirt=1, virtualisierter Fall) auch /amnt/<gast-pc>/turbomed, benennt
+# dabei ggf. das PraxisDB-Verzeichnis passend um (Pr-Variable: PraxisDB
+# bzw. deren -wser/-res-Variante) und kopiert am Ende noch /DATA/turbomed
+# und /DATA/Patientendokumente/eingelesen. Bei $obkill wird vor dem
+# virtuellen Kopierdurchlauf (iru=2) versuchsweise geprüft, ob Turbomeds
+# StammDB/objects.idx gesperrt ist, und falls nötig die VM per
+# VBoxManage neu gestartet (nach demselben lauf/lau-Umbenennungstrick wie
+# vdurch.sh). Wird auch aus buint.sh mit -nv aufgerufen (-> $obnv, dann
+# entfällt der zweite [virtuelle] Kopierdurchlauf), wenn dieses mit -m
+# ("mehr") aufgerufen wird. Ruft am Ende gutenacht() (aus bugem.sh) auf.
+# Aufruf: butm.sh [bugem.sh-Parameter, u.a. -e, -nv, -kill].
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost aus hostname festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;

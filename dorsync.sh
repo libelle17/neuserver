@@ -1,4 +1,10 @@
 #!/bin/sh
+# dorsync.sh - dünner rsync-Wrapper: protokolliert Start/Ende (mit den
+# übergebenen Parametern) nach /var/log/rsync.log und führt dann
+# "ionice -c3 nice -n19 rsync -avu $@" aus (alle Argumente werden 1:1 an
+# rsync durchgereicht). Wird u.a. von copydat.sh, gerade_PraxisDB.sh/
+# ungera_PraxisDB.sh (auskommentiert) verwendet. Aufruf: dorsync.sh
+# [beliebige rsync-Parameter], z.B. "dorsync.sh --delete /DATA/ /DAT3".
 dblau="\e[0;34;1;47m";
 reset="\e[0m";
 PROT="/var/log/rsync.log"

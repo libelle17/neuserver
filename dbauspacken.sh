@@ -1,4 +1,17 @@
 #!/bin/bash
+# dbauspacken.sh - Gegenstück zu dbeinpacken.sh: spielt auf einem
+# Ziel-Linuxrechner (bewusst NICHT auf linux1, um dort nichts Falsches zu
+# löschen) den von dbeinpacken.sh erzeugten Datenbank-Gesamtdump wieder
+# ein. Holt bei Bedarf per rsync von linux1 die Dateien dbverzeichnis/
+# dbeingepackt.sql nach, prüft per Beleg-Datei ($Beleg unter dem
+# MySQL-Datenverzeichnis), ob schon ausgepackt wurde, und tut dann
+# nichts erneut, falls dbeingepackt.sql nicht neuer ist. Andernfalls:
+# löscht alle in dbverzeichnis gelisteten Datenbanken (mysqladmin drop +
+# Verzeichnisreste), setzt innodb_fast_shutdown=0, stoppt mariadb, löscht
+# ibdata1/ib_logfile0 (frischer InnoDB-Tablespace), startet mariadb neu
+# und importiert den Dump. Aufgerufen wird dies über das aus bugem.sh
+# gesourcte commandline()/ausf() (Parameter wie -v, -z). Aufruf:
+# dbauspacken.sh [bugem.sh-Parameter].
 HOST=$(hostname);
 Ds=/DATA/sql;
 # Datenverzeichnis von mysql

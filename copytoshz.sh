@@ -1,4 +1,10 @@
 #!/bin/zsh
+# copytoshz.sh - vollständige Sicherung auf das externe USB-Laufwerk "toshz"
+# (Toshiba-Platte, Mountpunkt /amnt/toshz); gleicher Aufbau wie
+# copyseag.sh (sourct incopy.sh, ruft dieselbe Art von datakopier/tukopier-
+# Aufrufen für /DATA-Unterpfade, /opt/turbomed, /var/spool/fax, /root/bin,
+# ausgewählte /etc-Dateien und /var/lib/mysql). Läuft hier bis zum Ende
+# durch (kein "exit" mittendrin wie bei copyseag.sh). Aufruf ohne Parameter.
 PNAME=toshz
 Z=/amnt/$PNAME
 . incopy.sh;

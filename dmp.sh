@@ -1,4 +1,36 @@
 #/bin/bash
+# dmp.sh - OCR-Variante von dmprm.sh für DMP-Reminder-PDFs, die KEINEN
+# brauchbaren Textinhalt haben (reine Scans): PDF -> TIFF (ghostscript) ->
+# geränderte TIFF (convert) -> OCR-Text (tesseract deu+eng+osd) -> Bereinigung
+# über eine lange sed-Ersetzungskette (jede Zeile dort einzeln kommentiert) ->
+# awk baut daraus REPLACE/INSERT-INTO-SQL für die Tabelle "dmprm" (Datenbank
+# "quelle", siehe tabellen()). Enthält zusätzlich ausw2()/raussuch(): eine
+# zweite, direkt auf pdftotext basierende Variante (für Reminder mit Text,
+# ähnlich dmprm.sh, aber mit eigener SQL-Logik) samt Verzeichnis-Scan, der
+# neue Reminder-PDFs aus $qp automatisch einliest und nach $qvz verschiebt.
+#
+# Aufruf: dmp.sh [Datei] [-v|--verbose] [-nd|--neudd] [-nt|--neutif]
+#                [-ln|--lneu] [-e|--echt] [-h|--hilfe|--help]
+#   (kein Parameter)  ruft raussuch() auf: durchsucht $qvz nach TK/GS/AH-
+#                     benannten Reminder-PDFs (OCR-Pipeline via auswert())
+#                     und $qp+$qvz nach sonstigen "reminder"-PDFs (Text-
+#                     Pipeline via ausw2()), jeweils nur noch nicht in
+#                     dmpeinl eingetragene; verschiebt bearbeitete Dateien
+#                     aus $qp nach $qvz.
+#   Datei             Einzeldatei-Modus (einzeln=1): ruft auswert() direkt
+#                     mit qd=Datei auf (Datei muss bereits existieren, keine
+#                     ".pdf"-Ergänzung wie in dmprm.sh); -nd löscht dann NICHT
+#                     die kompletten Tabellen.
+#   -v, --verbose     ausführliche Zwischenausgaben
+#   -nd, --neudd      löscht vorher die Tabellen dmpeinl/dmprm komplett und
+#                     legt sie über tabellen() neu an (nur ohne Einzeldatei)
+#   -nt, --neutif     erzwingt Neuerstellung von TIFF/OCR-Text auch wenn
+#                     "${stamm}i.txt" schon existiert (statt sie zu behalten)
+#   -ln, --lneu       (nur in raussuch()/ausw2()-Zweig wirksam) liest auch
+#                     bereits in dmpeinl eingetragene "reminder"-PDFs erneut ein
+#   -e, --echt        zur Zeit ohne Wirkung (obecht wird gesetzt, aber
+#                     nirgends abgefragt)
+#   -h,-?,--hilfe,--help  setzt nur obhilfe, wird aber (noch) nicht ausgewertet
 blau="\033[1;34m";
 lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
@@ -81,6 +113,11 @@ commandline() {
 } # commandline
 
 tabellen() {
+# Legt (falls nicht vorhanden) dieselben zwei Tabellen wie dmprm.sh an (diese
+# Version hat keine eigene "dateidat"-Spalte, nur "erstellt" als Bezugsdatum
+# für die DELETE/REPLACE-Logik in auswert()). Die SQL-Strings werden über
+# Backslash-Zeilenfortsetzung zusammengesetzt - Kommentare deshalb hier
+# gesammelt DAVOR statt zwischen den Zeilen (sonst landen sie im SQL-String).
 sql="\
 CREATE TABLE IF NOT EXISTS dmprm (\
 	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
@@ -141,6 +178,12 @@ ENGINE=InnoDB\
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 } # tabellen
 
+# OCR-Pipeline für genau eine PDF ("$qd", muss bereits existieren, KEIN
+# automatisches Anhängen von ".pdf" wie in dmprm.sh/ausw2()). Baut aus dem
+# Dateistamm eine Kette von Zwischendateien auf ($zd/$rand/$txt/$ender/$awkd/
+# $awkdk, je mit fortlaufender Nummer kommentiert) und pflegt am Ende direkt
+# per awk/system() SQL in dmprm ein (anders als dmprm.sh, das SQL erst in
+# eine Datei schreibt und dann komplett per mariadb< ausführt).
 auswert() {
 [ $verb ]&&printf "${blau}auswert($qdd)$reset\n";
 [ ! -f "$qd" ]&&{ printf "Datei $blau\"$qd\"$reset nicht gefunden. Höre auf.\n"; exit; }
@@ -170,6 +213,13 @@ case ${stamm,,} in *gs*) arzt=gs;; *tk*) arzt=tk;; *ah*) arzt=ah;; *) arzt=so;; 
 # sql="DELETE FROM dmprm WHERE arzt='"$arzt"' AND erstellt=STR_TO_DATE('"$erstellt"','%d.%m.%Y')";
 # mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 [ $verb ]&&printf "sed ... $txt \> ${ender}\n";
+# Bereinigt das rohe, fehlerbehaftete OCR-Ergebnis zu einer möglichst
+# regelmäßigen "Feld|Feld|Feld"-Zeile pro Patient/Vorgang, damit der awk-Block
+# weiter unten die Felder per split(...,"|") zuverlässig trennen kann. Jede
+# der folgenden s///-Regeln behebt einen konkreten, empirisch bei diesem
+# Reminder-Layout beobachteten OCR-Fehler (Klammern/Satzzeichen statt "|",
+# verrutschte Ziffern in Datumsangaben usw.) - deshalb ist jede einzeln
+# rechts kommentiert statt hier vorab zusammengefasst.
 sed '
 /41915300/!d;                          # Zwischenzeilen löschen
 s/|}/|/g;      # eckige Klammer nach | löschen
@@ -235,6 +285,26 @@ s/\(5851\) \(\0288\)/\1\2/;
 epo=$(awk 'BEGIN{srand();print -srand();}'); # $(date +%s); # -epoch als vorläufige Bezugs-ID
 [ $verb ]&&printf "epo: $blau$epo$reset\n";
 [ $verb ]&&printf "vor akw -F \n ... ${ender} \> ${awkd}\n";
+# Der folgende awk-Block ist in einfache Anführungszeichen gepackt (Trick
+# '\'' für ein eingebettetes '); Kommentare dazu deshalb gesammelt hier statt
+# zwischen den Zeilen, um die Quote-Zählung nicht zu gefährden:
+#   - split($0,ar,"|") zerlegt die von sed vorbereitete Zeile in Nachname,
+#     Vorname (ar[1] via Komma gesplittet), Geburtsdatum (ar[2]), eine
+#     Patienten-/Versichertennummer-Gruppe (ar[3]) sowie Dokuart (ar[4]) und
+#     Dokudatum (ar[5]).
+#   - Weil OCR-Felder oft um eine Position verrutschen, wird re[1] danach
+#     heuristisch nach Länge/Zeichentyp interpretiert (Patientennummer vs.
+#     Versichertennummer) und weiter unten ("if (1) {...}") zusätzlich
+#     geprüft, ob das Dokudatum irrtümlich in "dokuart" gelandet ist.
+#   - Die gsub/gensub-Kette auf "gebdat"/"dokudat" korrigiert typische
+#     OCR-Ziffernverwechslungen in Datumsangaben (z.B. "14."->"11.",
+#     führende "4"/"9" statt "1"/"0").
+#   - Am Ende wird die REPLACE-INTO-Zeile sofort per system() gegen MariaDB
+#     ausgeführt (nicht erst gesammelt wie in dmprm.sh); "npid" wird direkt
+#     per SELECT MIN(pat_id) FROM namen mit OR-verknüpften Bedingungen
+#     (Pat_id/Nachname/Vorname/Geburtsdatum) mitbestimmt. Die weiter unten
+#     auskommentierten UPDATE-Statements sind alternative, nicht mehr aktive
+#     Nachbesserungsversuche für pat_id aus einer früheren Auswertung (Q2/25).
 awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" -v epo="$epo" '
 function trim(str) {
        # remove whitespaces begin of str and end of str
@@ -338,6 +408,12 @@ ausg2="$(mariadb --defaults-extra-file=~/.mariadbpwd quelle -e'SELECT COUNT(0) F
 }
 } # auswert
 
+# Zweite Einlese-Variante für Reminder-PDFs MIT brauchbarem Textinhalt
+# (also ohne OCR-Pipeline, direkt per pdftotext) - inhaltlich nah an
+# dmprm.sh:auswert(), aber mit eigener SQL-Feldreihenfolge/-Zuordnung und nur
+# über raussuch() aufgerufen (nicht direkt aus dem Einzeldatei-Modus). Anders
+# als bei dmprm.sh wird "$qd" hier OHNE ".pdf" übergeben und die Endung selbst
+# angehängt (pdf="$qd".pdf).
 ausw2() {
 [ $verb ]&&printf "${blau}ausw2($qdd)$reset\n";
 pdf="$qd".pdf;
@@ -358,6 +434,21 @@ if test -f "$pdf"; then
   epo2=$(date +%s);
   [ $verb ]&&printf "epo2: $blau$epo2$reset\n";
   [ $verb ]&&printf "pdf: $blau$pdf$reset\n";
+  # Wie in dmprm.sh in einfache Anführungszeichen mit '\'' -Trick gepackt,
+  # deshalb auch hier der Kommentar gesammelt davor:
+  #   - "art" (0 Fehler/Default,1 berücksichtigt,2 eingegangen) und "vsw"
+  #     (TN/ED/FD-Kurzform vor dem Quartal) werden wie in dmprm.sh aus den
+  #     Überschriftszeilen ("Bitte ...", "berücksichtigte/eingegangene
+  #     Dokumentationen") abgeleitet; anders als dort startet mit "/Bitte /"
+  #     jede neue Bitte-Zeile art/vsw explizit zurückgesetzt.
+  #   - Die Datenzeile beginnt mit der BSNR "641915300"; nach Normalisierung
+  #     auf Unterstriche liefert split($0,ar,"_") BSNR, "Nachname,Vorname",
+  #     Geburtsdatum, Versichertennummer, Kasse, Dokuart(-teile), Dokudatum
+  #     und Quartal/Jahr.
+  #   - Die abschließende INSERT-INTO-Zeile ermittelt "npid" über eine
+  #     mehrstufige COALESCE-Kette (erst exakter Name+Geburtsdatum-Treffer,
+  #     dann zunehmend lockerere Kriterien bis hin zu nur Geburtsdatum) statt
+  #     der RLIKE-Fuzzy-Suche aus dmprm.sh.
   awk -F " " -v arzt="$arzt" -v erstellt="$erstellt" -v epo="$epo" -v epo2="$epo2" -v pdf="$pdf" '
   BEGIN {
     zl=0;
@@ -438,6 +529,16 @@ else
 fi
 } # ausw2
 
+# Ohne Aufrufparameter aufgerufener Hauptzweig (kein einzeln=1): sucht in
+# zwei Durchläufen nach neuen Reminder-PDFs und liest sie ein.
+#   1. Durchlauf: bereits nach $qvz einsortierte, im Dateinamen mit " TK "/
+#      " GS "/" AH " gekennzeichnete PDFs (=schon einer Ärztin/einem Arzt
+#      zugeordnet), die noch nicht in dmpeinl stehen -> auswert() (OCR-Pfad).
+#   2. Durchlauf: alle sonstigen "*reminder*.pdf" in $qp (frisch angekommen)
+#      und $qvz (noch offene), die noch nicht in dmpeinl stehen bzw. bei
+#      gesetztem $lneu auch bereits eingetragene -> ausw2() (Text-Pfad);
+#      anschließend werden PDF+Nebendateien von $qp nach $qvz verschoben,
+#      damit $qp nur unbearbeitete Dateien enthält.
 raussuch() {
 #  altverb=$verb;
 #  verb=;

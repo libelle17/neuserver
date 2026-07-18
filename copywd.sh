@@ -1,4 +1,10 @@
 #!/bin/zsh
+# copywd.sh - vollständige Sicherung auf das externe USB-Laufwerk
+# "MyPassport" (Western-Digital-Platte, Mountpunkt /amnt/MyPassport);
+# gleicher Aufbau wie copyseag.sh/copytoshz.sh/copyverb.sh (sourct
+# incopy.sh, sichert dieselben /DATA-Unterpfade, /opt/turbomed,
+# /var/spool/fax, /root/bin, ausgewählte /etc-Dateien und /var/lib/mysql).
+# Läuft bis zum Ende durch. Aufruf ohne Parameter.
 PNAME=MyPassport
 Z=/amnt/$PNAME
 . incopy.sh;

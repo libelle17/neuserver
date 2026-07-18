@@ -1,5 +1,12 @@
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# stutze.sh - Generationen-Rotation für alte SQL-Dumps unter /DATA/sql
+# (verschiebt aussortierte Dateien nach /DATA/sqlloe statt sie zu löschen).
+# Definiert nur vorgaben()/ermittledatum() für den gemeinsamen Rotations-
+# Motor in instutz.sh (dort gesourct, s. dessen Kopfkommentar für den
+# genauen Ablauf) - Muster "*.sql*" (auch komprimierte Varianten), behält
+# ab 730 Tagen nur noch 1/Jahr (Januar), ab 182 Tagen nur noch 1/Monat (am
+# 1.), ab 15 Tagen 4/Monat (1./8./15./22.), ab 2 Tagen 1/Tag; Namen mit
+# "-dp-" im Dateinamen werden nie aussortiert. Aufruf: stutze.sh [-v]
+# [-h|--hilfe] (Parameter werden von instutz.sh:commandline() ausgewertet).
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis

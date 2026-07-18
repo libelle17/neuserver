@@ -17,6 +17,16 @@
 # Vollstaendige, aktuelle Parameterliste: bulinux.sh -h (Hilfetext weiter
 # unten im Skript, dynamisch ausgegeben - hier nicht duplizieren, sonst
 # laeuft er auseinander).
+#
+# Das Skript beendet sich nach dem MariaDB-Block immer explizit mit
+# "exit 1" (falls _bu_fehler gesetzt ist) oder sonst "exit 0". Der
+# komplette Rest der Datei danach - weitere kopiermt()-Aufrufe fuer
+# gerade/ungera, ein altes var/lib/mysql_1-rsync, scp des Protokolls, ein
+# los.sh-mysqlneu-Aufruf, UND das dortige abschliessende "gutenacht;"
+# (faehrt per pruefpc() geweckte PCs wieder herunter) - ist damit TOTER
+# CODE aus einer aelteren Fassung und wird nie erreicht. Falls das
+# Herunterfahren geweckter PCs noch benoetigt wird, muesste ein
+# "gutenacht;" VOR das abschliessende "exit 0"/"exit 1" gezogen werden.
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1ur, buhost festlegen # ./bul1.sh
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;

@@ -1,6 +1,38 @@
 #!/bin/dash
-# sucht in p:\eingelesene, aber nicht in die Karteikarten importierte Dokumente und kopiert sie in p:\ohneImportNachweis
-
+# pruefimp.sh - sucht in p:\eingelesen (/DATA/Patientendokumente/eingelesen)
+# nach Dokumenten, für die sich kein Nachweis eines erfolgten
+# Turbomed-Imports in die Patienten-Karteikarte finden lässt.
+# HINWEIS: Der ursprüngliche Kurzkommentar ("... kopiert sie in
+# p:\ohneImportNachweis") beschreibt eine Kopieraktion, die dieses Skript
+# tatsächlich NICHT (mehr) ausführt - $VzKp wird zwar angelegt und dessen
+# Rechte gesetzt, aber es findet keine "cp"/"mv" dorthin statt; nicht
+# gefundene Dateien werden nur in $PrtDt protokolliert und auf dem
+# Bildschirm gemeldet (Gegenstück pruefimpn.sh verschiebt/löscht dagegen
+# tatsächlich Dateien aus $VzKp, wenn sie doch noch gefunden werden).
+#
+# Ablauf je zu prüfender Datei (find-Liste ab $ab, s. commandline()):
+#   1. Suche in Tabelle "briefe" nach einem gleichnamigen Datenbankeintrag
+#      (Pfad-Umrechnung Windows-UNC -> /DATA/turbomed); bei Treffer(n)
+#      Inhaltsvergleich per diff gegen die jeweilige Datei auf der Platte.
+#   2. Unabhängig davon zusätzlich eine Größe+Zeitfenster-Suche (Toleranz
+#      -1/+5 Tage ums Änderungsdatum) unter $VzZS (/DATA/turbomed/
+#      Dokumente) nach Dateien, deren Name mit den ersten 3 Zeichen des
+#      Namens beginnt ("Fax" als Präfix wird dabei ignoriert, da zu
+#      generisch), ebenfalls per diff geprüft und zusätzlich gegen die
+#      Tabelle "briefe" rückbestätigt.
+#   Ergebnis pro Datei: eindeutig gefunden (in DB und/oder per Größe+Datum
+#   inhaltsgleich), nur größenähnlich aber inhaltlich verschieden (wird als
+#   Verdachtsfall mit stat-Vergleich ausgegeben), oder gar nicht gefunden
+#   (-> Protokolleintrag in $PrtDt, Zähler $fnr).
+#
+# Aufruf: pruefimp.sh [-ab JJJJMMTT] [-jahr JJJJ] [-v[v...]] [-h|--hilfe]
+#   -ab    nur Dateien ab diesem Datum berücksichtigen (Vorgabe: Datum aus
+#          dem Namen der zuletzt erzeugten "dateiliste_*"-Datei in
+#          $listeV, also seit dem letzten Lauf)
+#   -jahr  durchsucht nur $VzNG/<Jahr> statt des kompletten $VzNG
+#   -v     ausführlichere Ausgabe, mehrfach angebbar für mehr Detailtiefe
+#          (ab -vv werden auch die intern gebauten find/mariadb-Befehle
+#          angezeigt)
 vorgaben() {
   # vom Programmaufruf abhängige Parameter
   gruen="\033[0;32m"
@@ -78,6 +110,18 @@ commandline() {
 vorgaben;
 commandline "$@"; # alle Befehlszeilenparameter übergeben
 printf "suche in $blau$VzNG$reset ..."
+# Die folgende, sehr lange -iregex-Ausschlussliste blendet Dateien aus, die
+# erfahrungsgemäß NIE echte patientenbezogene Dokumente sind (Rundschreiben,
+# Werbung, Formulare/Vorlagen, Verbandsmaterial-Bestellungen, Praxis-interne
+# Organisation/Fortbildungen, Bilddateien aus der Gerätesteuerung usw.) -
+# jedes Wort/Fragment darin ist ein bei früheren Läufen als Fehlalarm
+# erkanntes Namensmuster; ohne diese Liste würde die Prüfung in der Masse
+# solcher Nicht-Patientendokumente untergehen. Der zusätzliche Klammer-Test
+# "-not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*'" schließt (UND-
+# verknüpft mit der Ausschlussliste) zusätzlich Dateien mit "an fax" im
+# Namen aus (vermutlich Faxversand-Protokolle/-Deckblätter, keine
+# Patientendokumente) - AUSSER ihr Name enthält zugleich "arztbrief", dann
+# bleiben sie trotz "an fax" im Namen in der Prüfung.
 find "$VzNG" -mindepth 1 -maxdepth 3 -newermt $ab -type f -not -iregex '.*\(abrechnungssem\|azubi\|anforderung\|bei geräten\|blankoform\|dmp-daten\|diabetes\(tag\|mittel\)\|dokumentation.*htm\|einladung\|experten forum\|fortbildung\|haus\(ärzteverb\|arztvertr\)\|patientenbefrag\|pipettieren\|qualitätskrit\|schweigepflichts+entbindung\|verbandsstoffe\|vhk an\)[^/]*$\|.*\.wav\|.*\.nix\|.*/\(pict\|img\).*jpg\|.*/befund_.*\.pdf\|plan .*\|.*/[0-9. ()]*.\.\(tif\|jpg\)\|.*/\(192.168\|7komma7\|abrechnung\|acots\|act\(os\|rapid\)\|ada \|adipositas\|advan[tz]ia\|afghanistan\|aida-studie\|äkd\|akag\|aktuell\|amd phenom\|amper\|anfrage\|angebot\|anleit\|anmeld\|antrag\|antwort\|aok \|apo-bank\|approbat\|artikel\|ärzt\|auf\(trag\|zug\)\|aus\(geschrieben\|richt\|stehen\)\|autofax\|avoid\|avp\|axa\|b2b\|bad heilbrunn\|bahn\|barmenia\|base \|basin\|bay\(\.\|eris\)\|befr\(agu\|eiu\)\|behand\|begleit\|berlin\( ak\|sulin\)\|brmitschnitt\|canon\|dmp\|blahusch\|easd\|ekf \|empfohlen\|erinnerung\|erklärung\|euromed\|europe\|exenatide\|fachverband\|fahrrad\|falsche\|fehlende überw\|ffh \|filelist\|finanztest\|force 3d\|fortknox\|gkm \|gkv \|gloxo\|glucosepent\|goä\|hävg\|ing-\|motivat\|patmit\|predictive\|programme\|prüfung\|pumpengutachten\|patient\|patmit\|schulungs\|sidebar\|unbekannt\)[^/]*$' \( -not -iregex '.*an fax.*' -o -iregex '.*arztbrief.*' \) -name '*'|sort > "$liste" 
 printf "\r$blau%d$reset zu untersuchende Dateien ab $blau$ab$reset gefunden, bearbeite sie ...\n" $(wc -l "$liste"|cut -f1 -d' ')
 # printf "Liste der in den Karteikarten fehlenden Dokumente: $blau$PrtDt\nnicht gefunden:$reset\n"

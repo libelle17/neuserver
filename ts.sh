@@ -1,4 +1,12 @@
 #!/bin/sh
+# ts.sh - wie treesize.sh (Größe der direkten Unterverzeichnisse/Dateien von
+# DIR, bleibt im selben Dateisystem, -x), aber mit Schwellwert-Filter: nur
+# Einträge, deren Größe mindestens $THRESHOLD_KB (aus einem optionalen
+# Parameter wie "-500M"/"-2G"/"-100k" abgeleitet) beträgt, werden
+# ausgegeben, alle in GB formatiert (keine automatische Einheitenwahl wie
+# bei treesize.sh). Aufruf: ts.sh [-<Zahl><k|K|m|M|g|G|t|T>] [<Verzeichnis>]
+# (beide Parameter optional, Vorgabe: kein Schwellwert, aktuelles
+# Verzeichnis), z.B. "ts.sh -500M /DATA".
 
 DIR="."
 THRESHOLD_KB=0

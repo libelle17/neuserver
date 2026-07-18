@@ -1,6 +1,49 @@
-<?php 
-
-class zutun_cls 
+<?php
+// anzeig.php - Kernseite des elektronischen Patienten-"Laufzettels"
+// (Hauptvariante; naher, älterer Verwandter: ianzeig.php, s. dessen
+// Kopfkommentar für die Unterschiede; historischer Vorläufer ohne Klasse:
+// tragein2.php, s. dort für die Grundidee der plz/vorb/behand/fertig-
+// Statusverzeichnisse). Erwartet die globalen Variablen $pat_id und
+// $telnr, die von der jeweils EINBINDENDEN, pro Patient/Besuch dynamisch
+// benannten Datei (nicht Teil dieses Repositories) vor dem Einbinden
+// gesetzt werden - siehe __construct() ganz unten in der Klasse.
+//
+// Klasse zutun_cls (statische Methoden, kein Instanzzustand außer den
+// zwei public-static-Feldern $basen/$copyq):
+//   tausch()/dotausch()  vertauschen zwei Aufgaben in Anzeige-Reihenfolge
+//                        UND in der Datenbank (Auf-/Ab-Pfeil-Buttons)
+//   getdb()              lädt beim Patientenwechsel alle "zutun"-Einträge
+//                        des Tages sowie aus der "aktiv"-Tabelle, seit
+//                        wann der Patient anwesend/bei Vorbereiter(in)/
+//                        bei Behandler(in) ist (anwseit/vorseit/behseit)
+//   zeiggeschichte()     zeigt bei Bedarf die komplette bisherige
+//                        "zutun"-Historie dieses Patienten an (nicht nur
+//                        heute)
+//   tragein()            fügt eine neue Aufgabe hinzu bzw. reaktiviert
+//                        eine gelöschte gleichlautende
+//   abfrage()            zentraler mysqli-Query-Wrapper mit Fehleranzeige
+//   verarbeite()          "Teil 1": verbindet zur DB (legt "zutun"/
+//                        "aktiv" bei Bedarf an), ermittelt/aktualisiert
+//                        DMP-Status ($_SESSION['dmpp']/dmpa/dmpk/kdmp,
+//                        über eine mehrstufige Unterabfrage gegen namen/
+//                        dmperg/diagnosen/kassenliste) und Rückruf-Status
+//                        (telnr/telgep-Tabelle, "seit >92 Tagen kein
+//                        Rückruf"), dann kompletter POST-Dispatch für
+//                        Statuswechsel anwesend/Vorbereiter(in)/
+//                        Behandler(in) inkl. Verschieben der pro-Patient-
+//                        Datei zwischen plz/vorb/behand/fertig (wie
+//                        tragein2.php) sowie Aufgaben-Buttons
+//                        (erledigt/löschen/hoch/runter/ändern/Kommentar)
+//   gibaus()             "Teil 2": reine HTML-Ausgabe von Aufgabenliste,
+//                        Statusknöpfen und - über i1S.php eingebunden -
+//                        den DMP-Kriterien-Buttons
+//   __construct()        Einstiegspunkt: verarbeite() dann gibaus()
+// Am Dateiende: $zutun = new zutun_cls() (führt beim Einbinden sofort den
+// kompletten Ablauf aus), gefolgt von statischem HTML für die
+// Autocomplete-<datalist>s (li0/li1/li2, je nach Workflow-Phase) und
+// JavaScript (Tastenkürzel Alt+T öffnet einen benutzerdefinierten
+// "oeffneverz:"-URL-Handler für den Patientenordner, u.a.).
+class zutun_cls
 {
   public static $basen; // =ltrim(basename("..".$_SERVER['PHP_SELF']));
   public static $copyq; // ="../plz/".$basen;

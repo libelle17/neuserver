@@ -1,6 +1,11 @@
 #!/bin/sh
-# sichert gezippte Datenbanken nach DBBack, zuletzt geändert 8.2.22
-# Sicherung zwischen labor3 und linux1ur s. netzverbind
+# 7zdb.sh - sichert gezippte Datenbanken nach DBBack, zuletzt geändert 8.2.22
+# Sicherung zwischen labor3 und linux1ur s. netzverbind. Aktualisiert (7z u)
+# jeweils ein Archiv pro Datenquelle unter /DATA/DBBack mit Tages- bzw.
+# Monatsdatum im Namen: AccuChek-Diaries, Diabass(Pro)/diabassdata,
+# custobase.mdb+Ekg/Blutdruck/LuFu-Verzeichnisse (monatlich) und
+# CareLink-Daten; setzt am Ende Eigentümer/Rechte für $SichV zurück.
+# Aufruf ohne Parameter; erfordert gemountetes /DATA.
 DBV=/DATA/Patientendokumente/Datenbanken/
 DBV2="/DATA/eigene Dateien/"
 SichV=/DATA/DBBack

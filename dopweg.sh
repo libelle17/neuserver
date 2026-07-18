@@ -1,4 +1,11 @@
 #/bin/bash
+# dopweg.sh - bereinigt Fehlimporte unter /DATA/Patientendokumente/dok:
+# Windows/Turbomed hängt bei einem Datei-Konflikt automatisch " (30)" (o.ä.
+# Zahl) an den Dateinamen an - findet also eine Datei mit "(30)" im Namen,
+# deren Basisdatei (ohne " (30)") dasselbe Änderungsdatum und dieselbe
+# Größe hat (also ein reiner Doppelimport ist), wird sie (und alle
+# weiteren Varianten " (1)".." (100)" mit demselben Datum/derselben
+# Größe) zu "zulöschen ..." umbenannt und danach gelöscht.
 # -e: echt umbenennen/löschen; ohne -e (Standard): Trockenlauf, zeigt nur an,
 # was geschehen würde. Wird obecht vom aufrufenden Mutterskript (bumo.sh)
 # durchgereicht - läuft bumo.sh auf linux0/linux7, wird dieses Skript dort

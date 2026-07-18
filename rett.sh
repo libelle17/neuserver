@@ -1,4 +1,20 @@
 #!/bin/bash
+# rett.sh - "Rettungs"-Sicherung wichtiger Systemdateien/-verzeichnisse
+# (nicht der Patientendaten selbst) nach /DATA/rett, für den Fall eines
+# Systemausfalls: /etc/{samba,hosts,vsftpd*.conf,my.cnf,fstab,capisuite,
+# sysconfig/isdn,openvpn}, /usr/lib64/capisuite, /opt/turbomed (ohne
+# Papierkorb, mit --delete), diverse /root-Dateien (.vimrc, Credentials,
+# bin, crontabakt), sowie /mnt und /amnt (nur oberste Ebene, -x = bleibt im
+# Dateisystem) und /obsl*/ungera. Ein testweiser Komplettabgleich nach
+# /DAT3 ist über "if [ 0 -eq 1 ]" fest deaktiviert. Läuft nur, wenn /DATA
+# gemountet ist; setzt am Ende Eigentümer/Rechte für /DATA/rett zurück.
+# Aufruf ohne Parameter. ACHTUNG: die Bedingung "test [[ $HOST == "linux4" ]]"
+# oben ist fehlerhaft (kein echtes [[...]], sondern [[/==/]] als einzelne,
+# an "test" übergebene Wörter) - "test" bricht dabei immer mit "Zu viele
+# Argumente" ab (getestet, unabhängig vom Wert von $HOST), der Exitcode ist
+# dadurch immer ungleich 0. Das Mounten von /hDATA und /DATA in diesem
+# if-Zweig wird deshalb NIE ausgeführt, unabhängig vom Hostnamen - die
+# beiden mount-Zeilen sind praktisch toter Code.
 if test [[ $HOST == "linux4" ]]; then
  mount /hDATA
  mount /DATA

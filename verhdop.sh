@@ -1,4 +1,9 @@
 #!/bin/zsh
+# verhdop.sh - "verhindere Doppelaufruf": führt das übergebene Kommando samt
+# Parametern nur aus, wenn nicht schon ein Prozess mit genau dieser
+# Kommandozeile läuft (Prüfung per ps/grep auf den vollständigen "$*"-String,
+# der eigene Aufruf wird per "grep -v $0" herausgefiltert). Aufruf:
+# verhdop.sh <Kommando> [Parameter...], z.B. "verhdop.sh rsync -av /a /b".
 rot="\033[31m"
 blau="\033[34m"
 schwarz="\033[0m"

@@ -1,4 +1,16 @@
-<?php 
+<?php
+// i3S.php - initialisiert für dieselben DMP-Kriterien wie i2S.php (plus
+// "telnr") einen parallelen Satz von $_SESSION-Schaltern mit "ob"-Präfix
+// (z.B. obGw, obTaille) auf 0 - genau die Flags, die i1S.php als
+// Sichtbarkeits-Schalter pro Kriterium abfragt. Anders als i2S.php/
+// i0S.php/i1S.php wird diese Datei von KEINER anderen Datei in diesem
+// Repository per include/require eingebunden (anzeig.php/ianzeig.php
+// binden nur i0S.php/i1S.php/i2S.php ein) - wirkt wie ein verwaister,
+// nicht mehr verdrahteter Gegenpart. Praktische Folge (s. Kopfkommentar
+// von i1S.php): ohne eine andere, hier nicht auffindbare Quelle für diese
+// "ob*"-Flags bleiben sie in der aktuellen Anwendung durchgehend
+// undefiniert/falsy, wodurch i1S.php aktuell keinen der DMP-Kriterien-
+// Buttons ausgibt.
  $_SESSION['obtelnr']=0;
  $_SESSION['obGw']=0;
  $_SESSION['obTaille']=0;

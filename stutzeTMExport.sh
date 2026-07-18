@@ -1,5 +1,12 @@
-# $1 = Befehl, $2 = Farbe, $3=obdirekt (ohne Result, bei Befehlen z.B. wie "... && Aktv=1" oder "sh ...")
-# in dem Befehl sollen zur Uebergabe erst die \ durch \\ ersetzt werden, dann die $ durch \$ und die " durch \", dann der Befehl von " eingerahmt
+# stutzeTMExport.sh - Generationen-Rotation für alte komprimierte
+# BDT-Exporte unter "/DATA/eigene Dateien/TMExport" (verschiebt
+# Aussortiertes nach /DATA/TMExportloe). Definiert nur vorgaben()/
+# ermittledatum() für instutz.sh (s. dessen Kopfkommentar) - Muster
+# "*.BDT.7z", nur mindestens 6M große Dateien (mgroe), nur zwei Runden: ab
+# 365 Tagen 1/Monat (am 1.), ab 30 Tagen 4/Monat (1./8./15./22.); keine
+# Jahres- oder Tages-Runde (kein gr0/gr3). Das Datum wird hier NICHT aus
+# dem Dateinamen, sondern aus dem echten Änderungszeitstempel der Datei
+# ermittelt (date -r). Aufruf: stutzeTMExport.sh [-v] [-h|--hilfe].
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
   # Suchverzeichnis

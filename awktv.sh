@@ -1,5 +1,16 @@
 #!/usr/bin/awk -f
-# korrigiert oder ergänzt die aufgerufene Datei um Einträge in awktv.inc
+# awktv.sh - korrigiert oder ergänzt eine "Name = Wert"-Konfigurationsdatei
+# (Eingabe über normale awk-Datei-Argumente) anhand einer Liste von
+# Soll-Werten, die aus der (gawk-spezifischen) @include-Datei "awktv.inc"
+# (Arrays N[]=Namen, W[]=Werte, muss im selben Verzeichnis liegen) geladen
+# wird: für jede Eingabezeile "Name = Wert" wird geprüft, ob der Name in
+# N[] vorkommt - stimmt der Wert überein, wird die Zeile unverändert
+# ausgegeben, sonst der korrigierte Soll-Wert; unbekannte Namen werden
+# unverändert durchgereicht. Am Ende werden alle Namen aus N[], die in der
+# Eingabedatei gar nicht vorkamen, zusätzlich angehängt. Aufruf:
+# gawk -f awktv.sh <datei> (erfordert gawk wegen @include; die Ausgabe muss
+# vom Aufrufer in die Zieldatei umgeleitet werden, awktv.sh schreibt nicht
+# selbst in die Datei zurück).
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function oA(s) {if (s~"\".*\""||s~"'.*'") return substr(s,2,length(s)-2);else return s}

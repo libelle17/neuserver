@@ -1,4 +1,21 @@
 #!/bin/dash
+# copyseagg.sh - neuere/schlankere Sicherung auf das externe USB-Laufwerk
+# "Seagate Backup Plus Drive" (Mountpunkt /amnt/SeagateBackupPlusDrive),
+# anders als copyseag.sh NICHT über incopy.sh/rsync direkt, sondern über die
+# aus bugem.sh gesourcte Funktion kopiermt() (dieselbe Kopierlogik wie in
+# den bu*.sh-Backup-Skripten). Aktiv ist nur der erste for-Durchlauf (u.a.
+# Patientendokumente, turbomed, rett/ungera, eigene Dateien/DM+TMExport+
+# Angiologie, shome/gerald/Schade) - danach beendet ein "exit;" das Skript.
+# Der komplette Rest der Datei (zweiter for-Durchlauf, tukopier()/
+# tukopierol()/datakopier()-Definitionen, ein weiterer "if false;"-Block)
+# ist TOTER CODE, der nie erreicht wird - offenbar ein älterer, nicht
+# aufgeräumter Anlauf mit teils unvollständigen Platzhalter-Aufrufen
+# (wörtliches "..." statt echter Parameter). Dieser Rest enthält sogar einen
+# echten Syntaxfehler (ein "done" ohne passendes "do", schon vor dieser
+# Kommentierung vorhanden) - "dash -n"/"bash -n" melden ihn deshalb, er wirkt
+# sich aber nicht aus: dash/bash parsen und führen Anweisung für Anweisung
+# aus, sodass das frühere "exit;" schon vorher greift (mit einem
+# Minimalbeispiel nachgestellt/bestätigt). Aufruf ohne Parameter.
 USB=Seagate\ Expansion\ Drive
 logf=/var/log/$USB.log
 #ZoD=/amnt/seag

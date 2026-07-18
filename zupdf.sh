@@ -1,4 +1,11 @@
 #!/bin/dash
+# zupdf.sh - wandelt Office-/sonstige Dokumente per "soffice --headless
+# --convert-to pdf" in PDF um (Ausgabeverzeichnis = Quellverzeichnis oder
+# optionales $2), übernimmt den Änderungszeitstempel der Quelle auf die
+# PDF (touch -r) und verschiebt bei Angabe von $2 die Originaldatei
+# anschließend dorthin. Aufruf: zupdf.sh <Datei-oder-Verzeichnis>
+# [<Zielpfad für Original>] - bei einem Verzeichnis werden alle direkt
+# darin enthaltenen Dateien (nicht rekursiv) einzeln umgewandelt.
 ROT_="\033[31m"
 BLAU_="\033[34m"
 SCHWARZ_="\033[0m"

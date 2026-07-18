@@ -1,4 +1,15 @@
 #!/bin/dash
+# pdfumw.sh - erzeugt zu PDF-Dateien eine durchsuchbare OCR-Kopie:
+# ("_ocr.pdf"-Datei per ocrmypdf, Erkennungssprachen deu+eng+osd) sowie
+# vorab eine reine OCR-Textdatei (per gs->TIFF->tesseract, "_ocr.txt"),
+# falls letztere noch nicht existiert (dient wohl der schnellen
+# Volltextsuche ohne die PDF selbst durchsuchen zu müssen). Überspringt
+# bereits erzeugte Ausgaben. Wird von dopdfumw.sh so aufgerufen, dass
+# nicht zwei Instanzen gleichzeitig laufen. Aufruf: pdfumw.sh
+# <Datei-oder-Verzeichnis mit *.pdf> [<Zielpfad für die Originaldatei>] -
+# bei einem Verzeichnis werden alle direkt darin enthaltenen *.pdf
+# (nicht rekursiv, bereits vorhandene "*_ocr.pdf" werden nur noch
+# verschoben statt erneut bearbeitet) einzeln behandelt.
 blue_msg() { echo -e "\\033[34;1m${@}\033[0m\c"; }
 yell() { echo -e "\033[33m"; }
 ROT_="\033[31m"

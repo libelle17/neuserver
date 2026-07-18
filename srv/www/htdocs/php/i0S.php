@@ -1,4 +1,12 @@
-<?php 
+<?php
+// i0S.php - wird von anzeig.php per include eingebunden: POST-Handler für
+// die DMP-Checkliste (s. i2S.php). Eine lange if/elseif-Kette prüft, ob
+// im aktuellen POST-Request genau eines der bekannten Kriterien-Felder
+// gesetzt ist (jeweils der Name eines angeklickten Checkbox-/Button-
+// Feldes im Formular), und schaltet dessen $_SESSION-Wert um (negiert
+// ihn) - es wird also pro Aufruf höchstens EIN Kriterium umgeschaltet,
+// entsprechend genau einem Klick im Formular. "IF"/"ELSE" in Großschreibung
+// ist in PHP gültig (Schlüsselwörter sind case-insensitiv), aber unüblich.
  IF(isset($_POST['Gw'])) {
     $_SESSION['Gw']=!$_SESSION['Gw'];
  } ELSE  IF(isset($_POST['Taille'])) {

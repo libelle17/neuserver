@@ -1,9 +1,17 @@
 #!/bin/bash
-# 21.11.2010
+# BDTkompr.sh - 21.11.2010: komprimiert alte BDT-Exportdateien unter
+# "/DATA/eigene Dateien/TMExport" (*.BDT/*.bdt) einzeln per 7z (mit
+# Passwort aus /root/.7zpassw), sobald sie mindestens $mint (10) Tage alt
+# sind, prÃ¼ft danach die Archiv-IntegritÃ¤t (7z t) und verschiebt bei
+# Erfolg das Original nach $lvz (Papierkorb-Pfad); ist das Archiv defekt,
+# wird stattdessen das (fehlerhafte) Archiv selbst in den Papierkorb
+# verschoben, damit beim nÃ¤chsten Lauf ein neuer Versuch erfolgt. Im
+# zweiten Teil werden Dateien im Papierkorb-Pfad, die mindestens $minl
+# (23) Tage alt sind, endgÃ¼ltig gelÃ¶scht. Aufruf ohne Parameter.
 vz="/DATA/eigene Dateien/TMExport"
 lvz="/DATA/Papierkorb/eigene Dateien/TMExport"
 declare -i -r mint=10 # Mindesttage bis zum Komprimieren
-declare -i -r minl=23 # Mindesttage bis zum Löschen
+declare -i -r minl=23 # Mindesttage bis zum Lï¿½schen
 . /root/.7zpassw
 # declare -i alter
 # declare -i tage
@@ -24,23 +32,23 @@ for datei in  "${Dateien[@]}";  do
    echo "  ""$zdatei" existiert nicht.
    if [ $tage -ge $mint ]; then     # wenn Datei alt genug
      ionice -c3 nice -n19 /usr/bin/7z a  "$zdatei" "$datei" -p$passw  -mx=9 -mtc=on -mmt=on      # komprimieren
-     touch	 -c -r "$datei" "$zdatei"      # Änderungsdatum setzen
+     touch	 -c -r "$datei" "$zdatei"      # ï¿½nderungsdatum setzen
    fi
   fi
   if [ -f "$zdatei" ]; then      # wenn Datei (dann) existiert
    echo "  "$zdatei existiert.
-   ionice -c3 nice -n19 /usr/bin/7z t "$zdatei" -p$passw > /dev/null # Integrität testen
+   ionice -c3 nice -n19 /usr/bin/7z t "$zdatei" -p$passw > /dev/null # Integritï¿½t testen
    rv=$?
    if [ $rv = 0 ]; then
      echo "  ""$zdatei" in Ordnung
      if [ "$tage" -ge $mint ];then	 	 
-      echo "  "´$datei´ wird nach ´$lvz´ verschoben
+      echo "  "ï¿½$dateiï¿½ wird nach ï¿½$lvzï¿½ verschoben
        mv "$datei" "$lvz"
      fi	  
      break	 
    else
      echo "  ""$zdatei" nicht in Ordnung! rv: $rv
-     echo "  "´$zdatei´ wird nach ´$lvz´ verschoben
+     echo "  "ï¿½$zdateiï¿½ wird nach ï¿½$lvzï¿½ verschoben
      mv "$zdatei" "$lvz"
    fi 
   else
@@ -49,7 +57,7 @@ for datei in  "${Dateien[@]}";  do
  done 
 done
 echo ""
-# ganz alte aus dem Papierkorb löschen
+# ganz alte aus dem Papierkorb lï¿½schen
 Dateien=("$lvz"/*)
 for datei in "${Dateien[@]}"; do
  echo "  "`ls --full-time "$datei"`:

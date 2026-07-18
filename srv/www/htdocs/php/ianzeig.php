@@ -1,5 +1,25 @@
-<?php 
-class zutun_cls 
+<?php
+// ianzeig.php - naher Zwilling von anzeig.php: dieselbe Klasse zutun_cls
+// mit denselben Kernmethoden (tausch()/dotausch()/getdb()/
+// zeiggeschichte()/tragein()/abfrage()/verarbeite()/gibaus()/
+// __construct()) für denselben elektronischen Patienten-"Laufzettel"
+// (Aufgabenliste "zutun", Statuswechsel anwesend/Vorbereiter(in)/
+// Behandler(in) mit Verschieben der pro-Patient-Datei zwischen den
+// Verzeichnissen plz/vorb/behand/fertig, DMP-Status- und
+// Rückruf-Tracking) - siehe den ausführlichen Kopfkommentar in anzeig.php
+// für die gemeinsame Grundarchitektur.
+//
+// Konkreter, geprüfter Unterschied: verarbeite() enthält hier zusätzlich
+// einen Block, der beim Aufruf Verzeichnis /DATA/Patientendokumente/Listen
+// nach noch nicht verarbeiteten "*Covid*.csv"-Dateien durchsucht und deren
+// Zeilen in die (hier zusätzlich angelegten) Tabellen covdat/covid
+// importiert - offenbar ein Rest der Corona-Impflisten-Verwaltung, den
+// anzeig.php nicht (mehr) enthält. Über den reinen Diff hinaus (rund 500
+// abweichende Zeilen zwischen beiden Dateien) wurde hier nicht jede
+// Einzelabweichung nachverfolgt - wer diesen Code pflegt, sollte klären,
+// welche der beiden Dateien aktuell tatsächlich verlinkt/aufgerufen wird
+// und ob die jeweils andere noch gebraucht wird.
+class zutun_cls
 {
   public static $basen; // =ltrim(basename("..".$_SERVER['PHP_SELF']));
   public static $copyq; // ="../plz/".$basen;

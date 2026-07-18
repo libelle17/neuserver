@@ -1,4 +1,16 @@
 #!/bin/dash
+# dmp_vers.sh - ältere Zwischenversion von dmprm.sh: fast identischer Aufbau
+# (commandline()/tabellen()/auswert() zum Einlesen eines DMP-Reminder-PDFs
+# in die Tabelle dmprm), aber OHNE Verzeichnis-Durchlauf und OHNE die
+# "dateidat"-Spalte in der SQL-Tabellendefinition (nur "erstellt" als
+# Bezugsdatum, wie auch in dmp.sh) - siehe dmprm.sh für die aktuelle,
+# ausführlich kommentierte Fassung mit denselben Grundfunktionen.
+# Am Dateiende ist $qd/$dt fest auf eine einzelne, konkrete Datei
+# ("DMP-Reminder 21.4.26") verdrahtet - dieses Skript ist damit kein
+# allgemein wiederverwendbares Werkzeug mehr, sondern ein einmaliger
+# Schnappschuss zum Einlesen genau dieser einen Datei. Aufruf: dmp_vers.sh
+# [-v|--verbose] [-nd|--neudd] [-h|--hilfe] (Parameter wie bei dmprm.sh,
+# aber ohne -n/-ln, da kein Verzeichnis-Durchlauf existiert).
 blau="\033[1;34m";
 lila="\033[1;35m";
 dblau="\033[0;34;1;47m";

@@ -1,7 +1,33 @@
 #!/bin/sh
-# versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken; 
+# versucht, einen, mehrere oder alle PCs an der Fritzbox zu wecken;
 # zusammengeschrieben von/written together by: Gerald Schade 6.4.2019
 # verwendet Tr-064 zur Kommunikation mit der Fritzbox (zum Aufwecken angeschlossener PCs und ggf. vorherigem Abfragen deren hierfür nötigen MAC-Adressen)
+#
+# Aufruf: weckalle.sh [-neu] [-grue] [-nicht <PC1>[,PC2...]] [<PC1>[,PC2...]]
+#                     [-verbo <IF1>[,IF2...]] [-erl <IF1>[,IF2...]] [-zeig]
+#                     [-zeigu] [-scan] [-al] [-vi] [-v] [-h|--hilfe|--help]
+#   (die vollständige, laufend gepflegte Parameterreferenz mit Beispielen gibt
+#   das Skript selbst über "-h" bzw. "--help" aus, siehe commandline() unten -
+#   hier nur eine Kurzübersicht, um Doppelpflege/Drift zu vermeiden):
+#   [<PC1>[,PC2...]]  weckt nur die angegebenen PCs (Mac/IP/Hostname/Interface,
+#                     kommagetrennt) statt aller bekannten; bei reinen
+#                     MAC-Adressen ohne Geräteliste (schneller, s. obnurmac)
+#   -neu              fragt Fritzbox-Benutzer/-Passwort neu ab (s. authorize())
+#   -grue             weckt gründlicher (alle je gesehenen MACs zu einer IP)
+#   -nicht <...>      schließt die angegebenen PCs aus
+#   -verbo/-erl <...> verbietet/erlaubt nur bestimmte Interfaces
+#   -zeig, -zeigu     zeigt nur die (bzw. ungefilterte) Geräteliste an, statt
+#                     zu wecken
+#   -scan             scannt nur die Geräte (aktualisiert die Liste)
+#   -al               aktualisiert die Geräteliste seltener (s. $listenintervall)
+#   -vi               öffnet Gerätelisten und dieses Skript in vi
+#   -v                gesprächiger Modus
+#
+# Ablauf: vorgaben() setzt Pfade/Konstanten -> pruefsql() stellt sqlite3
+# sicher -> commandline() parst Parameter -> authorize() liest/erfragt die
+# Fritzbox-Zugangsdaten -> geraeteliste() aktualisiert bei Bedarf die vom
+# Fritzbox-Router bzw. per "ip neigh" bekannte Geräteliste -> wecken() sendet
+# über fragab()/tufrag() die eigentlichen TR-064-Weck-Kommandos.
 
 vorgaben() {
 # vom Programmaufruf abhängige Parameter
@@ -34,7 +60,7 @@ vorgaben() {
 # TR-064-Parameter für fragab(): für die beide Abfragen geraeteliste() und wecken()
 	controlURL=hosts
 	serviceType=Hosts:1
-  sda=0;
+  sda=0; # 1=sqlite3 verfügbar und wird für die Geräteliste (Tabellen ips/mac in $sdb) verwendet, 0=Fallback auf reine Textdatei $gesausdt (s. pruefsql())
   MUPR=$(readlink -f $0);
   sdb="${MUPR%/*}/weck.db";
 # Möglichkeiten von tr-064 anzeigen:

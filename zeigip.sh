@@ -1,4 +1,11 @@
 #!/bin/bash
+# zeigip.sh - scannt das lokale Subnetz 192.168.178.<startip>-<endip> per
+# "nmap -sP" (Ping-Scan) ab und schreibt eine Liste der antwortenden PCs
+# (Hostname + IP, aus der nmap-Ausgabe herausgeparst) in die Datei
+# "zeigip_<Zeitstempel>.txt" im aktuellen Verzeichnis. Aufruf: zeigip.sh
+# [<startip>] [<endip>] - beide optional und rein numerisch (nicht-
+# numerische bzw. fehlende Werte fallen auf 1 bzw. 255 zurück), z.B.
+# "zeigip.sh 100 150" für nur 192.168.178.100-150.
 verb=;
 blau="\033[1;34m";
 lila="\033[1;35m";

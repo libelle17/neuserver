@@ -1,4 +1,8 @@
 #/bin/bash
+# runter.sh - inhaltlich identisch zu frühstückspause.sh (fährt dieselbe
+# Liste von Windows-PCs der Praxis per Ping+SSH-shutdown herunter, s.
+# dort), nur unter einem allgemeineren Namen ("herunterfahren" statt an
+# eine bestimmte Pause gebunden). Aufruf ohne Parameter.
 for pc in \
   anmmo \
   anmmw \

@@ -1,5 +1,30 @@
-# inlcude fuer mehrere stutz*.sh
-# ab hier sind alle gleich
+# instutz.sh - gemeinsamer "Generationen-Rotations"-Motor für die
+# stutze*.sh-Skripte (stutze.sh, stutzeDBBack.sh, stutzeTMBack.sh,
+# stutzeTMExport.sh, stutzMOSich.sh): keine eigenständige Datei, sondern
+# wird am ENDE jedes stutze*.sh per ". instutz.sh" gesourct, NACHDEM dort
+# die Funktionen vorgaben() (setzt Vz=Quellverzeichnis, Zvz=Zielverzeichnis
+# fürs "Löschen" [tatsächlich nur Verschieben dorthin], muende=Namensmuster,
+# gr0..gr3/beh0..beh2=Aufhebungsregeln, s.u.) und ermittledatum() (extrahiert
+# aus einem Dateinamen $dt die Variablen datum/jahr/monat/tag sowie nanf/
+# gname für den Gleichartigkeits-Vergleich) definiert wurden.
+#
+# Ablauf: aktuelle Zeit per NTP synchronisieren (zeit()), dann für jede zum
+# Muster passende Datei in $Vz vier Aufhebungs-"Runden" prüfen (grob wie
+# Großvater-Vater-Sohn-Rotation):
+#   Runde 0 (Schwelle gr0 Tage): ab diesem Alter nur noch je 1 Datei pro
+#     Jahr behalten, und zwar die im Monat $beh0 (z.B. Januar).
+#   Runde 1 (Schwelle gr1): ab diesem Alter nur noch je 1 Datei pro Monat
+#     behalten, am Tag $beh1 (z.B. der 1.).
+#   Runde 2 (Schwelle gr2): ab diesem Alter nur noch wenige Tage pro Monat
+#     behalten (Tage in $beh2, z.B. 1./8./15./22.).
+#   Runde 3 (Schwelle gr3): ab diesem Alter pro Tag nur noch die jüngste
+#     Datei behalten.
+# In jeder Runde wird eine Datei, die nicht zum Behaltemuster passt, nur
+# dann tatsächlich nach $Zvz verschoben, wenn eine andere, zu behaltende
+# Datei desselben Gegenstands (gleicher $nanf/$gname) im relevanten
+# Zeitraum bereits existiert - sonst bleibt sie erhalten, damit nie
+# versehentlich die letzte verbliebene Sicherung eines Gegenstands verloren
+# geht. $Ausspar kann Namen von der Aufräumung ganz ausnehmen.
 vgbstarr() {
 # eher starre Vorgaben
 	blau="\033[1;34m"; # für Programmausgaben

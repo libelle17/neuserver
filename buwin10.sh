@@ -1,4 +1,17 @@
 #!/bin/dash
+# buwin10.sh - sichert die virtuelle Windows-10-Festplatte
+# (/DATA/VirtualBox/Wind10/Wind10.vdi) per rsync von linux1 auf den
+# Zielrechner $ZL (Push) bzw. zieht sie von $QL (Pull, wenn direkt auf dem
+# Zielrechner aufgerufen) - wie bumo.sh/bunacht.sh nach demselben
+# Push/Pull-Schema (siehe bul1.sh/bugem.sh). VOR dem eigentlichen Kopieren
+# wird zur Sicherheit eine Turbomed-Schutzdatei ($SD, von bugem.sh gesetzt)
+# zwischen Quelle (/mnt/virtwin/turbomed) und Ziel (/mnt/$gpc/turbomed)
+# verglichen (diff) - stimmen beide Mountpunkte nicht überein, wird NICHT
+# kopiert, sondern eine Ransomware-Sicherheitswarnung an
+# diabetologie@dachau-mail.de gemailt (Gedanke: unerwartete Abweichungen
+# könnten auf eine laufende Verschlüsselung hindeuten). $obecht (per -e)
+# steuert, ob wirklich kopiert wird oder nur der Befehl angezeigt wird.
+# Aufruf: buwin10.sh [bugem.sh-Parameter, u.a. -e, -z "<Zielnummer>"].
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;

@@ -1,4 +1,14 @@
 #!/bin/zsh
+# alsres.sh - "als Reserve": konfiguriert den aktuellen Rechner von der
+# Server-Rolle (linux1) auf eine gewöhnliche Reserve-PC-Identität um.
+# Gegenstück zu alsserver.sh. Setzt neuen Hostnamen ($1) und passt den
+# zugehörigen Eintrag in /etc/hosts auf die angegebene IP ($2) an, deaktiviert
+# den Dienst "poetd" sowie Samba (smb/nmb, damit die Reserve-Rolle keine
+# Server-Freigaben mehr anbietet), löscht die Marker-Datei /obslaeuft und
+# ruft "autofax -st" auf. Der auskommentierte mysql-Datenverzeichnis-Umzug
+# (mysql_1/mysql_3-Vertauschung) ist seit 26.7.22 deaktiviert und damit
+# inaktiver Alt-Code. Aufruf: alsres.sh <hostname> <ip>, z.B.
+# "alsres.sh linux0 192.168.178.178".
 if [ $# -ne 2 ]; then
   echo "Syntax: $0 <hostname> <ip>",
   echo "z.B.    $0 linux0 192.168.178.178"

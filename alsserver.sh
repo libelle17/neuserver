@@ -1,5 +1,14 @@
 #!/bin/zsh
-# soll vor Verwendung des aktuellen Linux-PC als Server aufgerufen werden
+# alsserver.sh - soll vor Verwendung des aktuellen Linux-PC als Server
+# aufgerufen werden: benennt ihn zu "linux1" um (Hostname, /etc/hostname,
+# passender /etc/hosts-Eintrag anhand der aktuell ermittelten IP), aktiviert
+# den Dienst "poetd" sowie Samba (smb/nmb, damit dieser Rechner wieder
+# Freigaben als Server anbietet), legt die Marker-Datei /obslaeuft/laeuft an
+# und ruft "autofax -cm 2" auf. Gegenstück: alsres.sh (Rückumwandlung zur
+# Reserve-Identität). Der auskommentierte mysql-Datenverzeichnis-Umzug
+# (mysql_1/mysql_3-Vertauschung) ist seit 26.7.22 deaktiviert und damit
+# inaktiver Alt-Code; Hinweis: "apparmor muss dazu richtig eingerichtet oder
+# ausgeschaltet sein" (Kommentar im Original). Aufruf ohne Parameter.
 
 # mysql-Aktion am 26.7.22 auskommentiert
 # systemctl stop mysql

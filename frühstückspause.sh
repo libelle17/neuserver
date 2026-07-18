@@ -1,5 +1,8 @@
 #/bin/bash
-# fährt die genannten PCs runter
+# frühstückspause.sh - wie feierabend.sh (fährt die genannten Windows-PCs
+# der Praxis per Ping+SSH-shutdown herunter), für die Frühstückspause
+# verwendet; PC-Liste ist identisch zu feierabend.sh plus "anmmw"
+# zusätzlich. Aufruf ohne Parameter.
 for pc in \
   anmmo \
   anmmw \

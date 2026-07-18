@@ -1,4 +1,14 @@
 #!/bin/bash
+# zuocr.sh - findet PDFs, die noch keine OCR-Textschicht von ocrmypdf haben
+# (grep -iL "ocrmypdf" auf den PDF-Inhalt - ocrmypdf hinterlässt diesen
+# String i.d.R. in den PDF-Metadaten), und ocr'ed sie nach (Sprache deu, mit
+# den ocrmypdf-Optionen -r/--rotate-pages, -c/--clean, -s/--skip-text),
+# wobei die Originaldatei durch die OCR-Version ersetzt und deren
+# Änderungszeitstempel übernommen wird (touch -r). Die auskommentierten
+# sed-Zeilen (Umlaut-Transliteration im Dateinamen) sind inaktiver Alt-Code.
+# Aufruf: zuocr.sh [Verzeichnis] [Suchtiefe] - Vorgabe ohne Parameter:
+# /DATA/Patientendokumente mit Tiefe 1 (nur direkte Dateien, keine
+# Unterverzeichnisse).
 # find /DATA/Patientendokumente -mindepth 1 -maxdepth 1 -iname "*.pdf"
 Ort=/DATA/Patientendokumente
 [ "$1"/ != / ]&&[ -d "$1" ]&&Ort="$1";

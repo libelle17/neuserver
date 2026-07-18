@@ -1,4 +1,11 @@
 #!/bin/zsh
+# copyverb.sh - vollständige Sicherung auf das externe USB-Laufwerk
+# "verbatim" (Mountpunkt /amnt/verbatim); gleicher Aufbau wie copyseag.sh/
+# copytoshz.sh (sourct incopy.sh). Zusätzlich zu den üblichen /DATA-
+# Unterpfaden wird hier auch /DATA/Mail eigens per tukopier() gesichert.
+# Läuft bis zum Ende durch. Für eine schlankere, nur auf Turbomed
+# beschränkte Sicherung auf dasselbe Laufwerk s. copyverba.sh (kopiermt()-
+# basiert statt incopy.sh-basiert). Aufruf ohne Parameter.
 PNAME=verbatim
 Z=/amnt/$PNAME
 . incopy.sh;

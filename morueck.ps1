@@ -49,6 +49,10 @@ function Get-LaufwerkNachVolume {
 }
 
 # --- Hilfsfunktion: USB-Laufwerke ermitteln ---
+# Drei Anläufe für dieselbe Aufgabe; tatsächlich verwendet wird nur die
+# letzte, modernste Fassung (Get-USB-Laufwerke, per Get-Disk/BusType "USB").
+# Get-USB-Laufwerke-Alt und Get-USB-Laufwerke-2 sind ältere, nicht mehr
+# aufgerufene Anläufe (WMI-basiert) und bleiben als Referenz/Debug-Code stehen.
 function Get-USB-Laufwerke-Alt {
     # DriveType 2 = Wechseldatenträger
     $usbLaufwerke = Get-WmiObject Win32_LogicalDisk | Where-Object {

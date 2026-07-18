@@ -1,5 +1,11 @@
 #/bin/bash
-# kürzt eine Datei $1 vorne auf maximal $2 Byes
+# kuerze.sh - kürzt eine Datei $1 VORNE (nicht am Ende wie üblich bei
+# Logrotate) auf maximal $2 Bytes: ist die Datei größer, wird per "dd"
+# der überschüssige vordere Teil übersprungen (skip=diff), der Rest in
+# "<datei>_gekuerzt" geschrieben und diese Datei zurück auf den
+# Originalnamen verschoben. Nützlich z.B. für stetig wachsende Logs, bei
+# denen nur der jüngste Teil interessiert. Aufruf: kuerze.sh <Datei>
+# <MaxBytes>. Tut nichts, wenn die Datei fehlt oder $2 leer ist.
 datei=$1;
 max=$2;
 if [ -f "$datei" -a "$max" ]; then

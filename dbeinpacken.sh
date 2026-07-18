@@ -1,5 +1,11 @@
 #!/bin/bash
-# packt die Datenbanktabellen ein, um sie umzuziehen oder ibdata1 zu loeschen
+# dbeinpacken.sh - packt die Datenbanktabellen ein, um sie umzuziehen oder
+# ibdata1 zu loeschen: mountet /DATA falls nötig, ermittelt alle Datenbanken
+# außer mysql/performance_schema/information_schema, schreibt deren Namen
+# nach $Ds/dbverzeichnis und erstellt per mysqldump (komprimiert, UTF-8,
+# inkl. Routinen/Events/Triggern) einen Gesamtdump aller dieser Datenbanken
+# nach $Ds/dbeingepackt.sql. Gegenstück zum Wiedereinspielen: dbauspacken.sh.
+# Aufruf ohne Parameter.
 Ds=/DATA/sql/;
 mountpoint -q /DATA||mount /DATA;
 mountpoint -q /DATA&&{

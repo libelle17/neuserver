@@ -1,4 +1,20 @@
 #!/usr/bin/awk -f
+# awksmb.sh - gleicht eine smb.conf-artige Konfigurationsdatei (Eingabe
+# über normale awk-Dateiargumente) gegen Soll-Werte ab, die aus zwei
+# (gawk-@include-)Dateien im selben Verzeichnis geladen werden:
+#   awksmb.inc    - Soll-Werte für den [global]-Abschnitt (N[]/I[]) sowie
+#                   für Freigabe-("fstab"-)Abschnitte allgemein (Na[]/Ia[],
+#                   u.a. Kommentar, Pfad, Verzeichnismaske, "available")
+#   awksmbap.inc  - Namen (A[]) und Pfade (P[]) der konkret erwarteten
+#                   Freigabe-Abschnitte
+# Beim [global]-Abschnitt werden fehlende/abweichende Einstellungen aus
+# N[]/I[] ergänzt bzw. korrigiert (alte Zeile bleibt als Kommentar
+# erhalten); bei jedem erkannten Freigabe-Abschnitt (Name aus A[]) analog
+# über Na[]/Ia[]/P[]; fehlt ein ganzer erwarteter Abschnitt komplett, wird
+# er am Dateiende neu angelegt. Jede Änderung wird mit einem
+# "# ... (los.sh <Datum>)"-Kommentar markiert - wird also über los.sh
+# aufgerufen, nicht direkt. Aufruf: gawk -f awksmb.sh <datei> (Ausgabe
+# geht nach stdout, muss vom Aufrufer in die Zieldatei umgeleitet werden).
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}

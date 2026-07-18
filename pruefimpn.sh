@@ -1,5 +1,19 @@
 #!/bin/dash
-# prüfe die Dateien nochmal nach
+# pruefimpn.sh - prüfe die Dateien nochmal nach: durchsucht $VzKp
+# (/DATA/Patientendokumente/ohneImportNachweis - vermutlich von analdok.sh
+# als "niD" dorthin verschobene Dateien) und sucht für jede per Größe und
+# Änderungsdatum (±2 Tage) unter $VzZS (/DATA/turbomed/Dokumente) nach
+# einer passend benannten Kandidatendatei (Namensmuster "$init*" - siehe
+# Hinweis unten); wird über die Datenbank-Tabelle "briefe" doch noch ein
+# passender Datenbankeintrag gefunden, gilt die Datei als "doch gefunden":
+# sie wird aus $VzKp gelöscht und in einer Protokolldatei $PrtDt vermerkt.
+# Aufruf: pruefimpn.sh (keine Kommandozeilenparameter). ACHTUNG: die
+# Variablen $init (Namensfilter-Präfix) und $Jahr (Teil des Protokoll-
+# Dateinamens) werden in diesem Skript nirgends gesetzt und auch von
+# keinem anderen Skript in diesem Repository vor einem Aufruf befüllt -
+# ohne vorheriges manuelles Setzen bleiben beide leer ($init="" ergibt den
+# Namensfilter "*", $Jahr="" ergibt eine Protokolldatei mit doppeltem
+# Unterstrich im Namen).
 gruen="\033[0;32m"
 blau="\033[1;34m";
 dblau="\033[0;34;1;47m";

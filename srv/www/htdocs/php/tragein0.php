@@ -1,4 +1,10 @@
 <?php
+// tragein0.php - Debug-Hilfsseite: gibt bei einem POST-Aufruf $_POST,
+// $GLOBALS, $_FILES, $_SESSION und $_ENV formatiert (htmlspecialchars-
+// escaped) aus. Wird von KEINER anderen Datei in diesem Repository
+// eingebunden - wirkt wie ein verwaister Debug-Helfer aus der Entwicklung
+// der älteren "tragein*"-Formulargeneration (s. tragein.php). Aufruf: nur
+// über einen POST-Request sinnvoll, sonst keine Ausgabe.
 if ($_POST) {
   echo "Post:";
   echo '<pre>';

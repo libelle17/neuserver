@@ -1,4 +1,24 @@
 #!/bin/bash
+# analdok.sh - "analysiere Dokumente ohne Importnachweis": prüft Dateien
+# unter $testVz (/DATA/Patientendokumente/ohneImportNachweis), die
+# offenbar in Turbomed importiert wurden, aber ohne dass klar ist, ob/wo
+# genau sie in der Original-Dokumentenablage $VglVz (/DATA/turbomed/
+# Dokumente) noch vorhanden sind. mar() ist ein mariadb-Aufruf-Wrapper mit
+# Fehlerabbruch. indb() (derzeit nicht aufgerufen, s.u.) würde eine
+# Vergleichstabelle "dokfiles" mit allen Dateien aus $VglVz (Pfad/Name/
+# Größe/Änderungsdatum) neu anlegen und befüllen. haupttest() (die
+# tatsächlich aufgerufene Funktion) sucht für jede Datei in $testVz in der
+# Tabelle "dokfiles" nach Kandidaten gleicher Größe in einem plausiblen
+# Zeitfenster ums Änderungsdatum (Toleranz für Zeitzonen-Effekte), vergleicht
+# den Inhalt per diff und verschiebt bei Übereinstimmung die Testdatei nach
+# "schonda" (wenn ein passender Eintrag in der Tabelle "briefe" existiert)
+# oder nach "niD" ("nicht in Datenbank", wenn kein solcher Eintrag existiert).
+# vortest() (derzeit nicht aufgerufen) würde vorab prüfen, ob Dateinamen mit
+# "|" vorkommen (würde die spätere |-getrennte Feldverarbeitung stören).
+# Die drei "if false; then...fi"-Blöcke am Dateiende sind inaktiver, nie
+# ausgeführter Alt-/Debugcode. Aufruf ohne Parameter; erwartet vorher
+# angelegte/aktuelle Tabelle "dokfiles" (indb() müsste dafür einmalig
+# manuell aktiviert werden).
 blau="\033[1;34m";
 gruen="\033[1;32m";
 dblau="\033[0;34;1;47m";

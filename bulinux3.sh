@@ -1,4 +1,19 @@
 #!/bin/zsh
+# bulinux3.sh - älteres, eigenständiges (nicht auf bugem.sh/kopiermt()
+# basierendes) Sicherungsskript speziell zwischen linux1 und linux3:
+# kopiert per rsync -avu (Push von linux1 nach linux3:, oder umgekehrt
+# Pull, je nach $HOST) /opt/turbomed, ausgewählte /root-Dateien (.vim,
+# .fbcredentials, crontabakt, .getmail sowie /root/bin/*.sh), alle
+# /DATA-Unterverzeichnisse aus einer festen Liste (Patientendokumente,
+# turbomed, shome, eigene Dateien, sql, Mail, TMBack, rett, down, DBBack,
+# ifap, vontosh, Oberanger, att) sowie danach /DATA selbst (ohne diese
+# bereits kopierten Unterordner, per dynamisch gebautem --exclude={...}),
+# /gerade, /ungera und /var/lib/mysql nach var/lib/mysql_l. Protokolliert
+# nach /var/log/bulinux3prot.txt und kopiert dieses Protokoll am Ende zum
+# Gegenrechner. Auf linux0 wird abschließend zusätzlich "sh los.sh
+# mysqlneu -v" im Verzeichnis ~/neuserver ausgeführt. Mehrere
+# etc-Kopierzeilen sind seit 29.7.19 auskommentiert. Aufruf ohne
+# Parameter.
 function kopier {
  echo ""
  echo `date +%Y:%m:%d\ %T` "vor /$1" >> $PROT

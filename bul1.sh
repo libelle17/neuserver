@@ -1,4 +1,11 @@
-# bul1.sh – erweitert:
+# bul1.sh - keine eigenständig ausführbare Datei, sondern zum Sourcen (". bul1.sh")
+# aus den bu*.sh-Backup-Skripten (z.B. bumo.sh, bunacht.sh, bulinux.sh) direkt
+# nach deren MUPR-Ermittlung. Legt die für Push/Pull-Entscheidung und
+# Notfallbetrieb-Erkennung nötigen Variablen fest: $LINEINS (Name des
+# Haupt-/Quellrechners), $buhost (eigener Hostname ohne Domain), $EIGENHOST/
+# $EIGENNR (echte Identität auch während geliehener Identität im
+# Notfallbetrieb, s.u.) und $DATAZIEL (rechnerabhängiger Name des lokalen
+# /DATA-Ziels beim Zielrechner-Pull).
 LINEINS=linux1;
 buhost=$(hostname);
 buhost=${buhost%%.*};

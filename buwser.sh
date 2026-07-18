@@ -1,7 +1,15 @@
 #!/bin/bash
-# Sicherungsprogramm für Medical Office für ransomware, Gerald Schade 2.7.25
-# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# soll alle relevanten Datenen kopieren, fuer z.B. 2 x täglichen Gebrauch
+# buwser.sh - Sicherungsprogramm für Medical Office für ransomware, Gerald
+# Schade 2.7.25 (dash geht nicht: --exclude={,abc/,def/} wirkt nicht,
+# deshalb bash). Soll alle relevanten Daten kopieren, fuer z.B. 2 x
+# täglichen Gebrauch: mountet zunächst die WSER-Freigaben (per
+# mountwser.sh) und kopiert dann per kopiermt() (aus bugem.sh) sowohl
+# tmexport als auch indamed von /mnt/wser/<uvz> nach /DATA/wser/, mit
+# Prüfung, ob die Quelle mindestens 1 Sekunde neuer ist (letzter
+# kopiermt-Parameter). Läuft nur auf linux1 (Kommentar: "muss hier nicht
+# aufgerufen werden, da er von linux1 aus kopiert" - für andere Rechner
+# ist dieses Skript nicht vorgesehen). Aufruf: buwser.sh
+# [bugem.sh-Parameter, u.a. -e].
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;

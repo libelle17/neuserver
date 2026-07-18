@@ -1,4 +1,9 @@
 #!/bin/bash
+# bupc.sh - kopiert die Turbomed-Datenbanken (PraxisDB, StammDB, DruckDB,
+# Dictionary) per rsync auf einen Windows-PC $1, der über eine CIFS-Freigabe
+# "Turbomed" mit den in /root/.sturm hinterlegten Zugangsdaten erreichbar
+# ist (wird bei Bedarf unter /mnt/$1/Turbomed gemountet). Aufruf: bupc.sh
+# <pc>.
 	blau="\033[1;34m"; # für Programmausgaben
 	rot="\033[1;31m";
 	lila="\033[1;35m";

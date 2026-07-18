@@ -1,9 +1,38 @@
 #!/bin/bash
-# dash geht nicht: --exclude={,abc/,def/} wirkt nicht
-# zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit Leerzeichen
-# soll alle sehr relevanten Datenen kopieren, fuer z.B. halbstündlichen Gebrauch
-# wenn es auf dem Hauptserver wexp.fritz.box das Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed als Quelle verwendet, sonst /amnt/virtwin/turbomed
-# mountvirt.sh -a
+# buint.sh - "Backup Intern": zentrales Turbomed-Kopierskript rund um den
+# Windows-Terminalserver "wser"/wexp.fritz.box, komplexer Nachbar von
+# butm.sh/bumo.sh. dash geht nicht: --exclude={,abc/,def/} wirkt nicht;
+# zsh geht nicht, wegen der fehlenden Aufteilung der Variablen mit
+# Leerzeichen. Soll alle sehr relevanten Daten kopieren, fuer z.B.
+# halbstündlichen Gebrauch. Wenn es auf dem Hauptserver wexp.fritz.box das
+# Verzeichnis /opt/turbomed gibt, so wird auf jedem Server /opt/turbomed
+# als Quelle verwendet, sonst /amnt/virtwin/turbomed.
+#
+# Ablauf (Reihenfolge je nach $obvirt, per testobvirt() aus bugem.sh
+# ermittelt - 0/2: /opt/turbomed existiert (ggf. als -wser-Variante), 1:
+# nur virtuell erreichbar):
+#   0. kopierwser(): kopiert direkt zwischen /opt/turbomed und dem
+#      Windows-Server "wser" (per SSH+WSL-rsync, "sturm@wser:/mnt/c/
+#      turbomed/..."), inklusive Prüfung, ob Turbomeds objects.idx gerade
+#      gesperrt ist (per angehängtem "call"-Trick über cmd.exe), und bei
+#      -kill notfalls Beenden des FastObjects-Dienstes bzw. Neustart der
+#      lokalen VM, um die Sperre loszuwerden.
+#   1. Interner Kopierdurchlauf zwischen /opt/turbomed und dem zu diesem
+#      Host gehörigen virtuellen PC ($gpc, aus virtnamen.sh) per
+#      kopiermt() (aus bugem.sh), Richtung ebenfalls von $obvirt abhängig.
+#   2. Nur wenn mit -m ("mehr", $obmehr) aufgerufen UND auf $LINEINS: ruft
+#      für jede Nummer in $ziele (Vorgabe "0 3 7 8") butm.sh mit -nv auf,
+#      um von wexp.fritz.box weiter auf die jeweiligen (nicht-virtuellen)
+#      Reserve-Linux-Server zu kopieren.
+#   3. Danach (ebenfalls nur bei -m) für dieselben $ziele: prüft/weckt bei
+#      Bedarf deren virtuelle PCs, mountet deren CIFS-Freigabe (mit
+#      SMB-Versions-Fallback wie in weckalle.sh) und ruft dort per SSH
+#      rekursiv "buint.sh -e" auf, damit der jeweilige Reserve-Server sich
+#      selbst um seinen eigenen virtuellen PC kümmert (der "$dreieck"-Zweig
+#      davor ist laut eigenem Kommentar im Code nie erreichbar - die
+#      Variable wird nirgends gesetzt).
+# Aufruf: buint.sh [bugem.sh-Parameter, u.a. -e, -m/-mehr, -k/-kill, -z
+# "<nummern>"].
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost=linux1 festlegen
 # ziele="0 3 7 8"; # Vorgaben für Ziel-Servernummern: linux1ur, linux3 usw., abwandelbar durch Befehlszeilenparameter -z

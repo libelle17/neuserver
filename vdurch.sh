@@ -1,4 +1,12 @@
 #!/bin/bash
+# vdurch.sh - startet die zu diesem Rechner gehörige virtuelle Windows-10-VM
+# (VirtualBox, Name "Win10") einmal komplett durch (poweroff + startvm
+# headless), um sie z.B. nach einem Hänger neu aufzusetzen. Dabei wird
+# /opt/turbomed/lauf kurz in "lau" umbenannt (offenbar ein Sperr-/Lock-Datei-
+# Mechanismus, der Turbomed am Start hindert, solange die VM noch nicht
+# bereit ist) und nach 80 Sekunden Wartezeit wieder zurückbenannt. Auf
+# linux3 gibt es laut virtnamen.sh keinen virtuellen Server - dort passiert
+# dann nichts. Aufruf ohne Parameter (läuft auf dem jeweiligen Wirtsrechner).
 MUPR=$(readlink -f $0); # Mutterprogramm
 . ${MUPR%/*}/bul1.sh # LINEINS=linux1, buhost festlegen
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen

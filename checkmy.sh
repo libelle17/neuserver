@@ -1,10 +1,21 @@
 #!/bin/bash
-
+# checkmy.sh - prüft auf einem MySQL/MariaDB-Server, welche Tabellen (über
+# alle Datenbanken außer den Systemschemata) beim Anlegen mit
+# innodb_strict_mode=1 einen "Row size too large"-Fehler auslösen würden
+# (z.B. relevant vor einer Migration auf ein anderes ROW_FORMAT oder eine
+# strengere InnoDB-Konfiguration): legt dazu eine temporäre Datenbank an,
+# erstellt dort jede Tabellenstruktur nach (ergänzt bei Bedarf das
+# ermittelte ROW_FORMAT) und meldet betroffene Tabellen; räumt die temporäre
+# Datenbank am Ende wieder auf. Aufruf: checkmy.sh <host> <user> <password>.
 [ -z "$3" ] && echo "Usage: $0 host user password" >&2 && exit 1
 
 dt="tmp_$RANDOM$RANDOM"
 
 mysql -h $1 -u $2 -p$3 -ABNe "create database $dt;"
+# Hinweis: "exit 1" landet hier (fehlendes "&&" davor) nur als Text hinter
+# ">&2" im echo-Aufruf, wird aber NICHT als Kommando ausgeführt - bei einem
+# Fehler beim Anlegen der temporären Datenbank bricht das Skript trotz der
+# Fehlermeldung nicht wirklich ab, sondern läuft weiter (getestet).
 [ $? -ne 0 ] && echo "Error: $0 terminating" >&2 exit 1
 
 echo

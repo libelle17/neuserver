@@ -1,4 +1,13 @@
-#!/bin/bash 
+#!/bin/bash
+# hatrans.sh - überträgt bei Bedarf Änderungen aus der "medoff"-Datenbank
+# (externes System, Zugang ~/.modbpwd) in die eigene Datenbank "quelle":
+# ermittelt den jüngsten Änderungszeitstempel über dbsprot (Tabellen
+# epraxis/earzt/patrelation) und vergleicht ihn mit dem zuletzt verarbeiteten
+# Stand in $STAMPFILE ($HOME/.medoff_last_zp). Ist er neuer, wird
+# tmpmepraxis geleert, die Prozedur procmepraxis(0) aufgerufen und die
+# Tabellen earzt/tmpmepraxis/epraxis/patrelation per mariadb-dump|mariadb
+# nach "quelle" übertragen; danach wird der neue Zeitstempel gespeichert.
+# Aufruf: hatrans.sh [-v] (-v = gesprächige Ausgabe der Einzelschritte).
 STAMPFILE="$HOME/.medoff_last_zp"
 
 # -v Option auswerten

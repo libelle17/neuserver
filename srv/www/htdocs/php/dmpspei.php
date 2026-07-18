@@ -1,4 +1,15 @@
 <?php
+// dmpspei.php - "DMP speichern": AJAX-Endpunkt, der von anzeig.php und
+// ianzeig.php aus aufgerufen wird, wenn im Patientenlaufzettel der
+// DMP-Status (Disease-Management-Programm, z.B. Diabetes) geändert wird.
+// Erwartet POST-Felder pid (Patienten-ID), dmp (Textstatus, s.
+// $de-Zuordnung unten) und zp (Zeitpunkt); schreibt zusammen mit der
+// Aufrufer-IP einen neuen Datensatz in die Tabelle dmperg (History-Tabelle,
+// kein UPDATE - jede Änderung bleibt als eigene Zeile erhalten) und gibt
+// {"statusCode":200} bzw. bei SQL-Fehler {"statusCode":201} (plus das
+// SQL-Statement im Klartext - nur zur Fehlersuche, nicht für den
+// Produktivbetrieb gedacht) als JSON zurück. Zugangsdaten kommen aus
+// phppwd.php (von setmariadbpwdfuerpraxis.sh gepflegt).
 	$servername = "linux1";
 include '../../phppwd.php';
 	$db="quelle";

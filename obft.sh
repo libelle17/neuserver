@@ -1,4 +1,11 @@
 #!/bin/bash
+# obft.sh - "ob Feiertag": prüft, ob heute (in Bayern) ein gesetzlicher
+# Feiertag ist, und hinterlegt das Ergebnis als Marker-Datei
+# /root/heutefeiertag (Existenz = ja), die andere Skripte/Cron-Einträge
+# abfragen können, um an Feiertagen z.B. Praxis-spezifische Läufe
+# auszulassen. 24.12. und 31.12. gelten fest als "Feiertag" (auch ohne
+# gesetzlichen Feiertagsstatus); alle anderen Tage werden per Kayaposoft-API
+# (kayaposoft.com, Land "ger", Region "by") abgefragt. Aufruf ohne Parameter.
 pruefe () {
   datei=/root/heutefeiertag
   today=$(date --date="0 days ago " +"%-d-%-m-%Y");

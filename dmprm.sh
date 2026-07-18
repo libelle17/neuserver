@@ -1,4 +1,46 @@
 #!/bin/dash
+# dmprm.sh - liest die "Reminder"-PDFs der DMP-Datenstelle Bayern ein (Sätze
+# wie "Bitte ... Teilnahmeerklärung/Erstdokumentation/Folgedokumentation für
+# ..." bzw. Listen "berücksichtigter"/"eingegangener" Dokumentationen oder
+# "Dokumentationen ohne Handlungsbedarf") und schreibt daraus Datensätze in
+# die MariaDB-Tabelle "dmprm" (Datenbank "quelle", siehe tabellen()).
+# Verarbeitet werden nur PDFs mit echtem Textinhalt (siehe hat_text()) -
+# gescannte/Bild-PDFs werden stillschweigend übersprungen. Für Reminder ohne
+# Textschicht ist stattdessen dmp.sh (OCR-Pipeline über tesseract) zuständig.
+#
+# Aufruf: dmprm.sh [Datei] [-v|--verbose] [-n|--neu] [-ln|--letztneu]
+#                  [-nd|--neudd] [-e|--echt] [-h|--hilfe|--help]
+#   (kein Parameter)  alle *.pdf unterhalb von $qp (DMP-Reminder-Verzeichnis
+#                     und dessen Unterverzeichnisse, z.B. "1./2./3./4. Quartal")
+#                     durchsuchen; laut dmpeinl bereits eingelesene Dateien
+#                     werden übersprungen, außer -n ist gesetzt.
+#   Datei             nur diese eine PDF einlesen (Pfad ohne ".pdf"-Endung
+#                     oder mit ihr - beides wird intern über
+#                     qd="${1%.pdf}"/pdf="$qd".pdf gehandhabt); schaltet in
+#                     den Einzeldatei-Modus (einzeln=1), d.h. -nd löscht dann
+#                     NICHT die kompletten Tabellen.
+#   -v, --verbose     ausführliche Zwischenausgaben (Parameter, Zwischenwerte)
+#   -n, --neu         bereits eingetragene PDFs werden (gezielt per Datei
+#                     anhand von dmpeinl.Datei) gelöscht und neu eingelesen,
+#                     statt übersprungen zu werden
+#   -ln, --letztneu   ignoriert Dateiauswahl/-n; ermittelt stattdessen per SQL
+#                     die laut dmprm.dateidat jüngste bereits eingelesene
+#                     Datei und liest nur diese erneut ein (z.B. nach Korrektur
+#                     der Erkennungsregeln)
+#   -nd, --neudd      löscht vorher die Tabellen dmpeinl und dmprm komplett
+#                     (DROP TABLE) und legt sie über tabellen() neu an; ohne
+#                     Einzeldatei-Aufruf wirksam (s.o.)
+#   -e, --echt        zur Zeit ohne Wirkung (obecht wird zwar gesetzt, aber im
+#                     restlichen Skript nirgends abgefragt)
+#   -h,-?,--hilfe,--help  setzt nur obhilfe, wird aber (noch) nicht ausgewertet
+#     (es gibt also derzeit keine tatsächliche Hilfeausgabe über diese Flags)
+#
+# Ablauf: commandline() parsen -> ggf. Tabellen droppen (-nd) -> tabellen()
+# anlegen -> je nach Modus (-ln/Einzeldatei/Verzeichnis-Durchlauf) auswert()
+# für jede PDF aufrufen. auswert() ruft pdftotext auf, extrahiert Datum und
+# Erstellungsdatum per sed, baut per awk aus dem Text REPLACE-INTO-SQL für
+# dmprm und führt es gegen MariaDB aus; bei Fehlern (nicht-leere awkdk-Datei)
+# wird vi geöffnet, sonst eine kurze Zusammenfassung ausgegeben.
 blau="\033[1;34m";
 lila="\033[1;35m";
 dblau="\033[0;34;1;47m";
@@ -56,6 +98,17 @@ hat_text() {
 } # hat_text
 
 tabellen() {
+# Legt (falls nicht vorhanden) die beiden Tabellen an, die dieses Skript
+# beschreibt. Jede Feldzeile trägt ihre Bedeutung schon als SQL-COMMENT.
+# Die SQL-Strings werden hier über Backslash-Zeilenfortsetzung ("\" am
+# Zeilenende) zusammengesetzt - Zeilen dazwischen landen wörtlich im String,
+# deshalb steht dieser Erklärblock bewusst DAVOR statt zwischen den Zeilen.
+#   dmprm  : ein Datensatz je erkanntem Patienten/Vorgang aus einem Reminder
+#            (art: 0=Fehler,1=berücksichtigte,2=eingegangene,3=TN/ED/FD-Bitte,
+#            5=ohne Handlungsbedarf; npid verweist auf die Tabelle "namen",
+#            0 falls kein passender Patient gefunden wurde)
+#   dmpeinl: ein Datensatz je eingelesener PDF-Datei (für die "bereits
+#            eingetragen?"-Prüfung weiter unten und für -ln/--letztneu)
 sql="\
 CREATE TABLE IF NOT EXISTS dmprm (\
 	ID INT(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',\
@@ -118,6 +171,11 @@ ENGINE=InnoDB\
 mariadb --defaults-extra-file=~/.mariadbpwd quelle -e"$sql";
 } # tabellen
 
+# Liest genau eine PDF ("$qd".pdf) ein: pdftotext -> Datum/Erstelldatum per
+# sed extrahieren -> awk baut daraus REPLACE-INTO-SQL für dmprm (eine Zeile
+# pro erkanntem Patienten/Vorgang) -> SQL gegen MariaDB ausführen -> bei
+# Fehlern (nicht-leere ${awkdk}-Datei) vi öffnen, sonst kurze Erfolgsmeldung.
+# Erwartet gesetzt: $qd (Pfad ohne ".pdf"), optional $arzt, $skipdel (s.u.).
 auswert() {
 [ $verb ]&&printf "${blau}auswert($qd)$reset\n";
 pdf="$qd".pdf;
@@ -143,6 +201,27 @@ if test -f "$pdf"; then
   [ $verb ]&&printf "pdf: $blau$pdf$reset\n";
   # skipdel=1: dateidat-DELETE überspringen (bei -n gesetzt), damit TIF-Einträge
   # für dasselbe Datum erhalten bleiben; stattdessen wurde bereits per einlID gelöscht.
+  #
+  # Der folgende awk-Aufruf ist in einfache Anführungszeichen gepackt und
+  # verwendet den Trick '\'' um ein einzelnes ' einzubetten - Kommentare
+  # werden deshalb hier gesammelt VOR dem Block erklärt statt zwischen den
+  # Zeilen, damit die Quote-Zählung nicht versehentlich verschoben wird:
+  #   - Die /regex/{...}-Zeilen erkennen den Abschnittstyp der PDF-Zeile und
+  #     setzen "art" (0 Fehler/Default,1 berücksichtigt,2 eingegangen,
+  #     3 TN/ED/FD-Bitte bzw. Intervallfehler,5 ohne Handlungsbedarf) sowie
+  #     "vsw" (Kurzform TN/ED/FD, die später vor das Quartal geschrieben wird).
+  #   - Die Zeilen mit den festen Ziffernfolgen (889690003 usw.) sind die
+  #     Betriebsstättennummern, aus denen "arzt" (gs/tk/ah) abgeleitet wird.
+  #   - Die eigentliche Datenzeile beginnt mit der BSNR "641915300"; sie wird
+  #     zuerst auf Unterstriche normalisiert (Leerzeichen -> "_", damit ein
+  #     einzelnes split() reicht), mehrere Vornamen werden dabei durch die
+  #     gensub-Schleife vor split() geschützt. ar[1..9] enthält danach BSNR,
+  #     "Nachname,Vorname", Geburtsdatum, Versichertennummer, Kasse,
+  #     Dokuart(-teile), Dokudatum und Quartal/Jahr (ggf. mit Fehlertext).
+  #   - Die REPLACE-INTO-Zeile schreibt genau einen dmprm-Datensatz; die
+  #     COALESCE/SELECT-Unterabfrage versucht dabei per namen-Tabelle einen
+  #     Patienten (npid) über Name+Geburtsdatum bzw. RLIKE-Fuzzy-Match zu
+  #     finden, sonst bleibt npid 0.
   awk -F " " -v arzt="$arzt" -v dateidat="$dateidat" -v erstellt="$erstellt" -v epo="$epo" -v epo2="$epo2" -v pdf="$pdf" -v skipdel="$skipdel" '
   BEGIN {
     zl=0;
@@ -244,10 +323,11 @@ elif [ "$einzeln" ]; then
   skipdel=;
   auswert;
 else
-  # Alle Text-PDFs im Verzeichnis durchlaufen
+  # Alle Text-PDFs im Verzeichnis und in dessen Unterverzeichnissen durchlaufen
   gefunden=;
-  for pdf in "$qp"*.pdf; do
-    [ -f "$pdf" ] || continue;
+  pdfliste="/tmp/dmprm_pdfliste_$$";
+  find "$qp" -type f -iname '*.pdf' | sort >"$pdfliste";
+  while IFS= read -r pdf; do
     gefunden=1;
 
     # Nur PDFs mit echtem Textinhalt verarbeiten (keine OCR-Scans)
@@ -280,6 +360,7 @@ else
       qd="${pdf%.pdf}";
       auswert;
     fi
-  done;
+  done <"$pdfliste";
+  rm -f "$pdfliste";
   [ ! "$gefunden" ]&&printf "${rot}Keine PDF-Dateien in $blau$qp$rot gefunden.$reset\n";
 fi

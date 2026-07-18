@@ -1,4 +1,7 @@
 #!/bin/zsh
+# ungera_PraxisDB.sh - wie gerade_PraxisDB.sh, aber für ungerade Kalendertage
+# (Ziel /ungera statt /gerade) - siehe dort für Details zum Ablauf.
+# Aufruf ohne Parameter.
 ZV=/ungera
 mkdir -p $ZV
 Ziel=$ZV/TurbomedDB.7z
