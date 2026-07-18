@@ -13,6 +13,15 @@
 #      fbfax braucht keinen Datenbankzugriff und wird ausgelassen.
 #   5) /srv/www/phppwd.php (Zugangsdaten fuer die PHP-Seiten unter /srv/www/htdocs/php/,
 #      u.a. anzeig.php/ianzeig.php/dmpspei.php/tragein2.php -- Patientenlaufzettel)
+#   6) HeidiSQL-Sessions (User=praxis) auf den erreichbaren Windows-PCs: per SSH-Push
+#      (Konten sturm, schade, administrator -- je nachdem, welches davon auf dem
+#      jeweiligen PC passwortlos erreichbar ist) wird Update-HeidiSQLPassword.ps1 per
+#      scp lokal auf den PC kopiert (ein direkter Aufruf ueber den Netzwerkpfad
+#      \\linux1\daten\down\ scheitert am SSH-Double-Hop-Problem: eine per Public-Key
+#      authentifizierte Sitzung hat kein Windows-Passwort, um sich zusaetzlich beim
+#      Samba-Server auszuweisen -- s. Testlauf 18.07.2026 auf szn4/sturm) und dort
+#      ausgefuehrt; das neue Passwort wird per stdin uebergeben (landet nie auf der
+#      Platte) und aktualisiert die lokale Registry (HKCU\Software\HeidiSQL\...).
 #
 # Ohne -e: Simulation (zeigt nur, was getan wuerde). Mit -e: echter Lauf.
 #
@@ -126,6 +135,28 @@ if [ "$obecht" ]; then
 	printf "${blau}/srv/www/phppwd.php geschrieben.${schwarz}\n"
 else
 	printf "Waere: ${blau}/srv/www/phppwd.php neu schreiben (user=praxis, neues Passwort)${schwarz}\n"
+fi
+
+printf "${gruen}== 6) HeidiSQL auf Windows-PCs (SSH-Push, Registry-Update) ==${schwarz}\n"
+WINPCS="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
+WINKONTEN="sturm schade administrator"
+HEIDISKRIPTLOKAL=/DATA/down/Update-HeidiSQLPassword.ps1
+if [ "$obecht" ]; then
+	for pc in $WINPCS; do
+		ping -c1 -W1 "$pc" >/dev/null 2>&1 || continue
+		for konto in $WINKONTEN; do
+			zielpfad="C:/Users/$konto/Update-HeidiSQLPassword.ps1"
+			scp -o BatchMode=yes -o ConnectTimeout=3 -q "$HEIDISKRIPTLOKAL" "$konto@$pc:$zielpfad" 2>/dev/null || continue
+			ergebnis=$(printf '%s\n' "$NEUPWD" | ssh -o BatchMode=yes -o ConnectTimeout=3 "$konto@$pc" \
+				powershell -NoProfile -ExecutionPolicy Bypass -File "$zielpfad" 2>/dev/null) || continue
+			[ -n "$ergebnis" ] && printf "${blau}%s@%s${schwarz}: %s\n" "$konto" "$pc" "$ergebnis"
+		done
+	done
+else
+	printf "Waere: fuer jeden erreichbaren PC aus (${blau}%s${schwarz})\n" "$WINPCS"
+	printf "  per SSH mit den Konten ${blau}%s${schwarz} versucht,\n" "$WINKONTEN"
+	printf "  ${blau}%s${schwarz} per scp lokal zu kopieren und damit das Passwort\n" "$HEIDISKRIPTLOKAL"
+	printf "  in die dortige HeidiSQL-Registry zu pushen.\n"
 fi
 
 if [ "$obecht" ]; then
