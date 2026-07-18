@@ -1,5 +1,14 @@
 #!/bin/bash
-# setmariadbpwdfuerpraxis.sh [-e] <neues-passwort>
+# setmariadbpwdfuerpraxis.sh [-e]
+#
+# Das neue Passwort wird NICHT mehr als Kommandozeilenparameter uebergeben
+# (landete sonst dauerhaft in der Shell-History und war waehrend der Laufzeit
+# ueber ps/proc/cmdline fuer jeden lokalen Prozess sichtbar - anders als
+# ~/.mariadbpwd, das nur den jeweils aktuellen Stand mit Rechten 700 haelt),
+# sondern interaktiv ohne Echo abgefragt (an einem Terminal) bzw. per stdin
+# eingelesen (z.B. "printf '%s\n' "$pw" | setmariadbpwdfuerpraxis.sh -e" aus
+# einem Passwort-Manager/Skript heraus - dasselbe Muster wie beim Push an
+# Update-HeidiSQLPassword.ps1 in Schritt 6).
 #
 # Aendert das Passwort des gemeinsam genutzten MariaDB-Benutzers 'praxis' an allen
 # bekannten Stellen:
@@ -22,6 +31,9 @@
 #      Samba-Server auszuweisen -- s. Testlauf 18.07.2026 auf szn4/sturm) und dort
 #      ausgefuehrt; das neue Passwort wird per stdin uebergeben (landet nie auf der
 #      Platte) und aktualisiert die lokale Registry (HKCU\Software\HeidiSQL\...).
+#      Laeuft NUR auf linux1 (s. Hostcheck unten) - auf den Reserveservern
+#      waeren die Windows-PCs ueber dasselbe LAN ohnehin nochmal erreichbar,
+#      der Push muss aber nur einmal (von linux1 aus) erfolgen, nicht wiederholt.
 #
 # Ohne -e: Simulation (zeigt nur, was getan wuerde). Mit -e: echter Lauf.
 #
@@ -33,14 +45,31 @@ set -euo pipefail
 
 rot="\e[1;31m"; gruen="\e[0;32m"; blau="\e[1;34m"; schwarz="\e[0m"
 
+HOST=$(hostname); HOST=${HOST%%.*}
+
 obecht=
 if [ "${1:-}" = "-e" ]; then obecht=1; shift; fi
 
-NEUPWD="${1:-}"
-if [ -z "$NEUPWD" ]; then
-	printf "${rot}Aufruf: $0 [-e] <neues-passwort>${schwarz}\n" >&2
+if [ -n "${1:-}" ]; then
+	printf "${rot}Aufruf: $0 [-e]${schwarz}\n" >&2
+	printf "  Das Passwort wird NICHT mehr als Parameter uebergeben (Shell-History/ps!),\n" >&2
+	printf "  sondern gleich interaktiv abgefragt bzw. per stdin eingelesen.\n" >&2
 	printf "  ohne -e: Simulation (zeigt nur, was getan wuerde)\n" >&2
 	printf "  mit -e:  echter Lauf\n" >&2
+	exit 1
+fi
+
+if [ -t 0 ]; then
+	printf "${blau}Neues Passwort fuer 'praxis' eingeben (wird nicht angezeigt): ${schwarz}" >&2
+	stty -echo
+	IFS= read -r NEUPWD || true # "|| true": stty echo muss auch bei leerer Eingabe/EOF (read liefert dann != 0) unbedingt noch laufen, s.u. -- sonst bliebe das Terminal unter "set -e" ohne Echo stehen
+	stty echo
+	printf "\n" >&2
+else
+	IFS= read -r NEUPWD || true
+fi
+if [ -z "$NEUPWD" ]; then
+	printf "${rot}Kein Passwort eingegeben -- abgebrochen.${schwarz}\n" >&2
 	exit 1
 fi
 
@@ -138,25 +167,30 @@ else
 fi
 
 printf "${gruen}== 6) HeidiSQL auf Windows-PCs (SSH-Push, Registry-Update) ==${schwarz}\n"
-WINPCS="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
-WINKONTEN="sturm schade administrator"
-HEIDISKRIPTLOKAL=/DATA/down/Update-HeidiSQLPassword.ps1
-if [ "$obecht" ]; then
-	for pc in $WINPCS; do
-		ping -c1 -W1 "$pc" >/dev/null 2>&1 || continue
-		for konto in $WINKONTEN; do
-			zielpfad="C:/Users/$konto/Update-HeidiSQLPassword.ps1"
-			scp -o BatchMode=yes -o ConnectTimeout=3 -q "$HEIDISKRIPTLOKAL" "$konto@$pc:$zielpfad" 2>/dev/null || continue
-			ergebnis=$(printf '%s\n' "$NEUPWD" | ssh -o BatchMode=yes -o ConnectTimeout=3 "$konto@$pc" \
-				powershell -NoProfile -ExecutionPolicy Bypass -File "$zielpfad" 2>/dev/null) || continue
-			[ -n "$ergebnis" ] && printf "${blau}%s@%s${schwarz}: %s\n" "$konto" "$pc" "$ergebnis"
-		done
-	done
+if [ "$HOST" != "linux1" ]; then
+	printf "Uebersprungen: laeuft nur auf ${blau}linux1${schwarz} (hier: ${blau}%s${schwarz}) - der Push zu den\n" "$HOST"
+	printf "Windows-PCs braucht nur einmal zu erfolgen, nicht wiederholt von jedem Reserveserver aus.\n"
 else
-	printf "Waere: fuer jeden erreichbaren PC aus (${blau}%s${schwarz})\n" "$WINPCS"
-	printf "  per SSH mit den Konten ${blau}%s${schwarz} versucht,\n" "$WINKONTEN"
-	printf "  ${blau}%s${schwarz} per scp lokal zu kopieren und damit das Passwort\n" "$HEIDISKRIPTLOKAL"
-	printf "  in die dortige HeidiSQL-Registry zu pushen.\n"
+	WINPCS="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
+	WINKONTEN="sturm schade administrator"
+	HEIDISKRIPTLOKAL=/DATA/down/Update-HeidiSQLPassword.ps1
+	if [ "$obecht" ]; then
+		for pc in $WINPCS; do
+			ping -c1 -W1 "$pc" >/dev/null 2>&1 || continue
+			for konto in $WINKONTEN; do
+				zielpfad="C:/Users/$konto/Update-HeidiSQLPassword.ps1"
+				scp -o BatchMode=yes -o ConnectTimeout=3 -q "$HEIDISKRIPTLOKAL" "$konto@$pc:$zielpfad" 2>/dev/null || continue
+				ergebnis=$(printf '%s\n' "$NEUPWD" | ssh -o BatchMode=yes -o ConnectTimeout=3 "$konto@$pc" \
+					powershell -NoProfile -ExecutionPolicy Bypass -File "$zielpfad" 2>/dev/null) || continue
+				[ -n "$ergebnis" ] && printf "${blau}%s@%s${schwarz}: %s\n" "$konto" "$pc" "$ergebnis"
+			done
+		done
+	else
+		printf "Waere: fuer jeden erreichbaren PC aus (${blau}%s${schwarz})\n" "$WINPCS"
+		printf "  per SSH mit den Konten ${blau}%s${schwarz} versucht,\n" "$WINKONTEN"
+		printf "  ${blau}%s${schwarz} per scp lokal zu kopieren und damit das Passwort\n" "$HEIDISKRIPTLOKAL"
+		printf "  in die dortige HeidiSQL-Registry zu pushen.\n"
+	fi
 fi
 
 if [ "$obecht" ]; then
@@ -164,5 +198,5 @@ if [ "$obecht" ]; then
 	printf "das neue Passwort automatisch bei ihrem naechsten regulaeren Lauf aus der jeweiligen\n"
 	printf "Konfiguration -- ein Neu-Ausrollen der .exe/Binaries ist dafuer NICHT erforderlich.\n"
 else
-	printf "${gruen}Simulation beendet.${schwarz} Fuer den echten Lauf: $0 -e <neues-passwort>\n"
+	printf "${gruen}Simulation beendet.${schwarz} Fuer den echten Lauf: $0 -e\n"
 fi
