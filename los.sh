@@ -1684,6 +1684,7 @@ proginst() {
   doinst dash;
   setzgitssh;
   doinst git;
+  doinst gh; # GitHub-CLI, u.a. zum Pruefen gepushter Commits/PRs
   doinst lsb-release;
   doinst docker;
   doinst gparted;
