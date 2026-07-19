@@ -131,8 +131,8 @@ function Pruefe-Schutzdatei {
         return $false
     }
     if (-not (Test-Path $ZielPfad)) {
-        Write-Warning "  Schutzdatei nicht gefunden (Ziel): $ZielPfad"
-        return $false
+        Write-Host "  Schutzdatei nicht gefunden (Ziel): $ZielPfad - Ziel frisch, Kopie wird durchgeführt" -ForegroundColor Yellow
+        return $true
     }
 
     $quelle = Get-Item $QuellPfad

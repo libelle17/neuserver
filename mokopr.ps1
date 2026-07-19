@@ -188,8 +188,12 @@ function tuvgl {
 		return $null
 	}
 	if (-not (Test-Path $fileUSB)) {
-		Write-Host "USB-Datei nicht gefunden: $fileUSB" -ForegroundColor Red
-		return $null
+		Write-Host "USB-Datei nicht gefunden: $fileUSB - Ziel frisch, wird wie uebereinstimmend behandelt" -ForegroundColor Yellow
+		return [PSCustomObject]@{
+			sizeEqual    = $true
+			dateEqual    = $true
+			contentEqual = $true
+		}
 	}
 	$infoServer = Get-Item $fileServer
 	$infoUSB    = Get-Item $fileUSB
