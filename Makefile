@@ -555,6 +555,7 @@ shziel:
             printf " $${rot}$(SUDC)cp→mv $$D → $$Z/$$PF/$$BNAME; $$reset\n";\
             $(SUDC)cp -a $$D $$Z/$$PF/.$$BNAME.new && $(SUDC)mv $$Z/$$PF/.$$BNAME.new $$Z/$$PF/$$BNAME;\
             echo "$$BNAME"|grep -qE '\.sh$$'&&$(SUDC)chmod +x "$$Z/$$PF/$$BNAME"||true;\
+            command -v restorecon >/dev/null 2>&1&&$(SUDC)restorecon "$$Z/$$PF/$$BNAME" 2>/dev/null||true;\
           };\
         fi;\
         ;;\
