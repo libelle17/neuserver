@@ -10,7 +10,7 @@
 #   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
 #
 # Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
-#                 -mariai|-marianeu|-smb|-must|-fritz|-firebird|
+#                 -mariai|-marianeu|-smb|-must|-vmime|-fritz|-firebird|
 #                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
 #
@@ -108,6 +108,7 @@ commandline() {
   obkonfiglad=0; # Konfiguration laden
   obkonfignl=0; # Konfiguration neu laden
   obcron=0; # crontab sichern/übernehmen
+  obvmime=0; # vmime (für vmparse2) aus github frisch bauen
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -119,7 +120,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -140,6 +141,7 @@ commandline() {
         printf "  $blau-turbomed$reset:  richtet Turbomed ein\n";
         printf "  $blau-must$reset:      kopiert vom Musterserver\n";
         printf "  ${blau}-mustneu${reset}:   wie -must, aber überschreibt vorhandene Dateien\n";
+        printf "  $blau-vmime$reset:     baut vmime (für vmparse2) frisch aus github\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -180,6 +182,7 @@ commandline() {
           teamviewer) obtv=1;;
           remotepc|rpc) obrpc=1;;
           cron) obcron=1;;
+          vmime) obvmime=1;;
         esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -211,6 +214,7 @@ commandline() {
     [ "$obkonfignl" = 1 ]&&printf "obkonfignl: ${blau}1$reset\n"
     [ "$obcron" = 1 ]&&   printf "obcron: ${blau}1$reset\n"
     [ "$obbw" = 1 ]&&     printf "obbw: ${blau}1$reset\n"
+    [ "$obvmime" = 1 ]&&  printf "obvmime: ${blau}1$reset\n"
 	fi;
 } # commandline
 
@@ -3253,6 +3257,34 @@ turbomed() {
 	fi;
 } # turbomed
 
+# vmime_bauen() – baut vmime frisch aus github und installiert es nach
+# /usr/local. Grund: vmparse2.cpp (Fax-/Labor-Mailimport für Turbomed)
+# braucht die neuere vmime::shared_ptr-API; die archivierten Snapshots
+# (2013/2014, u.a. /DATA/down/vmime-master) haben noch die alte
+# vmime::ref-API und passen nicht mehr dazu. libgsasl-devel wird vorher
+# benötigt (sonst bricht cmake mit GSASL_INCLUDE_DIR-NOTFOUND ab).
+vmime_bauen() {
+	printf "${dblau}vmime_bauen$reset()\n";
+	ausf "$instp gsasl-devel";
+	VMSRC=/usr/local/src/vmime;
+	VMBUILD=/usr/local/src/vmime-build;
+	if [ -d "$VMSRC/.git" ]; then
+		ausf "git -C $VMSRC pull";
+	else
+		ausf "rm -rf $VMSRC";
+		ausf "git clone --depth 1 https://github.com/kisli/vmime.git $VMSRC";
+	fi;
+	ausf "cmake -S $VMSRC -B $VMBUILD -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib64";
+	ausf "cmake --build $VMBUILD -j$(nproc)";
+	ausf "cmake --install $VMBUILD";
+	ausf "ldconfig";
+	ausf "pkg-config --modversion vmime" "${blau}";
+	# vmparse2 selbst gegen die frisch gebaute vmime neu bauen und installieren
+	# (nach /usr/bin, per Makefile-install-Target); (cd ...) statt ausf-eval,
+	# damit das cd nicht den cwd von los.sh selbst verändert.
+	[ -d /root/vmparse2 ]&&ausf "(cd /root/vmparse2 && make -j$(nproc) && make install)" "${blau}";
+} # vmime_bauen
+
 dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset(), immer: $immer\n";
@@ -3385,6 +3417,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obtm = 1 ]&&turbomed;            # Turbomed-Praxissoftware einrichten
 [ $obteil = 0 -o $obmust = 1 ]&&musterserver;      # Dateien vom Musterserver kopieren
 [ "$obmustneu" = 1 ]&&musterserver neu;
+[ $obteil = 0 -o "$obvmime" = 1 ]&&vmime_bauen;    # vmime (für vmparse2) aus github bauen
 # ── Weitere Tools ────────────────────────────────────────────────────────
 [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;        # TeamViewer installieren
 [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;         # RemotePC installieren
