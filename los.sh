@@ -10,7 +10,7 @@
 #   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
 #
 # Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
-#                 -mariai|-marianeu|-smb|-must|-vmime|-fritz|-firebird|
+#                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fritz|-firebird|
 #                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
 #
@@ -109,6 +109,7 @@ commandline() {
   obkonfignl=0; # Konfiguration neu laden
   obcron=0; # crontab sichern/übernehmen
   obvmime=0; # vmime (für vmparse2) aus github frisch bauen
+  obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -120,7 +121,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-patdirs ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -142,6 +143,7 @@ commandline() {
         printf "  $blau-must$reset:      kopiert vom Musterserver\n";
         printf "  ${blau}-mustneu${reset}:   wie -must, aber überschreibt vorhandene Dateien\n";
         printf "  $blau-vmime$reset:     baut vmime (für vmparse2) frisch aus github\n";
+        printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -183,6 +185,7 @@ commandline() {
           remotepc|rpc) obrpc=1;;
           cron) obcron=1;;
           vmime) obvmime=1;;
+          patdirs) obpatdirs=1;;
         esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -215,6 +218,7 @@ commandline() {
     [ "$obcron" = 1 ]&&   printf "obcron: ${blau}1$reset\n"
     [ "$obbw" = 1 ]&&     printf "obbw: ${blau}1$reset\n"
     [ "$obvmime" = 1 ]&&  printf "obvmime: ${blau}1$reset\n"
+    [ "$obpatdirs" = 1 ]&&printf "obpatdirs: ${blau}1$reset\n"
 	fi;
 } # commandline
 
@@ -3209,6 +3213,25 @@ fi;
   # Loeschen: sh TM_setup -rm, zypper se FastObj, dann zypper rm -y ... fuer alle Namen; ggf. rm -rf /opt/Fast*, ggf. rm /etc/init.d/poetd
 } # tu_turbomed
 
+# patdokverzeichnisse() – legt die von dopdfumw.sh/dojpgumw.sh/dotifumw.sh/
+# dozupdf.sh/zusalat.sh benötigten Unterverzeichnisse unter
+# /DATA/Patientendokumente an (zutxt, zupdf, zusalat, ur, zufaxen) sowie
+# /DATA/ur. Fehlten diese (z.B. frisch eingerichteter Server, oder linux0/
+# linux7 als Sicherungsziele), brechen die genannten Skripte mit "Verzeichnis
+# nicht gefunden" ab.
+patdokverzeichnisse() {
+	printf "${dblau}patdokverzeichnisse$reset()\n";
+	mountpoint -q /DATA||{ printf "/DATA nicht eingehaengt, ueberspringe.\n"; return; };
+	for V in zutxt zupdf zusalat ur zufaxen; do
+		ausf "mkdir -p /DATA/Patientendokumente/$V";
+		ausf "chown sturm:praxis /DATA/Patientendokumente/$V";
+		ausf "chmod 770 /DATA/Patientendokumente/$V";
+	done;
+	ausf "mkdir -p /DATA/ur";
+	ausf "chown sturm:praxis /DATA/ur";
+	ausf "chmod 777 /DATA/ur";
+} # patdokverzeichnisse
+
 turbomed() {
 	printf "${dblau}turbomed$reset()\n";
 	# /DATA/down/CGM_TURBOMED_Version_19.2.1.4087_LINUX.zip
@@ -3414,6 +3437,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;         # Fritzbox einbinden
 [ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
 # ── Praxis-Software ──────────────────────────────────────────────────────
+[ $obteil = 0 -o "$obpatdirs" = 1 ]&&patdokverzeichnisse; # Patientendokumente-Unterverzeichnisse anlegen
 [ $obteil = 0 -o $obtm = 1 ]&&turbomed;            # Turbomed-Praxissoftware einrichten
 [ $obteil = 0 -o $obmust = 1 ]&&musterserver;      # Dateien vom Musterserver kopieren
 [ "$obmustneu" = 1 ]&&musterserver neu;
