@@ -2,7 +2,7 @@
 # homeoffice.sh - wie gutenacht.sh, aber laesst anmh und anmww an
 # (z.B. fuer Fernzugriff/Homeoffice ueber Nacht).
 
-ziele="anmmo anmmw anmoo bzw2 fuss labor3 sono1 sr25 sr6 szo1 szon1 szoo1 szow1 szs1"
+ziele="anmmo anmmw anmoo bzw2 fuss labor3 sono1 sr25 sr6 srn2 szo1 szon1 szoo1 szow1 szs1"
 
 for pc in $ziele; do
   if ! ping -c1 -W1 "$pc" >/dev/null 2>&1; then

@@ -171,7 +171,7 @@ if [ "$HOST" != "linux1" ]; then
 	printf "Uebersprungen: laeuft nur auf ${blau}linux1${schwarz} (hier: ${blau}%s${schwarz}) - der Push zu den\n" "$HOST"
 	printf "Windows-PCs braucht nur einmal zu erfolgen, nicht wiederholt von jedem Reserveserver aus.\n"
 else
-	WINPCS="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
+	WINPCS="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr25 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
 	WINKONTEN="sturm schade administrator"
 	HEIDISKRIPTLOKAL=/DATA/down/Update-HeidiSQLPassword.ps1
 	if [ "$obecht" ]; then

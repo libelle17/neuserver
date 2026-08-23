@@ -4,7 +4,7 @@
 # Name, IPv4- und MAC-Adresse. Pings laufen parallel fuer Tempo.
 
 linux_pcs="linux0 linux1 linux2 linux3 linux7 linux8"
-win_pcs="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
+win_pcs="anmoo anmww anmmo anmmw anmh bzw2 fuss labor3 res1 res3 sono1 sr25 sr6 srn2 szo1 szon1 szoo1 szow1 szs1 szn4 wexp wres wser amd hss"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT

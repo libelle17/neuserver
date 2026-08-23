@@ -4,7 +4,7 @@
 # Probiert pro PC die Benutzer sturm und administrator durch (je nach PC
 # ist der eine oder der andere eingerichtet).
 
-ziele="anmh anmmo anmmw anmoo anmww bzw2 fuss labor3 sono1 sr25 sr6 szo1 szon1 szoo1 szow1 szs1"
+ziele="anmh anmmo anmmw anmoo anmww bzw2 fuss labor3 sono1 sr25 sr6 srn2 szo1 szon1 szoo1 szow1 szs1"
 
 for pc in $ziele; do
   if ! ping -c1 -W1 "$pc" >/dev/null 2>&1; then

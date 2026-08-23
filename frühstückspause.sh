@@ -14,6 +14,7 @@ for pc in \
   res1 \
   res3 \
   sono1 \
+  sr25 \
   sr6 \
   srn2 \
   szo1 \

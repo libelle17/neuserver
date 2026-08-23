@@ -20,6 +20,20 @@
 # trotzdem gesichert (s.o.), aber NICHT abgeschaltet, um ihn niemandem
 # unter den Fuessen wegzuschalten.
 #
+# Sicherheitsprinzip 3 (s. Vorfall 24./25.07.2026 auf linux0: waehrend
+# bunacht.sh noch lief, hat ein unabhaengiger - vermutlich manueller,
+# ueber die Desktop-Oberflaeche ausgeloester - Shutdown das System
+# heruntergefahren; das Aushaengen von /root blieb dabei haengen, weil
+# bunacht.sh es noch benutzte ("Ziel wird gerade benutzt"), und der
+# Rechner war danach einen Monat lang unerreichbar, ohne dass wecklauf.sh
+# selbst dafuer verantwortlich war): waehrend der eigentlichen
+# Sicherungslaeufe haelt wecklauf.sh per systemd-inhibit einen
+# Delay-Inhibitor auf shutdown/sleep. Ein waehrenddessen angeforderter
+# Shutdown/Sleep (egal ob manuell, per Desktop oder "systemctl poweroff")
+# wird dadurch verzoegert, bis die Sicherung fertig ist - hoechstens
+# aber um $InhibitDelayMaxSec aus logind.conf(.d/) (Standard nur 5s!,
+# muss dort ausreichend hoch gesetzt sein, damit das wirkt).
+#
 # Jeder Sicherungslauf ist mit "timeout" gegen unbegrenztes Haengen
 # abgesichert. Ohne -e wird alles nur simuliert (rtcwake -Ausgabe, kein
 # shutdown, kein Setzen von Merkerdateien, -e wird nicht an die
@@ -107,6 +121,25 @@ else
   log "Simulation: rtcwake -m no -t $NAECHSTE_EPOCHE";
 fi;
 
+# Uptime JETZT merken, VOR den Sicherungslaeufen - Bugfix 20.07.2026: die
+# fruehere Pruefung NACH den Laeufen (s. Git-Historie) ergab bei variabler
+# Laufzeit (z.B. haelftig-automatischer Faxversand aller DMP-Dokumente an
+# Hausaerzte innerhalb bunacht.sh, je nach Betrieb mal kurz, mal lang)
+# faelschlich "laeuft schon laenger, vermutlich von Hand eingeschaltet" und
+# verhinderte dadurch das Abschalten, obwohl der Rechner tatsaechlich frisch
+# per rtcwake gestartet war (beobachtet 20.07.2026 auf linux7: Nachtlauf
+# dauerte bis 02:05 Uhr bei Boot um 00:00 Uhr, Uptime beim spaeten Check
+# 7486s >= Schwelle). Die Uptime direkt nach Fenster-Erkennung ist der
+# richtige Messzeitpunkt, unabhaengig von der spaeteren Laufzeit.
+UPTIME_BEIM_START_S=$(awk '{print int($1)}' /proc/uptime 2>/dev/null);
+if [ -n "$UPTIME_BEIM_START_S" ] && [ "$UPTIME_BEIM_START_S" -lt "$UPTIME_SCHWELLE_S" ]; then
+  OB_FRISCH_GEBOOTET=1;
+  log "Uptime beim Fenster-Start: ${UPTIME_BEIM_START_S}s < ${UPTIME_SCHWELLE_S}s - frisch gebootet (vermutlich rtcwake), wird am Ende abgeschaltet.";
+else
+  OB_FRISCH_GEBOOTET=;
+  log "Uptime beim Fenster-Start: ${UPTIME_BEIM_START_S:-?}s >= ${UPTIME_SCHWELLE_S}s - laeuft schon laenger (vermutlich von Hand eingeschaltet/in Benutzung), wird am Ende NICHT abgeschaltet.";
+fi;
+
 _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
   local skript="$1"; shift;
   if [ "$obecht" ]; then
@@ -130,6 +163,30 @@ else
   log "Simulation: ssh linux1 /root/bin/sdauffuellen.sh -e";
 fi;
 
+# Shutdown/Sleep-Inhibitor fuer die Dauer der Sicherungslaeufe setzen, s.
+# Sicherheitsprinzip 3 oben. $INHIBIT_PID haelt den systemd-inhibit-Prozess,
+# der den Lock nur haelt, solange er lebt - Beenden gibt ihn wieder frei.
+# Der EXIT-Trap sorgt dafuer, dass der Lock auch bei einem unerwarteten
+# Abbruch von wecklauf.sh selbst (z.B. Strg-C bei einem manuellen Test)
+# nicht dauerhaft haengen bleibt.
+INHIBIT_PID=;
+_inhibit_freigeben() {
+  if [ "$INHIBIT_PID" ]; then
+    kill "$INHIBIT_PID" 2>/dev/null;
+    wait "$INHIBIT_PID" 2>/dev/null;
+    INHIBIT_PID=;
+    log "Shutdown/Sleep-Inhibitor wieder freigegeben.";
+  fi;
+}
+if [ "$obecht" ] && command -v systemd-inhibit >/dev/null 2>&1; then
+  trap _inhibit_freigeben EXIT;
+  systemd-inhibit --what=shutdown:sleep --who=wecklauf.sh \
+    --why="Sicherungslauf ($BESTER_MODUS) auf $buhost laeuft" --mode=delay \
+    sleep infinity &
+  INHIBIT_PID=$!;
+  log "Shutdown/Sleep-Inhibitor gesetzt (PID $INHIBIT_PID) - schuetzt die folgenden Sicherungslaeufe.";
+fi;
+
 case "$BESTER_MODUS" in
   mittag)
     _lauf /root/bin/bumo.sh;
@@ -141,14 +198,17 @@ case "$BESTER_MODUS" in
     ;;
 esac;
 
-UPTIME_S=$(awk '{print int($1)}' /proc/uptime 2>/dev/null);
-if [ -n "$UPTIME_S" ] && [ "$UPTIME_S" -lt "$UPTIME_SCHWELLE_S" ]; then
+_inhibit_freigeben;
+
+# Entscheidung nutzt die beim Fenster-START gemerkte Uptime (s.o.), nicht
+# eine erneute Messung hier - genau das war der Bugfix vom 20.07.2026.
+if [ "$OB_FRISCH_GEBOOTET" ]; then
   if [ "$obecht" ]; then
-    log "${rot}Uptime ${UPTIME_S}s < ${UPTIME_SCHWELLE_S}s (vermutlich durch rtcwake gestartet) - schalte $buhost jetzt ab.${reset}";
+    log "${rot}War beim Fenster-Start frisch gebootet - schalte $buhost jetzt ab.${reset}";
     shutdown -h now;
   else
-    log "Simulation: shutdown -h now (Uptime ${UPTIME_S}s < ${UPTIME_SCHWELLE_S}s)";
+    log "Simulation: shutdown -h now (war beim Fenster-Start frisch gebootet)";
   fi;
 else
-  log "${blau}Uptime ${UPTIME_S:-?}s >= ${UPTIME_SCHWELLE_S}s - Rechner laeuft schon laenger (vermutlich von Hand eingeschaltet/in Benutzung) - schalte NICHT ab.${reset}";
+  log "${blau}War beim Fenster-Start schon laenger gelaufen (vermutlich von Hand eingeschaltet/in Benutzung) - schalte NICHT ab.${reset}";
 fi;
