@@ -729,7 +729,23 @@ HandleHibernateKey=ignore";
   else
     printf "unverändert: $blau$KF$reset\n";
   fi;
-  # 3) logind nur neu starten wenn etwas geändert wurde
+  # 3) InhibitDelayMaxSec anheben – der Shutdown/Sleep-Inhibitor, den
+  # wecklauf.sh waehrend der Sicherungslaeufe (bumo.sh/bulinux.sh/
+  # bunacht.sh) haelt, kann einen waehrenddessen angeforderten Shutdown/
+  # Sleep nur bis zu diesem Wert verzoegern - der Standard von 5s wuerde
+  # ihn quasi sofort trotzdem durchlassen (s. wecklauf.sh, Sicherheits-
+  # prinzip 3, sowie Vorfall 24./25.07.2026 auf linux0).
+  KF2=$KD/20-backup-inhibit.conf;
+  NEWINH2="[Login]
+InhibitDelayMaxSec=28800";
+  if [ ! -f "$KF2" ] || [ "$(cat "$KF2")" != "$NEWINH2" ]; then
+    printf "%s\n" "$NEWINH2" >"$KF2";
+    printf "geschrieben: $blau$KF2$reset\n";
+    geaendert=1;
+  else
+    printf "unverändert: $blau$KF2$reset\n";
+  fi;
+  # 4) logind nur neu starten wenn etwas geändert wurde
   [ "$geaendert" ] && systemctl restart systemd-logind && \
     printf "${gruen}systemd-logind neu gestartet$reset\n";
 } # bleibwach
