@@ -1,4 +1,12 @@
 <?php
+// tragein1.php - generisches Debug-Template ("Superglobals"-Anzeige aller
+// $_SERVER/$_ENV/$_REQUEST/$_GET/$_POST/$_COOKIE/$_FILES-Werte plus einer
+// Beispiel-Variable $_CUSTOM mit Phantasiedaten "john"/"18068416846") -
+// erkennbar eine unveränderte, aus einem allgemeinen PHP-Tutorial
+// übernommene Vorlage, nicht praxisspezifisch angepasst. Wird von KEINER
+// anderen Datei in diesem Repository eingebunden - verwaister Debug-Helfer
+// wie tragein0.php. Aufruf: tragein1.php im Browser, keine Parameter
+// nötig.
 // Generate a formatted list with all globals
 //----------------------------------------------------
 // Custom global variable $_CUSTOM

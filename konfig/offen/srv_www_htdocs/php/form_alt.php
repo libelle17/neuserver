@@ -1,4 +1,13 @@
 <?php
+// form_alt.php - "Formular alt": gibt das Aufgaben-Eingabeformular aus
+// (Freitext-Autocomplete-Feld "aufgaben" plus Statusknöpfe anwesend/
+// vorbereiter/behandler für den MFA/Arzt-Arbeitsablauf, inkl. optischer
+// Hervorhebung des jeweils aktiven Status über $stilan/$stilaus). Wird
+// von KEINER anderen Datei in diesem Repository per include/require
+// eingebunden - laut Namen ("_alt") eine ältere, durch das aktuelle
+// Formular in anzeig.php/ianzeig.php ersetzte Fassung; siehe auch die
+// eng verwandten, ebenfalls verwaisten tragein.php/tragein0.php/
+// tragein1.php/datalist.php.
 if (!isset($_SESSION['anwesend'])) $_SESSION['anwesend']=0;
 if (!isset($_SESSION['vorbereiter'])) $_SESSION['vorbereiter']=0;
 if (!isset($_SESSION['behandler'])) $_SESSION['behandler']=0;

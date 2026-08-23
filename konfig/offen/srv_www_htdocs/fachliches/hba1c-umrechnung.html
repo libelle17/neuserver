@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>HbA1c-Umrechnung</title>
+<style>
+  :root {
+    --header-bg: #1f6f8b;
+    --header-bg2: #123f50;
+    --header-fg: #ffffff;
+    --rowhead-bg: #dcedf3;
+    --rowhead-fg: #123f50;
+    --row-alt: #eaf5f9;
+    --row-hover: #fff3cf;
+    --border: #bcd6e0;
+    --text: #1b2530;
+    --page-bg: #eef4f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    font-family: "Liberation Sans", Arial, sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+  }
+  .topbar {
+    flex: 0 0 auto;
+    background: linear-gradient(90deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .topbar h1 {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 600;
+  }
+  .topbar nav a {
+    color: var(--header-fg);
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    margin-left: 0.4rem;
+  }
+  .topbar nav a:hover {
+    background: #ffe9b3;
+    color: #6b4a00;
+    border-color: #ffe9b3;
+  }
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 1.2rem;
+  }
+  .table-wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    overflow: auto;
+  }
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+  th, td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: linear-gradient(180deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  th.blockstart, td.blockstart {
+    border-left: 2px solid var(--header-bg2);
+  }
+  td.num { font-variant-numeric: tabular-nums; }
+  tbody tr:nth-child(even) td {
+    background: var(--row-alt);
+  }
+  tbody tr:hover td {
+    background: var(--row-hover);
+  }
+  .source {
+    max-width: 62rem;
+    margin: 0.8rem auto 0 auto;
+    font-size: 0.78rem;
+    color: #506672;
+    text-align: center;
+  }
+  .source a { color: var(--header-bg2); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>HbA1c-Umrechnung</h1>
+  <nav>
+    <a href="index.html">Fachliches</a>
+  </nav>
+</div>
+<main>
+  <div class="table-wrap">
+  <table>
+  <thead>
+<tr><th class="">HbA1c alt<br>%HbA1c</th><th>HbA1c neu<br>mmol/mol</th><th>mittlerer<br>Blutglukosewert<br>(mg/dl)</th><th class="blockstart">HbA1c alt<br>%HbA1c</th><th>HbA1c neu<br>mmol/mol</th><th>mittlerer<br>Blutglukosewert<br>(mg/dl)</th><th class="blockstart">HbA1c alt<br>%HbA1c</th><th>HbA1c neu<br>mmol/mol</th><th>mittlerer<br>Blutglukosewert<br>(mg/dl)</th><th class="blockstart">HbA1c alt<br>%HbA1c</th><th>HbA1c neu<br>mmol/mol</th><th>mittlerer<br>Blutglukosewert<br>(mg/dl)</th></tr>
+  </thead>
+  <tbody>
+<tr><td class="num">4,0</td><td class="num">20</td><td class="num">70</td><td class="num blockstart">6,1</td><td class="num">43</td><td class="num">130</td><td class="num blockstart">8,2</td><td class="num">66</td><td class="num">191</td><td class="num blockstart">10,3</td><td class="num">89</td><td class="num">250</td></tr>
+<tr><td class="num">4,1</td><td class="num">21</td><td class="num">72</td><td class="num blockstart">6,2</td><td class="num">44</td><td class="num">133</td><td class="num blockstart">8,3</td><td class="num">67</td><td class="num">193</td><td class="num blockstart">10,4</td><td class="num">90</td><td class="num">254</td></tr>
+<tr><td class="num">4,2</td><td class="num">22</td><td class="num">74</td><td class="num blockstart">6,3</td><td class="num">45</td><td class="num">135</td><td class="num blockstart">8,4</td><td class="num">68</td><td class="num">196</td><td class="num blockstart">10,5</td><td class="num">91</td><td class="num">256</td></tr>
+<tr><td class="num">4,3</td><td class="num">23</td><td class="num">77</td><td class="num blockstart">6,4</td><td class="num">46</td><td class="num">137</td><td class="num blockstart">8,5</td><td class="num">69</td><td class="num">198</td><td class="num blockstart">10,6</td><td class="num">92</td><td class="num">259</td></tr>
+<tr><td class="num">4,4</td><td class="num">25</td><td class="num">83</td><td class="num blockstart">6,5</td><td class="num">48</td><td class="num">142</td><td class="num blockstart">8,6</td><td class="num">70</td><td class="num">202</td><td class="num blockstart">10,7</td><td class="num">93</td><td class="num">261</td></tr>
+<tr><td class="num">4,5</td><td class="num">26</td><td class="num">85</td><td class="num blockstart">6,6</td><td class="num">49</td><td class="num">146</td><td class="num blockstart">8,7</td><td class="num">72</td><td class="num">205</td><td class="num blockstart">10,8</td><td class="num">95</td><td class="num">267</td></tr>
+<tr><td class="num">4,6</td><td class="num">27</td><td class="num">88</td><td class="num blockstart">6,7</td><td class="num">50</td><td class="num">148</td><td class="num blockstart">8,8</td><td class="num">73</td><td class="num">209</td><td class="num blockstart">10,9</td><td class="num">96</td><td class="num">268</td></tr>
+<tr><td class="num">4,7</td><td class="num">28</td><td class="num">90</td><td class="num blockstart">6,8</td><td class="num">51</td><td class="num">151</td><td class="num blockstart">8,9</td><td class="num">74</td><td class="num">211</td><td class="num blockstart">11,0</td><td class="num">97</td><td class="num">272</td></tr>
+<tr><td class="num">4,8</td><td class="num">29</td><td class="num">94</td><td class="num blockstart">6,9</td><td class="num">52</td><td class="num">153</td><td class="num blockstart">9,0</td><td class="num">75</td><td class="num">214</td><td class="num blockstart">11,1</td><td class="num">98</td><td class="num">274</td></tr>
+<tr><td class="num">4,9</td><td class="num">30</td><td class="num">95</td><td class="num blockstart">7,0</td><td class="num">53</td><td class="num">157</td><td class="num blockstart">9,1</td><td class="num">76</td><td class="num">216</td><td class="num blockstart">11,2</td><td class="num">99</td><td class="num">277</td></tr>
+<tr><td class="num">5,0</td><td class="num">31</td><td class="num">99</td><td class="num blockstart">7,1</td><td class="num">54</td><td class="num">159</td><td class="num blockstart">9,2</td><td class="num">77</td><td class="num">220</td><td class="num blockstart">11,3</td><td class="num">100</td><td class="num">279</td></tr>
+<tr><td class="num">5,1</td><td class="num">32</td><td class="num">101</td><td class="num blockstart">7,2</td><td class="num">55</td><td class="num">162</td><td class="num blockstart">9,3</td><td class="num">78</td><td class="num">222</td><td class="num blockstart">11,4</td><td class="num">101</td><td class="num">283</td></tr>
+<tr><td class="num">5,2</td><td class="num">33</td><td class="num">103</td><td class="num blockstart">7,3</td><td class="num">56</td><td class="num">164</td><td class="num blockstart">9,4</td><td class="num">79</td><td class="num">225</td><td class="num blockstart">11,5</td><td class="num">102</td><td class="num">285</td></tr>
+<tr><td class="num">5,3</td><td class="num">34</td><td class="num">106</td><td class="num blockstart">7,4</td><td class="num">57</td><td class="num">168</td><td class="num blockstart">9,5</td><td class="num">80</td><td class="num">227</td><td class="num blockstart">11,6</td><td class="num">103</td><td class="num">288</td></tr>
+<tr><td class="num">5,4</td><td class="num">36</td><td class="num">112</td><td class="num blockstart">7,5</td><td class="num">58</td><td class="num">169</td><td class="num blockstart">9,6</td><td class="num">81</td><td class="num">231</td><td class="num blockstart">11,7</td><td class="num">104</td><td class="num">290</td></tr>
+<tr><td class="num">5,5</td><td class="num">37</td><td class="num">114</td><td class="num blockstart">7,6</td><td class="num">60</td><td class="num">175</td><td class="num blockstart">9,7</td><td class="num">83</td><td class="num">234</td><td class="num blockstart">11,8</td><td class="num">105</td><td class="num">294</td></tr>
+<tr><td class="num">5,6</td><td class="num">38</td><td class="num">117</td><td class="num blockstart">7,7</td><td class="num">61</td><td class="num">177</td><td class="num blockstart">9,8</td><td class="num">84</td><td class="num">238</td><td class="num blockstart">11,9</td><td class="num">107</td><td class="num">299</td></tr>
+<tr><td class="num">5,7</td><td class="num">39</td><td class="num">119</td><td class="num blockstart">7,8</td><td class="num">62</td><td class="num">180</td><td class="num blockstart">9,9</td><td class="num">85</td><td class="num">240</td><td class="num blockstart">12,0</td><td class="num">108</td><td class="num">301</td></tr>
+<tr><td class="num">5,8</td><td class="num">40</td><td class="num">123</td><td class="num blockstart">7,9</td><td class="num">63</td><td class="num">182</td><td class="num blockstart">10,0</td><td class="num">86</td><td class="num">243</td><td class="num blockstart"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td class="num">5,9</td><td class="num">41</td><td class="num">124</td><td class="num blockstart">8,0</td><td class="num">64</td><td class="num">186</td><td class="num blockstart">10,1</td><td class="num">87</td><td class="num">245</td><td class="num blockstart"></td><td class="num"></td><td class="num"></td></tr>
+<tr><td class="num">6,0</td><td class="num">42</td><td class="num">128</td><td class="num blockstart">8,1</td><td class="num">65</td><td class="num">187</td><td class="num blockstart">10,2</td><td class="num">88</td><td class="num">249</td><td class="num blockstart"></td><td class="num"></td><td class="num"></td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="source">Quelle: Verein f&uuml;r Diabetiker der Universit&auml;tskinderklinik Graz &ndash; <a href="https://www.diabaer.at" target="_blank" rel="noopener">www.diabaer.at</a></p>
+</main>
+</body>
+</html>

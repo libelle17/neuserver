@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Fachliches</title>
+<style>
+  :root {
+    --head-bg: #2f5d78;
+    --head-fg: #ffffff;
+    --btn-bg: #eaf1f5;
+    --btn-border: #2f5d78;
+    --text: #1b2530;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Liberation Sans", Arial, sans-serif;
+    color: var(--text);
+    background: #ffffff;
+  }
+  .topbar {
+    background: var(--head-bg);
+    color: var(--head-fg);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .topbar h1 {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 600;
+  }
+  .topbar nav a {
+    color: var(--head-fg);
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 4px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .topbar nav a:hover { background: rgba(255,255,255,0.3); }
+  main {
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .btn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .btn-list a {
+    display: block;
+    text-decoration: none;
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0.9rem 1.2rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .btn-list a:hover { background: #dbe9f0; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Fachliches</h1>
+  <nav></nav>
+</div>
+<main>
+  <div class="btn-list">
+    <a href="aid-vergleich.html">AID-Vergleich</a>
+    <a href="hba1c-umrechnung.html">HbA1c-Umrechnung</a>
+    <a href="dienstplan/">Dienstplan (Team-Login)</a>
+  </div>
+</main>
+</body>
+</html>

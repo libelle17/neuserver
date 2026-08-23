@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>AID-Vergleich</title>
+<style>
+  :root {
+    --header-bg: #1f6f8b;
+    --header-bg2: #123f50;
+    --header-fg: #ffffff;
+    --rowhead-bg: #dcedf3;
+    --rowhead-fg: #123f50;
+    --section-bg: #ffe9b3;
+    --section-border: #e0a300;
+    --section-fg: #6b4a00;
+    --row-alt: #eaf5f9;
+    --row-hover: #fff3cf;
+    --border: #bcd6e0;
+    --text: #1b2530;
+    --page-bg: #eef4f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    font-family: "Liberation Sans", Arial, sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+  }
+  .topbar {
+    flex: 0 0 auto;
+    background: linear-gradient(90deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .topbar h1 {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 600;
+  }
+  .topbar nav a {
+    color: var(--header-fg);
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    margin-left: 0.4rem;
+  }
+  .topbar nav a:hover {
+    background: var(--section-bg);
+    color: var(--section-fg);
+    border-color: var(--section-bg);
+  }
+  .table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    margin: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  th, td {
+    padding: 0.35rem 0.6rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  /* fixierte Kopfzeile (Zeile 1) */
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: linear-gradient(180deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    font-weight: 600;
+    white-space: normal;
+    min-width: 9rem;
+    max-width: 16rem;
+  }
+  /* fixierte erste Spalte */
+  td.rowhead, thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--rowhead-bg);
+    color: var(--rowhead-fg);
+    font-weight: 600;
+    white-space: normal;
+    min-width: 12rem;
+    max-width: 18rem;
+  }
+  thead th:first-child {
+    z-index: 25;
+    background: var(--header-bg2);
+    color: var(--header-fg);
+  }
+  tbody tr:nth-child(even) td:not(.rowhead) {
+    background: var(--row-alt);
+  }
+  tbody tr:hover td:not(.rowhead) {
+    background: var(--row-hover);
+  }
+  tbody tr:hover td.rowhead {
+    background: #c3e0ec;
+  }
+  td.bold { font-weight: 600; }
+  /* farbige Abschnitts-Trennzeilen (Kategorien wie "Insuline", "Hardware", ...) */
+  td.sep {
+    border-top: 2px solid var(--section-border);
+    background: var(--section-bg);
+    color: var(--section-fg);
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>AID-Vergleich &ndash; Insulinpumpen</h1>
+  <nav>
+    <a href="index.html">Fachliches</a>
+  </nav>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th></th><th>Omnipod (Insulet)</th><th>Minimed 780G (Minimed)</th><th>Kaleido (viCentra)</th><th>T:Slim (VitalAire)</th><th>Ypsopump (mylife)</th><th>iLet Bionic Pancreas (in Deutschland noch nicht, deshalb lückenhaft)</th></tr>
+</thead>
+<tbody>
+<tr><td class="bold rowhead">Zulassung und Grenzwerte</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Mindestalter [a]</td><td>2</td><td>2</td><td>18</td><td>ControlIQ: 6, ControlIQ+: 2</td><td>1</td><td>6</td></tr>
+<tr><td class="rowhead">Mindestgewicht [kg]</td><td>-</td><td>-</td><td>35</td><td>ControlIQ: 25, ControlIQ+: 9</td><td>10</td><td>22</td></tr>
+<tr><td class="rowhead">Höchstgewicht [kg]</td><td>-</td><td>-</td><td>150</td><td>ControlIQ: 140, ControlIQ+: 200</td><td>300</td><td></td></tr>
+<tr><td class="rowhead">Mindestdosis [iE]</td><td>5</td><td>6</td><td>8</td><td>ControlIQ: 10, ControlIQ+: 5</td><td>5</td><td>15</td></tr>
+<tr><td class="rowhead">maximale Tagesgesamtdosis [iE]</td><td>66 (rechnerisch, für Pod alle 72h)</td><td>250</td><td>90 (inoff.140)</td><td>ControlIQ: 100, ControlIQ+: 200</td><td>350</td><td>150</td></tr>
+<tr><td class="rowhead">Schwangerschaft</td><td></td><td>x (auch T2Dm)</td><td></td><td>x (T1Dm, Control-IQ+, G7 / Libre 3+)</td><td>x</td><td></td></tr>
+<tr><td class="bold sep rowhead">Insuline</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Humalog U100</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Insulin  Lispro Sanofi</td><td>x</td><td></td><td></td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Humalog U200</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td></tr>
+<tr><td class="rowhead">Novorapid</td><td>x</td><td>x</td><td>x</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Fiasp</td><td>-</td><td>nicht mehr</td><td>-</td><td>-</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Lyumjev</td><td>-</td><td>-</td><td>-</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Insulin aspart sanofi</td><td>x</td><td>x</td><td></td><td></td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Kirsty</td><td>x</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Apidra</td><td>nicht mehr</td><td></td><td></td><td></td><td>x</td><td></td></tr>
+<tr><td class="bold sep rowhead">Reservoir</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Reservoirgröße [iE]</td><td>200</td><td>180, 300</td><td>200</td><td>300 (mind.50,verwendb.220-250)</td><td>160</td><td></td></tr>
+<tr><td class="rowhead">vorgefüllte Ampulle</td><td>-</td><td>-</td><td>-</td><td>-</td><td>Novorapid Pumpcart</td><td></td></tr>
+<tr><td class="bold sep rowhead">Eingabe vor Start</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Körpergewicht (wird verwendet für)</td><td>-</td><td>-</td><td>x (Hypo-BE)</td><td>x (Korrekturbolus,Sicherheitsbegr.)</td><td>x (Modell, Start-Insulinempf.)</td><td></td></tr>
+<tr><td class="rowhead">Tagesgesamtinsulindosis (TDD)</td><td>x</td><td>-</td><td>x</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Basalrate</td><td>nur für Anfang</td><td>nur für Anfang</td><td></td><td>x</td><td></td><td></td></tr>
+<tr><td class="rowhead">Sicherheitsbasalrate</td><td>x</td><td>x</td><td>x</td><td></td><td>x</td><td></td></tr>
+<tr><td class="rowhead">typische Mahlzeitengröße [gKH]</td><td></td><td></td><td>x</td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">BE-Faktoren</td><td>x</td><td>x</td><td>-</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Korrekturfaktoren</td><td>x</td><td>x</td><td>-</td><td>x</td><td>-</td><td></td></tr>
+<tr><td class="bold sep rowhead">Bolus- und Korrekturparameter</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Boluszielwert</td><td>= Basalratenzielwert</td><td>= Basalratenzielwert im AID-Modus, 60-400 mg/dl im manuellen Modus</td><td>= Basalratenzielwert</td><td>110 mg/dl im AID-Modus, 70-250 (zeitabschnittweise) im manuellen Modus</td><td>80-198 (zeitabschnittweise)</td><td></td></tr>
+<tr><td class="rowhead">Insulinwirkzeit [h]</td><td>2-6</td><td>2-8</td><td>- (5h)</td><td>-</td><td>-</td><td></td></tr>
+<tr><td class="rowhead">Bolusschrittgröße [iE]</td><td>0,05</td><td>0,025-0,1</td><td>0,1</td><td>0,01 (ab Mindestbolus 0,05)</td><td>0,1</td><td></td></tr>
+<tr><td class="rowhead">maximale Bolusgröße [iE]</td><td>30</td><td>25-75</td><td>10</td><td>25</td><td>30</td><td></td></tr>
+<tr><td class="rowhead">Insulinabgabe</td><td></td><td>normal,schnell</td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Schwellenwerte für Korrektur</td><td>= Zielwert</td><td>120 mg/dl, nur bei Algorithmusempfehlung</td><td>fließend</td><td>180</td><td>fließend</td><td></td></tr>
+<tr><td class="rowhead">Gegenläufige Korrektur</td><td>an/aus</td><td>an</td><td>dynamisch</td><td>an</td><td>dynamisch</td><td></td></tr>
+<tr><td class="rowhead">Mindestglucose für Boli [mg/dl]</td><td>50-70</td><td>50</td><td>60-85</td><td>70</td><td>60-100</td><td></td></tr>
+<tr><td class="rowhead">Hypo-Warnschwelle [mg/dl]</td><td>60-100</td><td>50-90 (Alarm vor niedrig)</td><td>60-100</td><td>60-100</td><td>60-100</td><td></td></tr>
+<tr><td class="bold sep rowhead">Zielwerte im AID-Modus</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Basalratenzielwert mindestens [mg/dl]</td><td>110 (8 Segmente)</td><td>100 (120)</td><td>100</td><td>Bereich 112-160</td><td>80 (abschnittweise)</td><td></td></tr>
+<tr><td class="rowhead">Basalratenzielwert  höchstens [mg/dl]</td><td>150 (8 Segmente)</td><td>120</td><td>130</td><td>Bereich 112-160</td><td>198 (zeitabschnittweise)</td><td></td></tr>
+<tr><td class="bold sep rowhead">Einstellmöglichkeiten</td><td class="sep">(indirekt: G’zielwert,man.Korr.=&gt;TDD)</td><td class="sep">Zeit akt. Insulin</td><td class="sep">Aggressivität Hyperglyk.</td><td class="sep">Korrekturfaktoren</td><td class="sep">Korrekturfaktor</td><td class="sep"></td></tr>
+<tr><td class="rowhead"></td><td>KE-Faktoren</td><td>KE-Faktoren</td><td>Aggressivität Frühstück/Mittagessen/Abendessen</td><td>KE-Faktoren</td><td>KE-Faktoren</td><td></td></tr>
+<tr><td class="rowhead"></td><td></td><td></td><td></td><td></td><td>Glucoseziel</td><td></td></tr>
+<tr><td class="rowhead"></td><td></td><td>Hypo-Warnschwelle (Al.vor/bei niedrig)</td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead"></td><td>Glucosezielwert</td><td>Zielwert</td><td>Aggressivität Normoglyk.</td><td>Basalrate</td><td>pers. Glucosziel (80-198)</td><td></td></tr>
+<tr><td class="rowhead"></td><td></td><td></td><td>Körperl.Akt.niedr./mod./int.</td><td></td><td></td><td></td></tr>
+<tr><td class="bold rowhead">Temporäre Modi</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Modus wenig Unterzucker</td><td>Aktivitätsmodus (0,5-24h)</td><td>Temp. Zielwert (Sport-Modus, 0,5-24h)</td><td>Zen-Modus (1-8h), Aktivitätsmodi (DBLG2: 29)</td><td>Sportmodus</td><td>Ease-off/man Modus: temp. Basalrate (-24h)</td><td></td></tr>
+<tr><td class="rowhead">vorausplanbar</td><td>-</td><td>-</td><td>ja</td><td>-</td><td>ja</td><td></td></tr>
+<tr><td class="rowhead">Wirkung</td><td>Zielwert 150, -50% Korr.</td><td>Ziel 150, keine/kaum Autokorr.</td><td>Zen: Ziel +10-40 mg/dl (≈ 140); Aktivität (Sekundärquellen): +20-+70, Aggr.stark red.,16h „Nachbrennen“</td><td>Ziel 140-160, keine Korrekturen</td><td>Ease off: Zielwert +45 mg/dl, Ins’sensit. + ca. 50%, kein Insulin bei &lt; 126 mg/dl (Sekundärquellen)</td><td></td></tr>
+<tr><td class="rowhead">Modus Schlaf</td><td>niedrigerer Zielwert im Profil</td><td>niedrigerer Zielwert manuell</td><td>Zielwert senken , (Nachtmodus DBLG2: Alarmverlängerung)</td><td>Schlafmodus (110-120)</td><td>Boost (Insulin +35%, -13h)</td><td></td></tr>
+<tr><td class="rowhead">temporäre Basalrate im manuellen Modus</td><td>+</td><td>+</td><td>+</td><td>+</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">temporäre Basalrate im AID-Modus</td><td>-</td><td>-</td><td>-</td><td>Nur ControlIQ+: 15 min – 72h</td><td>-</td><td></td></tr>
+<tr><td class="bold rowhead">Bolusrechner im AID-Betrieb</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Bolusvorschlag modifiziert sich nach Trend</td><td>x</td><td>-</td><td>x</td><td>-</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">Bolusrechner mit und ohne Sensorwert</td><td>x, oder eingegeben</td><td>- (ggf. seit 12 min eingegeben)</td><td>- (indirekt mit Kalibrierung)</td><td>-, oder eingeben</td><td>- (indirekt mit Kalibrierung)</td><td></td></tr>
+<tr><td class="rowhead">Bolusmodifikation bei langsamer Resorption</td><td>nur manueller Modus: Extended Bolus</td><td>nur manu.Modus: Dual Wave, Square Wave (verläng.Bolus 0,5-8h)</td><td>DBLG2: „fettreiche Mlzt“-Modus</td><td>Extended Bolus: ControlIQ -2h, ControlIQ+: -8h</td><td>Eingabe: „langsam resorbierbare Mlzt“</td><td></td></tr>
+<tr><td class="rowhead">Snack-Behandlung</td><td>Bolusrechner oder Autokorrektur</td><td>keine Eingabe: „Meal Detection“ =&gt; Autokorrektur mit 100% Korrekturbolus</td><td>„kleine Mahlzeit“, keine eigene Kategorie</td><td>Autokorrektur mit 60% Korrekturbolus</td><td>Eingabe: „Snack“</td><td></td></tr>
+<tr><td class="rowhead">Eingabe von Hypo-BE</td><td>-</td><td>-</td><td>Rescue-Carbs gewichtsadaptiert, vom System vorgeschlagen, eigenes Ereignis</td><td>-</td><td>Eingabe: „Hypoglykämie-Behandlung“</td><td>System frägt bei Hypo aktiv nach</td></tr>
+<tr><td class="rowhead">Korrektur über Bolusrechner empfohlen</td><td>eher -</td><td>eher -</td><td>x</td><td>eher -</td><td>x</td><td></td></tr>
+<tr><td class="bold sep rowhead">Betriebsmodi, Anzeige, Alarme</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">AID-Modus</td><td>automated mode (Kreis geschlossen+hellblau)</td><td>Smartguard-Modus (Schild hellblau)</td><td>Loop-Modus (grünes Kreissymbol, ∞)</td><td>Control-IQ (Symbol grün)</td><td>AID-Modus (Kreis in App grün)</td><td></td></tr>
+<tr><td class="rowhead">Zwischenmodus, falls es ihn gibt</td><td>limited mode (Kreis unterbrochen + grau-weiß)</td><td>safe basal (/Sicherheitsbasalrate, Schild weiß-grau)</td><td>-</td><td>-</td><td>-</td><td></td></tr>
+<tr><td class="rowhead">manueller Modus</td><td>manual mode (grau, „Ø“, Statusleiste grau)</td><td>manueller Modus (Schild weg)</td><td>manueller Modus (absichtl.: dashboard grau, ohne ∞, unabs.: Warnbalken)</td><td>manueller Modus (Symbol grau)</td><td>manueller Modus (Symbol rot, mit !, Off)</td><td></td></tr>
+<tr><td class="rowhead">manueller Modus vom System herstellbar nach</td><td>0 / 2-4h</td><td>20 min / 4h</td><td>30 min</td><td>20 min</td><td>30 min</td><td></td></tr>
+<tr><td class="rowhead">automatische Rückkehr in Automodus</td><td>x</td><td>nur aus safe basal, sonst mit BZ-Wert</td><td>x (bei langer Pause: mit man.Bestät.)</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">aktives Insulin=Boli+man.Korr.+</td><td>aut.Korr.nur intern</td><td>aut.Korr.</td><td>aut.Korr.</td><td>aut.Korr.</td><td>aut.Korr.</td><td></td></tr>
+<tr><td class="rowhead">Verstopfungsalarme</td><td>3–5 iE nicht abgegebenes Insulin (Ø), dann Hazard-Alarm, Pod verwerfen</td><td>Alarm „Insulinfluss blockiert&quot;; Auslöseschwelle vom Hersteller nicht veröffentlicht  (andere Quelle: nach: 2-3 IE Alarmton, 10 min Sirene)</td><td>nach int. Druckschwelle (Wert nicht veröffentlicht), dann Body abnehmen, Katheter prüfen, ggf. zweite Pumpe draufstecken</td><td>nach nicht abgegebenem Volumen – Bolus ≥3 iE: 1–3 min; 2 iE/h: 1–2 h; 0,1 iE/h: bis 36 h  =&gt; Anweisung auf Screen</td><td>Wert nicht veröffentlicht; Alarm an Körper und Smartphone</td><td></td></tr>
+<tr><td class="rowhead">Fully closed loop</td><td></td><td>vivera, vor. 2027</td><td>DBLG2</td><td></td><td>ja, camaps liberty 9/26</td><td>beta bionics, ?</td></tr>
+<tr><td class="bold sep rowhead">nicht wirksam einstellbar</td><td class="sep"></td><td class="sep"></td><td class="sep">Wirkdauer</td><td class="sep">Wirkdauer</td><td class="sep">Wirkdauer</td><td class="sep"></td></tr>
+<tr><td class="rowhead"></td><td></td><td></td><td>Hyperglykämieschwellenwert</td><td>Zielbereich (aber: über Modi)</td><td>Insulinsensitivitätsfaktor</td><td></td></tr>
+<tr><td class="rowhead"></td><td>basale Insulinversorgung</td><td>basale Insulinversorgung</td><td>Basalrate</td><td></td><td>Basalrate</td><td></td></tr>
+<tr><td class="rowhead"></td><td></td><td>Insulinsensitivitätsfaktor</td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead"></td><td></td><td>Korrektur-Zielwert 120 mg/dl</td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="bold sep rowhead">Hardware</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Pumpengarantiezeit</td><td>4a Handheld</td><td>4a</td><td>4a</td><td>4a</td><td>4a</td><td></td></tr>
+<tr><td class="rowhead">Sensoren</td><td>G6, G7, Libre 3+ (Herbst 2026)</td><td>Guardian 4, Simplera, Instinct</td><td>G6, G7 (DBLG2)</td><td>G6, G7, Libre 3+ (Control-IQ+)</td><td>G6, G7, Libre 3+</td><td></td></tr>
+<tr><td class="rowhead">Kalibration</td><td>nur optional</td><td>Start-BZ obligat, dann auf Anforderung</td><td>-</td><td>nur optional</td><td>nur optional</td><td></td></tr>
+<tr><td class="rowhead">Bluetooth-Reichweite Sensor-Pumpe</td><td>selbe Körperseite, 1-2m</td><td>Luft 10m, Körper 2-3m</td><td>DBLG2: 3-5m selber Raum</td><td>selbe Körperseite, 1,5 – 3m</td><td>über Smartphone, 3-5m selber Raum</td><td></td></tr>
+<tr><td class="rowhead">Akku-Ladedauer</td><td>PDM 1,5 h über USB-C-Kabel</td><td>1 x AA-Batterie</td><td>1 h (Pumpen im Wechsel; Erstladung 2h)</td><td>1,5-2h über Standard-Mikro-USB-Kabel</td><td>1 x AAA-Batterie</td><td></td></tr>
+<tr><td class="rowhead">Akku-Laufzeit</td><td>72 h, PDM 1-2d</td><td>Alkali: 7-10d, Lithium: 2-3 Wo</td><td>72 h</td><td>4-7 d</td><td>4-6 Wo</td><td></td></tr>
+<tr><td class="bold sep rowhead">Software und Datenmanagement</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Handheld</td><td>optional alternativ</td><td>-</td><td>DBLG1: obligat, DBLG2: optional alternativ</td><td>-</td><td>-</td><td></td></tr>
+<tr><td class="rowhead">Smartphone nötig</td><td>-</td><td>nur für Instinct-Erstkopplung</td><td>nur DBLG2</td><td>nur tandem mobi</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">Android</td><td>+</td><td>+</td><td>für G7</td><td>+</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">iOS</td><td>G6, G7</td><td>+</td><td>bald</td><td>+</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">Name der smartphone-App</td><td>Omnipod 5 App, Omnipod 5 iOS App</td><td>Minimed Mobile App</td><td>DBLG2-App</td><td>t:connect mobile App (Historie und Bolus), T:slim-App, Tandem Mobi App</td><td>/ mylife myloop</td><td></td></tr>
+<tr><td class="rowhead">Name einer Mitlese-App</td><td>Omnipod View</td><td>Carelink Connect App</td><td>Yourloop</td><td>- (Dexcom Follow App, Libre: TandemSource, Nightscout, bald:  Sugarmate)</td><td>camASAP</td><td></td></tr>
+<tr><td class="rowhead">Cloud/PC-Darstellung</td><td>Glooko-Cloud</td><td>Carelink Personal, Carelink Pro Cloud</td><td>Yourloop-Cloud</td><td>Tandem Source-Cloud, t:connect</td><td>Glooko-Cloud</td><td></td></tr>
+<tr><td class="rowhead">Bolusrechnername</td><td>SmartBolus</td><td>BolusExpert</td><td>Diabeloop-Bolusrechner</td><td>Bolusrechner</td><td>Bolus-Kalkulator</td><td></td></tr>
+<tr><td class="rowhead">Algorithmusname</td><td>adaptive Basalabgabe</td><td></td><td></td><td></td><td>MPC-Algorithmus</td><td></td></tr>
+<tr><td class="rowhead"></td><td>SmartAdjust</td><td>Smartguard</td><td>DBLG1, DBLG2</td><td>Control-IQ /Control-IQ+</td><td>CamAPS Fx</td><td></td></tr>
+<tr><td class="bold sep rowhead">Umgebungsbedingungen</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Wassertiefe Pumpe</td><td>IP28: 7,6 m 60 min</td><td>IPX8: 3,6 m 24h (aber nicht mit Haarrissen)</td><td>IP68: 1,5 m 1 h</td><td>IPX7: 1 m 30 min</td><td>IPX8: 1 m 60 min (Hersteller rät aber ab)</td><td></td></tr>
+<tr><td class="rowhead">Wassertiefe Sensor Dexcom G6,G7</td><td>2,4 m 24 h</td><td></td><td>2,4 m 24 h (DBLG2)</td><td>2,4 m 24 h</td><td>2,4 m 24 h</td><td></td></tr>
+<tr><td class="rowhead">Wassertiefe Sensor Libre 3+ (aber: Pflaster löst sich)</td><td>1 m 30 min</td><td></td><td></td><td>1 m 30 min</td><td>1 m 30 min</td><td></td></tr>
+<tr><td class="rowhead">Wassertiefe Guardian, Simplera</td><td></td><td>2,4 m 30 min</td><td></td><td></td><td></td><td></td></tr>
+<tr><td class="rowhead">Meereshöhe Pumpe</td><td>&lt; 3000 m (700 hPa =&gt; zu viel Insulin durch Luftbläschen!)</td><td>3000 m (=700 hPa lt.Handbuch)</td><td>3048 m (Konformitätsunterlagen)</td><td>3048 m (Handbuch)</td><td>5500 m (Benutzerhandbuch)</td><td></td></tr>
+<tr><td class="rowhead">Meereshöhe Dexcom</td><td>4206 m</td><td></td><td>4206 m</td><td>4206 m</td><td>4206 m</td><td></td></tr>
+<tr><td class="rowhead">Meereshöhe Libre 3+</td><td>3048 m</td><td></td><td></td><td>3048 m</td><td>3048 m</td><td></td></tr>
+<tr><td class="bold sep rowhead">Infusionssets</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Katheteranschluss</td><td></td><td>Minimed-Anschluss</td><td>Kaleido-Kopplung</td><td>t:lock (red.Innenvolumen ggü.Luer)</td><td>Luer-Lock, 360° drehbar</td><td></td></tr>
+<tr><td class="bold rowhead">Teflon</td><td>&lt; 50°</td><td>z.B. Mio Advance 90°, Medt.Extended 90°(nur 300 IE-Reservoir), MiniMed Mio 30 (30°)</td><td>90°, schräg</td><td>Autosoft (90°), Varisoft (20-45°)</td><td>myLife OrbitInis (90°)</td><td></td></tr>
+<tr><td class="rowhead">Länge [cm]</td><td>-</td><td>45, 60, 80, 110</td><td>5, 30</td><td>60, 80, 110</td><td>45, 60, 80, 110</td><td></td></tr>
+<tr><td class="rowhead">zusammensetzbar</td><td>entfällt</td><td>+</td><td>+</td><td>+</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">Nadellängen [mm]</td><td>9 mm (davon 6,5 mm i.c.)</td><td>6, 9, 13 (Mio 30)</td><td>6, 9</td><td>6, 9</td><td>6, 9</td><td></td></tr>
+<tr><td class="bold rowhead">Stahl</td><td>-</td><td>z.B. Sure-T 90°</td><td>-</td><td>TruSteel (90°)</td><td>myLife OrbitMicro (90°)</td><td></td></tr>
+<tr><td class="rowhead">Länge [cm]</td><td></td><td>45, 60, 80, 110 cm</td><td></td><td>43, 60, 80, 110 cm</td><td>45, 60, 80</td><td></td></tr>
+<tr><td class="rowhead">zusammensetzbar</td><td></td><td>+</td><td></td><td>+ (10 cm)</td><td>+</td><td></td></tr>
+<tr><td class="rowhead">Nadellängen [mm]</td><td></td><td>6, 8, 10</td><td></td><td>6, 8</td><td>5,5, 7, 8,5</td><td></td></tr>
+<tr><td class="rowhead">Tragedauer</td><td>- 72 h</td><td>2-3d, Medtronic Extended 7d</td><td>-3d</td><td>2-3d Teflon, 2d Stahl</td><td>-3d Teflon, 2d Stahl</td><td></td></tr>
+<tr><td class="bold sep rowhead">Bezugswege Stand 8/26</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">Vertrieb Pumpe</td><td>nur Hersteller</td><td>Hersteller oder Diabetesversand</td><td>Diabetesversender (z.B. Mediq, speziMED)</td><td>nur VitalAire</td><td>mylife</td><td></td></tr>
+<tr><td class="rowhead">Rezeptbesonderheit Pumpe</td><td></td><td>Rp. + Auftragsformular</td><td>herstellerseitige Rezeptvorlage</td><td>2 Rezepte: Pumpe, Verbrauchsmat.</td><td></td><td></td></tr>
+<tr><td class="rowhead">Vertrieb Verbrauchsmaterial</td><td>nur Hersteller</td><td>Hersteller oder Diabetesversand</td><td>Diabetesversender</td><td>nur VitalAire</td><td>Herstellerangabe: nur mylife, faktisch auch Fachhandel</td><td></td></tr>
+<tr><td class="rowhead">Rezeptart Verbrauchsmaterial</td><td></td><td>Rp. (privat: Rezeptkopie), bei Versorgungsauftrag nur formlos nachbestellen</td><td>Versand zuzahlungsfrei</td><td></td><td>bei Fiasp: Hilfsmittelrp. Leerampulle + Alkoholtupfer</td><td></td></tr>
+<tr><td class="rowhead">Besonderheit</td><td></td><td></td><td>Monats-Kits</td><td>Nachbestellung VitalAire onlineshop, VitalAire übernimmt Zuzahlung + Porto</td><td></td><td></td></tr>
+<tr><td class="rowhead">krankenkassenabhängige pauschale Verbrauchsmaterialversorgung möglich</td><td>? (Patchpumpensystematik)</td><td>x (eShop od. telefonisch)</td><td>x</td><td>x</td><td>x</td><td></td></tr>
+<tr><td class="rowhead">aktueller Übergang</td><td></td><td></td><td>Wechsel von DBLG1/G6 auf DBLG2/G7 erfolgt gestaffelt</td><td></td><td></td><td></td></tr>
+<tr><td class="bold sep rowhead">Studienergebnisse</td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td><td class="sep"></td></tr>
+<tr><td class="rowhead">HbA1c in Studien</td><td>6,7-6,9%</td><td>6,8-6,9%</td><td>6,9-7,1%</td><td>6,9-7,0%</td><td>6,7-6,9%</td><td></td></tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>

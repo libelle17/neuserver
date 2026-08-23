@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Dienstplan</title>
+<style>
+  :root {
+    --header-bg: #1f6f8b;
+    --header-bg2: #123f50;
+    --header-fg: #ffffff;
+    --page-bg: #eef4f6;
+    --text: #1b2530;
+    --border: #bcd6e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Liberation Sans", Arial, sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+  }
+  .topbar {
+    background: linear-gradient(90deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .topbar h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .topbar nav a {
+    color: var(--header-fg);
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .topbar nav a:hover { background: #ffe9b3; color: #6b4a00; border-color: #ffe9b3; }
+  .stand {
+    max-width: 62rem;
+    margin: 0.8rem auto 0 auto;
+    font-size: 0.8rem;
+    color: #506672;
+  }
+  .content-wrap {
+    max-width: 62rem;
+    margin: 0.5rem auto 2rem auto;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .content-wrap table { border-collapse: collapse; }
+
+		@page { size: 29.7cm 21cm; margin-left: 2cm; margin-right: 2.5cm; margin-top: 2.5cm; margin-bottom: 2.5cm }
+		p { color: #000000; margin-bottom: 0.25cm; direction: ltr; orphans: 2; widows: 2; line-height: 115%; background: transparent }
+		p.western { font-size: 11pt; so-language: de-DE; font-family: "Calibri", sans-serif }
+		p.cjk { font-family: "Times New Roman", serif; font-size: 11pt }
+		p.ctl { font-size: 11pt; font-family: "Calibri", sans-serif; so-language: ar-SA }
+		h1 { margin-top: 0cm; margin-bottom: 0cm; color: #000000; direction: ltr; orphans: 2; widows: 2; line-height: 100%; background: transparent; page-break-after: avoid }
+		h1.western { font-size: 14pt; so-language: pl-PL; font-family: "Calibri", sans-serif }
+		h1.cjk { font-family: "Times New Roman", serif; font-size: 14pt }
+		h1.ctl { font-size: 14pt; font-family: "Calibri", sans-serif; so-language: ar-SA }
+	
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Dienstplan</h1>
+  <nav><a href="../index.html">Fachliches</a></nav>
+</div>
+<p class="stand">Stand: 21.08.2026 09:12</p>
+<div class="content-wrap">
+
+<table width="952" cellpadding="7" cellspacing="0">
+	<col width="144"/>
+	<col width="135"/>
+	<col width="155"/>
+	<col width="145"/>
+	<col width="145"/>
+	<col width="144"/>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Bereich</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Montag </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Dienstag </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Mittwoch </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Donnerstag </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Freitag </font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 1</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><h1 lang="pl-PL" class="western">
+			Tami</h1>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Tami</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 2</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Nina</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Sabrina </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Sabrina </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Nina  </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><h1 lang="pl-PL" class="western">
+			Nina</h1>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 3</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="pl-PL">Nina ca.
+			9:30</span></font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Silvia </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Sabrina </font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Labor 1</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Sibora </span></font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Ayten</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Sibora </span></font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Ayten </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Sibora </span></font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Labor 2 </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			 
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Zimmer
+			Schade</span></font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Bigi </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Ayten</span></font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">Zimmer
+			Ko</span></font><font size="4" style="font-size: 14pt">thny </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Bigi </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Sibora </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<font size="4" style="font-size: 14pt">Ayten </font>
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Zimmer Hammers</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">----------------------</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">------------------------</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Bigi </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">3./4. Vorbereiter </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Springer </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Sibora </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Nina ab ca. 9.30</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western"><a name="_GoBack"></a>
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Zutun/Abre./DMP </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Import </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="fr-FR">bt, eo</span></font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="fr-FR">sh, eo</span></font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="en-GB">bt, eo,
+			us</span></font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">sh, eo, bt</font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><h1 lang="pl-PL" class="western">
+			<span lang="fr-FR">eo, us, ab</span></h1>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="2" style="font-size: 10pt"><span lang="it-IT">Na</span></font><font size="2" style="font-size: 10pt">chmittag
+			</font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 1 </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Tami </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 2 </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Nina </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Nina </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Zeitraum</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Nina </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Anmeldung 3</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="it-IT">24.8. –
+			28.8.26</span></font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Uli </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Labor </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<font size="4" style="font-size: 14pt">Ayten</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<font size="4" style="font-size: 14pt">Ayten </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<font size="4" style="font-size: 14pt">Sibora </font>
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="en-GB" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Zimmer Schade </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="pl-PL">Sibora </span></font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="pl-PL">Bigi</span></font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="pl-PL" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Zimm</font><font size="4" style="font-size: 14pt"><span lang="it-IT">er
+			Kothny </span></font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Bigi</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Bigi </font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Ayten</font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Zimmer Hammers</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">--------------------</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">--------------------------</font></p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">---------------------</font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">3. Vorb. </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Enkhmaa</font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Springer </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<font size="4" style="font-size: 14pt">Sibora </font>
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			 
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="it-IT" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt">Zutun/Abre./DMP</font></p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+	<tr valign="top">
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="fr-FR" class="western">
+			<font size="4" style="font-size: 14pt">Import </font>
+			</p>
+		</td>
+		<td width="135" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="en-GB">Bt, sh</span></font></p>
+		</td>
+		<td width="155" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="fr-FR">sh, bt, </span></font>
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="fr-FR" class="western">
+			<br/>
+
+			</p>
+		</td>
+		<td width="145" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p class="western">
+			<font size="4" style="font-size: 14pt"><span lang="fr-FR">bt, ab</span></font></p>
+		</td>
+		<td width="144" style="border: 1px solid #000000; padding: 0cm 0.19cm"><p lang="fr-FR" class="western">
+			<br/>
+
+			</p>
+		</td>
+	</tr>
+</table>
+<p lang="fr-FR" class="western" style="margin-bottom: 0.28cm; line-height: 107%">
+<br/>
+<br/>
+
+</p>
+</div>
+</body>
+</html>
