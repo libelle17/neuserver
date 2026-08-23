@@ -191,13 +191,18 @@ fi;
 # httpd_sys_rw_content_t statt des Standard-httpd_sys_content_t, sonst scheitert
 # copy()/rename() dort lautlos mit "Permission denied" (AVC-Fix vom 10.7.2026,
 # betraf "Beh.fertig" in anzeig.php).
-for A in php plz vorb behand fertig; do
+for A in php plz vorb behand fertig fachliches; do
   bukopierfn "srv/www/htdocs/$A" "srv/www/htdocs/$A/" "" "$OBDEL" || _bu_fehler=1
 done;
 if [ "$obecht" ]; then
   $zssh 'semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -m -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -a -t httpd_sys_rw_content_t "/srv/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -m -t httpd_sys_rw_content_t "/srv/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || true; restorecon -Rv /srv/www/htdocs/plz /srv/www/htdocs/vorb /srv/www/htdocs/behand /srv/www/htdocs/fertig 2>/dev/null || true';
+  # fachliches/ (oeffentliche Webseiten, keine Patientendaten) braucht kein
+  # rw_content_t - Standard-httpd_sys_content_t (read-only) reicht, per
+  # restorecon nur sicherstellen dass es dabei bleibt:
+  $zssh 'restorecon -Rv /srv/www/htdocs/fachliches 2>/dev/null || true';
 else
   printf "Simulation: semanage fcontext httpd_sys_rw_content_t + restorecon auf plz/vorb/behand/fertig (Ziel)\n";
+  printf "Simulation: restorecon auf fachliches (Ziel)\n";
 fi;
 fi; # Ende dt1-A Konfigdateien
 verb=$altverb;
@@ -652,6 +657,28 @@ if [ -n "$VLM" ]; then
             --init-command="SET SESSION foreign_key_checks=0; SET SESSION unique_checks=0; SET SESSION sql_log_bin=0;";
         fi;
       }
+      # ── DB-Waechter (Ransomware-Fruehwarnung auf DB-Ebene), Logging-Modus,
+      # eingefuehrt 19.07.2026: erhebt vor jedem Dump/Import je DB eine grobe
+      # Zeilenschaetzung ueber information_schema.tables (kein Table-Scan,
+      # kein Eingriff in die Praxis-DB-Schemata) und protokolliert sie. Dient
+      # aktuell NUR der Kalibrierung der normalen Schwankungsbreite - noch
+      # KEIN Abbruch/Alarm bei Rueckgang (s. Analyse Ransomware-Vorsorge,
+      # DB-Waechter-Vorschlag). Analog zur Datei-Schutzdatei (bugem.sh) bzw.
+      # zum Massenaenderungs-Waechter (massenaenderung_waechter.sh), aber auf
+      # DB-Ebene, da beide bisher nur Dateien abdecken, nicht den
+      # mariadb-dump/import-Pfad hier.
+      if [ "$obecht" ]; then
+        _bu_dbw_log=/var/log/dbwaechter_rowcounts.csv;
+        [ -f "$_bu_dbw_log" ] || echo "zeitpunkt;quelle;ziel;datenbank;table_rows_schaetzung" > "$_bu_dbw_log";
+        _bu_dbw_in=$(printf "'%s'," $_bu_dbs); _bu_dbw_in=${_bu_dbw_in%,};
+        _bu_dbw_ts=$(date '+%Y-%m-%d %H:%M:%S');
+        eval "$qssh \
+          'mariadb --defaults-extra-file=/root/.mysqlrpwd -BN \
+           -e \"SELECT table_schema, IFNULL(SUM(table_rows),0) FROM information_schema.tables WHERE table_schema IN ($_bu_dbw_in) GROUP BY table_schema\" 2>/dev/null'" \
+        | while IFS=$'\t' read -r _dbw_db _dbw_rows; do
+            printf '%s;%s;%s;%s;%s\n' "$_bu_dbw_ts" "${QL:-lokal}" "${ZL:-lokal}" "$_dbw_db" "$_dbw_rows" >> "$_bu_dbw_log";
+          done;
+      fi;
       if [ "$obecht" ]; then
         # Timeouts auf Quell-Server erhöhen (gilt für alle folgenden Dump-Verbindungen)
         eval "$qssh 'mariadb --defaults-extra-file=/root/.mysqlrpwd \

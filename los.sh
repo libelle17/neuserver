@@ -10,7 +10,7 @@
 #   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
 #
 # Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
-#                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fritz|-firebird|
+#                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fachliches|-fritz|-firebird|
 #                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
 #
@@ -110,6 +110,7 @@ commandline() {
   obcron=0; # crontab sichern/übernehmen
   obvmime=0; # vmime (für vmparse2) aus github frisch bauen
   obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
+  obfachliches=0; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan) einrichten
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -121,7 +122,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-patdirs ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-patdirs ][-fachliches ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -144,6 +145,7 @@ commandline() {
         printf "  ${blau}-mustneu${reset}:   wie -must, aber überschreibt vorhandene Dateien\n";
         printf "  $blau-vmime$reset:     baut vmime (für vmparse2) frisch aus github\n";
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
+        printf "  $blau-fachliches$reset: richtet die oeffentlichen Fachliches-Webseiten ein (AID-Vergleich, HbA1c, Dienstplan)\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -186,6 +188,7 @@ commandline() {
           cron) obcron=1;;
           vmime) obvmime=1;;
           patdirs) obpatdirs=1;;
+          fachliches) obfachliches=1;;
         esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -1723,6 +1726,9 @@ proginst() {
   doinst apache2;
   doinst apache2-mod_php8;
   doinst php8-mysql;
+  doinst python313-certbot;     # Let's-Encrypt-Zertifikate (fachliches_einrichten)
+  doinst certbot-systemd-timer; # automatische Zertifikatsverlaengerung
+  doinst fail2ban;              # Bruteforce-Schutz Basic-Auth (Dienstplan-Login)
   doinst postgresql;
   doinst postgresql-contrib;
   doinst postgresql-server;
@@ -2069,6 +2075,398 @@ PYEOF
 		printf "${rot}postfix-Konfiguration fehlerhaft - bitte 'postfix check' von Hand pruefen!${reset}\n";
 } # postfix
 
+# fachliches_einrichten() – richtet die oeffentlichen "Fachliches"-Webseiten
+# ein (AID-Vergleich, HbA1c-Umrechnung, Dienstplan), eingerichtet am
+# 2026-08-23 (Chat-Sitzung): isolierter Apache-vHost auf Port 8008/8443
+# (DocumentRoot NUR /srv/www/htdocs/fachliches, sieht plz/vorb/behand/fertig
+# etc. nicht - Router leitet extern 80/443 dorthin um, NICHT auf den
+# Haupt-vHost), Let's-Encrypt-Zertifikat fuer scha-koth.dyndns.org,
+# Basic-Auth-geschuetzter Dienstplan-Bereich (Passwort-Hash s.u.),
+# fail2ban gegen Bruteforce, sowie ein Cronjob, der den jeweils neuesten
+# Dienstplan (*.doc) aus /DATA/Patientendokumente/Dienstplan/ automatisch
+# in HTML umwandelt und dort veroeffentlicht.
+#
+# aid-vergleich.html und hba1c-umrechnung.html selbst werden hier NICHT neu
+# erzeugt (Quellen: /DATA/eigene Dateien/DM/AID-Vergleich.ods bzw.
+# .../HbA1c-Umrechnungstabelle.pdf, Konvertierung war eine manuelle
+# Chat-Sitzung mit LibreOffice/Python) - sie kommen wie der Rest von
+# /srv/www/htdocs ueber musterserver()/konfig_laden bzw. das Backup
+# (bulinux.sh, dort "fachliches" ergaenzt) auf einen neuen Server.
+fachliches_einrichten() {
+  printf "${dblau}fachliches_einrichten${reset}()\n";
+  _eigenkurz=$(hostname); _eigenkurz=${_eigenkurz%%.*};
+  [ "$_eigenkurz" = "linux1" ]||{ printf "fachliches_einrichten: nicht linux1 ($_eigenkurz) - uebersprungen.\n"; return 0; };
+
+  _fdom=scha-koth.dyndns.org; # DynDNS-Adresse der Praxis (Router: 80->8008, 443->8443)
+  _fdir=/srv/www/htdocs/fachliches;
+  mkdir -p "$_fdir/dienstplan";
+  chown wwwrun:www -R "$_fdir";
+
+  # ---- Fachliches-Knopf auf der Haupt-Diagnoseseite index.php ----
+  _ip=/srv/www/htdocs/index.php;
+  if [ -f "$_ip" ] && ! grep -q 'fachliches/index.html' "$_ip"; then
+    sed -i '/<a href="intern\/strong.php">Link<br><\/a>/a\
+<a href="fachliches/index.html" style="display:inline-block;text-decoration:none;background:#eaf1f5;border:1px solid #2f5d78;border-radius:6px;color:#1b2530;padding:0.5rem 1rem;font-weight:600;margin:0.5rem 0;">Fachliches</a><br>' "$_ip";
+    printf "Fachliches-Knopf in ${blau}$_ip${reset} ergaenzt.\n";
+  fi;
+
+  # ---- Menue-Seite (nur anlegen falls fehlend - nicht ueberschreiben) ----
+  [ -f "$_fdir/index.html" ]||cat >"$_fdir/index.html" <<'EOF'
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Fachliches</title>
+<style>
+  :root { --head-bg:#2f5d78; --head-fg:#fff; --btn-bg:#eaf1f5; --btn-border:#2f5d78; --text:#1b2530; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Liberation Sans",Arial,sans-serif; color:var(--text); background:#fff; }
+  .topbar { background:var(--head-bg); color:var(--head-fg); padding:0.6rem 1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .topbar h1 { font-size:1.1rem; margin:0; font-weight:600; }
+  main { max-width:40rem; margin:2rem auto; padding:0 1rem; }
+  .btn-list { display:flex; flex-direction:column; gap:0.75rem; }
+  .btn-list a { display:block; text-decoration:none; background:var(--btn-bg); border:1px solid var(--btn-border); border-radius:6px; color:var(--text); padding:0.9rem 1.2rem; font-size:1.05rem; font-weight:600; }
+  .btn-list a:hover { background:#dbe9f0; }
+</style>
+</head>
+<body>
+<div class="topbar"><h1>Fachliches</h1><nav></nav></div>
+<main>
+  <div class="btn-list">
+    <a href="aid-vergleich.html">AID-Vergleich</a>
+    <a href="hba1c-umrechnung.html">HbA1c-Umrechnung</a>
+    <a href="dienstplan/">Dienstplan (Team-Login)</a>
+  </div>
+</main>
+</body>
+</html>
+EOF
+
+  # ---- isolierter Apache-vHost (Port 8008/8443) ----
+  _vh=/etc/apache2/vhosts.d/fachliches-extern.conf;
+  cat >"$_vh" <<EOF
+# Isolierter vHost, der ausschliesslich fachliches/ (keine Patientendaten)
+# nach aussen freigibt. Eigenes DocumentRoot - selbst bei einem
+# Konfigurationsfehler im Haupt-vHost kann dieser vHost nichts ausserhalb
+# von $_fdir ausliefern. Von fachliches_einrichten() in los.sh erzeugt.
+#
+# Port 8008 (HTTP)  <- Router: extern 80  -> $(hostname -I 2>/dev/null|awk '{print $1}'):8008
+# Port 8443 (HTTPS) <- Router: extern 443 -> $(hostname -I 2>/dev/null|awk '{print $1}'):8443
+#
+# Port 8008 leitet alles ausser /.well-known/acme-challenge/ auf HTTPS um
+# (Ausnahme fuer die automatische Zertifikatsverlaengerung ueber Port 80/8008).
+
+Listen 8008
+Listen 8443
+
+<VirtualHost *:8008>
+	DocumentRoot "$_fdir"
+
+	RedirectMatch 301 ^/(?!\\.well-known/acme-challenge/)(.*)\$ https://$_fdom/\$1
+
+	<Directory "$_fdir">
+		Options None
+		AllowOverride None
+		<IfModule !mod_access_compat.c>
+			Require all granted
+		</IfModule>
+		<IfModule mod_access_compat.c>
+			Order allow,deny
+			Allow from all
+		</IfModule>
+	</Directory>
+
+	<Directory "$_fdir/dienstplan">
+		AuthType Basic
+		AuthName "Dienstplan - nur fuer das Praxisteam"
+		AuthUserFile /etc/apache2/htpasswd/dienstplan
+		Require valid-user
+	</Directory>
+
+	ErrorLog /var/log/apache2/fachliches-extern_error_log
+	CustomLog /var/log/apache2/fachliches-extern_access_log combined
+</VirtualHost>
+
+<VirtualHost *:8443>
+	DocumentRoot "$_fdir"
+
+	SSLEngine on
+	SSLCertificateFile      /etc/letsencrypt/live/$_fdom/fullchain.pem
+	SSLCertificateKeyFile   /etc/letsencrypt/live/$_fdom/privkey.pem
+
+	<Directory "$_fdir">
+		Options None
+		AllowOverride None
+		<IfModule !mod_access_compat.c>
+			Require all granted
+		</IfModule>
+		<IfModule mod_access_compat.c>
+			Order allow,deny
+			Allow from all
+		</IfModule>
+	</Directory>
+
+	<Directory "$_fdir/dienstplan">
+		AuthType Basic
+		AuthName "Dienstplan - nur fuer das Praxisteam"
+		AuthUserFile /etc/apache2/htpasswd/dienstplan
+		Require valid-user
+	</Directory>
+
+	ErrorLog /var/log/apache2/fachliches-extern-ssl_error_log
+	CustomLog /var/log/apache2/fachliches-extern-ssl_access_log combined
+</VirtualHost>
+EOF
+  printf "vHost geschrieben: ${blau}$_vh${reset}\n";
+
+  # ---- Haupt-vHost (default-server.conf) aufs LAN beschraenken ----
+  # (nur die ERSTE "Require all granted"-Stelle patchen - das ist die fuer
+  # /srv/www/htdocs; icons/cgi-bin sollen wie bisher unbeschraenkt bleiben)
+  D=/etc/apache2/default-server.conf;
+  if ! grep -q "192.168.178.0/24" "$D" 2>/dev/null; then
+    DN=${D}_neu;
+    awk '
+      !done && /^([[:space:]]*)Require all granted[[:space:]]*$/ {
+        match($0, /^[[:space:]]*/); ind = substr($0, RSTART, RLENGTH);
+        print ind "<RequireAny>";
+        print ind "\tRequire ip 192.168.178.0/24";
+        print ind "\tRequire local";
+        print ind "</RequireAny>";
+        done=1;
+        next;
+      }
+      { print }
+    ' "$D" >"$DN";
+    if cmp -s "$D" "$DN"; then
+      rm -f "$DN";
+    else
+      cp "$D" "${D}.bak";
+      mv "$DN" "$D";
+      printf "Haupt-vHost auf Praxis-LAN beschraenkt: ${blau}$D${reset} (Sicherung: ${blau}${D}.bak${reset})\n";
+    fi;
+  fi;
+
+  # ---- SELinux: Let's-Encrypt-Zertifikate lesbar fuer httpd ----
+  semanage fcontext -a -t cert_t "/etc/letsencrypt/live(/.*)?" 2>/dev/null|| \
+    semanage fcontext -m -t cert_t "/etc/letsencrypt/live(/.*)?" 2>/dev/null||true;
+  semanage fcontext -a -t cert_t "/etc/letsencrypt/archive(/.*)?" 2>/dev/null|| \
+    semanage fcontext -m -t cert_t "/etc/letsencrypt/archive(/.*)?" 2>/dev/null||true;
+  restorecon -Rv /etc/letsencrypt/ >/dev/null 2>&1||true;
+  # (Ports 8008/8443 sind im Standard-SELinux-Policy-Typ http_port_t schon
+  # enthalten - kein "semanage port -a" noetig, s. "semanage port -l".)
+
+  # ---- Let's-Encrypt-Zertifikat holen (nur falls noch keins vorhanden) ----
+  if [ ! -f "/etc/letsencrypt/live/$_fdom/fullchain.pem" ]; then
+    printf "Hole Let's-Encrypt-Zertifikat fuer ${blau}$_fdom${reset} (braucht funktionierende Portweiterleitung extern 80 -> 8008) ...\n";
+    certbot certonly --webroot -w "$_fdir" -d "$_fdom" --non-interactive --agree-tos -m gerald.schade@gmail.com|| \
+      printf "${rot}Zertifikat konnte nicht geholt werden - Portweiterleitung/DNS pruefen, spaeter erneut: los.sh -fachliches${reset}\n";
+  fi;
+  # Reload-Hook, damit Apache nach jeder automatischen Verlaengerung das
+  # neue Zertifikat uebernimmt:
+  CB=/etc/sysconfig/certbot;
+  if [ -f "$CB" ] && ! grep -q "systemctl reload apache2" "$CB"; then
+    sed -i 's|^POST_HOOK=.*|POST_HOOK="--post-hook '"'"'systemctl reload apache2'"'"'"|' "$CB";
+    printf "Reload-Hook in ${blau}$CB${reset} eingetragen.\n";
+  fi;
+  systemctl enable --now certbot-renew.timer 2>/dev/null||true;
+
+  # ---- Dienstplan-Login (Basic-Auth) ----
+  # Passwort-Hash vom 2026-08-23 (Benutzer "mfa"); bei Aenderung: neu
+  # erzeugen mit "htpasswd -bcB /etc/apache2/htpasswd/dienstplan mfa '<neues Passwort>'"
+  # und die Zeile hier ersetzen (Klartext-Passwort bewusst NICHT in diesem
+  # Repository - nur der Hash).
+  _hf=/etc/apache2/htpasswd/dienstplan;
+  _hash='mfa:$2y$05$WaOW95k6y2mQNaKdSLrhze20T89P1KsifGEETypFdiP6Dl43TmnLG';
+  mkdir -p "$(dirname "$_hf")";
+  if [ ! -f "$_hf" ]||! grep -qF "$_hash" "$_hf" 2>/dev/null; then
+    printf '%s\n' "$_hash" >"$_hf";
+    printf "htpasswd geschrieben: ${blau}$_hf${reset}\n";
+  fi;
+  chown root:www "$_hf"; chmod 640 "$_hf";
+
+  # ---- fail2ban gegen Bruteforce auf den Dienstplan-Login ----
+  cat >/etc/fail2ban/jail.d/dienstplan-auth.conf <<'EOF'
+# Sperrt IPs, die bei der Basic-Auth-Anmeldung der Dienstplan-Seite
+# (fachliches-extern vHost, Port 8008/8443) mehrfach falsche Zugangsdaten
+# eingeben - Schutz gegen automatisiertes Durchprobieren von aussen.
+[dienstplan-auth]
+enabled  = true
+filter   = apache-auth
+logpath  = /var/log/apache2/fachliches-extern_error_log
+           /var/log/apache2/fachliches-extern-ssl_error_log
+banaction = firewallcmd-allports
+maxretry = 5
+findtime = 600
+bantime  = 3600
+EOF
+  systemctl enable --now fail2ban 2>/dev/null||true;
+
+  # ---- Cronjob + Skript: Dienstplan (*.doc) automatisch veroeffentlichen ----
+  cat >/root/bin/dienstplan_publish.sh <<'SCRIPTEOF'
+#!/bin/bash
+# Wandelt den jeweils neuesten Dienstplan (*.doc) aus
+# /DATA/Patientendokumente/Dienstplan/ in HTML um und veroeffentlicht ihn
+# unter /srv/www/htdocs/fachliches/dienstplan/index.html (dort per
+# Basic-Auth geschuetzt, siehe /etc/apache2/vhosts.d/fachliches-extern.conf).
+# Wird per Cron alle 15 Minuten aufgerufen (/etc/cron.d/dienstplan-publish).
+set -u
+
+SRC_DIR="/DATA/Patientendokumente/Dienstplan"
+STATE_DIR="/var/lib/dienstplan-publish"
+STATE_FILE="$STATE_DIR/last_source"
+OUT_DIR="/srv/www/htdocs/fachliches/dienstplan"
+OUT_FILE="$OUT_DIR/index.html"
+LOG="/var/log/dienstplan_publish.log"
+
+log() { echo "$(date '+%F %T') $*" >>"$LOG"; }
+
+mountpoint -q /DATA || exit 0
+
+mkdir -p "$STATE_DIR" "$OUT_DIR"
+
+# Neueste passende Datei suchen (Muster: enthaelt "dienstplan", endet auf
+# .doc), Word-/LO-Sperr- und Temporaerdateien (beginnen mit ~) ausschliessen.
+latest=$(find "$SRC_DIR" -maxdepth 1 -type f -iname "*dienstplan*.doc" -not -name "~*" -printf '%T@ %p\n' 2>/dev/null \
+    | sort -rn | head -1 | cut -d' ' -f2-)
+
+if [ -z "$latest" ]; then
+    exit 0
+fi
+
+# Wird die Datei gerade in Word bearbeitet (Sperrdatei "~$<name>" vorhanden)?
+# Dann in diesem Lauf nichts tun, beim naechsten Mal erneut versuchen.
+lockfile="$(dirname "$latest")/~\$$(basename "$latest")"
+if [ -e "$lockfile" ]; then
+    exit 0
+fi
+
+last=""
+[ -f "$STATE_FILE" ] && last=$(cat "$STATE_FILE" 2>/dev/null)
+current_marker="$latest|$(stat -c %Y "$latest" 2>/dev/null)"
+if [ "$current_marker" = "$last" ]; then
+    exit 0
+fi
+
+tmp_dir=$(mktemp -d)
+trap 'rm -rf "$tmp_dir"' EXIT
+
+if ! timeout 90 /usr/bin/soffice --headless --norestore --convert-to html --outdir "$tmp_dir" "$latest" >>"$LOG" 2>&1; then
+    log "FEHLER: Konvertierung von '$latest' fehlgeschlagen"
+    exit 1
+fi
+
+converted="$tmp_dir/$(basename "${latest%.*}").html"
+if [ ! -f "$converted" ]; then
+    log "FEHLER: erwartete Ausgabedatei '$converted' fehlt"
+    exit 1
+fi
+
+# Style-Regeln (p.western usw.) und den Koerper der LibreOffice-Ausgabe
+# herausloesen (nur der Inhalt, ohne die <style>/<body>-Tags selbst) und in
+# unsere Seitenvorlage einbetten.
+styles=$(sed -n '/<style/,/<\/style>/p' "$converted" | sed '1s/^[[:space:]]*<style[^>]*>//' | sed '$s/<\/style>[[:space:]]*$//')
+body_inner=$(sed -n '/<body/,/<\/body>/p' "$converted" | sed '1s/^[[:space:]]*<body[^>]*>//' | sed '$s/<\/body>[[:space:]]*$//')
+stand=$(date -d "@$(stat -c %Y "$latest")" '+%d.%m.%Y %H:%M')
+
+out_tmp="$tmp_dir/index.html.out"
+cat > "$out_tmp" <<HTMLEOF
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Dienstplan</title>
+<style>
+  :root {
+    --header-bg: #1f6f8b;
+    --header-bg2: #123f50;
+    --header-fg: #ffffff;
+    --page-bg: #eef4f6;
+    --text: #1b2530;
+    --border: #bcd6e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Liberation Sans", Arial, sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+  }
+  .topbar {
+    background: linear-gradient(90deg, var(--header-bg), var(--header-bg2));
+    color: var(--header-fg);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .topbar h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .topbar nav a {
+    color: var(--header-fg);
+    text-decoration: none;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .topbar nav a:hover { background: #ffe9b3; color: #6b4a00; border-color: #ffe9b3; }
+  .stand {
+    max-width: 62rem;
+    margin: 0.8rem auto 0 auto;
+    font-size: 0.8rem;
+    color: #506672;
+  }
+  .content-wrap {
+    max-width: 62rem;
+    margin: 0.5rem auto 2rem auto;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .content-wrap table { border-collapse: collapse; }
+$styles
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Dienstplan</h1>
+  <nav><a href="../index.html">Fachliches</a></nav>
+</div>
+<p class="stand">Stand: $stand</p>
+<div class="content-wrap">
+$body_inner
+</div>
+</body>
+</html>
+HTMLEOF
+
+install -m 644 -o wwwrun -g www "$out_tmp" "$OUT_FILE"
+restorecon "$OUT_FILE" >/dev/null 2>&1
+
+echo "$current_marker" > "$STATE_FILE"
+log "OK: '$latest' veroeffentlicht"
+SCRIPTEOF
+  chmod 750 /root/bin/dienstplan_publish.sh;
+  chown root:$gruppe /root/bin/dienstplan_publish.sh;
+  mkdir -p /var/lib/dienstplan-publish;
+
+  cat >/etc/cron.d/dienstplan-publish <<'EOF'
+# Wandelt den neuesten Dienstplan aus /DATA/Patientendokumente/Dienstplan/
+# in HTML um und veroeffentlicht ihn unter fachliches/dienstplan/
+# (passwortgeschuetzt, siehe /etc/apache2/vhosts.d/fachliches-extern.conf).
+# Eingerichtet 2026-08-23 (los.sh: fachliches_einrichten).
+*/15 * * * * root HOST=$(hostname); [ "${HOST%%.*}" = "linux1" ] && /root/bin/dienstplan_publish.sh
+EOF
+  chmod 644 /etc/cron.d/dienstplan-publish;
+
+  systemctl restart apache2;
+  printf "${gruen}fachliches_einrichten abgeschlossen.${reset}\n";
+} # fachliches_einrichten
+
 bildschirm() {
   printf "${dblau}bildschirm$reset()\n"
   delay=250;  # Millisekunden bis Wiederholung beginnt
@@ -2293,6 +2691,7 @@ firewall() {
 			mysql) p1=3306;p2=mysql_connect_any;p3=allow_user_mysql_connect;p4=mysql;p5=mysql;;
 			rsync) p1=rsync;p2="-";p3="-";p4=rsyncd;p5="rsync-server";;
 			turbomed) p1="6001/tcp";p2="-";p3="-";p4="6001/tcp";p5="6001/tcp";;
+			fachliches) p1="8008/tcp,8443/tcp";p2="-";p3="-";p4="8008/tcp,8443/tcp";p5="-";; # oeffentliche Fachliches-Webseiten (eigener vHost, s. fachliches_einrichten)
 			firebird) p1="3050/tcp";p2="-";p3="-";p4="3050/tcp";p5="3050/tcp";;# soll nach speedguide.net Vulnerabilität haben
 			# vpn: 1701
 			*) printf "firewall: Unbekannter Parameter $blau$para$reset\n";;
@@ -3451,10 +3850,11 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obsmb = 1 ]&&setzbenutzer;       # Benutzer/Samba einrichten
 [ $obteil = 0 -o $obsmb = 1 ]&&sambaconf;          # Samba konfigurieren
 [ $obteil = 0 -o $obfritz = 1 ]&&fritzbox;         # Fritzbox einbinden
-[ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed; # Firewall-Ports freigeben (Vollaufruf)
+[ $obteil = 0 ]&&firewall http https dhcp dhcpv6 dhcpv6c postgresql ssh smtp imap imaps pop3 pop3s vsftp mysql rsync turbomed fachliches; # Firewall-Ports freigeben (Vollaufruf)
 # ── Praxis-Software ──────────────────────────────────────────────────────
 [ $obteil = 0 -o "$obpatdirs" = 1 ]&&patdokverzeichnisse; # Patientendokumente-Unterverzeichnisse anlegen
 [ $obteil = 0 -o $obtm = 1 ]&&turbomed;            # Turbomed-Praxissoftware einrichten
+[ $obteil = 0 -o "$obfachliches" = 1 ]&&fachliches_einrichten; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan)
 [ $obteil = 0 -o $obmust = 1 ]&&musterserver;      # Dateien vom Musterserver kopieren
 [ "$obmustneu" = 1 ]&&musterserver neu;
 [ $obteil = 0 -o "$obvmime" = 1 ]&&vmime_bauen;    # vmime (für vmparse2) aus github bauen
