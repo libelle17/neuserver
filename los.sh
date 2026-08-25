@@ -2139,6 +2139,11 @@ fachliches_einrichten() {
     color: var(--text);
     background: #ffffff;
   }
+  .screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
   .topbar {
     background: var(--head-bg);
     color: var(--head-fg);
@@ -2164,7 +2169,9 @@ fachliches_einrichten() {
   }
   .topbar nav a:hover { background: rgba(255,255,255,0.3); }
   main {
+    flex: 1 0 auto;
     max-width: 40rem;
+    width: 100%;
     margin: 2rem auto;
     padding: 0 1rem;
   }
@@ -2194,7 +2201,7 @@ fachliches_einrichten() {
   .btn-list a:hover { background: #dbe9f0; }
   footer.pagefoot {
     max-width: 40rem;
-    margin: 1.5rem auto 0;
+    margin: 0 auto;
     padding: 0.8rem 1rem 2rem;
     font-size: 0.72rem;
     line-height: 1.5;
@@ -2211,6 +2218,7 @@ fachliches_einrichten() {
 </style>
 </head>
 <body>
+<div class="screen">
 <div class="topbar">
   <h1>Fachliches</h1>
   <nav></nav>
@@ -2225,6 +2233,7 @@ fachliches_einrichten() {
     <a href="dienstplan/">Dienstplan (Team-Login)</a>
   </div>
 </main>
+</div>
 <footer class="pagefoot">
 <p class="fnav"><a href="#impressum">Impressum</a> &middot; <a href="#datenschutz">Datenschutz</a></p>
 
