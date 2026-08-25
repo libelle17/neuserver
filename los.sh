@@ -2112,7 +2112,7 @@ fachliches_einrichten() {
 
   # ---- Menue-Seite (nur anlegen falls fehlend - nicht ueberschreiben) ----
   # Stand des Templates 2026-08-25 (Chat-Sitzung): Quiz-Knopf neben statt
-  # unter AID-Vergleich, Quiz-Link auf aid-quizz.netlify.app (statt der alten
+  # unter AID-Vergleich, Quiz-Link auf aid-quiz.netlify.app (statt der alten
   # dreamy-rolypoly-86ec27.netlify.app-Adresse), Impressum+Datenschutz
   # ergaenzt (Seite ist ueber den vHost fachliches-extern.conf oeffentlich
   # ohne Login erreichbar - Apache-Zugriffsprotokoll = personenbezogene
@@ -2227,7 +2227,7 @@ fachliches_einrichten() {
   <div class="btn-list">
     <div class="btn-row">
       <a href="aid-vergleich.html">AID-Vergleich</a>
-      <a href="https://aid-quizz.netlify.app/" target="_blank" rel="noopener">Quiz</a>
+      <a href="https://aid-quiz.netlify.app/" target="_blank" rel="noopener">Quiz</a>
     </div>
     <a href="hba1c-umrechnung.html">HbA1c-Umrechnung</a>
     <a href="dienstplan/">Dienstplan (Team-Login)</a>
