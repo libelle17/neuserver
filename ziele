@@ -4,6 +4,7 @@ Auch_eine_Schutzdatei_bitte_belassen.jpg
 BDTkompr.sh
 Schutzdatei_bitte_belassen.doc
 aenderungsrate_erhebung.sh
+aid_vergleich_publish.sh
 alsres.sh
 alsserver.sh
 analdok.sh
@@ -42,6 +43,7 @@ copyverba.sh
 copywd.sh
 dbauspacken.sh
 dbeinpacken.sh
+dienstplan_publish.sh
 dirsum.sh
 dmp.sh
 dmp_vers.sh
