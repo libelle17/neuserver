@@ -232,10 +232,9 @@ template = """<!DOCTYPE html>
   td.bold { font-weight: 600; }
   td.sep { border-top: 2px solid var(--section-border); background: var(--section-bg); color: var(--section-fg); }
   footer.imp {
-    flex: 0 0 auto;
     max-width: 900px;
-    margin: 0 1rem;
-    padding: 0.6rem 0 1.2rem;
+    margin: 0.6rem 0 0;
+    padding: 0.6rem 1rem 1.2rem;
     font-size: 0.72rem;
     line-height: 1.5;
     color: #4d5a63;
@@ -261,7 +260,6 @@ __HEADER__
 __BODY__
 </tbody>
 </table>
-</div>
 <footer class="imp" id="impressum">
 <h2>Impressum</h2>
 
@@ -312,6 +310,7 @@ Information und Fortbildung. Sie stellt keine
 medizinische Beratung dar und ersetzt weder die &auml;rztliche Betreuung noch die Gebrauchsanweisung
 des jeweiligen AID-Systems.</p>
 </footer>
+</div>
 </body>
 </html>
 """
