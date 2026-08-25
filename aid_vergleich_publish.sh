@@ -231,7 +231,7 @@ template = """<!DOCTYPE html>
   tbody tr:hover td.rowhead { background: #c3e0ec; }
   td.bold { font-weight: 600; }
   td.sep { border-top: 2px solid var(--section-border); background: var(--section-bg); color: var(--section-fg); }
-  footer.imp {
+  footer.pagefoot {
     max-width: 900px;
     margin: 0.6rem 0 0;
     padding: 0.6rem 1rem 1.2rem;
@@ -240,10 +240,13 @@ template = """<!DOCTYPE html>
     color: #4d5a63;
     border-top: 1px solid var(--border);
   }
-  footer.imp h2 { font-size: 0.85rem; color: var(--text); margin: 0.6rem 0 0.4rem; }
-  footer.imp h3 { font-size: 0.72rem; color: var(--text); margin: 0.6rem 0 0.15rem; }
-  footer.imp p { margin: 0 0 0.4rem; }
-  footer.imp a { color: var(--header-bg2); }
+  footer.pagefoot .fnav { margin: 0 0 0.6rem; }
+  footer.pagefoot .imp { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--border); }
+  footer.pagefoot .imp:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  footer.pagefoot h2 { font-size: 0.85rem; color: var(--text); margin: 0 0 0.4rem; }
+  footer.pagefoot h3 { font-size: 0.72rem; color: var(--text); margin: 0.6rem 0 0.15rem; }
+  footer.pagefoot p { margin: 0 0 0.4rem; }
+  footer.pagefoot a { color: var(--header-bg2); }
 </style>
 </head>
 <body>
@@ -260,7 +263,10 @@ __HEADER__
 __BODY__
 </tbody>
 </table>
-<footer class="imp" id="impressum">
+<footer class="pagefoot">
+<p class="fnav"><a href="#impressum">Impressum</a> &middot; <a href="#datenschutz">Datenschutz</a></p>
+
+<section class="imp" id="impressum">
 <h2>Impressum</h2>
 
 <h3>Angaben gem&auml;&szlig; &sect; 5 DDG</h3>
@@ -309,6 +315,53 @@ Diabetesberaterinnen und -berater). Diese Seite dient ausschlie&szlig;lich der
 Information und Fortbildung. Sie stellt keine
 medizinische Beratung dar und ersetzt weder die &auml;rztliche Betreuung noch die Gebrauchsanweisung
 des jeweiligen AID-Systems.</p>
+</section>
+
+<section class="imp" id="datenschutz">
+<h2>Datenschutzerkl&auml;rung</h2>
+
+<h3>1. Verantwortlicher</h3>
+<p>Verantwortlicher im Sinne des Art. 4 Nr. 7 DSGVO ist:<br>
+Gerald Schade, Mittermayerstra&szlig;e 13, 85221 Dachau, Deutschland<br>
+Telefon: 08131 616380 &middot; E-Mail:
+<a href="mailto:gerald.schade@gmail.com">gerald.schade@gmail.com</a></p>
+
+<h3>2. Umfang der Verarbeitung</h3>
+<p>Diese Seite ist eine rein statische HTML-Seite. Sie setzt keine Cookies, bindet keine
+externen Schriften, Skripte oder sonstigen Inhalte Dritter ein und f&uuml;hrt keine Reichweiten-
+oder Nutzungsanalyse durch. Es besteht keine Registrierung und kein Nutzerkonto; es werden
+keine Formulardaten erhoben.</p>
+
+<h3>3. Server-Logfiles</h3>
+<p>Die Seite wird auf einem selbst betriebenen Server gehostet. Beim Abruf der Seite
+verarbeitet der Webserver technisch notwendige Zugriffsdaten, insbesondere IP-Adresse,
+Datum und Uhrzeit des Abrufs, die abgerufene Datei, &uuml;bertragene Datenmenge, Referrer-URL
+sowie Browsertyp und Betriebssystem.</p>
+<p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Das berechtigte Interesse liegt in der
+sicheren, stabilen und st&ouml;rungsfreien Bereitstellung des Angebots sowie der Abwehr von
+Angriffen. Eine Auswertung dieser Daten zu Analyse-, Profilbildungs- oder Marketingzwecken
+findet nicht statt; die Logdateien werden automatisiert nach sp&auml;testens 12 Monaten
+gel&ouml;scht.</p>
+
+<h3>4. Kontaktaufnahme</h3>
+<p>Wenn Sie per E-Mail oder Telefon Kontakt aufnehmen, werden die von Ihnen mitgeteilten
+Daten zur Bearbeitung Ihres Anliegens verarbeitet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
+DSGVO, bei vertragsbezogenen Anfragen Art. 6 Abs. 1 lit. b DSGVO. Die Daten werden
+gel&ouml;scht, sobald die Anfrage abschlie&szlig;end bearbeitet ist und keine gesetzlichen
+Aufbewahrungspflichten entgegenstehen.</p>
+
+<h3>5. Ihre Rechte</h3>
+<p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16 DSGVO), L&ouml;schung
+(Art. 17 DSGVO), Einschr&auml;nkung der Verarbeitung (Art. 18 DSGVO) und Daten&uuml;bertragbarkeit
+(Art. 20 DSGVO) sowie das Recht, der Verarbeitung auf Grundlage von Art. 6 Abs. 1 lit. f
+DSGVO aus Gr&uuml;nden Ihrer besonderen Situation zu widersprechen (Art. 21 DSGVO). Wenden Sie
+sich dazu an die oben genannten Kontaktdaten.</p>
+
+<h3>6. Beschwerderecht</h3>
+<p>Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbeh&ouml;rde zu beschweren
+(Art. 77 DSGVO). Zust&auml;ndig ist das Bayerische Landesamt f&uuml;r Datenschutzaufsicht (BayLDA),
+Promenade 27, 91522 Ansbach.</p>
+</section>
 </footer>
 </div>
 </body>
