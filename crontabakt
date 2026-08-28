@@ -168,6 +168,7 @@ ELG=/var/log/cronf.log
 # --delete-Volllauf von bunacht.sh (2:20 Uhr), s. Analyse dort.
 -0 3 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
 #-1 1 * * * /root/bin/berecht.sh
+-*/15 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/labpdf_chown.sh >>$NLG 2>>$ELG
 #-59 */2 * * * chmod 774 -R /DATA/Patientendokumente
 -0 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&chown sturm:praxis /DATA/Patientendokumente >/dev/null 2>>$ELG
 -0 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && chmod 550 /DATA/eigene\ Dateien/Webseite\ Praxis\ 1/Pumpeneinstellung*.xls >/dev/null 2>>$ELG
@@ -203,11 +204,11 @@ ELG=/var/log/cronf.log
 # -*/2 * * * * /root/bin/faxord >>$NLG 2>>$ELG
 -0 14,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wser/mo7z&&rsync /mnt/wser/mo7z/ /DATA/mo7z/ -dlptgoDvuz --delete
 -0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wres/mo7z&&rsync /mnt/wres/mo7z/ /DATA/wresmo7z/ -dlptgoDvuz --delete
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente >>$NLG 2>>$ELG
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente
--* * * * * /usr/bin/ionice -c3 /root/bin/zusalat.sh
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/usr/bin/ionice -c3 /root/bin/dopdfumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente" >>$NLG 2>>$ELG
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/usr/bin/ionice -c3 /root/bin/dojpgumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente" >>$NLG 2>>$ELG
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/usr/bin/ionice -c3 /root/bin/dotifumw.sh /DATA/Patientendokumente/zutxt /DATA/Patientendokumente" >>$NLG 2>>$ELG
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/root/bin/dozupdf.sh /DATA/Patientendokumente/zupdf /DATA/Patientendokumente"
+-* * * * * su - sturm -c "/usr/bin/ionice -c3 /root/bin/zusalat.sh"
 # Medical-Office-Dateisicherungen
 # Umgestellt 13.7.2026: statt acht einzelner fester Cron-Zeiten fuer
 # bumo.sh/bunacht.sh/bulinux.sh (Mittag/Nacht je linux0/linux7 versetzt,
@@ -256,7 +257,7 @@ ELG=/var/log/cronf.log
 10 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null; }
 0 1 * * * /usr/bin/ionice -c3 /usr/bin/find /tmp -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * /usr/bin/ionice -c3 /usr/bin/nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
-00 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux1/ -o ${HOST\%\%.*}/ = linux7/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,18:C0:4D:EC:A4:F7,74:D4:35:D6:80:82,1C:87:2C:42:80:4F,74:56:3C:99:B9:01,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,94:DE:80:B8:49:2D,04:D4:C4:EE:88:07,E0:D5:5E:0E:66:34,FC:AA:14:CD:88:AC,04:D4:C4:EE:98:F1,04:D4:C4:EE:97:50,04:D4:C4:EE:98:0B,E0:D5:5E:40:A8:DE,9C:6B:00:9F:B0:3C,04:7C:16:E6:F5:AD,D8:5E:D3:9B:A1:06,3C:7C:3F:D7:BD:C0,FC:34:97:11:89:AD,40:8D:5C:52:ED:75,04:D4:C4:01:E7:15>/dev/null; }
+00 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux1/ -o ${HOST\%\%.*}/ = linux7/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,18:C0:4D:EC:A4:F7,74:D4:35:D6:80:82,1C:87:2C:42:80:4F,74:56:3C:99:B9:01,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,94:DE:80:B8:49:2D,04:D4:C4:EE:88:07,E0:D5:5E:0E:66:34,FC:AA:14:CD:88:AC,04:D4:C4:EE:98:F1,04:D4:C4:EE:97:50,04:D4:C4:EE:98:0B,E0:D5:5E:40:A8:DE,9C:6B:00:9F:B0:3C,04:7C:16:E6:F5:AD,D8:5E:D3:9B:A1:06,3C:7C:3F:D7:BD:C0,FC:34:97:11:89:AD,40:8D:5C:52:ED:75,04:D4:C4:01:E7:15,54:B2:03:0F:B3:25,28:C5:C8:2D:90:21>/dev/null; }
 # * * * * 1-5 /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
 # Entzerrung 8.7.2026: von 2:00 auf 1:15 Uhr verschoben, s. Analyse bei bunacht.sh.
 15 1 * * * /usr/bin/python3 /root/bin/doppelteimporte.py --delete --no-color >> /var/log/doppelteimporte.log 2>&1
