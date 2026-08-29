@@ -70,7 +70,7 @@ commandline() {
         *) 
           einzeln=1;
           [ $verb ]&&printf "commandline: werte aus: $blau$1$reset\n"
-          [ -f "$1" ]&&qd="$1"||printf "Datei $blau$1$reset nicht gefunden!\n";;
+          [ -f "$1" ]&&qd="${1%.pdf}"||printf "Datei $blau$1$reset nicht gefunden!\n";;
       esac;;
      *)
       qd="$1";;
