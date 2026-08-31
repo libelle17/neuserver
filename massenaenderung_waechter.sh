@@ -13,7 +13,7 @@
 # Per Cron alle 15 Minuten aufrufen (Aufrufintervall = $MINUTEN).
 
 MINUTEN=15
-SCHWELLE=300
+SCHWELLE=20000
 COOLDOWN_MIN=60
 MARKER=/root/.massenaenderung_waechter_letzter_alarm
 EMPFAENGER="diabetologie@dachau-mail.de gerald.schade@gmx.de geraldschade@gmx.de"
