@@ -10,6 +10,7 @@
      relevant, falls dieser Apache über die reine Praxis-LAN-Nutzung
      hinaus erreichbar sein sollte. -->
 <a href="intern/strong.php">Link<br></a>
+<a href="fachliches/index.html" style="display:inline-block;text-decoration:none;background:#eaf1f5;border:1px solid #2f5d78;border-radius:6px;color:#1b2530;padding:0.5rem 1rem;font-weight:600;margin:0.5rem 0;">Fachliches</a><br>
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
