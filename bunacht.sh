@@ -68,7 +68,14 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
     if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
 #    kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
 #    kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
-    kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
+    # .snapshots/ ausschliessen: das Ziel-/DATA ist selbst Snapper-verwaltet
+    # (Config "data"), --delete durchsuchte bislang auch den Inhalt der dort
+    # liegenden (i.d.R. read-only) Snapshots mit, fand dort massenhaft
+    # "Dateien", die auf der Quelle so nicht existieren, und scheiterte beim
+    # Versuch sie zu loeschen ("Read-only file system") - Millionen Zeilen
+    # Logspam bei jedem Lauf (s. Vorfall linux0 01.09.2026, Snapshot 41/wrz,
+    # sowie aeltere Logs mit Snapshot 15/vrweb).
+    kopiermt "/DATA/" "/$vz/" ".snapshots/" "$obOBDEL" "" ""; # ohne --iconv
     _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
@@ -84,7 +91,8 @@ else
   obOBDEL=--delete
   wirt=$QL;
   vz=$DATAZIEL;
-  kopiermt "/DATA/" "/$vz/" "" "$obOBDEL" "" ""; # ohne --iconv
+  # .snapshots/ ausschliessen: s. Kommentar beim Push-Aufruf oben.
+  kopiermt "/DATA/" "/$vz/" ".snapshots/" "$obOBDEL" "" ""; # ohne --iconv
   _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;
