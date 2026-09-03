@@ -64,7 +64,7 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
   for ziel in $ziele; do
     ZL=linux$ziel;
     ZmD=$ZL:;
-    if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
+    vz=$(datenziel_fuer "$ZL"); # s. bul1.sh
 #    kopiermt_delta "/DATA/Patientendokumente/dok/" "/$vz/Patientendokumente/dok/" "" "" "" ""; # ohne --iconv
 #    kopiermt_delta "/DATA/Patientendokumente/eingelesen/" "/$vz/Patientendokumente/eingelesen/" "" "" "" ""; # ohne --iconv
     kopiermt_delta "/DATA/Patientendokumente/" "/$vz/Patientendokumente/" "" "" "" ""; # kein --delete mehr (s. Analyse oben); ohne --iconv

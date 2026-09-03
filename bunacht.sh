@@ -65,7 +65,7 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
   for ziel in $ziele; do
     ZL=linux$ziel;
     ZmD=$ZL:;
-    if [ $ziel -eq 7 ]; then vz=DATA\/DATA;else vz=DATA; fi;
+    vz=$(datenziel_fuer "$ZL"); # s. bul1.sh
 #    kopiermt "/DATA/Patientendokumente/dok" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
 #    kopiermt "/DATA/Patientendokumente/eingelesen" "/$vz/Patientendokumente/" "" "$obOBDEL" "" ""; # ohne --iconv
     # .snapshots/ ausschliessen: das Ziel-/DATA ist selbst Snapper-verwaltet

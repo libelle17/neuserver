@@ -22,8 +22,19 @@ else
   EIGENHOST=$buhost;
 fi;
 EIGENNR=${EIGENHOST#linux};
-# Zielverzeichnis für /DATA-Kopien – rechnerabhängig:
-case "$buhost" in
-	linux7) DATAZIEL=DATA/DATA;;  # linux7: /DATA/DATA statt /DATA
-	*)      DATAZIEL=DATA;;       # alle anderen (linux0 etc.): /DATA
-esac;
+# Zielverzeichnis für /DATA-Kopien – rechnerabhängig: manche Hosts legen den
+# lokalen /DATA-Mirror unter /DATA/DATA statt direkt unter /DATA ab
+# (historisch bedingt). Als Funktion definiert (nicht nur als $DATAZIEL für
+# $buhost), weil bulinux.sh sie im Notfallbetrieb-Tausch auch für einen
+# ANDEREN Host als $buhost braucht, und bumo.sh/bunacht.sh sie in ihrer
+# Push-Schleife für jeden Zielrechner neu abfragen - beide sollen dieselbe
+# Zuordnung verwenden, statt sie lokal zu duplizieren. linux7 hatte diesen
+# Sonderfall bis zur Umstellung auf eine eigene /DATA/DATA-Platte (sde) am
+# 3.9.2026, s. Git-Historie.
+datenziel_fuer() {  # $1 = Hostname; liefert DATA oder DATA/DATA
+  case "$1" in
+    *3|*8) echo DATA/DATA;;
+    *)     echo DATA;;
+  esac;
+}
+DATAZIEL=$(datenziel_fuer "$buhost");

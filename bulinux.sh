@@ -52,7 +52,7 @@ if [ "$obumg" ]; then
   ZmD=$ZL:; ZmD=${ZmD#:};
   # DtZ neu berechnen: basiert auf Zielrechner (ZL) statt buhost
   _zielh="${ZL:-$buhost}";
-  case "$_zielh" in *3|*7|*8) DATAZIEL=DATA/DATA;; *) DATAZIEL=DATA;; esac;
+  DATAZIEL=$(datenziel_fuer "$_zielh"); # s. bul1.sh
   DtZ=$DATAZIEL;
 fi;
 # Abort-Check: ohne -u braucht linux1 ein ZL; mit -u braucht es ein QL
