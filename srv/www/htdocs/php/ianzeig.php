@@ -165,8 +165,9 @@ if ($ergeb->num_rows >0) {
 }
 }
 
-function tragein($conn, $pat_id, $eintrag) 
+function tragein($conn, $pat_id, $eintrag)
 {
+    $eintrag=substr($eintrag,0,200); // Spalte "Beschreib" ist varchar(200)
     $schondrin=0;
     if (isset($_SESSION['arr'])) 
       for($i=0;$i<count($_SESSION['arr']);$i++) if ($_SESSION['arr'][$i]==$eintrag) {

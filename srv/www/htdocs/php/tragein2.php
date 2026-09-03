@@ -148,10 +148,11 @@ $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION[
 // (eintragen=neue Aufgabe, anwesend/obvorb/obbeha/anbeh=Statuswechsel,
 // alleloeschen/blenden=Listenverwaltung, erlknopfN/gelknopfN/aufknopfN/
 // abknopfN=Aktion auf Aufgabe Nr. N).
-if(isset($_POST['ma']))  $_SESSION['ma']=$_POST['ma'];
-if(isset($_POST['bh']))  $_SESSION['bh']=$_POST['bh'];
+if(isset($_POST['ma']))  $_SESSION['ma']=substr($_POST['ma'],0,5);
+if(isset($_POST['bh']))  $_SESSION['bh']=substr($_POST['bh'],0,5);
 if(isset($_POST['eintragen'])) {
   if(isset($_POST['aufgaben'])) if ($_POST['aufgaben']) {
+    $_POST['aufgaben']=substr($_POST['aufgaben'],0,200); // Spalte "beschreib" ist varchar(200)
     $obneu=0;
     if(isset($_SESSION['aufgaben'])) {
       if ($_POST['aufgaben']!=$_SESSION['aufgaben']) $obneu=1;

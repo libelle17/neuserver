@@ -191,8 +191,9 @@ if ($ergeb->num_rows >0) {
 }
 }
 
-function tragein($conn, $pat_id, $eintrag) 
+function tragein($conn, $pat_id, $eintrag)
 {
+    $eintrag=substr($eintrag,0,200); // Spalte "Beschreib" ist varchar(200)
     $schondrin=0;
     if (isset($_SESSION['arr'])) 
       for($i=0;$i<count($_SESSION['arr']);$i++) if ($_SESSION['arr'][$i]==$eintrag) {
@@ -406,8 +407,8 @@ include '../../phppwd.php';
   $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
 
 
-  if(isset($_POST['ma']))  $_SESSION['ma']=$_POST['ma']; else if (!isset($_SESSION['ma'])) $_SESSION['ma']="";
-  if(isset($_POST['bh']))  $_SESSION['bh']=$_POST['bh']; else if (!isset($_SESSION['bh'])) $_SESSION['bh']="";
+  if(isset($_POST['ma']))  $_SESSION['ma']=substr($_POST['ma'],0,5); else if (!isset($_SESSION['ma'])) $_SESSION['ma']="";
+  if(isset($_POST['bh']))  $_SESSION['bh']=substr($_POST['bh'],0,5); else if (!isset($_SESSION['bh'])) $_SESSION['bh']="";
   if (!file_exists(self::$copyq)) {
     copy("..".$_SERVER['PHP_SELF'],self::$copyq);
   }
@@ -423,6 +424,7 @@ include '../../phppwd.php';
   ?> <script>var hist=<?php echo json_encode($_SESSION['history'], JSON_HEX_TAG); ?>;alert("stelle history auf "+hist);</script> <?php
  */
   if ($komaktiv>-1 && isset($_POST['erlknopf0']) && isset($_POST['kommentar'])) {
+    $_POST['kommentar']=substr($_POST['kommentar'],0,70); // Spalte "Kommentar" ist varchar(70)
     $sql="UPDATE zutun SET kommentar='".$_POST['kommentar'].
       "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($komaktiv+1).";";
     echo $sql."<br>";
