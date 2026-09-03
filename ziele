@@ -41,6 +41,7 @@ copytoshz.sh
 copyverb.sh
 copyverba.sh
 copywd.sh
+datac_sync.sh
 dbauspacken.sh
 dbeinpacken.sh
 dienstplan_publish.sh
