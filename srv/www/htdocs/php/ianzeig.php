@@ -197,8 +197,8 @@ function tragein($conn, $pat_id, $eintrag)
       }
       $_SESSION['aut'][]=$aut;
       $sql="INSERT INTO zutun(pat_id,pos,beschreib,AktZeit,AktPC,Person,Vorbereiter,Behandler) ".
-        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$eintrag."',now(),'".$_SERVER['REMOTE_ADDR']
-        ."','".$_SESSION['person']."','".$_SESSION['ma']."','".$_SESSION['bh']."');";
+        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$conn->real_escape_string($eintrag)."',now(),'".$_SERVER['REMOTE_ADDR']
+        ."','".$_SESSION['person']."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."');";
       //    echo $sql."<br>";
       //  $ergeb=$conn->query($sql);
       $ergeb=self::abfrage($conn,$sql);

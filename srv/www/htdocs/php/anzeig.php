@@ -223,8 +223,8 @@ function tragein($conn, $pat_id, $eintrag)
       }
       $_SESSION['aut'][]=$aut;
       $sql="INSERT INTO zutun(pat_id,pos,beschreib,AktZeit,AktPC,Person,Vorbereiter,Behandler) ".
-        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$eintrag."',now(),'".$_SERVER['REMOTE_ADDR']
-        ."','".$_SESSION['person']."','".$_SESSION['ma']."','".$_SESSION['bh']."');";
+        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$conn->real_escape_string($eintrag)."',now(),'".$_SERVER['REMOTE_ADDR']
+        ."','".$_SESSION['person']."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."');";
       //    echo $sql."<br>";
       //  $ergeb=$conn->query($sql);
       $ergeb=self::abfrage($conn,$sql);
@@ -425,7 +425,7 @@ include '../../phppwd.php';
  */
   if ($komaktiv>-1 && isset($_POST['erlknopf0']) && isset($_POST['kommentar'])) {
     $_POST['kommentar']=substr($_POST['kommentar'],0,70); // Spalte "Kommentar" ist varchar(70)
-    $sql="UPDATE zutun SET kommentar='".$_POST['kommentar'].
+    $sql="UPDATE zutun SET kommentar='".$conn->real_escape_string($_POST['kommentar']).
       "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($komaktiv+1).";";
     echo $sql."<br>";
     $_SESSION['kom'][$komaktiv]=$_POST['kommentar'];
@@ -667,23 +667,23 @@ include '../../phppwd.php';
       if ($myaktiv) {
         $_SESSION['anwseit']=new DateTime(date("Y-m-d H:i:s"));
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$conn->real_escape_string($_SESSION['ma'])."','".
+          $conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
       }
       // in Datenbank eintragen, wann Vorbereitung gedrueckt wurde
       if ($myvorb) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$conn->real_escape_string($_SESSION['ma'])."','".
+          $conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //     $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
       }
       // in Datenbank eintragen, wann Behandlung gedrueckt wurde
       if ($mybeh) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0").
+          "VALUES(".$pat_id.",'B','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obbeha']?"1":"0").
           "',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);

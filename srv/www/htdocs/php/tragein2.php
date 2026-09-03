@@ -174,8 +174,8 @@ if(isset($_POST['eintragen'])) {
         $_SESSION['gel'][]=0;
         $_SESSION['per'][]=$_SESSION['person'];
         $eintrag="insert into zutun(pat_id,pos,beschreib,AktZeit,AktPC,Person,Vorbereiter,Behandler) ".
-                 "values (".$_SESSION['pat_id'].",".count($_SESSION['arr']).",'".$_POST['aufgaben']."',now(),'".$_SERVER['REMOTE_ADDR']
-                 ."','".$_SESSION['person']."','".$_SESSION['ma']."','".$_SESSION['bh']."');";
+                 "values (".$_SESSION['pat_id'].",".count($_SESSION['arr']).",'".$conn->real_escape_string($_POST['aufgaben'])."',now(),'".$_SERVER['REMOTE_ADDR']
+                 ."','".$_SESSION['person']."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."');";
         //    echo $eintrag."<br>";
         $ergeb=$conn->query($eintrag);
       }
@@ -329,19 +329,19 @@ if(isset($_POST['eintragen'])) {
 // in Datenbank eintragen, wann anwesend gedrueckt wurde
 if ($myaktiv) {
    $eintrag="insert into aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-            "values(".$_SESSION['pat_id'].",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+            "values(".$_SESSION['pat_id'].",'".($_SESSION['anbeh']?"a":"A")."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
    $ergeb=$conn->query($eintrag);
 }
 // in Datenbank eintragen, wann Vorbereitung gedrueckt wurde
 if ($myvorb) {
      $eintrag="insert into aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-              "values(".$_SESSION['pat_id'].",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+              "values(".$_SESSION['pat_id'].",'".($_SESSION['anbeh']?"v":"V")."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
      $ergeb=$conn->query($eintrag);
 }
 // in Datenbank eintragen, wann Behandlung gedrueckt wurde
 if ($mybeh) {
      $eintrag="insert into aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-              "values(".$_SESSION['pat_id'].",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+              "values(".$_SESSION['pat_id'].",'B','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obbeha']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
      $ergeb=$conn->query($eintrag);
 }
 }
