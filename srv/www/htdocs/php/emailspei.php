@@ -57,6 +57,10 @@ function einfuegenZeile($conn, $pat_id, $email, $rolle, $bezug, $aktpc, $person,
 
 function zurueck($ref) {
   if ($ref === '' || $ref === null) $ref = '../plz/';
+  // #emailoffen: das Email-Adr.-Editierfenster soll nach einer Aktion offen bleiben statt
+  // sich beim Neuladen der Laufzettelseite wieder zu schliessen (siehe emailAdrToggle()/
+  // Auto-Aufklapp-Skript in Laufzettelneu.bas:EmailAdressenPHP).
+  $ref = preg_replace('/#.*$/', '', $ref)."#emailoffen";
   header("Location: ".$ref);
   exit;
 }
