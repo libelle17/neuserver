@@ -1,0 +1,170 @@
+<?php
+// emailspei.php - manuelle Pflege von quelle.pat_email_adr aus dem Patientenlaufzettel
+// heraus (PHP-Variante). Ergaenzt/aendert/loescht eine Email-Adresse eines Patienten und
+// haengt dazu immer genau eine Zeile an pat_email_adr_audit an. Schreibt NIE nach
+// patstamm, NIE die Spalten marker/committed (Sache des Windows-seitigen Commit-Schritts).
+// Verbindungs-/Session-Muster wie tragein2.php.
+//
+// Rueckgaengig-Funktion: $_SESSION['eundo_stack'] ist ein Stapel (Array) der in DIESER
+// Sitzung fuer den AKTUELLEN Patienten ausgefuehrten Aktionen (jederlei Art, in der
+// Reihenfolge ihrer Ausfuehrung). Jeder Klick auf "Rueckgaengig" macht genau die zuletzt
+// noch nicht rueckgaengig gemachte Aktion rueckgaengig (LIFO) und entfernt sie vom Stapel -
+// ein zweiter Klick macht dann die davor ausgefuehrte Aktion rueckgaengig, usw. Wechselt der
+// Patient, wird der Stapel geleert (kein Rueckgaengig ueber Patientengrenzen hinweg).
+session_start();
+
+$pc = "localhost";
+include '../../phppwd.php';
+$db = "quelle";
+$conn = new mysqli($pc, $user, $pwt, $db);
+if ($conn->connect_error) {
+  echo "Datenbankverbindung zu '".$pc."' fehlgeschlagen: ".$conn->connect_error;
+  exit;
+}
+$conn->set_charset("utf8mb4");
+
+function eSql($conn, $s) {
+  if ($s === '' || $s === null) return 'NULL';
+  return "'".$conn->real_escape_string($s)."'";
+}
+
+function schreibeAudit($conn, $aktionTxt, $pat_id, $alt_email, $neu_email, $bezug, $aktpc, $person, $vorbereiter, $behandler, $bemerkung = null) {
+  $sql = "INSERT INTO pat_email_adr_audit (aktion,pat_id,alt_email,neu_email,bezug,AktPC,Person,Vorbereiter,Behandler,bemerkung) VALUES (".
+    eSql($conn, $aktionTxt).",".eSql($conn, $pat_id).",".eSql($conn, $alt_email).",".eSql($conn, $neu_email).",".
+    eSql($conn, $bezug).",".eSql($conn, $aktpc).",".eSql($conn, $person).",".eSql($conn, $vorbereiter).",".eSql($conn, $behandler).",".
+    eSql($conn, $bemerkung).")";
+  $conn->query($sql);
+}
+
+function gibtsSchonAnders($conn, $email, $pat_id) {
+  $r = $conn->query("SELECT pat_id FROM pat_email_adr WHERE email=".eSql($conn, $email)." AND pat_id<>".eSql($conn, $pat_id)." LIMIT 1");
+  return $r && $r->num_rows > 0;
+}
+
+// aktuelle Zeile (rolle+bezug) vor einer Aendern/Loeschen-Aktion lesen, fuer den Undo-Stapel
+function leseZeile($conn, $pat_id, $email) {
+  $r = $conn->query("SELECT rolle,bezug FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $email)." LIMIT 1");
+  if ($r && $r->num_rows > 0) return $r->fetch_assoc();
+  return null;
+}
+
+function einfuegenZeile($conn, $pat_id, $email, $rolle, $bezug, $aktpc, $person, $vorbereiter, $behandler) {
+  $sql = "INSERT INTO pat_email_adr (pat_id,email,rolle,quelle,bezug,AktPC,Person,Vorbereiter,Behandler,erfasst_am,committed) VALUES (".
+    eSql($conn, $pat_id).",".eSql($conn, $email).",".eSql($conn, $rolle).",'m',".eSql($conn, $bezug).",".
+    eSql($conn, $aktpc).",".eSql($conn, $person).",".eSql($conn, $vorbereiter).",".eSql($conn, $behandler).",NOW(),0)";
+  return $conn->query($sql);
+}
+
+function zurueck($ref) {
+  if ($ref === '' || $ref === null) $ref = '../plz/';
+  header("Location: ".$ref);
+  exit;
+}
+
+$aktion    = isset($_POST['aktion'])    ? $_POST['aktion']            : '';
+$email     = isset($_POST['email'])     ? trim($_POST['email'])       : '';
+$bezug     = isset($_POST['bezug'])      ? trim($_POST['bezug'])       : '';
+$alt_email = isset($_POST['alt_email']) ? trim($_POST['alt_email'])   : '';
+$alt_rolle = isset($_POST['alt_rolle']) ? $_POST['alt_rolle']         : '';
+$ref       = isset($_POST['ref'])       ? $_POST['ref']               :
+             (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '');
+
+// pat_id bewusst aus der Session, nicht aus dem POST-Feld - der Laufzettel setzt
+// $_SESSION['pat_id'] ohnehin schon fuer die zutun-Verwaltung.
+$pat_id = isset($_SESSION['pat_id']) ? intval($_SESSION['pat_id']) : 0;
+
+$vorbereiter = isset($_SESSION['ma'])     ? $_SESSION['ma']     : '';
+$behandler   = isset($_SESSION['bh'])     ? $_SESSION['bh']     : '';
+$person      = isset($_SESSION['person']) ? $_SESSION['person'] : '';
+$aktpc       = $_SERVER['REMOTE_ADDR'];
+
+if ($pat_id == 0) {
+  echo "Kein Patient in der Sitzung gefunden - bitte den Laufzettel neu aufrufen.";
+  exit;
+}
+
+// Undo-Stapel: patientenbezogen, wird bei Patientenwechsel geleert.
+if (!isset($_SESSION['eundo_pat']) || $_SESSION['eundo_pat'] != $pat_id) {
+  $_SESSION['eundo_pat'] = $pat_id;
+  $_SESSION['eundo_stack'] = array();
+}
+if (!isset($_SESSION['eundo_stack'])) $_SESSION['eundo_stack'] = array();
+
+$bestaetigt = false;
+if ($aktion === 'bestaetigt_hinzufuegen') { $aktion = 'hinzufuegen'; $bestaetigt = true; }
+if ($aktion === 'bestaetigt_aendern')     { $aktion = 'aendern';     $bestaetigt = true; }
+
+if (($aktion === 'hinzufuegen' || $aktion === 'aendern') && $email !== '' && !$bestaetigt && gibtsSchonAnders($conn, $email, $pat_id)) {
+  // Warnhinweis mit Rueckfrage statt sofort zu schreiben (Geschaeftsregel 6 der Spezifikation)
+  $wiederholAktion = ($aktion === 'hinzufuegen') ? 'bestaetigt_hinzufuegen' : 'bestaetigt_aendern';
+  echo "<!DOCTYPE html><html><head><meta charset='utf-8'><title>E-Mail-Adresse pruefen</title></head><body>";
+  echo "<p style='color:red'>Die Adresse ".htmlspecialchars($email)." ist bereits bei einem anderen Patienten hinterlegt.</p>";
+  echo "<form method='post' action='emailspei.php'>";
+  echo "<input type='hidden' name='aktion' value='".htmlspecialchars($wiederholAktion)."'>";
+  echo "<input type='hidden' name='email' value='".htmlspecialchars($email)."'>";
+  echo "<input type='hidden' name='bezug' value='".htmlspecialchars($bezug)."'>";
+  echo "<input type='hidden' name='alt_email' value='".htmlspecialchars($alt_email)."'>";
+  echo "<input type='hidden' name='alt_rolle' value='".htmlspecialchars($alt_rolle)."'>";
+  echo "<input type='hidden' name='ref' value='".htmlspecialchars($ref)."'>";
+  echo "<button type='submit'>Trotzdem speichern</button> ";
+  echo "<button type='button' onclick=\"location.href='".htmlspecialchars($ref)."'\">Abbrechen</button>";
+  echo "</form></body></html>";
+  exit;
+}
+
+if ($aktion === 'hinzufuegen' && $email !== '') {
+  if (einfuegenZeile($conn, $pat_id, $email, 'n', $bezug, $aktpc, $person, $vorbereiter, $behandler)) {
+    schreibeAudit($conn, 'hinzugefuegt', $pat_id, null, $email, $bezug, $aktpc, $person, $vorbereiter, $behandler);
+    $_SESSION['eundo_stack'][] = array('typ' => 'hinzugefuegt', 'email' => $email);
+  }
+} elseif ($aktion === 'aendern' && $email !== '' && $alt_email !== '') {
+  $vorherZeile = leseZeile($conn, $pat_id, $alt_email);
+  if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $alt_email))) {
+    if ($alt_rolle === 'h') {
+      $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id)." AND rolle='h'");
+    }
+    $neueRolle = ($alt_rolle === 'h' || $alt_rolle === 'a') ? $alt_rolle : 'n';
+    if (einfuegenZeile($conn, $pat_id, $email, $neueRolle, $bezug, $aktpc, $person, $vorbereiter, $behandler)) {
+      schreibeAudit($conn, 'geaendert', $pat_id, $alt_email, $email, $bezug, $aktpc, $person, $vorbereiter, $behandler);
+      $_SESSION['eundo_stack'][] = array(
+        'typ' => 'geaendert', 'alt_email' => $alt_email,
+        'alt_rolle' => $vorherZeile ? $vorherZeile['rolle'] : $alt_rolle,
+        'alt_bezug' => $vorherZeile ? $vorherZeile['bezug'] : $bezug,
+        'neu_email' => $email,
+      );
+    }
+  }
+} elseif ($aktion === 'loeschen' && $alt_email !== '') {
+  $vorherZeile = leseZeile($conn, $pat_id, $alt_email);
+  if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $alt_email))) {
+    schreibeAudit($conn, 'geloescht', $pat_id, $alt_email, null, null, $aktpc, $person, $vorbereiter, $behandler);
+    $_SESSION['eundo_stack'][] = array(
+      'typ' => 'geloescht', 'email' => $alt_email,
+      'rolle' => $vorherZeile ? $vorherZeile['rolle'] : 'n',
+      'bezug' => $vorherZeile ? $vorherZeile['bezug'] : null,
+    );
+  }
+} elseif ($aktion === 'rueckgaengig') {
+  $eintrag = array_pop($_SESSION['eundo_stack']);
+  if ($eintrag !== null) {
+    if ($eintrag['typ'] === 'hinzugefuegt') {
+      if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['email']))) {
+        schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['email'], null, null, $aktpc, $person, $vorbereiter, $behandler, 'Hinzufuegen rueckgaengig gemacht');
+      }
+    } elseif ($eintrag['typ'] === 'geaendert') {
+      if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']))) {
+        if ($eintrag['alt_rolle'] === 'h') {
+          $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id)." AND rolle='h'");
+        }
+        einfuegenZeile($conn, $pat_id, $eintrag['alt_email'], $eintrag['alt_rolle'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler);
+        schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
+      }
+    } elseif ($eintrag['typ'] === 'geloescht') {
+      if (einfuegenZeile($conn, $pat_id, $eintrag['email'], $eintrag['rolle'], $eintrag['bezug'], $aktpc, $person, $vorbereiter, $behandler)) {
+        schreibeAudit($conn, 'rueckgaengig', $pat_id, null, $eintrag['email'], $eintrag['bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Loeschen rueckgaengig gemacht');
+      }
+    }
+  }
+}
+
+zurueck($ref);
