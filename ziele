@@ -187,6 +187,8 @@ my.cnf
 vsftpd.conf
 [/etc/auto.master.d]
 gs.autofs
+[/etc/sudoers.d]
+mo-emailadr-commit
 [/]
 srv/www/htdocs/behand/=.Neuer_Patient
 srv/www/htdocs/behand/=\.Fertige

@@ -1728,6 +1728,11 @@ proginst() {
   doinst php8-mysql;
   doinst python313-certbot;     # Let's-Encrypt-Zertifikate (fachliches_einrichten)
   doinst certbot-systemd-timer; # automatische Zertifikatsverlaengerung
+  # Email-Adr.-Widget im Patientenlaufzettel (linux1_commit_medoff.py,
+  # linux1_sync_medoff_changes.py, eingerichtet 2026-09-12): keine
+  # zypper-Paket fuer PyMySQL gefunden, daher per pip. Guard vermeidet einen
+  # unnoetigen Netzwerkzugriff, wenn schon installiert.
+  python3 -c "import pymysql" 2>/dev/null || pip install pymysql;
   doinst fail2ban;              # Bruteforce-Schutz Basic-Auth (Dienstplan-Login)
   doinst postgresql;
   doinst postgresql-contrib;
@@ -3702,6 +3707,31 @@ cron() {
     fi;
   else
     printf "${rot}bulinux.sh nicht gefunden in $RBI${reset} – crontab-Eintrag übersprungen.\n";
+  fi;
+  # mo-emailadr-Eintraege pruefen und ggf. eintragen (Email-Adr.-Widget im
+  # Patientenlaufzettel <-> medoff.patstamm.FEmail, eingerichtet 2026-09-12,
+  # siehe /DATA/down/linux1_testlauf_befunde.txt). Greifen erst, wenn die
+  # Uebernahme von $srv0/lokal die drei Zeilen NICHT schon mitgebracht hat -
+  # z.B. bei einer Neueinrichtung ohne erreichbaren Quellserver.
+  if [ -d /opt/mo-emailadr ]; then
+    _moe1="*/2 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply >>\$VL/linux1_sync_medoff_changes.log 2>&1";
+    _moe2="5 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply >>\$VL/linux1_commit_medoff.log 2>&1";
+    _moe3="15 2 * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply --full >>\$VL/linux1_sync_medoff_changes_full.log 2>&1";
+    for _moe in "$_moe1" "$_moe2" "$_moe3"; do
+      if ! crontab -l 2>/dev/null | grep -qF "$_moe"; then
+        { crontab -l 2>/dev/null; printf "%s\n" "$_moe"; } | crontab -;
+        printf "mo-emailadr-Eintrag in ${blau}crontab${reset} eingetragen: ${blau}$_moe${reset}\n";
+      fi;
+    done;
+    if [ -f /etc/sudoers.d/mo-emailadr-commit ]; then
+      visudo -cf /etc/sudoers.d/mo-emailadr-commit >/dev/null 2>&1 && \
+        printf "${blau}/etc/sudoers.d/mo-emailadr-commit${reset}: Syntax ok.\n" || \
+        printf "${rot}/etc/sudoers.d/mo-emailadr-commit: Syntax-Fehler!${reset}\n";
+    else
+      printf "${rot}/etc/sudoers.d/mo-emailadr-commit fehlt${reset} – emailspei.php koennte linux1_commit_medoff.py nicht direkt anstossen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
+    fi;
+  else
+    printf "${rot}/opt/mo-emailadr nicht gefunden${reset} – mo-emailadr-Cron-Eintraege uebersprungen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
   fi;
 
   # 3) Arbeitskopie erstellen:
