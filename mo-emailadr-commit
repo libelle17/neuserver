@@ -1,6 +1,0 @@
-# Erlaubt wwwrun (Apache/PHP), linux1_commit_medoff.py --apply als root auszufuehren,
-# ohne dass wwwrun selbst Zugriff auf /root/.modbpwd oder /root/.mariadbrpwd (dort
-# user=root) bekommt. Eingerichtet 2026-09-12 fuer den Patientenlaufzettel
-# (emailspei.php), siehe /DATA/down/linux1_testlauf_befunde.txt. Bewusst exakt genau
-# dieser eine Befehl, keine Wildcards - wwwrun kann dadurch sonst nichts als root tun.
-wwwrun ALL=(root) NOPASSWD: /usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply

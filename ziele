@@ -87,6 +87,7 @@ machtha.sh
 maria.sh
 massenaenderung_waechter.sh
 mountvirt.sh
+mysql_restart_watch.sh
 mountwser.sh
 nampruef.sh
 obft.sh
@@ -187,8 +188,6 @@ my.cnf
 vsftpd.conf
 [/etc/auto.master.d]
 gs.autofs
-[/etc/sudoers.d]
-mo-emailadr-commit
 [/]
 srv/www/htdocs/behand/=.Neuer_Patient
 srv/www/htdocs/behand/=\.Fertige
@@ -256,4 +255,8 @@ linux1_medoff_connect.py
 linux1_commit_medoff.py
 linux1_sync_medoff_changes.py
 patient_addresses_db.py
+watch_trigger.sh
+[/etc/systemd/system]
+mo-emailadr-commit-watch.service
+mysql-restart-watch.service
 

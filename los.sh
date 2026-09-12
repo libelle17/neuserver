@@ -3723,20 +3723,54 @@ cron() {
         printf "mo-emailadr-Eintrag in ${blau}crontab${reset} eingetragen: ${blau}$_moe${reset}\n";
       fi;
     done;
-    if [ -f /etc/sudoers.d/mo-emailadr-commit ]; then
-      # git kennt nur "ausfuehrbar oder nicht" (100644/100755), kein exaktes
-      # 0440 - nach einem frischen "git clone"+"make shziel" haette die Datei
-      # sonst zu offene Rechte und wuerde von sudo ignoriert.
-      chown root:root /etc/sudoers.d/mo-emailadr-commit;
-      chmod 0440 /etc/sudoers.d/mo-emailadr-commit;
-      visudo -cf /etc/sudoers.d/mo-emailadr-commit >/dev/null 2>&1 && \
-        printf "${blau}/etc/sudoers.d/mo-emailadr-commit${reset}: Syntax ok.\n" || \
-        printf "${rot}/etc/sudoers.d/mo-emailadr-commit: Syntax-Fehler!${reset}\n";
+    # Direkter Anstoss aus emailspei.php: urspruenglich per sudo (shell_exec aus PHP) -
+    # unter enforcendem SELinux verweigert httpd_t aber jeden exec von /bin/sh UND
+    # /usr/bin/sudo (je ein "entrypoint"-Denial, verifiziert 2026-09-12). Stattdessen:
+    # PHP schreibt nur eine Trigger-Datei (reines Dateischreiben ist httpd_t erlaubt,
+    # wenn das Zielverzeichnis passend beschriftet ist); mo-emailadr-commit-watch.service
+    # (systemd, NICHT unter httpd_t) reagiert per inotifywait. Diese Zeilen gehen ueber
+    # reine Crontab-Pflege hinaus, sind aber am selben "/opt/mo-emailadr vorhanden"-Gate
+    # sinnvoll aufgehoben.
+    mkdir -p /var/lib/mo-emailadr;
+    chown root:wwwrun /var/lib/mo-emailadr;
+    chmod 0770 /var/lib/mo-emailadr;
+    if command -v semanage >/dev/null 2>&1; then
+      semanage fcontext -a -t httpd_var_lib_t "/var/lib/mo-emailadr(/.*)?" 2>/dev/null || true;
+      restorecon -R /var/lib/mo-emailadr;
+      printf "${blau}/var/lib/mo-emailadr${reset}: Eigentuemer/Rechte/SELinux-Kontext gesetzt.\n";
     else
-      printf "${rot}/etc/sudoers.d/mo-emailadr-commit fehlt${reset} – emailspei.php koennte linux1_commit_medoff.py nicht direkt anstossen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
+      printf "${rot}semanage nicht gefunden${reset} – SELinux-Kontext fuer /var/lib/mo-emailadr uebersprungen (kein SELinux?).\n";
+    fi;
+    if [ -f /etc/systemd/system/mo-emailadr-commit-watch.service ] && [ -x /opt/mo-emailadr/watch_trigger.sh ]; then
+      systemctl daemon-reload;
+      systemctl enable --now mo-emailadr-commit-watch.service;
+      printf "${blau}mo-emailadr-commit-watch.service${reset}: aktiviert.\n";
+    else
+      printf "${rot}mo-emailadr-commit-watch.service oder watch_trigger.sh fehlt${reset} – erst 'make shziel' in /root/neuserver ausfuehren.\n";
     fi;
   else
-    printf "${rot}/opt/mo-emailadr nicht gefunden${reset} – mo-emailadr-Cron-Eintraege uebersprungen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
+    printf "${rot}/opt/mo-emailadr nicht gefunden${reset} – mo-emailadr-Cron-Eintraege/Trigger-Dienst uebersprungen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
+  fi;
+  # mysql-restart-watch.service: analoger Trigger-Dienst fuer den DB-Verbindungsfehler-
+  # Fallback in anzeig.php/tragein2.php/ianzeig.php (urspruenglich ebenfalls per
+  # shell_exec(sudo ...), ebenso wirkungslos unter enforcendem SELinux, siehe oben und
+  # /DATA/down/linux1_testlauf_befunde.txt). Unabhaengig von /opt/mo-emailadr.
+  mkdir -p /var/lib/mo-mysql-restart;
+  chown root:wwwrun /var/lib/mo-mysql-restart;
+  chmod 0770 /var/lib/mo-mysql-restart;
+  if command -v semanage >/dev/null 2>&1; then
+    semanage fcontext -a -t httpd_var_lib_t "/var/lib/mo-mysql-restart(/.*)?" 2>/dev/null || true;
+    restorecon -R /var/lib/mo-mysql-restart;
+    printf "${blau}/var/lib/mo-mysql-restart${reset}: Eigentuemer/Rechte/SELinux-Kontext gesetzt.\n";
+  else
+    printf "${rot}semanage nicht gefunden${reset} – SELinux-Kontext fuer /var/lib/mo-mysql-restart uebersprungen (kein SELinux?).\n";
+  fi;
+  if [ -f /etc/systemd/system/mysql-restart-watch.service ] && [ -x "$RBI/mysql_restart_watch.sh" ]; then
+    systemctl daemon-reload;
+    systemctl enable --now mysql-restart-watch.service;
+    printf "${blau}mysql-restart-watch.service${reset}: aktiviert.\n";
+  else
+    printf "${rot}mysql-restart-watch.service oder $RBI/mysql_restart_watch.sh fehlt${reset} – erst 'make shziel' in /root/neuserver ausfuehren.\n";
   fi;
 
   # 3) Arbeitskopie erstellen:

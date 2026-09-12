@@ -56,12 +56,15 @@ $db="quelle";
 $conn = new mysqli($pc,$user,$pwt,$db);
 if ($conn->connect_error) {
   if ($conn->connect_error=="Connection refused") {
-    $ergeb=shell_exec('sudo systemctl start mysql');
-    if ($ergeb) {
-      echo("Ergebnis beim Versuch, mysql zu starten: <pre>".$ergeb."</pre><br>");
-    } else {
-      $conn = new mysqli($pc,$user,$pwt,$db);
-    }
+    // urspruenglich shell_exec('sudo systemctl start mysql') - unter enforcendem
+    // SELinux verweigert httpd_t aber jeden exec von /bin/sh UND /usr/bin/sudo
+    // (verifiziert 2026-09-12, siehe /DATA/down/linux1_testlauf_befunde.txt) -
+    // das war also wirkungslos. Stattdessen: Trigger-Datei schreiben (reines
+    // Dateischreiben ist httpd_t erlaubt), mysql-restart-watch.service (systemd,
+    // nicht unter httpd_t) reagiert per inotifywait.
+    @file_put_contents("/var/lib/mo-mysql-restart/trigger", (string)time());
+    sleep(2); // dem Watcher kurz Zeit geben, bevor erneut verbunden wird
+    $conn = new mysqli($pc,$user,$pwt,$db);
   }
   echo "Fehler: ".$conn->connect_error."<br>";
   if (substr($conn->connect_error,0,16)=="Unknown database") {

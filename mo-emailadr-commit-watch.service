@@ -1,0 +1,11 @@
+[Unit]
+Description=Beobachtet /var/lib/mo-emailadr auf pat_email_adr-Aenderungen aus emailspei.php und stoesst linux1_commit_medoff.py --apply an (statt sudo aus httpd_t, siehe /DATA/down/linux1_testlauf_befunde.txt)
+After=network.target mariadb.service
+
+[Service]
+ExecStart=/opt/mo-emailadr/watch_trigger.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

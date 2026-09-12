@@ -279,10 +279,15 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
 }
 
 // Nach jeder Aktion linux1_commit_medoff.py direkt anstossen, statt auf den naechsten
-// stuendlichen Cron-Fallback zu warten (siehe /etc/sudoers.d/mo-emailadr-commit - wwwrun
-// darf per sudo NUR genau diesen einen Befehl ausfuehren, ohne selbst Zugriff auf
-// /root/.modbpwd bzw. /root/.mariadbrpwd zu haben). No-op und damit harmlos, wenn nichts
-// wartet; Fehler/Timeout werden bewusst ignoriert, der Cron-Fallback faengt das auf.
-shell_exec("timeout 10 sudo -n /usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply > /dev/null 2>&1");
+// stuendlichen Cron-Fallback zu warten. Urspruenglich per shell_exec(sudo ...) - unter
+// enforcendem SELinux (targeted policy) verweigert httpd_t aber jeden exec von
+// /bin/sh UND /usr/bin/sudo (je ein "entrypoint"-Denial, verifiziert 2026-09-12,
+// siehe /DATA/down/linux1_testlauf_befunde.txt) - das waere also wirkungslos
+// gewesen. Stattdessen: nur eine Trigger-Datei schreiben (reines Dateischreiben ist
+// httpd_t erlaubt, /var/lib/mo-emailadr ist eigens als httpd_var_lib_t beschriftet);
+// mo-emailadr-commit-watch.service (systemd, laeuft nicht unter httpd_t) reagiert per
+// inotifywait und stoesst linux1_commit_medoff.py --apply an. No-op/harmlos, falls der
+// Dienst mal nicht laeuft - der stuendliche Cron-Fallback faengt das auf.
+@file_put_contents("/var/lib/mo-emailadr/trigger", (string)time());
 
 zurueck($ref);

@@ -1,0 +1,11 @@
+[Unit]
+Description=Beobachtet /var/lib/mo-mysql-restart auf DB-Verbindungsfehler-Trigger aus anzeig.php/tragein2.php/ianzeig.php und startet mysql/mariadb neu (statt sudo aus httpd_t, siehe /DATA/down/linux1_testlauf_befunde.txt)
+After=network.target
+
+[Service]
+ExecStart=/root/bin/mysql_restart_watch.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
