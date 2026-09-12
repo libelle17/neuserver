@@ -179,6 +179,7 @@ def main():
     n_skip_file_missing = 0
     n_skip_addr = {}
     skip_examples = {}
+    n_rows_missing_skipped = 0
 
     for key, rows in groups.items():
         pat_id, direction, ts = key
@@ -213,17 +214,26 @@ def main():
         marker = DIRECTION_MARKER[direction]
         new_prefix_full = f"{prefix} Email {marker} {addr} {ts}, "
 
+        # Fehlende EINZELNE Zeilen (Anhaenge) blockieren nicht mehr die
+        # GANZE Gruppe - die Basis-Email-PDF existiert bereits (oben
+        # geprueft) und die Adresse ist bereits eindeutig ermittelt; eine
+        # fehlende Anhang-Datei kann ohnehin nie umbenannt werden, soll
+        # aber nicht laenger dazu fuehren, dass auch die vorhandenen
+        # Zeilen (Basis-PDF + andere Anhaenge) unnoetig uebersprungen
+        # werden (Befund des Nutzers 2026-09-12, Kategorie "Anhang-/
+        # Quelldatei fehlt auf Platte" - dort war die Adresse laut Nutzer
+        # oft eindeutig sichtbar, wurde aber trotzdem nicht verwendet).
         group_ok = True
         skip_reason = None
         planned = []
+        n_row_missing_this_group = 0
         for r in rows:
             new_name = cap_filename_length(new_prefix_full + r["_rest"])
             new_path = os.path.join(DOK_ROOT, str(pat_id), new_name)
             old_path = os.path.join(DOK_ROOT, str(pat_id), r["datName"])
             if old_path != new_path and not os.path.exists(old_path):
-                group_ok = False
-                skip_reason = "Anhang-/Quelldatei fehlt auf Platte"
-                break
+                n_row_missing_this_group += 1
+                continue
             if new_path != old_path and os.path.exists(new_path):
                 group_ok = False
                 skip_reason = "Zieldatei existiert bereits"
@@ -232,6 +242,15 @@ def main():
         if not group_ok:
             n_skip_addr[skip_reason] = n_skip_addr.get(skip_reason, 0) + 1
             continue
+        if not planned:
+            # Kann eigentlich nicht vorkommen (Basis-Datei wurde oben
+            # bereits als vorhanden bestaetigt), sicherheitshalber trotzdem
+            # wie zuvor behandeln statt eine leere Gruppe als "erledigt"
+            # zu zaehlen.
+            n_skip_addr["alle Zeilen fehlen auf Platte"] = n_skip_addr.get(
+                "alle Zeilen fehlen auf Platte", 0) + 1
+            continue
+        n_rows_missing_skipped += n_row_missing_this_group
 
         if apply_changes:
             try:
@@ -265,6 +284,10 @@ def main():
 
     print(f"\n{'Angewendet' if apply_changes else 'Wuerde anwenden'}: "
           f"{n_ok_groups} Gruppen ({n_ok_rows} Zeilen/Dateien)")
+    if n_rows_missing_skipped:
+        print(f"  davon {n_rows_missing_skipped} einzelne Zeilen (Anhaenge) NICHT "
+              f"umbenannt, da deren Datei bereits fehlte - Rest der jeweiligen "
+              f"Gruppe trotzdem erledigt")
     print(f"Uebersprungen - kein Pat_ID: {n_skip_no_patid}")
     print(f"Uebersprungen - Pat_ID nicht (mehr) in patstamm: {n_skip_no_patstamm}")
     print(f"Uebersprungen - Basis-Email-PDF nicht eindeutig bestimmbar: {n_skip_no_base}")
