@@ -278,4 +278,11 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
   }
 }
 
+// Nach jeder Aktion linux1_commit_medoff.py direkt anstossen, statt auf den naechsten
+// stuendlichen Cron-Fallback zu warten (siehe /etc/sudoers.d/mo-emailadr-commit - wwwrun
+// darf per sudo NUR genau diesen einen Befehl ausfuehren, ohne selbst Zugriff auf
+// /root/.modbpwd bzw. /root/.mariadbrpwd zu haben). No-op und damit harmlos, wenn nichts
+// wartet; Fehler/Timeout werden bewusst ignoriert, der Cron-Fallback faengt das auf.
+shell_exec("timeout 10 sudo -n /usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply > /dev/null 2>&1");
+
 zurueck($ref);

@@ -16,7 +16,29 @@
 # patient_addresses_db.sync_from_medoff()-Docstring - dort auch der
 # Unterschied zwischen den beiden Aufrufern erklaert).
 #
-# Aufruf: python3 linux1_sync_medoff_changes.py [--apply]
+# Zwei Modi (2026-09-12, fuer haeufiges Polling ohne relevante DB-Last):
+#   Normal (ohne --full): inkrementell ueber medoff.dbsprot - Medical
+#     Office protokolliert dort jede patstamm-Aenderung als schlankes
+#     XML-Fragment nur mit dem GEAENDERTEN Feld (verifiziert: die
+#     jeweils letzte patstamm-Zeile enthaelt nur <Email>...</Email>,
+#     nicht die ganze Zeile). FSurogat (Primaerschluessel von dbsprot,
+#     nachweislich monoton mit der Zeit) dient als billiger Cursor - nur
+#     Zeilen mit FSurogat > letztem Bookmark UND FTablename='patstamm'
+#     UND FXmlinhalt LIKE '%<Email>%' werden angesehen, das sind bei
+#     normalem Praxisbetrieb ca. 10-20 dbsprot-Zeilen pro Minute
+#     INSGESAMT (alle Tabellen), also unkritisch fuer 1-2-Minuten-Takt.
+#     FPatnr in dbsprot entspricht direkt patstamm.FSurogat/pat_id
+#     (verifiziert). Bookmark liegt in DBSPROT_BOOKMARK_FILE; bei
+#     fehlender Datei wird NICHT rueckwirkend der komplette dbsprot-
+#     Bestand durchsucht, sondern beim aktuellen Maximalwert begonnen.
+#   --full: die urspruengliche, erschoepfende Pruefung (alle committeten
+#     rolle='h'-Zeilen gegen medoff) als taeglicher Backstop, falls
+#     dbsprot aus irgendeinem Grund (z.B. eine Aenderung ausserhalb des
+#     normalen MO-Wegs) etwas nicht protokolliert haben sollte -
+#     dasselbe Backstop-Prinzip wie der Windows-Task neben dem direkten
+#     PHP-Aufruf bei linux1_commit_medoff.py.
+#
+# Aufruf: python3 linux1_sync_medoff_changes.py [--apply] [--full]
 import sys
 import os
 
@@ -24,22 +46,53 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import patient_addresses_db as padb
 import linux1_medoff_connect as conn_helper
 
+DBSPROT_BOOKMARK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".dbsprot_bookmark")
 
-def main():
-    apply_changes = "--apply" in sys.argv
 
-    padb_conn = conn_helper.connect_quelle()
-    cur = padb_conn.cursor()
-    cur.execute(
-        "SELECT pat_id, email FROM pat_email_adr WHERE rolle=%s AND committed=1",
-        (padb.ROLLE_HAUPT,)
+def load_bookmark():
+    try:
+        with open(DBSPROT_BOOKMARK_FILE) as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return None
+
+
+def save_bookmark(value):
+    with open(DBSPROT_BOOKMARK_FILE, "w") as f:
+        f.write(str(value))
+
+
+def kandidaten_seit_bookmark(mcur):
+    """pat_ids (als str), deren patstamm.FEmail sich seit dem letzten Lauf
+    laut dbsprot geaendert haben koennte, plus der neue Bookmark-Wert (vom
+    Aufrufer bei apply_changes zu speichern)."""
+    bookmark = load_bookmark()
+    mcur.execute("SELECT MAX(FSurogat) AS m FROM dbsprot")
+    aktueller_max = mcur.fetchone()["m"] or 0
+
+    if bookmark is None:
+        # Erster Lauf: nicht rueckwirkend den kompletten Bestand durchsuchen,
+        # sondern erst ab jetzt beobachten (die --full-Vergleiche decken den
+        # Bestand bis hierher ab).
+        print(f"Kein Bookmark gefunden - initialisiere auf aktuellen Stand ({aktueller_max}), "
+              f"kein Rueckwirkungs-Scan.")
+        return set(), aktueller_max
+
+    mcur.execute(
+        "SELECT DISTINCT FPatnr FROM dbsprot WHERE FTablename='patstamm' AND FSurogat > %s "
+        "AND FXmlinhalt LIKE '%%<Email>%%'",
+        (bookmark,)
     )
-    tracked = {str(row["pat_id"]): row["email"] for row in cur.fetchall()}
-    print(f"Bereits committete Hauptadressen zur Kontrolle: {len(tracked)}")
+    pat_ids = {str(row["FPatnr"]) for row in mcur.fetchall() if row["FPatnr"] is not None}
+    print(f"dbsprot: {aktueller_max - bookmark} neue Zeile(n) seit Bookmark {bookmark}, "
+          f"davon mit patstamm-Email-Aenderung: {len(pat_ids)}")
+    return pat_ids, aktueller_max
 
-    medoff_conn = conn_helper.connect_medoff()
-    mcur = medoff_conn.cursor()
 
+def pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes):
+    """Gemeinsamer Vergleichs-/Schreibteil fuer --full und den
+    dbsprot-Modus - identisch zur urspruenglichen Logik, nur die Auswahl
+    von "tracked" (welche pat_ids ueberhaupt angesehen werden) ist neu."""
     aktuelle_werte = {}
     if tracked:
         placeholders = ",".join(["%s"] * len(tracked))
@@ -80,16 +133,53 @@ def main():
             padb.log_audit(padb_conn, "FEmail manuell in medoff geaendert - pat_email_adr synchronisiert",
                             pat_id, alt=bekannt_h, neu=aktuell, bemerkung="linux1_sync_medoff_changes.py")
 
+    return {
+        "n_unchanged": n_unchanged,
+        "n_synced": n_synced,
+        "n_cleared": n_cleared,
+        "n_patient_fehlt": n_patient_fehlt,
+    }
+
+
+def main():
+    apply_changes = "--apply" in sys.argv
+    voller_lauf = "--full" in sys.argv
+
+    padb_conn = conn_helper.connect_quelle()
+    cur = padb_conn.cursor()
+    cur.execute(
+        "SELECT pat_id, email FROM pat_email_adr WHERE rolle=%s AND committed=1",
+        (padb.ROLLE_HAUPT,)
+    )
+    alle_committeten = {str(row["pat_id"]): row["email"] for row in cur.fetchall()}
+    print(f"Bereits committete Hauptadressen insgesamt: {len(alle_committeten)}")
+
+    medoff_conn = conn_helper.connect_medoff()
+    mcur = medoff_conn.cursor()
+
+    neuer_bookmark = None
+    if voller_lauf:
+        print("Voller Lauf (--full): pruefe ALLE committeten Hauptadressen gegen medoff.")
+        tracked = alle_committeten
+    else:
+        kandidaten, neuer_bookmark = kandidaten_seit_bookmark(mcur)
+        tracked = {pid: alle_committeten[pid] for pid in kandidaten if pid in alle_committeten}
+
+    stats = pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes)
+
     print("=== Ergebnis ===")
-    print(f"Unveraendert: {n_unchanged}")
-    print(f"Synchronisiert (direkte medoff-Aenderung uebernommen): {n_synced}")
-    print(f"Geleert (medoff-FEmail entfernt, keine Ersatzadresse): {n_cleared}")
-    print(f"Patient in medoff nicht gefunden: {n_patient_fehlt}")
+    print(f"Geprueft: {len(tracked)}")
+    print(f"Unveraendert: {stats['n_unchanged']}")
+    print(f"Synchronisiert (direkte medoff-Aenderung uebernommen): {stats['n_synced']}")
+    print(f"Geleert (medoff-FEmail entfernt, keine Ersatzadresse): {stats['n_cleared']}")
+    print(f"Patient in medoff nicht gefunden: {stats['n_patient_fehlt']}")
     if not apply_changes:
         print("Trockenlauf beendet. Zum tatsaechlichen Schreiben erneut mit --apply aufrufen.")
 
     if apply_changes:
         padb_conn.commit()
+        if neuer_bookmark is not None:
+            save_bookmark(neuer_bookmark)
     medoff_conn.close()
     padb_conn.close()
 
