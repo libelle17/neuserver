@@ -266,4 +266,5 @@ run_poll_diabetologie.sh
 [/etc/systemd/system]
 mo-emailadr-commit-watch.service
 mysql-restart-watch.service
+poll-diabetologie-inbox.service
 

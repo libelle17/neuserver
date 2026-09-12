@@ -311,4 +311,3 @@ ELG=/var/log/cronf.log
 # Takt) - deduplizert ueber Inhaltsvergleich gegen bereits vorhandene Dateien,
 # also unschaedlich; der Windows-Task wird von der anderen Instanz deaktiviert,
 # sobald dieser Linux-Cron sich bewaehrt hat.
-*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply >>$VL/poll_diabetologie_inbox.log 2>&1

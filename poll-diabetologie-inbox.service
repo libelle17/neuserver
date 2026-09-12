@@ -1,0 +1,11 @@
+[Unit]
+Description=Dauerdienst: holt neue Nachrichten fuer diabetologie@dachau-mail.de per POP3 ab und legt sie als PDF in P:\dok ab (siehe /DATA/down/poll_diabetologie_linux1_auftrag.txt) - ersetzt den frueheren */5-Minuten-Cron-Job durch einen RAM-only gecachten Dauerdienst (2-Minuten-Takt, siehe run_daemon() in poll_diabetologie_inbox.py)
+After=network.target mariadb.service
+
+[Service]
+ExecStart=/opt/mo-emailadr/run_poll_diabetologie.sh --daemon
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

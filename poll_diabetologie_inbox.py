@@ -25,7 +25,7 @@
 #      daher (wie in archive_patient_emails.py) der inhaltliche Text-
 #      Vergleich gegen bereits in P:\dok vorhandene Dateien (emails.
 #      dok_text_cache) VOR dem tatsaechlichen Speichern.
-import email, email.policy, email.utils, hashlib, os, poplib, ssl, sys
+import email, email.policy, email.utils, hashlib, os, poplib, ssl, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
 
@@ -61,6 +61,11 @@ POP_PWD_FILE_LINUX = "/root/.diabetologie_pop_pwd"
 UIDL_CHECKPOINT_FILE = os.environ.get(
     "UIDL_CHECKPOINT_FILE", r"C:\Mail\Thunderbird\Profiles\diabetologie_pop_uidl.txt")
 TARGET_ALIAS = "diabetologie@dachau-mail.de"
+# Takt fuer --daemon (linux1): im Normalfall (nichts Neues) nur zwei billige
+# indexierte Abfragen + eine POP3-UIDL-Abfrage pro Zyklus - von der
+# Netzwerklatenz zu POP_HOST dominiert, nicht von CPU/DB-Last, siehe
+# [[project-missing-patient-emails]].
+POLL_INTERVAL_SECONDS = 120
 
 
 def read_pop_password():
@@ -140,13 +145,41 @@ def build_by_email():
     return by_email
 
 
-def main():
-    apply_changes = "--apply" in sys.argv
-    pwd = read_pop_password()
+# Billige Aenderungserkennung fuer den Dauerdienst (--daemon, siehe unten):
+# by_email (Namen+Emails+Geburtsdaten) wird bewusst NUR im Arbeitsspeicher
+# gehalten, nie auf die Platte gecacht (keine neue Klartext-Ablage von
+# Patientendaten) - build_by_email() (oben, teuer: liest patstamm komplett)
+# wird daher nur neu aufgerufen, wenn sich seit dem letzten Check TATSAECHLICH
+# etwas an einer der beiden Quellen geaendert hat:
+#   - direkte medoff-Aenderungen -> dbsprot (dasselbe Muster wie
+#     linux1_sync_medoff_changes.py: FSurogat waechst monoton, billiger
+#     Cursor, gefiltert auf patstamm+<Email>-Tag).
+#   - pat_email_adr-Aenderungen (Email-Adr.-Widget/Automatisierung) -> das
+#     append-only pat_email_adr_audit, MAX(id) waechst monoton bei JEDER
+#     Aktion (Insert/Update/Delete) - reiner Rollenwechsel (h/n/a) aendert
+#     zwar addresses_by_patient()'s Ergebnis nicht inhaltlich, ein
+#     unnoetiger Rebuild dabei ist aber nur verschwendete Arbeit, kein
+#     Korrektheitsproblem.
+def get_watermarks(medoff_conn, quelle_conn):
+    mcur = medoff_conn.cursor()
+    mcur.execute(
+        "SELECT MAX(FSurogat) AS m FROM dbsprot "
+        "WHERE FTablename='patstamm' AND FXmlinhalt LIKE '%<Email>%'"
+    )
+    dbsprot_max = (mcur.fetchone() or {}).get("m") or 0
+    qcur = quelle_conn.cursor()
+    qcur.execute("SELECT MAX(id) AS m FROM pat_email_adr_audit")
+    audit_max = (qcur.fetchone() or {}).get("m") or 0
+    return dbsprot_max, audit_max
 
-    by_email = build_by_email()
-    print(f"Patienten mit hinterlegter oder gestagter Email-Adresse: {len(by_email)}")
 
+def poll_once(pwd, by_email, apply_changes):
+    """Ein einzelner Abholzyklus (POP3-Verbindung, neue Nachrichten seit dem
+    UIDL-Checkpoint verarbeiten) mit einer BEREITS aufgebauten by_email-
+    Zuordnung - weder hier noch in run_daemon() wird patstamm dafuer erneut
+    gelesen. Fuer den Einzelaufruf (main(), CLI/Cron-Kompatibilitaet) baut
+    der Aufrufer by_email frisch; fuer den Dauerdienst (run_daemon())
+    wird sie nur bei tatsaechlicher Aenderung neu aufgebaut."""
     conn = pop_connect(pwd)
     try:
         resp, lines, octets = conn.uidl()
@@ -386,16 +419,15 @@ def main():
         mail_cache_conn.close()
         audit.close()
 
-        print("=== Ergebnis ===")
-        print(f"Abgeholt: {len(to_process)}")
-        print(f"Relevant (TARGET_ALIAS + bekannter Patient): {n_relevant}")
-        print(f"Erzeugt: {n_created}")
-        print(f"Bereits vorhanden (inhaltlich): {n_duplicate}")
-        print(f"Fehler: {n_error}")
-        print(f"POP3-Wiederverbindungen: {n_reconnects}")
-        print(f"Aenderungsprotokoll: {audit.path}")
-        if not apply_changes:
-            print("Trockenlauf beendet. Zum tatsaechlichen Ablegen erneut mit --apply aufrufen.")
+        return {
+            "n_abgeholt": len(to_process),
+            "n_relevant": n_relevant,
+            "n_created": n_created,
+            "n_duplicate": n_duplicate,
+            "n_error": n_error,
+            "n_reconnects": n_reconnects,
+            "audit_path": audit.path,
+        }
     finally:
         try:
             conn.quit()
@@ -403,5 +435,78 @@ def main():
             pass
 
 
+def print_stats(stats, apply_changes):
+    print("=== Ergebnis ===")
+    print(f"Abgeholt: {stats['n_abgeholt']}")
+    print(f"Relevant (TARGET_ALIAS + bekannter Patient): {stats['n_relevant']}")
+    print(f"Erzeugt: {stats['n_created']}")
+    print(f"Bereits vorhanden (inhaltlich): {stats['n_duplicate']}")
+    print(f"Fehler: {stats['n_error']}")
+    print(f"POP3-Wiederverbindungen: {stats['n_reconnects']}")
+    print(f"Aenderungsprotokoll: {stats['audit_path']}")
+    if not apply_changes:
+        print("Trockenlauf beendet. Zum tatsaechlichen Ablegen erneut mit --apply aufrufen.")
+
+
+def main():
+    """Einzelaufruf (CLI/manueller Test, sowie Cron-Kompatibilitaet, falls
+    --daemon je zurueckgebaut werden muss) - baut by_email immer frisch,
+    genau ein Abholzyklus, druckt das Ergebnis."""
+    apply_changes = "--apply" in sys.argv
+    pwd = read_pop_password()
+    by_email = build_by_email()
+    print(f"Patienten mit hinterlegter oder gestagter Email-Adresse: {len(by_email)}")
+    stats = poll_once(pwd, by_email, apply_changes)
+    print_stats(stats, apply_changes)
+
+
+def run_daemon():
+    """Dauerdienst (linux1, systemd - siehe poll-diabetologie-inbox.service):
+    haelt by_email nur im Arbeitsspeicher, baut sie NUR bei tatsaechlicher
+    Aenderung (siehe get_watermarks()) neu auf, sonst wiederverwendet.
+    Laeuft immer mit apply_changes=True (kein Dry-Run-Dauerbetrieb - fuer
+    Tests weiterhin main() ohne --apply verwenden)."""
+    apply_changes = True
+    pwd = read_pop_password()
+
+    medoff_conn = connect_medoff()
+    padb_conn = padb.connect()
+    dbsprot_max, audit_max = get_watermarks(medoff_conn, padb_conn)
+    medoff_conn.close()
+    padb_conn.close()
+
+    by_email = build_by_email()
+    print(f"[Start] Patienten mit hinterlegter oder gestagter Email-Adresse: {len(by_email)}", flush=True)
+
+    while True:
+        medoff_conn = connect_medoff()
+        padb_conn = padb.connect()
+        try:
+            neu_dbsprot, neu_audit = get_watermarks(medoff_conn, padb_conn)
+        finally:
+            medoff_conn.close()
+            padb_conn.close()
+        if neu_dbsprot != dbsprot_max or neu_audit != audit_max:
+            by_email = build_by_email()
+            dbsprot_max, audit_max = neu_dbsprot, neu_audit
+            print(f"[Neuaufbau] Aenderung erkannt (dbsprot={dbsprot_max}, audit={audit_max}), "
+                  f"Patienten mit hinterlegter oder gestagter Email-Adresse: {len(by_email)}", flush=True)
+
+        try:
+            stats = poll_once(pwd, by_email, apply_changes)
+        except Exception as e:
+            print(f"FEHLER im Abholzyklus: {type(e).__name__}", flush=True)
+            time.sleep(POLL_INTERVAL_SECONDS)
+            continue
+
+        if stats["n_relevant"] or stats["n_error"]:
+            print_stats(stats, apply_changes)
+
+        time.sleep(POLL_INTERVAL_SECONDS)
+
+
 if __name__ == "__main__":
-    main()
+    if "--daemon" in sys.argv:
+        run_daemon()
+    else:
+        main()

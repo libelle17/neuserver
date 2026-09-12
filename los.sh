@@ -3732,10 +3732,7 @@ cron() {
     _moe1="*/2 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply >>\$VL/linux1_sync_medoff_changes.log 2>&1";
     _moe2="5 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply >>\$VL/linux1_commit_medoff.log 2>&1";
     _moe3="15 2 * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply --full >>\$VL/linux1_sync_medoff_changes_full.log 2>&1";
-    # poll_diabetologie_inbox.py (2026-09-12, siehe oben bei den PDF-Bibliotheken):
-    # gleicher Takt wie der bisherige Windows-Task (alle 5 Min.).
-    _moe4="*/5 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply >>\$VL/poll_diabetologie_inbox.log 2>&1";
-    for _moe in "$_moe1" "$_moe2" "$_moe3" "$_moe4"; do
+    for _moe in "$_moe1" "$_moe2" "$_moe3"; do
       if ! crontab -l 2>/dev/null | grep -qF "$_moe"; then
         { crontab -l 2>/dev/null; printf "%s\n" "$_moe"; } | crontab -;
         printf "mo-emailadr-Eintrag in ${blau}crontab${reset} eingetragen: ${blau}$_moe${reset}\n";
@@ -3765,6 +3762,18 @@ cron() {
       printf "${blau}mo-emailadr-commit-watch.service${reset}: aktiviert.\n";
     else
       printf "${rot}mo-emailadr-commit-watch.service oder watch_trigger.sh fehlt${reset} – erst 'make shziel' in /root/neuserver ausfuehren.\n";
+    fi;
+    # poll_diabetologie_inbox.py (2026-09-12): urspruenglich Cron alle 5 Min., seit
+    # der RAM-only-Cache-Umstellung (by_email nur bei tatsaechlicher dbsprot-/
+    # pat_email_adr_audit-Aenderung neu aufgebaut, siehe get_watermarks()) als
+    # Dauerdienst statt Cron - erlaubt den gewuenschten 2-Minuten-Takt ohne
+    # wiederholten teuren patstamm-Vollimport pro Aufruf.
+    if [ -f /etc/systemd/system/poll-diabetologie-inbox.service ] && [ -x /opt/mo-emailadr/run_poll_diabetologie.sh ]; then
+      systemctl daemon-reload;
+      systemctl enable --now poll-diabetologie-inbox.service;
+      printf "${blau}poll-diabetologie-inbox.service${reset}: aktiviert.\n";
+    else
+      printf "${rot}poll-diabetologie-inbox.service oder run_poll_diabetologie.sh fehlt${reset} – erst 'make shziel' in /root/neuserver ausfuehren.\n";
     fi;
   else
     printf "${rot}/opt/mo-emailadr nicht gefunden${reset} – mo-emailadr-Cron-Eintraege/Trigger-Dienst uebersprungen (erst 'make shziel' in /root/neuserver ausfuehren).\n";
