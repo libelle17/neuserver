@@ -2,7 +2,10 @@
 # Einmaliges Hilfsskript (2026-09-12, Nutzeranfrage): kopiert die von
 # migrate_dokprotlist_email_adresse.py uebersprungenen Email-Gruppen zur
 # Durchsicht nach /DATA/Patientendokumente/email_migration_review/<Grund>/
-# <Pat_ID>/ - reine Kopie (Originale in dok/ bleiben unangetastet).
+# <Pat_ID>/ - reine Kopie (Originale in dok/ bleiben unangetastet). Bei
+# jedem Lauf wird REVIEW_ROOT zuerst geleert (reset_review_root(), NUR
+# Inhalt, nie das Verzeichnis selbst - kein rm -rf REVIEW_ROOT von aussen
+# mehr aufrufen, siehe Kommentar dort).
 import os
 import re
 import shutil
@@ -29,7 +32,26 @@ def slugify(text):
     return text[:60]
 
 
+def reset_review_root():
+    """Leert REVIEW_ROOT fuer einen frischen Lauf - loescht dabei bewusst
+    NUR den INHALT, nie das REVIEW_ROOT-Verzeichnis selbst (kein rm -rf
+    REVIEW_ROOT von aussen mehr): ein Windows-Client, der den Ordner schon
+    offen hat, haelt eine SMB3-Lease auf dessen Inode - wird das Verzeichnis
+    geloescht+neu angelegt, zeigt die Lease auf ein totes Inode und der
+    Zugriff schlaegt fehl, bis die Lease serverseitig gebrochen wird
+    (smbcontrol <pid> close-share <share> - zweimal, 2026-09-12, passiert).
+    Mit stabilem Root-Inode bleibt zumindest DER Fall aus."""
+    os.makedirs(REVIEW_ROOT, exist_ok=True)
+    for name in os.listdir(REVIEW_ROOT):
+        p = os.path.join(REVIEW_ROOT, name)
+        if os.path.isdir(p) and not os.path.islink(p):
+            shutil.rmtree(p)
+        else:
+            os.remove(p)
+
+
 def main():
+    reset_review_root()
     padb_conn = padb.connect()
     medoff = medoff_conn_helper.connect_medoff()
     medoff_cur = medoff.cursor()
