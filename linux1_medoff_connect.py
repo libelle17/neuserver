@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-# Fuer den Betrieb auf linux1 vorgesehen, NICHT auf szn4/Windows.
-# Deployment-Ziel: /opt/mo-emailadr/ (ausserhalb von /srv/www/htdocs,
-# bewusst nicht web-exponiert). Gemeinsame Verbindungs-Hilfe fuer medoff
-# (wser) UND quelle (linux1 selbst) ueber die
-# dort bereits vorhandenen MariaDB-Client-Defaults-Dateien - laut
-# Rueckmeldung der PHP-Instanz (siehe [[project-missing-patient-emails]]):
+# Gemeinsame Verbindungs-Hilfe fuer medoff (wser) UND quelle (linux1 selbst) ueber die
+# dort bereits vorhandenen MariaDB-Client-Defaults-Dateien - laut Rueckmeldung der
+# PHP-Instanz (siehe [[project-missing-patient-emails]]):
 #   /root/.modbpwd     -> medoff (Format wie /root/.mariadbrpwd)
 #   /root/.mariadbrpwd -> quelle
 # Beide im "[client]"-Format mit ssl/user/password/host/port - siehe
-# `mariadb --defaults-extra-file=<Datei> -e "..."`, dort bereits verifiziert.
+# `mariadb --defaults-extra-file=<Datei> -e "..."`, dort bereits verifiziert. Von beiden
+# linux1-Skripten genutzt (linux1_commit_medoff.py, linux1_sync_medoff_changes.py), damit
+# es nur EINE Stelle gibt, die dieses Dateiformat parst.
 #
-# Von beiden linux1-Skripten genutzt (linux1_commit_medoff.py,
-# linux1_sync_medoff_changes.py), damit es nur EINE Stelle gibt, die dieses
-# Dateiformat parst.
+# Fuer den Betrieb auf linux1 vorgesehen, NICHT auf szn4/Windows.
+# Deployment-Ziel: /opt/mo-emailadr/ (ausserhalb von /srv/www/htdocs, bewusst nicht
+# web-exponiert).
 #
 # Zwei reale Befunde aus dem ersten Testlauf auf linux1 (2026-09-12,
 # siehe [[project-missing-patient-emails]]), beide hier behoben und live

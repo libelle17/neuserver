@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# Fuer den Betrieb auf linux1 vorgesehen (Cron), NICHT auf szn4/Windows -
-# Deployment-Ziel: /opt/mo-emailadr/ (ausserhalb von /srv/www/htdocs,
-# bewusst nicht web-exponiert). Ergaenzt das Commit-Skript
-# (patient_addresses_db.commit_pending_main_addresses, schreibt
-# pat_email_adr -> medoff) um die umgekehrte Richtung: erkennt
-# Adressen, die DIREKT in medoff.patstamm.FEmail geaendert wurden (nicht
-# ueber pat_email_adr/den PHP-Patientenlaufzettel), und uebernimmt sie nach
-# quelle.pat_email_adr.
+# Ergaenzt das Commit-Skript (patient_addresses_db.commit_pending_main_addresses,
+# schreibt pat_email_adr -> medoff) um die umgekehrte Richtung: erkennt Adressen, die
+# DIREKT in medoff.patstamm.FEmail geaendert wurden (nicht ueber pat_email_adr/den
+# PHP-Patientenlaufzettel), und uebernimmt sie nach quelle.pat_email_adr.
+#
+# Fuer den Betrieb auf linux1 vorgesehen (Cron), NICHT auf szn4/Windows - Deployment-Ziel:
+# /opt/mo-emailadr/ (ausserhalb von /srv/www/htdocs, bewusst nicht web-exponiert).
 #
 # Betrachtet ABSICHTLICH nur pat_email_adr-Zeilen mit rolle='h' UND
 # committed=1 - eine noch nicht committete (committed=0) Zeile ist eine
