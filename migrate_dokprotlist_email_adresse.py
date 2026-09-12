@@ -43,6 +43,7 @@ import linux1_medoff_connect as medoff_conn_helper
 from archive_patient_emails import (
     extract_pdf_text, cap_filename_length, DOK_ROOT, build_name_prefix,
 )
+from find_missing_patient_emails import OWN_ACCOUNT_EMAILS
 
 OLD_PATTERN_RE = re.compile(
     r"\((?P<direction>angek|gesan)\.\) Email (?P<ts>\d{6} \d{6}), (?P<rest>.*)$")
@@ -112,12 +113,28 @@ def extract_address(pdf_path, direction, known_addrs):
     candidates = deduped
     if not candidates:
         return None, "keine Adresse in Header-Zeile"
-    if len(candidates) == 1:
-        return candidates[0].lower(), None
-    matching = [c for c in candidates if c.lower() in known_addrs]
+
+    # Eigene Adressen/Aliase (OWN_ACCOUNT_EMAILS) ausfiltern - die eigene
+    # Adresse taucht z.B. auf der An:-Zeile auf, wenn eine Email an die
+    # Praxis-Sammeladresse UND an einen externen Empfaenger ging (Befund
+    # des Nutzers 2026-09-12, Beispiel Pat_ID 45964: eigene Adresse +
+    # Sanofi-Aussendienst). "Bekannt" (known_addrs) meint nur bekannte
+    # PATIENTENadressen - die Pruefung hier ist unabhaengig davon.
+    external = [c for c in candidates if c.lower() not in OWN_ACCOUNT_EMAILS]
+    if not external:
+        return None, "nur eigene Adresse(n) gefunden"
+    if len(external) == 1:
+        return external[0].lower(), None
+
+    matching = [c for c in external if c.lower() in known_addrs]
     if len(matching) == 1:
         return matching[0].lower(), None
-    return None, f"{len(candidates)} Adressen, davon {len(matching)} bekannt (nicht eindeutig)"
+
+    # Mehrere externe Adressen, keine (oder mehrere) davon eine bekannte
+    # Patientenadresse - Anweisung des Nutzers 2026-09-12: die erste in der
+    # Von:/An:-Zeile genannte Adresse nehmen (typischerweise der
+    # Haupt-/Erstempfaenger, weitere sind meist CC).
+    return external[0].lower(), None
 
 
 def main():
