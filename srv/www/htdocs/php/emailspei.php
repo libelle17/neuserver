@@ -156,6 +156,20 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
   }
 } elseif ($aktion === 'loeschen' && $alt_email !== '') {
   $vorherZeile = leseZeile($conn, $pat_id, $alt_email);
+  if ($vorherZeile && $vorherZeile['rolle'] === 'h') {
+    // Die aktuelle Hauptadresse darf nicht ersatzlos geloescht werden: patstamm.FEmail wuerde
+    // dadurch NICHT geleert (email ist Teil des Primaerschluessels und NOT NULL, "leer" laesst
+    // sich darueber nicht sauber abbilden) - der Patient wuerde nur stillschweigend aus der
+    // Commit-Warteliste verschwinden, ohne dass sich an medoff etwas aendert. Mit der
+    // Windows-Instanz abgestimmt (Antwort auf die offene Frage 6).
+    echo "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Hauptadresse loeschen</title></head><body>";
+    echo "<p style='color:red'>Die aktuelle Hauptadresse kann nicht ersatzlos geloescht werden ".
+      "(die Email-Adresse in Medical Office wuerde dadurch NICHT geleert, sondern unveraendert ".
+      "stehen bleiben). Bitte stattdessen 'Aendern' verwenden und eine bekannte Adresse eintragen.</p>";
+    echo "<button type='button' onclick=\"location.href='".htmlspecialchars($ref)."'\">Zurueck</button>";
+    echo "</body></html>";
+    exit;
+  }
   if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $alt_email))) {
     schreibeAudit($conn, 'geloescht', $pat_id, $alt_email, null, null, $aktpc, $person, $vorbereiter, $behandler);
     $_SESSION['eundo_stack'][] = array(
@@ -183,7 +197,28 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
         // existiert noch (rolle='a') - per UPDATE zurueckheben statt per INSERT (Primaerschluessel
         // (pat_id,email) wuerde sonst kollidieren). committed/marker zuruecksetzen, damit der
         // naechste Commit-Lauf sie garantiert erneut nach patstamm.FEmail uebertraegt.
-        if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']))) {
+        //
+        // Die Y-Zeile (neu_email) darf nur geloescht werden, wenn sie NIE committed war
+        // (committed=0). Stand sie bereits in medoff (committed=1), muss sie stattdessen auf
+        // rolle='a' zurueckgestuft werden statt geloescht zu werden - sonst fehlt dem naechsten
+        // Commit-Lauf die Information, dass Y ein bekannter/erwarteter Wert war, und er haelt
+        // das dortige medoff-Y faelschlich fuer eine fremde Aenderung (sync_from_medoff wuerde
+        // Y wiederherstellen und X erneut zurueckstufen). Mit der Windows-Instanz abgestimmt.
+        $yWarCommitted = false;
+        $yr = $conn->query("SELECT committed FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id).
+          " AND email=".eSql($conn, $eintrag['neu_email']));
+        if ($yr && $yr->num_rows > 0) {
+          $yzeile = $yr->fetch_assoc();
+          $yWarCommitted = intval($yzeile['committed']) !== 0;
+        }
+        if ($yWarCommitted) {
+          $ok = $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id).
+            " AND email=".eSql($conn, $eintrag['neu_email']));
+        } else {
+          $ok = $conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id).
+            " AND email=".eSql($conn, $eintrag['neu_email']));
+        }
+        if ($ok) {
           $conn->query("UPDATE pat_email_adr SET rolle='h', committed=0, marker=NULL WHERE pat_id=".eSql($conn, $pat_id).
             " AND email=".eSql($conn, $eintrag['alt_email']));
           schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
