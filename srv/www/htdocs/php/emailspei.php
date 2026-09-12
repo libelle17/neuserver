@@ -1,8 +1,12 @@
 <?php
 // emailspei.php - manuelle Pflege von quelle.pat_email_adr aus dem Patientenlaufzettel
-// heraus (PHP-Variante). Ergaenzt/aendert/loescht eine Email-Adresse eines Patienten und
-// haengt dazu immer genau eine Zeile an pat_email_adr_audit an. Schreibt NIE nach
-// patstamm, NIE die Spalten marker/committed (Sache des Windows-seitigen Commit-Schritts).
+// heraus (PHP-Variante). Ergaenzt/aendert/loescht eine Email-Adresse eines Patienten, erlaubt
+// die Rangvergabe (welche Adresse nach patstamm.FEmail soll) und haengt dazu immer genau eine
+// Zeile an pat_email_adr_audit an. Schreibt NIE direkt nach patstamm - das bleibt Sache des
+// (Windows- bzw. kuenftig gemeinsamen) Commit-Schritts. committed/marker werden hier aber
+// gezielt zurueckgesetzt (auf 0/NULL), wenn eine Zeile neu als rolle='h' vorgesehen wird, damit
+// der naechste Commit-Lauf sie garantiert erneut verarbeitet - siehe Abstimmung mit der
+// Windows-Instanz vom 2026-09-12 zu den Rueckgaengig-Faellen.
 // Verbindungs-/Session-Muster wie tragein2.php.
 //
 // Rueckgaengig-Funktion: $_SESSION['eundo_stack'] ist ein Stapel (Array) der in DIESER
@@ -178,6 +182,31 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
       'bezug' => $vorherZeile ? $vorherZeile['bezug'] : null,
     );
   }
+} elseif ($aktion === 'hauptsetzen' && $email !== '') {
+  // Rang vergeben: eine bereits vorhandene Zeile (rolle='a' oder 'n') wird zur neuen
+  // Hauptadresse (rolle='h', die nach patstamm.FEmail soll). Die bisherige Hauptadresse wird
+  // wie bei "Aendern" per UPDATE auf rolle='a' herabgestuft, nie geloescht (Historie bleibt
+  // erhalten, kein PK-Konflikt moeglich, da keine der beiden Zeilen neu eingefuegt wird).
+  $vorherZeile = leseZeile($conn, $pat_id, $email);
+  $alteH = null;
+  $r = $conn->query("SELECT email FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND rolle='h' LIMIT 1");
+  if ($r && $r->num_rows > 0) { $alteHRow = $r->fetch_assoc(); $alteH = $alteHRow['email']; }
+  if ($vorherZeile && $vorherZeile['rolle'] !== 'h' && $alteH !== $email) {
+    $ok = true;
+    if ($alteH !== null) {
+      $ok = $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $alteH));
+    }
+    if ($ok) {
+      $ok = $conn->query("UPDATE pat_email_adr SET rolle='h', committed=0, marker=NULL WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $email));
+    }
+    if ($ok) {
+      schreibeAudit($conn, 'hauptgewaehlt', $pat_id, $alteH, $email, $vorherZeile['bezug'], $aktpc, $person, $vorbereiter, $behandler);
+      $_SESSION['eundo_stack'][] = array(
+        'typ' => 'hauptgewaehlt', 'alt_email' => $alteH, 'neu_email' => $email,
+        'neu_vorherige_rolle' => $vorherZeile['rolle'],
+      );
+    }
+  }
 } elseif ($aktion === 'rueckgaengig') {
   $eintrag = array_pop($_SESSION['eundo_stack']);
   if ($eintrag !== null) {
@@ -234,6 +263,17 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
       if (einfuegenZeile($conn, $pat_id, $eintrag['email'], $eintrag['rolle'], $eintrag['bezug'], $aktpc, $person, $vorbereiter, $behandler)) {
         schreibeAudit($conn, 'rueckgaengig', $pat_id, null, $eintrag['email'], $eintrag['bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Loeschen rueckgaengig gemacht');
       }
+    } elseif ($eintrag['typ'] === 'hauptgewaehlt') {
+      // Rangvergabe rueckgaengig machen: beide Zeilen existieren noch unveraendert (nur die
+      // Rolle wurde umgesetzt), also reicht ein einfaches Zurueckdrehen per UPDATE - kein
+      // Loeschen/Einfuegen und damit auch keine committed-Pruefung noetig.
+      $conn->query("UPDATE pat_email_adr SET rolle=".eSql($conn, $eintrag['neu_vorherige_rolle']).
+        " WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']));
+      if ($eintrag['alt_email'] !== null) {
+        $conn->query("UPDATE pat_email_adr SET rolle='h', committed=0, marker=NULL WHERE pat_id=".eSql($conn, $pat_id).
+          " AND email=".eSql($conn, $eintrag['alt_email']));
+      }
+      schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], null, $aktpc, $person, $vorbereiter, $behandler, 'Rangaenderung rueckgaengig gemacht');
     }
   }
 }
