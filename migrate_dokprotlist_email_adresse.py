@@ -113,13 +113,24 @@ def resolve_address(rows, direction, pat_id, known_addrs):
         return extract_address(base_path, direction, known_addrs)
 
     candidates = base_pdf_candidates(rows)
-    if len(candidates) < 2:
-        return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
-    addrs = []
+    if not candidates:
+        return None, "keine Basis-Email-PDF in der Gruppe gefunden"
+
+    # Getrennt auswerten, welche Kandidaten ueberhaupt noch existieren -
+    # "Datei fehlt" und "wirklich mehrdeutig" sind zwei verschiedene
+    # Ursachen und sollten nicht unter derselben Meldung landen (Wunsch
+    # des Nutzers 2026-09-12, nachdem beide Kategorien in der Praxis fast
+    # ausschliesslich fehlende Dateien enthielten).
+    existing = []
     for c in candidates:
         cp = os.path.join(DOK_ROOT, str(pat_id), c["datName"])
-        if not os.path.exists(cp):
-            return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
+        if os.path.exists(cp):
+            existing.append(cp)
+    if not existing:
+        return None, "Basis-Datei fehlt auf Platte"
+
+    addrs = []
+    for cp in existing:
         a, _ = extract_address(cp, direction, known_addrs)
         if a is None:
             return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
