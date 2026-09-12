@@ -249,4 +249,9 @@ spiegele.ps1
 StutzMOSich.ps1
 StutzMOSich.xml
 vorupdate.ps1
+[/opt/mo-emailadr]
+linux1_medoff_connect.py
+linux1_commit_medoff.py
+linux1_sync_medoff_changes.py
+patient_addresses_db.py
 
