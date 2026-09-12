@@ -96,6 +96,20 @@ def extract_address(pdf_path, direction, known_addrs):
     if not m:
         return None, "Header-Zeile nicht gefunden"
     candidates = EMAIL_RE.findall(m.group(1))
+    # Deduplizieren (case-insensitiv) - haeufigster Fall: Anzeigename ==
+    # Adresse (z.B. "patient@email.de <patient@email.de>"), das ergaebe
+    # sonst faelschlich zwei "Kandidaten" fuer dieselbe Adresse und wuerde
+    # als nicht eindeutig gewertet (Befund des Nutzers 2026-09-12, betraf
+    # den Grossteil der urspruenglich 1028 "2 Adressen, davon 2 bekannt"-
+    # Faelle).
+    seen = set()
+    deduped = []
+    for c in candidates:
+        cl = c.lower()
+        if cl not in seen:
+            seen.add(cl)
+            deduped.append(c)
+    candidates = deduped
     if not candidates:
         return None, "keine Adresse in Header-Zeile"
     if len(candidates) == 1:
