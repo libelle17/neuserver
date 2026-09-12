@@ -810,6 +810,10 @@ function gibaus()
     /*     ?> <script>alert("rolle durch");</script> <?php  */
     // anwesend / ->von vorne
     echo "<button type='submit' style=".$stil." id='anwesend' name='anwesend' accesskey='$accessk'>".$text."</button>";
+    // natives accesskey funktioniert in mancher Browser/OS-Umgebung offenbar gar
+    // nicht (2026-09-12 beim Nutzer beobachtet) - Alt+<aktueller Buchstabe> per
+    // eigenem keydown-Listener, dasselbe bewaehrte Muster wie Alt+M/Alt+E/Alt+Z/Alt+L.
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&e.key.toLowerCase()=='".strtolower($accessk)."'){e.preventDefault();document.getElementById('anwesend').click();}},true);</script>";
 
     if ($_SESSION['obvorb']) {
       $stil=$stilan;
@@ -828,7 +832,10 @@ function gibaus()
       echo "MA: <font color=blue>".$_SESSION['ma']."</font> ";
     }
     // Vorbereiter / Vorbereiter fertig
-    echo "<button type='submit' style=".$stil." name='obvorb' accesskey='v'>".$text."</button>";
+    echo "<button type='submit' style=".$stil." id='obvorb' name='obvorb' accesskey='v'>".$text."</button>";
+    // siehe Kommentar bei 'anwesend' oben - natives accesskey='v' funktioniert
+    // offenbar nicht, Alt+V per eigenem keydown-Listener.
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&(e.key=='v'||e.key=='V'||e.code=='KeyV')){e.preventDefault();document.getElementById('obvorb').click();}},true);</script>";
 
     if (!isset($_SESSION['bh'])) $_SESSION['bh']='';
     if (!$_SESSION['obbeha']) {
@@ -849,7 +856,12 @@ function gibaus()
       $weite=60;
     }
     // Behandler / Behandler fertig
-    echo "<button type='submit' style='width:".$weite.";".$stil."' name='obbeha' accesskey='$accessk'>".$text."</button>";
+    echo "<button type='submit' style='width:".$weite.";".$stil."' id='obbeha' name='obbeha' accesskey='$accessk'>".$text."</button>";
+    // siehe Kommentar bei 'anwesend' oben - natives accesskey funktioniert
+    // offenbar nicht, Alt+<aktueller Buchstabe> per eigenem keydown-Listener.
+    // $accessk kann hier auch '.' sein - ueber e.key statt e.code abgefragt, damit
+    // auch das funktioniert (KeyCode fuer '.' waere layoutabhaengig unzuverlaessig).
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&e.key.toLowerCase()=='".strtolower(addslashes($accessk))."'){e.preventDefault();document.getElementById('obbeha').click();}},true);</script>";
     // if (isset($_SESSION['arr']))
     $welcheda=0;
     $nurwelcheweg=0;
