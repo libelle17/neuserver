@@ -50,6 +50,7 @@ OLD_PATTERN_RE = re.compile(
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 DIRECTION_MARKER = {"angek": "von", "gesan": "an"}
 DIRECTION_HEADER_LABEL = {"angek": "Von", "gesan": "An"}
+HEADER_LABELS = ("Von", "An", "Datum", "Betreff")
 
 
 def load_patstamm(medoff_cur, pat_ids):
@@ -90,10 +91,55 @@ def find_base_row(rows):
     return None
 
 
+def base_pdf_candidates(rows):
+    """Alle Zeilen, die als eigenstaendige Email-PDF in Frage kommen (auf
+    .pdf endend, kein "; " - also kein Anhang)."""
+    return [r for r in rows if r["datName"].lower().endswith(".pdf") and "; " not in r["datName"]]
+
+
+def resolve_address(rows, direction, pat_id, known_addrs):
+    """Bestimmt die Adresse fuer eine Gruppe. Normalfall: genau eine
+    eindeutige Basis-Email-PDF (find_base_row()). Mehrere gleichwertige
+    Kandidaten (z.B. mehrfach mit leicht anderem Dateinamen archivierte
+    Kopien derselben Email) sind trotzdem verwendbar, wenn ALLE davon auf
+    dieselbe Adresse fuehren (Befund des Nutzers 2026-09-12, Pat_ID 69: 5
+    Kandidaten, gleiche Adresse) - liefert dann diese Adresse.
+    Rueckgabe: (addr_oder_None, fehlertext_oder_None)."""
+    base = find_base_row(rows)
+    if base is not None:
+        base_path = os.path.join(DOK_ROOT, str(pat_id), base["datName"])
+        if not os.path.exists(base_path):
+            return None, "Basis-Datei fehlt auf Platte"
+        return extract_address(base_path, direction, known_addrs)
+
+    candidates = base_pdf_candidates(rows)
+    if len(candidates) < 2:
+        return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
+    addrs = []
+    for c in candidates:
+        cp = os.path.join(DOK_ROOT, str(pat_id), c["datName"])
+        if not os.path.exists(cp):
+            return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
+        a, _ = extract_address(cp, direction, known_addrs)
+        if a is None:
+            return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
+        addrs.append(a)
+    if all(a == addrs[0] for a in addrs):
+        return addrs[0], None
+    return None, "Basis-Email-PDF nicht eindeutig bestimmbar"
+
+
 def extract_address(pdf_path, direction, known_addrs):
     txt = extract_pdf_text(pdf_path) or ""
     label = DIRECTION_HEADER_LABEL[direction]
-    m = re.search(rf"{label}\s*:?[ \t]*([^\n]*)", txt)
+    # Bis zum naechsten bekannten Feldlabel erfassen (nicht nur bis zum
+    # ersten Zeilenumbruch) - ein sehr langer Anzeigename laesst die
+    # gerenderte PDF-Zeile umbrechen, die eigentliche Adresse landet dann
+    # auf einer Folgezeile und wuerde sonst abgeschnitten (Befund des
+    # Nutzers 2026-09-12, Pat_ID 64214).
+    other_labels = "|".join(l for l in HEADER_LABELS if l != label)
+    m = re.search(rf"{label}\s*:?[ \t]*(.*?)(?=\n\s*(?:{other_labels})\s*:|\Z)",
+                  txt, re.DOTALL)
     if not m:
         return None, "Header-Zeile nicht gefunden"
     candidates = EMAIL_RE.findall(m.group(1))
@@ -175,8 +221,6 @@ def main():
     n_ok_rows = 0
     n_skip_no_patid = 0
     n_skip_no_patstamm = 0
-    n_skip_no_base = 0
-    n_skip_file_missing = 0
     n_skip_addr = {}
     skip_examples = {}
     n_rows_missing_skipped = 0
@@ -192,22 +236,14 @@ def main():
         if p is None:
             n_skip_no_patstamm += 1
             continue
-        base = find_base_row(rows)
-        if base is None:
-            n_skip_no_base += 1
-            continue
-        base_path = os.path.join(DOK_ROOT, str(pat_id), base["datName"])
-        if not os.path.exists(base_path):
-            n_skip_file_missing += 1
-            continue
         known = known_addr_cache.get(pat_id)
         if known is None:
             known = load_known_addresses(medoff_cur, staged_by_patient, pat_id)
             known_addr_cache[pat_id] = known
-        addr, err = extract_address(base_path, direction, known)
+        addr, err = resolve_address(rows, direction, pat_id, known)
         if addr is None:
             n_skip_addr[err] = n_skip_addr.get(err, 0) + 1
-            skip_examples.setdefault(err, []).append(base["id"])
+            skip_examples.setdefault(err, []).append(rows[0]["id"])
             continue
 
         prefix = build_name_prefix(p)
@@ -290,8 +326,6 @@ def main():
               f"Gruppe trotzdem erledigt")
     print(f"Uebersprungen - kein Pat_ID: {n_skip_no_patid}")
     print(f"Uebersprungen - Pat_ID nicht (mehr) in patstamm: {n_skip_no_patstamm}")
-    print(f"Uebersprungen - Basis-Email-PDF nicht eindeutig bestimmbar: {n_skip_no_base}")
-    print(f"Uebersprungen - Basis-Datei fehlt auf Platte: {n_skip_file_missing}")
     for err, n in sorted(n_skip_addr.items(), key=lambda kv: -kv[1]):
         beispiel_ids = skip_examples.get(err, [])[:5]
         print(f"Uebersprungen - {err}: {n}" +
