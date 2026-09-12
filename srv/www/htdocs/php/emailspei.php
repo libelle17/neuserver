@@ -123,20 +123,36 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
   }
 } elseif ($aktion === 'aendern' && $email !== '' && $alt_email !== '') {
   $vorherZeile = leseZeile($conn, $pat_id, $alt_email);
-  if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $alt_email))) {
-    if ($alt_rolle === 'h') {
-      $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id)." AND rolle='h'");
+  $erfolgreich = false;
+  if ($alt_email === $email) {
+    // nur Bezug geaendert, Adresse bleibt gleich: Rolle unangetastet lassen
+    $erfolgreich = $conn->query("UPDATE pat_email_adr SET bezug=".eSql($conn, $bezug).
+      " WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $email));
+  } elseif ($alt_rolle === 'h') {
+    // Korrektur der Hauptadresse: alte Zeile als Historie behalten (rolle='a'), nicht loeschen -
+    // siehe Spaltenkommentar pat_email_adr.rolle ("a = fruehere Hauptadresse, durch neuere ersetzt")
+    $erfolgreich = $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id).
+      " AND email=".eSql($conn, $alt_email));
+    if ($erfolgreich) {
+      $erfolgreich = einfuegenZeile($conn, $pat_id, $email, 'h', $bezug, $aktpc, $person, $vorbereiter, $behandler);
     }
-    $neueRolle = ($alt_rolle === 'h' || $alt_rolle === 'a') ? $alt_rolle : 'n';
-    if (einfuegenZeile($conn, $pat_id, $email, $neueRolle, $bezug, $aktpc, $person, $vorbereiter, $behandler)) {
-      schreibeAudit($conn, 'geaendert', $pat_id, $alt_email, $email, $bezug, $aktpc, $person, $vorbereiter, $behandler);
-      $_SESSION['eundo_stack'][] = array(
-        'typ' => 'geaendert', 'alt_email' => $alt_email,
-        'alt_rolle' => $vorherZeile ? $vorherZeile['rolle'] : $alt_rolle,
-        'alt_bezug' => $vorherZeile ? $vorherZeile['bezug'] : $bezug,
-        'neu_email' => $email,
-      );
+  } else {
+    // nicht die Hauptadresse: wie bisher ersetzen (keine Historienpflicht fuer rolle='n')
+    $erfolgreich = $conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id).
+      " AND email=".eSql($conn, $alt_email));
+    if ($erfolgreich) {
+      $neueRolle = ($alt_rolle === 'a') ? $alt_rolle : 'n';
+      $erfolgreich = einfuegenZeile($conn, $pat_id, $email, $neueRolle, $bezug, $aktpc, $person, $vorbereiter, $behandler);
     }
+  }
+  if ($erfolgreich) {
+    schreibeAudit($conn, 'geaendert', $pat_id, $alt_email, $email, $bezug, $aktpc, $person, $vorbereiter, $behandler);
+    $_SESSION['eundo_stack'][] = array(
+      'typ' => 'geaendert', 'alt_email' => $alt_email,
+      'alt_rolle' => $vorherZeile ? $vorherZeile['rolle'] : $alt_rolle,
+      'alt_bezug' => $vorherZeile ? $vorherZeile['bezug'] : $bezug,
+      'neu_email' => $email,
+    );
   }
 } elseif ($aktion === 'loeschen' && $alt_email !== '') {
   $vorherZeile = leseZeile($conn, $pat_id, $alt_email);
@@ -156,12 +172,28 @@ if ($aktion === 'hinzufuegen' && $email !== '') {
         schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['email'], null, null, $aktpc, $person, $vorbereiter, $behandler, 'Hinzufuegen rueckgaengig gemacht');
       }
     } elseif ($eintrag['typ'] === 'geaendert') {
-      if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']))) {
-        if ($eintrag['alt_rolle'] === 'h') {
-          $conn->query("UPDATE pat_email_adr SET rolle='a' WHERE pat_id=".eSql($conn, $pat_id)." AND rolle='h'");
+      if ($eintrag['alt_email'] === $eintrag['neu_email']) {
+        // war nur eine Bezug-Aenderung: Bezug zuruecksetzen, Rolle unangetastet
+        if ($conn->query("UPDATE pat_email_adr SET bezug=".eSql($conn, $eintrag['alt_bezug']).
+          " WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['alt_email']))) {
+          schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
         }
-        einfuegenZeile($conn, $pat_id, $eintrag['alt_email'], $eintrag['alt_rolle'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler);
-        schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
+      } elseif ($eintrag['alt_rolle'] === 'h') {
+        // Korrektur der Hauptadresse rueckgaengig machen: die per Aendern demotete alte Zeile
+        // existiert noch (rolle='a') - per UPDATE zurueckheben statt per INSERT (Primaerschluessel
+        // (pat_id,email) wuerde sonst kollidieren). committed/marker zuruecksetzen, damit der
+        // naechste Commit-Lauf sie garantiert erneut nach patstamm.FEmail uebertraegt.
+        if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']))) {
+          $conn->query("UPDATE pat_email_adr SET rolle='h', committed=0, marker=NULL WHERE pat_id=".eSql($conn, $pat_id).
+            " AND email=".eSql($conn, $eintrag['alt_email']));
+          schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
+        }
+      } else {
+        // nicht die Hauptadresse: die alte Zeile wurde beim Aendern echt geloescht, also neu einfuegen
+        if ($conn->query("DELETE FROM pat_email_adr WHERE pat_id=".eSql($conn, $pat_id)." AND email=".eSql($conn, $eintrag['neu_email']))) {
+          einfuegenZeile($conn, $pat_id, $eintrag['alt_email'], $eintrag['alt_rolle'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler);
+          schreibeAudit($conn, 'rueckgaengig', $pat_id, $eintrag['neu_email'], $eintrag['alt_email'], $eintrag['alt_bezug'], $aktpc, $person, $vorbereiter, $behandler, 'Aenderung rueckgaengig gemacht');
+        }
       }
     } elseif ($eintrag['typ'] === 'geloescht') {
       if (einfuegenZeile($conn, $pat_id, $eintrag['email'], $eintrag['rolle'], $eintrag['bezug'], $aktpc, $person, $vorbereiter, $behandler)) {
