@@ -14,21 +14,22 @@
 # linux1_sync_medoff_changes.py), damit es nur EINE Stelle gibt, die dieses
 # Dateiformat parst.
 #
-# WICHTIG fuer die andere Instanz: die exakte SSL-Parameteruebergabe an
-# PyMySQL (ssl=...) haengt von der genauen PyMySQL-Version und dem
-# tatsaechlichen Inhalt von "ssl=" in der Datei ab - hier nur ein
-# plausibler Default, bitte gegen die echten Dateien verifizieren/anpassen.
+# Zwei reale Befunde aus dem ersten Testlauf auf linux1 (2026-09-12,
+# siehe [[project-missing-patient-emails]]), beide hier behoben und live
+# gegen die echten Dateien verifiziert:
+#   1. "ssl=false" steht als STRING in der Datei - ein blosses
+#      "if cfg.get('ssl'):" waere damit faelschlich wahr (jeder nicht-leere
+#      String ist truthy). Jetzt echte Bool-Interpretation.
+#   2. /root/.mariadbrpwd hat "user=root" und KEINE host=-Zeile. Das
+#      MariaDB-Konto root@localhost ist auf unix_socket/auth_socket-Auth
+#      beschraenkt - ueber TCP (auch 127.0.0.1) schlaegt die Anmeldung fehl,
+#      das Passwort wird dabei ignoriert. Fehlt host= in der Datei, wird
+#      jetzt stattdessen per unix_socket verbunden.
 import configparser
 
 MODBPWD_FILE = "/root/.modbpwd"
 MARIADBRPWD_FILE = "/root/.mariadbrpwd"
-
-# /root/.mariadbrpwd (quelle) enthaelt "user=root", ohne host=-Zeile. Das
-# MariaDB-Konto root@localhost ist auf unix_socket/auth_socket-Auth
-# beschraenkt (Passwort wird ignoriert) - ueber TCP, auch 127.0.0.1, schlaegt
-# die Anmeldung fehl (verifiziert 2026-09-12: "Access denied for user
-# 'root'@'localhost'"). Genau das nutzt die mariadb-CLI ohne "-h" die ganze
-# Zeit schon; Pfad per "SHOW VARIABLES LIKE 'socket'" bestaetigt.
+# Pfad per "SHOW VARIABLES LIKE 'socket'" auf linux1 bestaetigt (2026-09-12).
 QUELLE_UNIX_SOCKET = "/run/mysql/mysql.sock"
 
 
@@ -58,13 +59,10 @@ def _connect(path, database, autocommit):
         kwargs["port"] = int(cfg.get("port", 3306))
     else:
         kwargs["unix_socket"] = QUELLE_UNIX_SOCKET
-    # linux1 (2026-09-12): /root/.modbpwd enthaelt "ssl=false" (String!), das
-    # ist in Python truthy - ein blosses "if cfg.get('ssl'):" wuerde SSL hier
-    # faelschlich aktivieren. Verifiziert per
-    # "mariadb --defaults-extra-file=/root/.modbpwd -e ...": funktioniert
-    # ohne SSL, also muss der Wert als Bool interpretiert werden.
-    # /root/.mariadbrpwd hat gar keine ssl=-Zeile (cfg.get liefert None, bleibt
-    # falsy - unveraendert kein SSL).
+    # "ssl=false" steht als STRING in /root/.modbpwd - ein blosses
+    # "if cfg.get('ssl'):" waere in Python truthy (jeder nicht-leere String
+    # ist wahr) und haette SSL faelschlich aktiviert. Echte Bool-
+    # Interpretation, live gegen beide Dateien verifiziert (2026-09-12).
     ssl_wert = str(cfg.get("ssl", "")).strip().lower()
     if ssl_wert not in ("", "0", "false", "no", "off"):
         kwargs["ssl"] = {"ssl": {}}

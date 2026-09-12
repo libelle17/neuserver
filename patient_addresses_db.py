@@ -64,6 +64,7 @@
 # Protokolldateien hat. Wird ausschliesslich von der geplanten PHP-Pflege
 # geschrieben/gelesen - deshalb hier kein Python-Gegenstueck zu stage() o.ae.
 import os
+import re
 import pymysql
 
 # Dieselbe Datenbank/dasselbe Passwort-Verfahren wie dokprotlist (siehe
@@ -140,6 +141,23 @@ def connect():
                 COMMENT '1 = bereits nach patstamm.FEmail uebertragen (nur rolle=h relevant)',
             PRIMARY KEY (pat_id, email)
         ) CHARACTER SET utf8mb4
+    """)
+    conn.cursor().execute("""
+        CREATE TABLE IF NOT EXISTS pat_email_adr_audit (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            zeitstempel DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Zeitpunkt der Aenderung',
+            aktion VARCHAR(100) NOT NULL COMMENT 'z.B. hinzugefuegt / geaendert / geloescht / FEmail geaendert / FStaatsangehoerigkeit geaendert / FEmail manuell in medoff geaendert - pat_email_adr synchronisiert',
+            pat_id VARCHAR(20) NOT NULL COMMENT 'Patientennummer (patstamm.FSurogat)',
+            alt_email VARCHAR(100) NULL COMMENT 'Wert vor der Aenderung (leer bei Neuanlage)',
+            neu_email VARCHAR(100) NULL COMMENT 'Wert nach der Aenderung (leer bei Loeschung)',
+            bezug VARCHAR(60) NULL COMMENT 'Beziehung des Absenders zum Patienten, wie pat_email_adr.bezug',
+            AktPC VARCHAR(20) NULL COMMENT 'wie pat_email_adr.AktPC',
+            Person CHAR(1) NULL COMMENT 'wie pat_email_adr.Person (A/a/V/v/B, siehe zutun/aktiv)',
+            Vorbereiter CHAR(5) NULL COMMENT 'wie pat_email_adr.Vorbereiter',
+            Behandler CHAR(5) NULL COMMENT 'wie pat_email_adr.Behandler',
+            bemerkung VARCHAR(200) NULL COMMENT 'freier Text, optional'
+        ) CHARACTER SET utf8mb4
+        COMMENT 'Nur-anhaengendes Aenderungsprotokoll fuer manuelle Pflege von pat_email_adr ueber den Patientenlaufzettel (PHP, linux1) und die linux1-Wartungsskripte - Pendant zu den AendProt_Phase_*.csv-Dateien der Windows-seitigen Pipeline, siehe audit_log.py. Schreibt NIE waehrend eines Trockenlaufs (siehe log_audit()).'
     """)
     return conn
 
@@ -264,12 +282,22 @@ def demote_to_alt(conn, pat_id, email):
     )
 
 
-def log_audit(conn, aktion, pat_id, alt="", neu="", bemerkung=None):
+def log_audit(conn, aktion, pat_id, alt="", neu="", bemerkung=None, apply_changes=True):
     """Schreibt eine Zeile in pat_email_adr_audit - das DB-seitige Pendant
     zu den AendProt_Phase_*.csv-Dateien der Windows-Pipeline (siehe
     audit_log.py), fuer alle Schreibzugriffe, die von linux1 aus erfolgen
     (PHP-Dialog, linux1_commit_medoff.py, linux1_sync_medoff_changes.py) -
-    dort ist die Windows-lokale Protokolldatei nicht erreichbar."""
+    dort ist die Windows-lokale Protokolldatei nicht erreichbar.
+
+    apply_changes=False (Trockenlauf) schreibt bewusst GAR NICHTS - anders
+    als audit_log.AuditLog.log() (das eine neue, pro Lauf eigene CSV-Datei
+    auch fuer simulierte Aenderungen fuellt, was dort folgenlos ist), waere
+    ein INSERT in diese gemeinsame, dauerhafte Tabelle bei einem
+    Trockenlauf ein echter, nicht als solcher kenntlich gemachter Eintrag
+    in einem sonst nur echte Aenderungen enthaltenden Protokoll - gefunden
+    beim ersten Testlauf auf linux1, siehe [[project-missing-patient-emails]]."""
+    if not apply_changes:
+        return
     conn.cursor().execute(
         "INSERT INTO pat_email_adr_audit (aktion, pat_id, alt_email, neu_email, bemerkung) "
         "VALUES (%s, %s, %s, %s, %s)",
@@ -283,6 +311,19 @@ def is_latin1_safe(s):
         return True
     except UnicodeEncodeError:
         return False
+
+
+# Format aus apply_patient_emails.build_marker(): "->YYMMDD" + optional
+# " (<alte-mo-adresse>)". Damit laesst sich unterscheiden, ob
+# patstamm.FStaatsangehoerigkeit einen eigenen, frueher von dieser
+# Pipeline selbst gesetzten Marker enthaelt (unbedenklich, kann bei einer
+# erneuten Korrektur ueberschrieben werden) oder einen echten, fremden
+# Inhalt (z.B. tatsaechliche Nationalitaetsdaten - dort weiter blockieren).
+OWN_MARKER_RE = re.compile(r"^->\d{6}(?: \(.+\))?$")
+
+
+def is_own_marker(value):
+    return bool(OWN_MARKER_RE.match(value or ""))
 
 
 def commit_pending_main_addresses(padb_conn, medoff_cursor, apply_changes, log):
@@ -319,70 +360,92 @@ def commit_pending_main_addresses(padb_conn, medoff_cursor, apply_changes, log):
     n_synced = 0
     n_skipped_belegt = 0
     n_skipped_encoding = 0
+    n_error = 0
 
     for pat_id, (neu_email, marker) in pending.items():
-        # Bereits vor dem Latin1-Fix (2026-09-08) gestagte Zeilen tragen noch
-        # den alten Unicode-Pfeil "→" statt "->" - hier normalisieren, damit
-        # sie nicht erneut UEBERSPRUNGEN werden bzw. nicht erneut abstuerzen.
-        marker = (marker or "").replace("→", "->")
-        if not (is_latin1_safe(marker) and is_latin1_safe(neu_email)):
-            n_skipped_encoding += 1
-            print(f"UEBERSPRUNGEN (Zeichen ausserhalb Latin-1): Patient {pat_id}")
-            continue
+        try:
+            # Bereits vor dem Latin1-Fix (2026-09-08) gestagte Zeilen tragen
+            # noch den alten Unicode-Pfeil "→" statt "->" - hier
+            # normalisieren, damit sie nicht erneut UEBERSPRUNGEN werden
+            # bzw. nicht erneut abstuerzen.
+            marker = (marker or "").replace("→", "->")
+            if not (is_latin1_safe(marker) and is_latin1_safe(neu_email)):
+                n_skipped_encoding += 1
+                print(f"UEBERSPRUNGEN (Zeichen ausserhalb Latin-1): Patient {pat_id}")
+                continue
 
-        medoff_cursor.execute("SELECT FEmail, FStaatsangehoerigkeit FROM patstamm WHERE FSurogat=%s", (pat_id,))
-        row = medoff_cursor.fetchone()
-        if row is None:
-            n_skipped_changed += 1
-            print(f"UEBERSPRUNGEN (Patient nicht mehr gefunden): {pat_id}")
-            continue
-        aktuelles_email = (row["FEmail"] or "").strip().lower()
-        aktuelle_marke = (row["FStaatsangehoerigkeit"] or "").strip()
+            medoff_cursor.execute("SELECT FEmail, FStaatsangehoerigkeit FROM patstamm WHERE FSurogat=%s", (pat_id,))
+            row = medoff_cursor.fetchone()
+            if row is None:
+                n_skipped_changed += 1
+                print(f"UEBERSPRUNGEN (Patient nicht mehr gefunden): {pat_id}")
+                continue
+            aktuelles_email = (row["FEmail"] or "").strip().lower()
+            aktuelle_marke = (row["FStaatsangehoerigkeit"] or "").strip()
 
-        if aktuelles_email == neu_email:
-            # medoff zeigt bereits exakt den gewuenschten Wert - z.B. wenn
-            # eine gestagte Zeile per "Rueckgaengig" (PHP-Pflege) wieder auf
-            # eine Adresse zurueckgesetzt wurde, die dort ohnehin schon
-            # unveraendert steht. Nichts zu schreiben, nur als erledigt
-            # markieren - sonst wuerde der naechste Vergleich unten
-            # faelschlich "zwischenzeitlich veraendert" auswerten und
-            # sync_from_medoff() faelschlich ausloesen.
-            n_already_current += 1
+            if aktuelles_email == neu_email:
+                # medoff zeigt bereits exakt den gewuenschten Wert - z.B. wenn
+                # eine gestagte Zeile per "Rueckgaengig" (PHP-Pflege) wieder auf
+                # eine Adresse zurueckgesetzt wurde, die dort ohnehin schon
+                # unveraendert steht. Nichts zu schreiben, nur als erledigt
+                # markieren - sonst wuerde der naechste Vergleich unten
+                # faelschlich "zwischenzeitlich veraendert" auswerten und
+                # sync_from_medoff() faelschlich ausloesen.
+                n_already_current += 1
+                if apply_changes:
+                    mark_committed(padb_conn, pat_id)
+                continue
+
+            erwartet = alt_by_patient.get(pat_id, set())
+            if aktuelles_email not in ({""} | erwartet):
+                # Jemand hat FEmail direkt in medoff geaendert (nicht ueber
+                # pat_email_adr) - den neuen Ist-Stand uebernehmen, statt diese
+                # Zeile bei jedem kuenftigen Lauf erneut zu uebergehen.
+                n_skipped_changed += 1
+                n_synced += 1
+                print(f"UEBERSPRUNGEN, aber pat_email_adr synchronisiert (FEmail zwischenzeitlich veraendert): Patient {pat_id}")
+                if apply_changes:
+                    sync_from_medoff(padb_conn, pat_id, aktuelles_email, neu_email)
+                log("FEmail manuell in medoff geaendert - pat_email_adr synchronisiert",
+                    pat_id, alt=neu_email, neu=aktuelles_email)
+                continue
+            if aktuelle_marke and not is_own_marker(aktuelle_marke):
+                # Nur bei WIRKLICH fremdem Inhalt blockieren (z.B. echte
+                # Nationalitaetsdaten) - ein eigener, frueherer Marker dieser
+                # Pipeline darf bei einer erneuten Korrektur ueberschrieben
+                # werden. Ohne diese Unterscheidung blieb JEDER Patient nach
+                # seinem ersten Commit fuer immer blockiert, da das Feld nie
+                # wieder geleert wird - real bestaetigt am 2026-09-12: alle
+                # 1310 Patienten mit nicht-leerem FStaatsangehoerigkeit hatten
+                # ausschliesslich eigene Marker, keine fremden Daten.
+                n_skipped_belegt += 1
+                print(f"UEBERSPRUNGEN (FStaatsangehoerigkeit bereits belegt): Patient {pat_id}")
+                continue
+
+            n_written += 1
             if apply_changes:
+                medoff_cursor.execute(
+                    "UPDATE patstamm SET FEmail=%s, FStaatsangehoerigkeit=%s WHERE FSurogat=%s",
+                    (neu_email, marker, pat_id)
+                )
                 mark_committed(padb_conn, pat_id)
-            continue
-
-        erwartet = alt_by_patient.get(pat_id, set())
-        if aktuelles_email not in ({""} | erwartet):
-            # Jemand hat FEmail direkt in medoff geaendert (nicht ueber
-            # pat_email_adr) - den neuen Ist-Stand uebernehmen, statt diese
-            # Zeile bei jedem kuenftigen Lauf erneut zu uebergehen.
-            n_skipped_changed += 1
-            n_synced += 1
-            print(f"UEBERSPRUNGEN, aber pat_email_adr synchronisiert (FEmail zwischenzeitlich veraendert): Patient {pat_id}")
-            if apply_changes:
-                sync_from_medoff(padb_conn, pat_id, aktuelles_email, neu_email)
-            log("FEmail manuell in medoff geaendert - pat_email_adr synchronisiert",
-                pat_id, alt=neu_email, neu=aktuelles_email)
-            continue
-        if aktuelle_marke:
-            n_skipped_belegt += 1
-            print(f"UEBERSPRUNGEN (FStaatsangehoerigkeit bereits belegt): Patient {pat_id}")
-            continue
-
-        n_written += 1
-        if apply_changes:
-            medoff_cursor.execute(
-                "UPDATE patstamm SET FEmail=%s, FStaatsangehoerigkeit=%s WHERE FSurogat=%s",
-                (neu_email, marker, pat_id)
-            )
-            mark_committed(padb_conn, pat_id)
-        log("FEmail geaendert", pat_id, alt=aktuelles_email, neu=neu_email)
-        log("FStaatsangehoerigkeit geaendert", pat_id, alt=aktuelle_marke, neu=marker)
+            log("FEmail geaendert", pat_id, alt=aktuelles_email, neu=neu_email)
+            log("FStaatsangehoerigkeit geaendert", pat_id, alt=aktuelle_marke, neu=marker)
+        except Exception as e:
+            # Ein unerwarteter Fehler bei EINEM Patienten (z.B. ein
+            # fehlschlagender log()-Aufruf) soll nicht die Verarbeitung
+            # aller anderen wartenden Patienten in diesem Lauf abbrechen -
+            # gefunden beim ersten Testlauf auf linux1 (zu kurze
+            # aktion-Spalte liess log_audit() mitten in der Schleife
+            # abstuerzen), siehe [[project-missing-patient-emails]]. Nie
+            # str(e) ausgeben (kann Patientendaten enthalten).
+            n_error += 1
+            print(f"FEHLER ({type(e).__name__}) bei Patient {pat_id} - uebersprungen")
 
     return {
         "n_written": n_written,
         "n_already_current": n_already_current,
+        "n_error": n_error,
         "n_skipped_changed": n_skipped_changed,
         "n_synced": n_synced,
         "n_skipped_belegt": n_skipped_belegt,

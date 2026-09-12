@@ -32,8 +32,12 @@ def main():
     mcur = medoff_conn.cursor()
 
     def log(aktion, pat_id, alt="", neu=""):
+        # apply_changes durchreichen - commit_pending_main_addresses() ruft
+        # log() unconditional auf (siehe dortigen Docstring/Windows-AendProt-
+        # Verhalten), log_audit() selbst sorgt dafuer, dass ein Trockenlauf
+        # trotzdem nichts in die gemeinsame Tabelle schreibt.
         padb.log_audit(padb_conn, aktion, pat_id, alt=alt, neu=neu,
-                        bemerkung="linux1_commit_medoff.py")
+                        bemerkung="linux1_commit_medoff.py", apply_changes=apply_changes)
 
     stats = padb.commit_pending_main_addresses(padb_conn, mcur, apply_changes, log)
 
@@ -48,6 +52,7 @@ def main():
           f" (davon nach pat_email_adr synchronisiert: {stats['n_synced']})")
     print(f"Uebersprungen (FStaatsangehoerigkeit bereits belegt): {stats['n_skipped_belegt']}")
     print(f"Uebersprungen (Zeichen ausserhalb Latin-1): {stats['n_skipped_encoding']}")
+    print(f"Fehler (unerwartet, uebersprungen): {stats['n_error']}")
     if not apply_changes:
         print("Trockenlauf beendet. Zum tatsaechlichen Eintragen erneut mit --apply aufrufen.")
 
