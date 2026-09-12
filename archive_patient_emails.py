@@ -97,22 +97,42 @@ def _mb3_safe(s):
     return "".join(c for c in (s or "") if ord(c) <= 0xFFFF)
 
 
+def build_name_prefix(patient):
+    """Nachname [Titel ][Vorsatzwort ][Zusatzwort ]Vorname - fuer Dateinamen/
+    Patientenname, ersetzt die frueheren "(angek.)"/"(gesan.)"-Markierungen
+    (seit der EmailAdresse-Migration 2026-09-12, siehe
+    migrate_dokprotlist_email_adresse.py und [[project-missing-patient-emails]]:
+    die tatsaechliche Email-Adresse im Namen macht die Herkunft eindeutiger,
+    als es die reine Richtungsangabe je konnte)."""
+    parts = [(patient.get("FNachname") or "").strip()]
+    for key in ("FTitel", "FNamensvorsatz", "FNamenszusatz"):
+        v = (patient.get(key) or "").strip()
+        if v:
+            parts.append(v)
+    parts.append((patient.get("FVorname") or "").strip())
+    return " ".join(x for x in parts if x)
+
+
 def log_dokprot(cur, fpatnr, nachname, vorname, gebdat_sql, ursp_name, dat_name,
-                 groesse, typ, laend_dt):
+                 groesse, typ, laend_dt, email_adresse=None):
     """Traegt eine erzeugte Datei (Email-PDF oder Anhang) in dokprotlist ein,
     analog zum Vorgehen in DokimpKurz.au3 (Archivierungsmodus, kopart=0 - kein
-    Sicherheits-/Zielverzeichnis, da die Datei direkt in P:\\dok landet)."""
+    Sicherheits-/Zielverzeichnis, da die Datei direkt in P:\\dok landet).
+
+    email_adresse: Absenderadresse (empfangene Email) bzw. Empfaengeradresse
+    (gesandte Email) - seit der EmailAdresse-Migration 2026-09-12, None fuer
+    alle anderen (nicht email-bezogenen) Aufrufer."""
     pc = os.environ.get("COMPUTERNAME", "")[:10]
     benutzer = os.environ.get("USERNAME", "")[:10]
     patientenname = _mb3_safe(f"{nachname}, {vorname}")[:50]
     ursp_name = _mb3_safe(ursp_name)[:200]
-    dat_name = _mb3_safe(dat_name)[:300]
+    dat_name = _mb3_safe(dat_name)[:360]
     cur.execute(
         "INSERT INTO dokprotlist "
         "(kPatN, ntum, nImp, urspnm, Patientenname, Gebdat, Ort, Pat_ID, "
-        " urspName, datName, lAend, groesse, Typ, Mitarbeiter, PC, Benutzer, eingetragen) "
-        "VALUES (0, 0, 1, 0, %s, %s, '', %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())",
-        (patientenname, gebdat_sql, fpatnr, ursp_name, dat_name,
+        " urspName, datName, EmailAdresse, lAend, groesse, Typ, Mitarbeiter, PC, Benutzer, eingetragen) "
+        "VALUES (0, 0, 1, 0, %s, %s, '', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())",
+        (patientenname, gebdat_sql, fpatnr, ursp_name, dat_name, email_adresse,
          laend_dt, groesse, typ[:7], DOKPROT_MITARBEITER, pc, benutzer),
     )
 
@@ -156,7 +176,7 @@ MAX_FILENAME_LEN = 230  # Sicherheitsmarge unter Windows' MAX_PATH (260 Zeichen 
 
 def cap_filename_length(fn, max_len=MAX_FILENAME_LEN):
     """Kuerzt einen Dateinamen auf max_len Zeichen (Endung bleibt erhalten),
-    damit weder das Windows-Pfadlimit noch die 300-Zeichen-Spalte
+    damit weder das Windows-Pfadlimit noch die 360-Zeichen-Spalte
     dokprotlist.datName ueberschritten wird."""
     if len(fn) <= max_len:
         return fn
@@ -343,7 +363,8 @@ def main():
         print(f"FEHLER: medoff-Datenbank (wser) nicht erreichbar: {e}")
         sys.exit(3)
     cur = conn.cursor()
-    cur.execute("SELECT FSurogat, FVorname, FNachname, FEmail, FGeburtsdatum FROM patstamm "
+    cur.execute("SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
+                "FEmail, FGeburtsdatum FROM patstamm "
                 "WHERE FEmail IS NOT NULL AND FEmail <> ''")
     patients = cur.fetchall()
 
@@ -364,7 +385,8 @@ def main():
     padb_conn.close()
     if staged:
         placeholders = ",".join(["%s"] * len(staged))
-        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FEmail, FGeburtsdatum FROM patstamm "
+        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
+                    f"FEmail, FGeburtsdatum FROM patstamm "
                     f"WHERE FSurogat IN ({placeholders})", tuple(staged.keys()))
         staged_patients = {str(p["FSurogat"]): p for p in cur.fetchall()}
         for patientennummer, addrs in staged.items():
@@ -498,15 +520,18 @@ def main():
 
             patient = None
             direction = None
+            partner_addr = None
             if sender_addr in OWN_ACCOUNT_EMAILS:
                 for r in recipients:
                     if r in by_email:
                         patient = by_email[r]
                         direction = "gesan."
+                        partner_addr = r
                         break
             elif sender_addr in by_email:
                 patient = by_email[sender_addr]
                 direction = "angek."
+                partner_addr = sender_addr
 
             if patient is None:
                 n_no_patient += 1
@@ -525,7 +550,10 @@ def main():
             vorname = sanitize((patient["FVorname"] or "").strip())
             zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
             betreff_sane = sanitize(subject_raw)[:100]
-            base_name = f"{nachname} {vorname} ({direction}) Email {zeitstempel}, {betreff_sane}"
+            richtungswort = "von" if direction == "angek." else "an"
+            name_prefix_sane = sanitize(build_name_prefix(patient))
+            base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
+                         f"{zeitstempel}, {betreff_sane}")
 
             try:
                 mtime_ts = msg_date.timestamp()
@@ -651,7 +679,8 @@ def main():
                         os.utime(pdf_path, (mtime_ts, mtime_ts))
                     existing_text_cache[target_dir][pdf_path] = candidate_text
                     log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date)
+                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
+                                email_adresse=partner_addr)
                 audit.log("Email als PDF abgelegt", fpatnr, neu=os.path.basename(pdf_path), pfad=target_dir)
                 n_created += 1
             except Exception as e:
@@ -679,7 +708,7 @@ def main():
                             os.utime(att_path, (mtime_ts, mtime_ts))
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                     att_name_disp, os.path.basename(att_path), len(att_data),
-                                    att_ext.lstrip("."), msg_date)
+                                    att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
                     audit.log("Anhang abgelegt", fpatnr, neu=os.path.basename(att_path), pfad=target_dir)
                 except Exception as e:
                     # Nur Fehlertyp + Patientennummer ausgeben, NIE die

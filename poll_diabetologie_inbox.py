@@ -34,7 +34,7 @@ from archive_patient_emails import (
     parse_addr_list, sanitize, cap_filename_length, gebdat_to_sql,
     log_dokprot, open_seen_cache, mark_seen, connect_dokprot,
     render_message, extract_attachments, extract_pdf_text, normalize_pdf_text,
-    get_header,
+    get_header, build_name_prefix,
 )
 import patient_addresses_db as padb
 import mail_id_cache
@@ -119,7 +119,8 @@ def connect_medoff():
 def build_by_email():
     conn = connect_medoff()
     cur = conn.cursor()
-    cur.execute("SELECT FSurogat, FVorname, FNachname, FEmail, FGeburtsdatum FROM patstamm "
+    cur.execute("SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
+                "FEmail, FGeburtsdatum FROM patstamm "
                 "WHERE FEmail IS NOT NULL AND FEmail <> ''")
     by_email = {}
     for p in cur.fetchall():
@@ -132,7 +133,8 @@ def build_by_email():
     padb_conn.close()
     if staged:
         placeholders = ",".join(["%s"] * len(staged))
-        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FEmail, FGeburtsdatum FROM patstamm "
+        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
+                    f"FEmail, FGeburtsdatum FROM patstamm "
                     f"WHERE FSurogat IN ({placeholders})", tuple(staged.keys()))
         staged_patients = {str(p["FSurogat"]): p for p in cur.fetchall()}
         for pat_id, addrs in staged.items():
@@ -300,15 +302,18 @@ def poll_once(pwd, by_email, apply_changes, full=False):
 
             patient = None
             direction = None
+            partner_addr = None
             if sender_addr in OWN_ACCOUNT_EMAILS:
                 for r in recipients:
                     if r in by_email:
                         patient = by_email[r]
                         direction = "gesan."
+                        partner_addr = r
                         break
             elif sender_addr in by_email:
                 patient = by_email[sender_addr]
                 direction = "angek."
+                partner_addr = sender_addr
 
             if patient is None:
                 continue
@@ -328,7 +333,10 @@ def poll_once(pwd, by_email, apply_changes, full=False):
             vorname = sanitize((patient["FVorname"] or "").strip())
             zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
             betreff_sane = sanitize(subject_raw)[:100]
-            base_name = f"{nachname} {vorname} ({direction}) Email {zeitstempel}, {betreff_sane}"
+            richtungswort = "von" if direction == "angek." else "an"
+            name_prefix_sane = sanitize(build_name_prefix(patient))
+            base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
+                         f"{zeitstempel}, {betreff_sane}")
             try:
                 mtime_ts = msg_date.timestamp()
             except (OverflowError, OSError, ValueError):
@@ -388,7 +396,8 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                     if mtime_ts is not None:
                         os.utime(pdf_path, (mtime_ts, mtime_ts))
                     log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date)
+                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
+                                email_adresse=partner_addr)
                 audit.log("Email als PDF abgelegt (POP3-Direktabruf)", fpatnr,
                           neu=os.path.basename(pdf_path), pfad=target_dir)
                 n_created += 1
@@ -414,7 +423,7 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                             os.utime(att_path, (mtime_ts, mtime_ts))
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                     att_name_disp, os.path.basename(att_path), len(att_data),
-                                    att_ext.lstrip("."), msg_date)
+                                    att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
                     audit.log("Anhang abgelegt (POP3-Direktabruf)", fpatnr,
                               neu=os.path.basename(att_path), pfad=target_dir)
                 except Exception as e:

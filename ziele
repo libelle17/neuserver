@@ -263,6 +263,7 @@ mail_id_cache.py
 audit_log.py
 mitarbeiter_filter.py
 run_poll_diabetologie.sh
+migrate_dokprotlist_email_adresse.py
 [/etc/systemd/system]
 mo-emailadr-commit-watch.service
 mysql-restart-watch.service
