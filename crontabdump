@@ -21,7 +21,7 @@ ELG=/var/log/cronf.log
 # am 10.4.13 wurde dorsync.sh passager durch donix.sh ersetzt, weiterhin gsbutm.sh durch gsbutmnix.sh und gsbackup.sh durch gsbackupnix.sh
 # am 7.10.15 5 alle vmp-Aufrufe passager inaktiviert
 # bitte editieren mit `crontab -e`
--*/15 * * * *  test -x /usr/lib/cron/run-crons && /usr/lib/cron/run-crons >>$VL/run-crons-Aufruf.log 2>&1 
+-*/15 * * * *  test -x /usr/lib/cron/run-crons && /usr/lib/cron/run-crons >>$VL/run-crons-Aufruf.log 2>&1
 # -0 0 * * * /root/bin/dorsync.sh --delete /etc/ /wurzelalt/etc >>$VL/dorsync-Aufruf.log 2>&1
 
 # unsichere oder langsame Module nicht beim Systemstart laden, um diesen nicht zu gefaehrden oder aufzuhalten
@@ -89,10 +89,10 @@ ELG=/var/log/cronf.log
 -57 23 * * * Q=/DATA;Z=/DAT3;mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ /root/bin/dorsync.sh --delete --exclude "/ausgelagert***" --exclude "/down***" --exclude "/Oberanger***" --exclude "/Papierkorb***" --exclude "/TMBackloe***" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};}
 -17 21 * * * Q=/DATA;Z=/DAT1;mountpoint -q "$Q"&&mountpoint -q "$Z"&&{ pgrep -c -f "dorsync.sh.* $Z" >/dev/null||{ /root/bin/dorsync.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" "$Q/" "$Z" >>$VL/dorsync-Aufruf.log 2>&1;};}
 # Daten jeden Freitag nach szn1 sichern
-#-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q "/DATA" && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1 
+#-0 22 * * 5 pgrep -c -f "dorsync.* /mnt/szn1/daten" || mountpoint -q "/DATA" && mountpoint -q "/mnt/szn1/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" /DATA/ /mnt/szn1/daten >>$VL/dorsync-Aufruf.log 2>&1
 # Daten einmal taeglich nach anmeldl sichern
-#-27 19 * * * pgrep -c -f "dorsync.* /mnt/anmeldl/daten" || mountpoint -q "/DATA" && mountpoint -q "/mnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /mnt/anmeldl/daten 
-#-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q "/DATA" && mountpoint -q "/DAT2" && /root/bin/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1 
+#-27 19 * * * pgrep -c -f "dorsync.* /mnt/anmeldl/daten" || mountpoint -q "/DATA" && mountpoint -q "/mnt/anmeldl/daten" && dorsync_vonsamba.sh --delete --exclude "Papierkorb*" --exclude "*.tmp*" --exclude "*vgluloe*" --exclude "*PC-Magazin*" --exclude "ausgelagert" --exclude "TMBack" /DATA/ /mnt/anmeldl/daten
+#-17 23 * * * pgrep -c -f "dorsync.sh.* /DAT2" || mountpoint -q "/DATA" && mountpoint -q "/DAT2" && /root/bin/dorsync.sh --delete --include "/ausgelagert***" --include "/Papierkorb***" --exclude "*" /DATA/ /DAT2 >>$VL/dorsync-Aufruf.log 2>&1
 # Kontrolldatei für Laufen des Turbomed-Servers erstellen
 -*/2 * * * * mountpoint -q "/DATA" && ps h opid,time,cmd -C ptserver > /DATA/poet_aktiv.txt 2>>$VL/poet_aktiv-Auruf.log
 # Kontrolldatei zur Auslastung des Datenlaufwerks erstellen
@@ -111,7 +111,7 @@ ELG=/var/log/cronf.log
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q "/DATA" && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
 # die Turbomed-Datenbank einmal taeglich sichern
--40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/ionice -c3 /usr/bin/7z a "/DATA/TMBack/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" /opt/turbomed/StammDB /opt/turbomed/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG 
+-40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/ionice -c3 /usr/bin/7z a "/DATA/TMBack/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" /opt/turbomed/StammDB /opt/turbomed/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG
 
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA >>$VL/chown-Aufruf.log 2>&1
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA/firebird >>$VL/chown-Aufruf.log 2>&1
@@ -157,7 +157,7 @@ ELG=/var/log/cronf.log
 # -27 5 * * * mountpoint -q "/DATA" && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/ungera" "/mnt/szo1/daten/ungera" >>$NLG 2>>$ELG
 # -50 5 * * * mountpoint -q "/DATA" && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/gerade" "/mnt/szo1/daten/gerade"  >>$NLG 2>>$ELG
 
-# fast ganz /DATA 
+# fast ganz /DATA
 # -0 1 * * 6,7 mountpoint -q "/DATA" && mountpoint -q "/mnt/szo1/daten" && /root/bin/gsbackup.sh "/mnt/szo1/daten" "/DATA/" "/mnt/szo1/daten" "Papierkorb" "TMBack" "eigene Dateien/TMExport" "sql" >>$NLG 2>>$ELG
 
 # -15 * * * * /root/bin/kopierpoet.sh >>$NLG 2>>$ELG
@@ -307,7 +307,10 @@ ELG=/var/log/cronf.log
 # diabetologie@dachau-mail.de, archiviert Treffer gegen bekannte
 # Patientenadressen als PDF nach /DATA/Patientendokumente/dok/ (dokprotlist),
 # eingerichtet 2026-09-12 (Aufgabe aus /DATA/down/poll_diabetologie_linux1_auftrag.txt).
-# Laeuft PARALLEL zum bisherigen Windows-Task auf szn4 (alle 5 Minuten, gleicher
-# Takt) - deduplizert ueber Inhaltsvergleich gegen bereits vorhandene Dateien,
-# also unschaedlich; der Windows-Task wird von der anderen Instanz deaktiviert,
-# sobald dieser Linux-Cron sich bewaehrt hat.
+# Seit demselben Tag (spaeter) Dauerdienst statt Cron fuer den 2-Minuten-Takt
+# (poll-diabetologie-inbox.service, RAM-only by_email-Cache, siehe Skriptkopf/
+# run_daemon()) - hier nur noch der naechtliche --full-Backstop, unabhaengig
+# vom UIDL-Checkpoint, gegen einen fehlerhaft fortgeschriebenen Checkpoint
+# (Mailbox behaelt Nachrichten auf dem Server, waechst also unbegrenzt -
+# deshalb bewusst nachts, ca. 16 Min. bei ~10000 Nachrichten).
+30 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply --full >>$VL/poll_diabetologie_inbox_full.log 2>&1

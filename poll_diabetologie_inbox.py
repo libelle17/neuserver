@@ -173,13 +173,22 @@ def get_watermarks(medoff_conn, quelle_conn):
     return dbsprot_max, audit_max
 
 
-def poll_once(pwd, by_email, apply_changes):
+def poll_once(pwd, by_email, apply_changes, full=False):
     """Ein einzelner Abholzyklus (POP3-Verbindung, neue Nachrichten seit dem
     UIDL-Checkpoint verarbeiten) mit einer BEREITS aufgebauten by_email-
     Zuordnung - weder hier noch in run_daemon() wird patstamm dafuer erneut
     gelesen. Fuer den Einzelaufruf (main(), CLI/Cron-Kompatibilitaet) baut
     der Aufrufer by_email frisch; fuer den Dauerdienst (run_daemon())
-    wird sie nur bei tatsaechlicher Aenderung neu aufgebaut."""
+    wird sie nur bei tatsaechlicher Aenderung neu aufgebaut.
+
+    full=True (--full, gedacht fuer einen seltenen naechtlichen Cron-Lauf,
+    NICHT fuer run_daemon()): Backstop gegen einen fehlerhaft fortgeschriebenen
+    UIDL-Checkpoint, der sonst Nachrichten fuer immer unbemerkt uebersehen
+    wuerde (Postfach behaelt Mails auf dem Server, siehe leave_on_server) -
+    prueft ALLE Nachrichten auf dem Server, unabhaengig vom Checkpoint, und
+    schreibt den Checkpoint dabei bewusst NICHT fort (reiner Lesevorgang,
+    verlaesst sich auf den bereits vorhandenen Inhalts-Hash-/dok_text_cache-
+    Abgleich weiter unten, um keine Duplikate anzulegen)."""
     conn = pop_connect(pwd)
     try:
         resp, lines, octets = conn.uidl()
@@ -190,14 +199,19 @@ def poll_once(pwd, by_email, apply_changes):
                 pairs.append((parts[0], parts[1]))
 
         last_uidl = load_last_uidl()
-        start_idx = 0
-        if last_uidl:
-            for i, (num, uid) in enumerate(pairs):
-                if uid == last_uidl:
-                    start_idx = i + 1
-                    break
-        to_process = pairs[start_idx:]
-        print(f"Nachrichten auf Server: {len(pairs)}, neu seit letztem Checkpoint: {len(to_process)}")
+        if full:
+            to_process = pairs
+            print(f"Voll-Scan (Backstop): {len(pairs)} Nachrichten auf Server werden "
+                  f"vollstaendig geprueft, UIDL-Checkpoint bleibt unveraendert")
+        else:
+            start_idx = 0
+            if last_uidl:
+                for i, (num, uid) in enumerate(pairs):
+                    if uid == last_uidl:
+                        start_idx = i + 1
+                        break
+            to_process = pairs[start_idx:]
+            print(f"Nachrichten auf Server: {len(pairs)}, neu seit letztem Checkpoint: {len(to_process)}")
 
         seen_cache = open_seen_cache()
         mail_cache_conn = mail_id_cache.connect()
@@ -410,7 +424,7 @@ def poll_once(pwd, by_email, apply_changes):
             if apply_changes:
                 mark_seen(seen_cache, msg_hash)
 
-        if apply_changes and newest_uidl:
+        if apply_changes and not full and newest_uidl:
             save_last_uidl(newest_uidl)
 
         if dokprot_conn:
@@ -451,12 +465,15 @@ def print_stats(stats, apply_changes):
 def main():
     """Einzelaufruf (CLI/manueller Test, sowie Cron-Kompatibilitaet, falls
     --daemon je zurueckgebaut werden muss) - baut by_email immer frisch,
-    genau ein Abholzyklus, druckt das Ergebnis."""
+    genau ein Abholzyklus, druckt das Ergebnis.
+
+    --full: seltener naechtlicher Backstop-Cron-Lauf, siehe poll_once()."""
     apply_changes = "--apply" in sys.argv
+    full = "--full" in sys.argv
     pwd = read_pop_password()
     by_email = build_by_email()
     print(f"Patienten mit hinterlegter oder gestagter Email-Adresse: {len(by_email)}")
-    stats = poll_once(pwd, by_email, apply_changes)
+    stats = poll_once(pwd, by_email, apply_changes, full=full)
     print_stats(stats, apply_changes)
 
 
