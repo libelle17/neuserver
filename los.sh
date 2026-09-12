@@ -3724,6 +3724,11 @@ cron() {
       fi;
     done;
     if [ -f /etc/sudoers.d/mo-emailadr-commit ]; then
+      # git kennt nur "ausfuehrbar oder nicht" (100644/100755), kein exaktes
+      # 0440 - nach einem frischen "git clone"+"make shziel" haette die Datei
+      # sonst zu offene Rechte und wuerde von sudo ignoriert.
+      chown root:root /etc/sudoers.d/mo-emailadr-commit;
+      chmod 0440 /etc/sudoers.d/mo-emailadr-commit;
       visudo -cf /etc/sudoers.d/mo-emailadr-commit >/dev/null 2>&1 && \
         printf "${blau}/etc/sudoers.d/mo-emailadr-commit${reset}: Syntax ok.\n" || \
         printf "${rot}/etc/sudoers.d/mo-emailadr-commit: Syntax-Fehler!${reset}\n";
