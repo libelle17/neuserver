@@ -77,16 +77,19 @@
 <a href="http://linux1/plz" accesskey='z'>&#8598;</a>
 <!-- <a href="http://linux1/plz" accesskey='z'>A</a> -->
 <?php
-// Vereinfachte Rueckkehr zum vorherigen Patientenlaufzettel (Alt+Strg+v bzw. je
+// Vereinfachte Rueckkehr zum vorherigen Patientenlaufzettel (Alt+Strg+r bzw. je
 // nach Browser/OS - siehe accesskey='z' oben fuer die Analogie): merkt sich in der
 // Session die zuletzt aufgerufene Laufzettel-URL und zeigt hier - solange sie sich
 // vom aktuellen Laufzettel unterscheidet - einen Link darauf. Absichtlich nur EIN
 // Schritt zurueck (kein voller Verlauf), genau der angefragte Anwendungsfall: von
 // der /plz-Liste (oder direkt vom naechsten Laufzettel aus) wieder zum vorherigen.
+// accesskey='r' ("Rueckkehr") statt 'v' - 'v' ist schon durch den
+// Vorbereiter-Knopf in anzeig.php belegt (das in dieselbe Seite eingebunden wird),
+// was den urspruenglichen Tastaturkurzbefehl unwirksam gemacht hat.
 $_aktuelle_lz_url = $_SERVER['REQUEST_URI'];
 $_vorherige_lz_url = isset($_SESSION['letztes_laufzettel']) ? $_SESSION['letztes_laufzettel'] : null;
 if ($_vorherige_lz_url && $_vorherige_lz_url !== $_aktuelle_lz_url) {
-  echo '<a href="'.htmlspecialchars($_vorherige_lz_url).'" accesskey="v" title="zurueck zum vorherigen Patientenlaufzettel">&#8592;</a>';
+  echo '<a href="'.htmlspecialchars($_vorherige_lz_url).'" accesskey="r" title="zurueck zum vorherigen Patientenlaufzettel">&#8249;</a>';
 }
 $_SESSION['letztes_laufzettel'] = $_aktuelle_lz_url;
 ?>
