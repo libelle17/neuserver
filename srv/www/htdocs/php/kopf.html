@@ -74,24 +74,24 @@
 <a href="http://linux1/vorb" accesskey='1'>V</a>
 <a href="http://linux1/behand" accesskey='2'>B</a>
 <a href="http://linux1/fertig" accesskey='3'>F</a>
-<a href="http://linux1/plz" accesskey='z'>&#8598;</a>
+<a href="http://linux1/plz" accesskey='z' id='plzListeLink'>&#8598;</a>
 <!-- <a href="http://linux1/plz" accesskey='z'>A</a> -->
+<script>document.addEventListener("keydown",function(e){if(e.altKey&&(e.key=="z"||e.key=="Z"||e.code=="KeyZ")){e.preventDefault();location.href=document.getElementById("plzListeLink").href;}},true);</script>
 <?php
-// Vereinfachte Rueckkehr zum vorherigen Patientenlaufzettel (Alt+Strg+l bzw. je
-// nach Browser/OS - siehe accesskey='z' oben fuer die Analogie): merkt sich in der
+// Vereinfachte Rueckkehr zum vorherigen Patientenlaufzettel: merkt sich in der
 // Session die zuletzt aufgerufene Laufzettel-URL und zeigt hier - solange sie sich
 // vom aktuellen Laufzettel unterscheidet - einen Link darauf. Absichtlich nur EIN
 // Schritt zurueck (kein voller Verlauf), genau der angefragte Anwendungsfall: von
 // der /plz-Liste (oder direkt vom naechsten Laufzettel aus) wieder zum vorherigen.
-// accesskey='l' ("letzter"): 'v' kollidiert mit dem Vorbereiter-Knopf, 'r' mit dem
-// (nur wenn $_SESSION['anwesend'] gesetzt ist, also fuer die meisten aktiven
-// Laufzetteln zutreffenden) "von vorne"-Knopf - beide in anzeig.php, das in
-// dieselbe Seite eingebunden wird. Vollstaendige Bestandsaufnahme aller schon
-// verwendeten Accesskeys (2026-09-12): e,g,m,n,q,r,t,u,v,w,z - 'l' ist frei.
+// Kein natives accesskey (trotz kollisionsfreiem 'l' in zwei Browsern wirkungslos,
+// vermutlich Browser/OS-abhaengige Modifier-Vielfalt) - stattdessen Alt+L per
+// eigenem keydown-Listener, dasselbe bewaehrte Muster wie Alt+M/Alt+E
+// (emailAdrToggle/MedVerlauf) an anderer Stelle in diesem Laufzettel.
 $_aktuelle_lz_url = $_SERVER['REQUEST_URI'];
 $_vorherige_lz_url = isset($_SESSION['letztes_laufzettel']) ? $_SESSION['letztes_laufzettel'] : null;
 if ($_vorherige_lz_url && $_vorherige_lz_url !== $_aktuelle_lz_url) {
-  echo '<a href="'.htmlspecialchars($_vorherige_lz_url).'" accesskey="l" title="zurueck zum vorherigen Patientenlaufzettel">&#8249;</a>';
+  echo '<a href="'.htmlspecialchars($_vorherige_lz_url).'" id="vorherigerLzLink" title="zurueck zum vorherigen Patientenlaufzettel (Alt+L)">&#8249;</a>';
+  echo '<script>document.addEventListener("keydown",function(e){if(e.altKey&&(e.key=="l"||e.key=="L"||e.code=="KeyL")){e.preventDefault();location.href=document.getElementById("vorherigerLzLink").href;}},true);</script>';
 }
 $_SESSION['letztes_laufzettel'] = $_aktuelle_lz_url;
 ?>
