@@ -256,6 +256,13 @@ linux1_commit_medoff.py
 linux1_sync_medoff_changes.py
 patient_addresses_db.py
 watch_trigger.sh
+poll_diabetologie_inbox.py
+archive_patient_emails.py
+find_missing_patient_emails.py
+mail_id_cache.py
+audit_log.py
+mitarbeiter_filter.py
+run_poll_diabetologie.sh
 [/etc/systemd/system]
 mo-emailadr-commit-watch.service
 mysql-restart-watch.service

@@ -1733,6 +1733,21 @@ proginst() {
   # zypper-Paket fuer PyMySQL gefunden, daher per pip. Guard vermeidet einen
   # unnoetigen Netzwerkzugriff, wenn schon installiert.
   python3 -c "import pymysql" 2>/dev/null || pip install pymysql;
+  # poll_diabetologie_inbox.py (eingerichtet 2026-09-12, Aufgabe aus
+  # /DATA/down/poll_diabetologie_linux1_auftrag.txt): xhtml2pdf/pdfplumber/
+  # reportlab brauchen ein neueres "cryptography" als pyOpenSSL/certbot
+  # vertraegt (verifiziert: systemweite Installation hat certbot kurzzeitig
+  # kaputt gemacht) - deshalb eigene, isolierte venv statt systemweitem pip.
+  if [ ! -x /opt/mo-emailadr/venv/bin/python3 ]; then
+    python3 -m venv /opt/mo-emailadr/venv;
+    /opt/mo-emailadr/venv/bin/pip install --upgrade pip;
+    /opt/mo-emailadr/venv/bin/pip install xhtml2pdf pdfplumber reportlab pymysql;
+    printf "${blau}/opt/mo-emailadr/venv${reset}: neu angelegt, PDF-Bibliotheken installiert.\n";
+  fi;
+  if [ ! -f /root/.diabetologie_pop_pwd ]; then
+    printf "${rot}/root/.diabetologie_pop_pwd fehlt${reset} - poll_diabetologie_inbox.py kann sich nicht bei pop.mnet-online.de anmelden. Manuell anlegen, z.B.:\n";
+    printf "  read -s -p \"POP3-Passwort: \" pw \&\& printf '%%s' \"\$pw\" > /root/.diabetologie_pop_pwd \&\& chmod 600 /root/.diabetologie_pop_pwd \&\& unset pw\n";
+  fi;
   doinst fail2ban;              # Bruteforce-Schutz Basic-Auth (Dienstplan-Login)
   doinst postgresql;
   doinst postgresql-contrib;
@@ -3717,7 +3732,10 @@ cron() {
     _moe1="*/2 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply >>\$VL/linux1_sync_medoff_changes.log 2>&1";
     _moe2="5 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply >>\$VL/linux1_commit_medoff.log 2>&1";
     _moe3="15 2 * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply --full >>\$VL/linux1_sync_medoff_changes_full.log 2>&1";
-    for _moe in "$_moe1" "$_moe2" "$_moe3"; do
+    # poll_diabetologie_inbox.py (2026-09-12, siehe oben bei den PDF-Bibliotheken):
+    # gleicher Takt wie der bisherige Windows-Task (alle 5 Min.).
+    _moe4="*/5 * * * * HOST=\$(hostname);[ \${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply >>\$VL/poll_diabetologie_inbox.log 2>&1";
+    for _moe in "$_moe1" "$_moe2" "$_moe3" "$_moe4"; do
       if ! crontab -l 2>/dev/null | grep -qF "$_moe"; then
         { crontab -l 2>/dev/null; printf "%s\n" "$_moe"; } | crontab -;
         printf "mo-emailadr-Eintrag in ${blau}crontab${reset} eingetragen: ${blau}$_moe${reset}\n";

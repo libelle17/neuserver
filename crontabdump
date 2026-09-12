@@ -303,3 +303,12 @@ ELG=/var/log/cronf.log
 */2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply >>$VL/linux1_sync_medoff_changes.log 2>&1
 5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_commit_medoff.py --apply >>$VL/linux1_commit_medoff.log 2>&1
 15 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/python3 /opt/mo-emailadr/linux1_sync_medoff_changes.py --apply --full >>$VL/linux1_sync_medoff_changes_full.log 2>&1
+# poll_diabetologie_inbox.py: holt per POP3 neue Nachrichten von
+# diabetologie@dachau-mail.de, archiviert Treffer gegen bekannte
+# Patientenadressen als PDF nach /DATA/Patientendokumente/dok/ (dokprotlist),
+# eingerichtet 2026-09-12 (Aufgabe aus /DATA/down/poll_diabetologie_linux1_auftrag.txt).
+# Laeuft PARALLEL zum bisherigen Windows-Task auf szn4 (alle 5 Minuten, gleicher
+# Takt) - deduplizert ueber Inhaltsvergleich gegen bereits vorhandene Dateien,
+# also unschaedlich; der Windows-Task wird von der anderen Instanz deaktiviert,
+# sobald dieser Linux-Cron sich bewaehrt hat.
+*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply >>$VL/poll_diabetologie_inbox.log 2>&1
