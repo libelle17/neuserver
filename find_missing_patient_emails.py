@@ -862,8 +862,15 @@ def main():
         beim Ablegen in P:\\dok haeufig geaendert wird) gegen alle P:\\dok-
         Dateien derselben Groesse. Als Plausibilitaetspruefung wird verlangt,
         dass die Datei nicht deutlich vor der Email angelegt/geaendert wurde
-        (1 Tag Toleranz fuer Zeitzonen/Rundung)."""
+        (1 Tag Toleranz fuer Zeitzonen/Rundung).
+
+        Gibt (surogat, msg_dates) zurueck, wobei msg_dates die Menge der
+        unterschiedlichen Nachrichtendaten ist, aus denen ein passender
+        Anhang stammt (Naeherung fuer "Anzahl unabhaengiger Nachrichten mit
+        diesem Signal", da Anhaenge selbst keine Message-ID hier tragen) -
+        sonst (None, set())."""
         cand = {}
+        cand_dates = {}
         for fname, size, digest, msg_date in attachments.get(addr, []):
             if not digest:
                 continue
@@ -889,9 +896,23 @@ def main():
                     continue
                 s = int(patient_nr)
                 cand[s] = cand.get(s, 0) + 1
+                cand_dates.setdefault(s, set()).add(msg_date)
         if len(cand) == 1:
-            return next(iter(cand))
-        return None
+            s = next(iter(cand))
+            return s, cand_dates[s]
+        return None, set()
+
+    def count_messages_with_name(addr, surogat):
+        """Naeherung fuer 'Anzahl unabhaengiger Nachrichten dieser Adresse, die
+        den Namen von surogat im Betreff ODER im Body nennen' - zaehlt beide
+        Kanaele getrennt (Betreff-Liste und Body-Liste sind nicht
+        garantiert index-gleich, da in getrennten Durchlaeufen befuellt) und
+        nimmt das Maximum, statt eine exakte Paarung zu unterstellen."""
+        n_subj = sum(1 for s in candidate_senders.get(addr, {}).get("subjects", [])
+                      if surogat in find_names_in_text(normalize_text(s), name_index))
+        n_body = sum(1 for b in bodies.get(addr, [])
+                     if surogat in find_names_in_text(normalize_text(b), name_index))
+        return max(n_subj, n_body)
 
     rows_attach = []       # per Anhang eindeutig identifiziert
     rows_content = []      # per Namensnennung im Inhalt eindeutig identifiziert
@@ -1049,7 +1070,7 @@ def main():
                 if found:
                     kind_base = "vermutlich Angehoerige/r (nur Nachname eindeutig)"
 
-        att_surogat = attachment_match(addr)
+        att_surogat, att_msg_dates = attachment_match(addr)
         if att_surogat is not None and att_surogat not in info_by_surogat:
             # P:\dok-Ordner ohne (mehr) zugehoerigen patstamm-Eintrag (z.B.
             # geloeschter/zusammengefuehrter Patient) - Anhangstreffer verwerfen.
@@ -1078,7 +1099,7 @@ def main():
                     rows_conflict.append({
                         "addr": addr, "subject": subject, "source": "Anhang",
                         "att_surogat": att_surogat, "att_info": info_a, "att_status": status_a,
-                        "name_surogats": found,
+                        "name_surogats": found, "n_messages": len(att_msg_dates),
                     })
                     continue
             check_relations(att_surogat, addr, combined, subject)
@@ -1167,6 +1188,7 @@ def main():
                         "addr": addr, "subject": subject, "source": "Name im Inhalt",
                         "att_surogat": content_surogat, "att_info": info_c, "att_status": status_c,
                         "name_surogats": found,
+                        "n_messages": count_messages_with_name(addr, content_surogat),
                     })
                     continue
             check_relations(content_surogat, addr, combined, subject)
@@ -1207,6 +1229,7 @@ def main():
                         "source": "Vorname eines anderen Patienten mit gleichem Nachnamen im Inhalt",
                         "att_surogat": conflict_other, "att_info": info_c, "att_status": status_c,
                         "name_surogats": {surogat},
+                        "n_messages": count_messages_with_name(addr, conflict_other),
                     })
                     continue
             check_relations(surogat, addr, combined, subject)
@@ -1536,16 +1559,34 @@ def main():
                 n3 += 1
 
         out.write("\n")
-        out.write("### 4) WIDERSPRUCH: Anhang oder Name im Inhalt deutet auf anderen Patienten hin als der Absender-Anzeigename ###\n")
+        out.write("### 4a) WIDERSPRUCH, aber mehrfach bestaetigt: Anhang/Name in mindestens 2 unabhaengigen Nachrichten derselben Adresse zeigt auf denselben Patienten ###\n")
+        write_comment(out, "Keine automatische Verarbeitung. Wiederholtes Signal ueber mehrere Nachrichten hinweg - deutlich staerkerer Hinweis, dass die Adresse trotz abweichendem Anzeigenamen tatsaechlich diesem Patienten gehoert (z.B. Zweitadresse), als ein einzelner Treffer. Bei Bestaetigung von Hand in Medical Office eintragen, oder die Zeile manuell in Abschnitt 1 verschieben.")
+        n4a = 0
+        n4b = 0
+        rows_conflict_sorted = sorted(rows_conflict, key=lambda c: -c.get("n_messages", 1))
+        for c in rows_conflict_sorted:
+            if c.get("n_messages", 1) < 2:
+                continue
+            att_full = f"{c['att_info']['nachname']}, {c['att_info']['vorname']}"
+            name_list = ", ".join(str(s) for s in c["name_surogats"])
+            subj = c["subject"][:80].replace("\t", " ").replace("\r", " ").replace("\n", " ")
+            out.write(f"{att_full}\t{c['att_surogat']}\t{c['att_info']['geburtsdatum']}\t{c['addr']}\t"
+                      f"{c['source']} zeigt in {c['n_messages']} unabhaengigen Nachrichten auf {c['att_surogat']}, Anzeigename passt zu Patientennr(n) {name_list}\t{c['att_status']}\t{fmt_last_fall(c['att_surogat'])}\t{subj}\t-\t-\n")
+            n4a += 1
+
+        out.write("\n")
+        out.write("### 4b) WIDERSPRUCH: Anhang oder Name im Inhalt deutet auf anderen Patienten hin als der Absender-Anzeigename (nur einzelner Beleg) ###\n")
         write_comment(out, "Keine automatische Verarbeitung (echte Widersprueche werden schon vorab durch Telefonnummer/Geburtsdatum im Text aufgeloest, wenn moeglich). Bei Bedarf von Hand in Medical Office klaeren, oder die Zeile manuell in Abschnitt 1 verschieben.")
-        n4 = 0
-        for c in rows_conflict:
+        for c in rows_conflict_sorted:
+            if c.get("n_messages", 1) >= 2:
+                continue
             att_full = f"{c['att_info']['nachname']}, {c['att_info']['vorname']}"
             name_list = ", ".join(str(s) for s in c["name_surogats"])
             subj = c["subject"][:80].replace("\t", " ").replace("\r", " ").replace("\n", " ")
             out.write(f"{att_full}\t{c['att_surogat']}\t{c['att_info']['geburtsdatum']}\t{c['addr']}\t"
                       f"{c['source']} zeigt auf {c['att_surogat']}, Anzeigename passt zu Patientennr(n) {name_list}\t{c['att_status']}\t{fmt_last_fall(c['att_surogat'])}\t{subj}\t-\t-\n")
-            n4 += 1
+            n4b += 1
+        n4 = n4a + n4b
 
         out.write("\n")
         out.write("### 6) Vermutlich fehlende Beziehungsdokumentation (patrelation) ###\n")
@@ -1635,6 +1676,8 @@ def main():
     print(f"Abschnitt 5 (vermutlich Tippfehler): {n5}")
     print(f"Abschnitt 3 (mehrdeutig, gruppiert je Absender): {n3}")
     print(f"Abschnitt 4 (Widersprueche Anhang/Name): {n4}")
+    print(f"  davon 4a) mehrfach bestaetigt (>=2 unabhaengige Nachrichten): {n4a}")
+    print(f"  davon 4b) nur einzelner Beleg: {n4b}")
     print(f"Abschnitt 6 (fehlende Beziehungsdokumentation): {n6}")
     print(f"Abschnitt 7 (verworfen, keine Anhaltspunkte): {n7}")
     print(f"Abschnitt 8 (verworfen, evtl. Sammeladresse): {n8}")

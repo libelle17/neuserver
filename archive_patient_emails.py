@@ -52,7 +52,8 @@ def silence():
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from find_missing_patient_emails import (
     OWN_ACCOUNT_EMAILS, decode_header_val, parse_from_header, iter_full_messages,
-    iter_headers,
+    iter_headers, dob_in_text, phone_tails_of_patient, phone_tails_in_text,
+    normalize_text, normalize_word, PHONE_FIELDS,
 )
 from audit_log import AuditLog, get_run_ts, get_run_phase
 import mail_id_cache
@@ -350,9 +351,23 @@ def gebdat_to_sql(yyyymmdd):
     return None
 
 
-def main():
-    apply_changes = "--apply" in sys.argv
+PATSTAMM_SELECT_FIELDS = (
+    "FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
+    "FEmail, FGeburtsdatum, " + ", ".join(PHONE_FIELDS)
+)
 
+
+def build_by_email():
+    """Adresse (klein geschrieben) -> Liste der Patienten, die diese Adresse
+    fuehren (patstamm.FEmail ODER in patient_addresses_db.py gestagt - siehe
+    unten). WICHTIG: eine Liste, NICHT ein einzelner Patient - dieselbe
+    Adresse kann inzwischen (z.B. Ehepaar, oder eine ueber Abschnitt 3 der
+    Vorschlagsliste bestaetigte gemeinsame Adresse) zu MEHREREN Patienten
+    gehoeren. Ein frueherer Bug hier (by_email als 1:1-Zuordnung, per
+    setdefault() nur der erste gewinnt) haette bei so einer Adresse
+    stillschweigend alle bis auf einen Patienten von neuer Archivierung
+    ausgeschlossen - siehe resolve_ambiguous_patients() fuer die
+    Entscheidung, bei WEM konkret eine mehrdeutige Adresse einsortiert wird."""
     import secure_pwd
     password = secure_pwd.read_protected_password(PWD_FILE)
     try:
@@ -363,16 +378,17 @@ def main():
         print(f"FEHLER: medoff-Datenbank (wser) nicht erreichbar: {e}")
         sys.exit(3)
     cur = conn.cursor()
-    cur.execute("SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
-                "FEmail, FGeburtsdatum FROM patstamm "
-                "WHERE FEmail IS NOT NULL AND FEmail <> ''")
+    cur.execute(f"SELECT {PATSTAMM_SELECT_FIELDS} FROM patstamm "
+                f"WHERE FEmail IS NOT NULL AND FEmail <> ''")
     patients = cur.fetchall()
 
     by_email = {}
+    seen_pairs = set()  # (addr, FSurogat) - Dubletten vermeiden (FEmail + gestaged identisch)
     for p in patients:
         addr = (p["FEmail"] or "").strip().lower()
         if addr:
-            by_email[addr] = p
+            by_email.setdefault(addr, []).append(p)
+            seen_pairs.add((addr, p["FSurogat"]))
 
     # Zusaetzlich alle in patient_addresses_db.py "gestagten" Adressen
     # beruecksichtigen - auch fuer Patienten, deren medoff-Eintrag (noch)
@@ -385,8 +401,7 @@ def main():
     padb_conn.close()
     if staged:
         placeholders = ",".join(["%s"] * len(staged))
-        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
-                    f"FEmail, FGeburtsdatum FROM patstamm "
+        cur.execute(f"SELECT {PATSTAMM_SELECT_FIELDS} FROM patstamm "
                     f"WHERE FSurogat IN ({placeholders})", tuple(staged.keys()))
         staged_patients = {str(p["FSurogat"]): p for p in cur.fetchall()}
         for patientennummer, addrs in staged.items():
@@ -394,9 +409,152 @@ def main():
             if info is None:
                 continue
             for addr in addrs:
-                by_email.setdefault(addr.strip().lower(), info)
+                addr_l = addr.strip().lower()
+                key = (addr_l, info["FSurogat"])
+                if key in seen_pairs:
+                    continue
+                seen_pairs.add(key)
+                by_email.setdefault(addr_l, []).append(info)
 
     conn.close()
+    return by_email
+
+
+def _match_candidates_in_text(candidates, text):
+    """Prueft fuer jeden Kandidaten (patstamm-Zeile), ob Name, Geburtsdatum
+    oder Telefonnummer im (bereits normalize_text()-normalisierten) Text
+    vorkommen. Liefert die Teilmenge von candidates mit mindestens einem
+    Treffer."""
+    hits = []
+    for c in candidates:
+        nachname = normalize_word((c["FNachname"] or "").strip())
+        vorname = normalize_word((c["FVorname"] or "").strip())
+        name_ok = (len(nachname) >= 3 and re.search(r"\b" + re.escape(nachname) + r"\b", text)) or \
+                  (len(vorname) >= 3 and re.search(r"\b" + re.escape(vorname) + r"\b", text))
+        dob_ok = dob_in_text((c["FGeburtsdatum"] or "").strip(), text)
+        phone_ok = bool(phone_tails_of_patient(c) & phone_tails_in_text(text))
+        if name_ok or dob_ok or phone_ok:
+            hits.append(c)
+    return hits
+
+
+def _staff_filed_hash_match(candidates, attachment_digest):
+    """Prueft, ob der Anhang (per Inhalts-Hash) bereits OHNE das automatische
+    'Email'-Namensmuster im P:\\dok-Ordner GENAU EINES Kandidaten liegt - ein
+    starkes Indiz, dass eine Mitarbeiterin/ein Mitarbeiter die Datei bereits
+    von Hand dem richtigen Patienten zugeordnet hat. Nur die Ordner der
+    uebergebenen (wenigen) Kandidaten werden durchsucht, nicht ganz P:\\dok."""
+    if not attachment_digest:
+        return []
+    hits = []
+    for c in candidates:
+        pat_dir = os.path.join(DOK_ROOT, str(c["FSurogat"]))
+        if not os.path.isdir(pat_dir):
+            continue
+        try:
+            filenames = os.listdir(pat_dir)
+        except OSError:
+            continue
+        for fn in filenames:
+            if " email " in fn.lower():
+                continue
+            fp = os.path.join(pat_dir, fn)
+            if not os.path.isfile(fp):
+                continue
+            try:
+                with open(fp, "rb") as f:
+                    digest = hashlib.sha256(f.read()).hexdigest()
+            except OSError:
+                continue
+            if digest == attachment_digest:
+                hits.append(c)
+                break
+    return hits
+
+
+def _ocr_pdf_bytes(pdf_bytes):
+    """Letzter Schritt der Kaskade in resolve_ambiguous_patients() (teuer,
+    daher nur wenn alle vorherigen Stufen nichts ergeben haben): rastert die
+    ersten Seiten und laesst Tesseract den Text erkennen. Liefert "", wenn
+    Tesseract/die noetigen Bibliotheken hier nicht verfuegbar sind oder OCR
+    fehlschlaegt - der Aufrufer faellt dann auf den sicheren "bei allen
+    Kandidaten archivieren"-Standard zurueck. TESSERACT_CMD/TESSDATA_DIR
+    per Umgebungsvariable ueberschreibbar (fuer die Linux-Portierung)."""
+    try:
+        import fitz
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        return ""
+    tesseract_cmd = os.environ.get("TESSERACT_CMD", r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+    tessdata_dir = os.environ.get("TESSDATA_DIR", r"C:\Mail\Thunderbird\Profiles\Scripts\tessdata_custom")
+    if not os.path.isfile(tesseract_cmd):
+        return ""
+    try:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        Image.MAX_IMAGE_PIXELS = None
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        parts = []
+        for i, page in enumerate(doc):
+            if i >= 3:
+                break
+            pix = page.get_pixmap(dpi=300)
+            img = Image.open(BytesIO(pix.tobytes("png")))
+            parts.append(pytesseract.image_to_string(img, lang="deu",
+                                                       config=f"--tessdata-dir {tessdata_dir}"))
+        doc.close()
+        return "\n".join(parts)
+    except Exception:
+        return ""
+
+
+def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes):
+    """Bei einer Adresse, die zu MEHREREN Patienten gehoert (siehe
+    pat_email_adr): versucht anhand des Inhalts DIESER Nachricht
+    herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
+    wenn die vorherige(n) noch nichts ergeben haben:
+      1. Name/Geburtsdatum/Telefonnummer in Betreff+Body+Anhangname.
+      2. Anhang-Inhalts-Hash bereits (ohne 'Email'-Namensmuster, also von
+         Hand durch Mitarbeiter) in genau eines Kandidaten P:\\dok-Ordner.
+      3. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
+         Telefon-Pruefung.
+      4. OCR des Anhangs (nur wenn 1-3 nichts ergeben haben).
+    Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
+    wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
+    unterscheiden konnte (der Aufrufer archiviert dann sicherheitshalber bei
+    ALLEN Kandidaten - fehlende Dokumentation waere das groessere Risiko als
+    eine zusaetzliche Kopie, siehe [[project-email-archiving-feature]])."""
+    combined = normalize_text(f"{subject_raw} {body_html or ''} {attachment_name or ''}")
+    hits = _match_candidates_in_text(candidates, combined)
+    if hits:
+        return hits
+
+    if not attachment_bytes:
+        return []
+
+    attachment_digest = hashlib.sha256(attachment_bytes).hexdigest()
+    hits = _staff_filed_hash_match(candidates, attachment_digest)
+    if len(hits) == 1:
+        return hits
+
+    native_text = normalize_pdf_text(extract_pdf_text(BytesIO(attachment_bytes)))
+    if native_text:
+        hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {native_text}"))
+        if hits:
+            return hits
+
+    ocr_text = _ocr_pdf_bytes(attachment_bytes)
+    if ocr_text:
+        hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {ocr_text}"))
+        if hits:
+            return hits
+
+    return []
+
+
+def main():
+    apply_changes = "--apply" in sys.argv
+    by_email = build_by_email()
 
     dokprot_conn = None
     dokprot_cur = None
@@ -417,6 +575,8 @@ def main():
     n_created = 0
     n_error = 0
     n_cached_skip = 0
+    n_ambiguous_resolved = 0
+    n_ambiguous_fallback_all = 0
     existing_text_cache = {}  # dok-Ordner -> {pfad: normalisierter_text}
     seen_cache = open_seen_cache()
 
@@ -518,22 +678,22 @@ def main():
             _, sender_addr = parse_from_header(from_raw) if from_raw else ("", "")
             recipients = parse_addr_list(to_raw) + parse_addr_list(cc_raw)
 
-            patient = None
+            matched_patients = None
             direction = None
             partner_addr = None
             if sender_addr in OWN_ACCOUNT_EMAILS:
                 for r in recipients:
                     if r in by_email:
-                        patient = by_email[r]
+                        matched_patients = by_email[r]
                         direction = "gesan."
                         partner_addr = r
                         break
             elif sender_addr in by_email:
-                patient = by_email[sender_addr]
+                matched_patients = by_email[sender_addr]
                 direction = "angek."
                 partner_addr = sender_addr
 
-            if patient is None:
+            if not matched_patients:
                 n_no_patient += 1
                 continue
 
@@ -545,71 +705,10 @@ def main():
                 n_error += 1
                 continue
 
-            fpatnr = str(patient["FSurogat"])
-            nachname = sanitize((patient["FNachname"] or "").strip())
-            vorname = sanitize((patient["FVorname"] or "").strip())
-            zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
-            betreff_sane = sanitize(subject_raw)[:100]
-            richtungswort = "von" if direction == "angek." else "an"
-            name_prefix_sane = sanitize(build_name_prefix(patient))
-            base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
-                         f"{zeitstempel}, {betreff_sane}")
-
             try:
                 mtime_ts = msg_date.timestamp()
             except (OverflowError, OSError, ValueError):
                 mtime_ts = None
-
-            target_dir = os.path.join(DOK_ROOT, fpatnr)
-            if target_dir not in existing_text_cache:
-                cache = {}
-                if os.path.isdir(target_dir):
-                    # Erst alle in Frage kommenden Dateien mit aktuellem
-                    # mtime/Groesse einsammeln, dann den persistenten Cache
-                    # (dok_text_cache) in EINER Abfrage fuer genau diese
-                    # Pfade abfragen - unveraenderte Dateien muessen so bei
-                    # wiederholten Laeufen nicht erneut per pdfplumber
-                    # ausgelesen werden (Ursache der wiederkehrenden
-                    # "Zeitbudget ueberschritten"-Warnungen).
-                    candidates = []  # (fp, mtime_unix, groesse)
-                    for fn in os.listdir(target_dir):
-                        if not (fn.lower().endswith(".pdf") and " email " in fn.lower()):
-                            continue
-                        fp = os.path.join(target_dir, fn)
-                        try:
-                            st = os.stat(fp)
-                        except OSError:
-                            continue
-                        if st.st_size > MAX_CACHE_FILE_BYTES:
-                            continue
-                        candidates.append((fp, int(st.st_mtime), st.st_size))
-
-                    cached = mail_id_cache.load_dok_text_cache(mail_cache_conn, [c[0] for c in candidates])
-
-                    # Zeitbudget gilt nur noch fuer tatsaechliche Extraktion
-                    # (Cache-Treffer sind praktisch kostenlos) - manche
-                    # Patienten haben viele/grosse bestehende PDFs (z.B.
-                    # umfangreiche Scans), deren Textextraktion kein eigenes
-                    # Zeitlimit hat und daher den ganzen Lauf blockieren
-                    # koennte. Nach Ablauf des Budgets werden restliche neue/
-                    # geaenderte Dateien fuer den Duplikat-Vergleich einfach
-                    # ausgelassen (im schlimmsten Fall entsteht dadurch mal
-                    # eine redundante PDF, statt dass der Lauf haengen bleibt).
-                    cache_build_start = time.monotonic()
-                    for fp, mtime_unix, groesse in candidates:
-                        hit = cached.get(fp)
-                        if hit is not None and hit[0] == mtime_unix and hit[1] == groesse:
-                            txt = hit[2]
-                        else:
-                            if time.monotonic() - cache_build_start > CACHE_BUILD_BUDGET_SECONDS:
-                                print(f"WARNUNG: Zeitbudget beim Cache-Aufbau fuer Patient {fpatnr} "
-                                      f"ueberschritten - restliche bestehende Dateien nicht verglichen.")
-                                break
-                            txt = normalize_pdf_text(extract_pdf_text(fp))
-                            new_dok_text_rows.append((fp, mtime_unix, groesse, txt))
-                        if txt:
-                            cache[fp] = txt
-                existing_text_cache[target_dir] = cache
 
             try:
                 msg = email.message_from_bytes(raw, policy=email.policy.compat32)
@@ -617,105 +716,192 @@ def main():
                 n_error += 1
                 continue
 
-            # Ohne Vergleichsziel (Ordner noch leer) und im Trockenlauf lohnt
-            # sich das aufwendige PDF-Rendering nicht - der Duplikat-Vergleich
-            # haette ohnehin nichts, womit er vergleichen koennte. Email und
-            # Anhaenge werden trotzdem informativ ins Aenderungsprotokoll
-            # geschrieben (nur ohne tatsaechliches Rendern).
-            if not apply_changes and not existing_text_cache[target_dir]:
-                n_created += 1
-                audit.log("Email als PDF abgelegt", fpatnr, neu=base_name + ".pdf", pfad=target_dir)
-                for att_name, _ in extract_attachments(msg):
-                    att_name_sane = sanitize(decode_header_val(att_name))
-                    audit.log("Anhang abgelegt", fpatnr, neu=f"{base_name}; {att_name_sane}", pfad=target_dir)
-                continue
-
-            # Gerenderter/extrahierter Text einer Nachricht aendert sich nie -
-            # aus dem persistenten Cache wiederverwenden, wenn vorhanden
-            # (spart das teure Rendern, das war beim wiederholten Testlauf
-            # der dominante Zeitanteil). pdf_bytes bleibt dann zunaechst
-            # None - erst tatsaechlich rendern, wenn sich unten herausstellt,
-            # dass die Nachricht wirklich neu abgelegt werden muss.
-            pdf_bytes = None
-            if message_id and message_id in render_cache:
-                candidate_text = render_cache[message_id]
+            if len(matched_patients) == 1:
+                resolved_patients = matched_patients
             else:
-                pdf_bytes = render_message(msg, from_raw, to_raw, date_raw, subject_raw)
-                if pdf_bytes is None:
-                    n_error += 1
+                # Adresse gehoert (in pat_email_adr) zu MEHREREN Patienten
+                # (z.B. Ehepaar mit gemeinsamer Adresse, oder eine ueber
+                # Abschnitt 3 der Vorschlagsliste bestaetigte gemeinsame
+                # Adresse) - resolve_ambiguous_patients() versucht anhand
+                # dieser konkreten Nachricht herauszufinden, wen sie
+                # tatsaechlich betrifft. Ohne jeden Beleg werden
+                # sicherheitshalber ALLE Kandidaten bedient (fehlende
+                # Dokumentation im richtigen Patienten waere das groessere
+                # Risiko als eine zusaetzliche Kopie bei einem falschen).
+                body_text_raw = extract_body_html(msg)
+                first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
+                resolved_patients = resolve_ambiguous_patients(
+                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data)
+                if resolved_patients:
+                    n_ambiguous_resolved += 1
+                else:
+                    n_ambiguous_fallback_all += 1
+                    resolved_patients = matched_patients
+
+            richtungswort = "von" if direction == "angek." else "an"
+
+            # Nachrichteninhalt (Rendering/Text) ist patientenunabhaengig -
+            # einmal pro Nachricht ermittelt/gerendert, nicht pro Patient
+            # (auch wenn resolved_patients mehrere enthaelt).
+            pdf_bytes = None
+            candidate_text = render_cache.get(message_id) if message_id else None
+
+            for patient in resolved_patients:
+                fpatnr = str(patient["FSurogat"])
+                nachname = sanitize((patient["FNachname"] or "").strip())
+                vorname = sanitize((patient["FVorname"] or "").strip())
+                zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
+                betreff_sane = sanitize(subject_raw)[:100]
+                name_prefix_sane = sanitize(build_name_prefix(patient))
+                base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
+                             f"{zeitstempel}, {betreff_sane}")
+
+                target_dir = os.path.join(DOK_ROOT, fpatnr)
+                if target_dir not in existing_text_cache:
+                    cache = {}
+                    if os.path.isdir(target_dir):
+                        # Erst alle in Frage kommenden Dateien mit aktuellem
+                        # mtime/Groesse einsammeln, dann den persistenten Cache
+                        # (dok_text_cache) in EINER Abfrage fuer genau diese
+                        # Pfade abfragen - unveraenderte Dateien muessen so bei
+                        # wiederholten Laeufen nicht erneut per pdfplumber
+                        # ausgelesen werden (Ursache der wiederkehrenden
+                        # "Zeitbudget ueberschritten"-Warnungen).
+                        candidates = []  # (fp, mtime_unix, groesse)
+                        for fn in os.listdir(target_dir):
+                            if not (fn.lower().endswith(".pdf") and " email " in fn.lower()):
+                                continue
+                            fp = os.path.join(target_dir, fn)
+                            try:
+                                st = os.stat(fp)
+                            except OSError:
+                                continue
+                            if st.st_size > MAX_CACHE_FILE_BYTES:
+                                continue
+                            candidates.append((fp, int(st.st_mtime), st.st_size))
+
+                        cached = mail_id_cache.load_dok_text_cache(mail_cache_conn, [c[0] for c in candidates])
+
+                        # Zeitbudget gilt nur noch fuer tatsaechliche Extraktion
+                        # (Cache-Treffer sind praktisch kostenlos) - manche
+                        # Patienten haben viele/grosse bestehende PDFs (z.B.
+                        # umfangreiche Scans), deren Textextraktion kein eigenes
+                        # Zeitlimit hat und daher den ganzen Lauf blockieren
+                        # koennte. Nach Ablauf des Budgets werden restliche neue/
+                        # geaenderte Dateien fuer den Duplikat-Vergleich einfach
+                        # ausgelassen (im schlimmsten Fall entsteht dadurch mal
+                        # eine redundante PDF, statt dass der Lauf haengen bleibt).
+                        cache_build_start = time.monotonic()
+                        for fp, mtime_unix, groesse in candidates:
+                            hit = cached.get(fp)
+                            if hit is not None and hit[0] == mtime_unix and hit[1] == groesse:
+                                txt = hit[2]
+                            else:
+                                if time.monotonic() - cache_build_start > CACHE_BUILD_BUDGET_SECONDS:
+                                    print(f"WARNUNG: Zeitbudget beim Cache-Aufbau fuer Patient {fpatnr} "
+                                          f"ueberschritten - restliche bestehende Dateien nicht verglichen.")
+                                    break
+                                txt = normalize_pdf_text(extract_pdf_text(fp))
+                                new_dok_text_rows.append((fp, mtime_unix, groesse, txt))
+                            if txt:
+                                cache[fp] = txt
+                    existing_text_cache[target_dir] = cache
+
+                # Ohne Vergleichsziel (Ordner noch leer) und im Trockenlauf lohnt
+                # sich das aufwendige PDF-Rendering nicht - der Duplikat-Vergleich
+                # haette ohnehin nichts, womit er vergleichen koennte. Email und
+                # Anhaenge werden trotzdem informativ ins Aenderungsprotokoll
+                # geschrieben (nur ohne tatsaechliches Rendern).
+                if not apply_changes and not existing_text_cache[target_dir]:
+                    n_created += 1
+                    audit.log("Email als PDF abgelegt", fpatnr, neu=base_name + ".pdf", pfad=target_dir)
+                    for att_name, _ in extract_attachments(msg):
+                        att_name_sane = sanitize(decode_header_val(att_name))
+                        audit.log("Anhang abgelegt", fpatnr, neu=f"{base_name}; {att_name_sane}", pfad=target_dir)
                     continue
-                candidate_text = normalize_pdf_text(extract_pdf_text(BytesIO(pdf_bytes)))
-                if message_id:
-                    new_render_rows.append((message_id, candidate_text))
-                    render_cache[message_id] = candidate_text
 
-            is_duplicate = any(candidate_text == t for t in existing_text_cache[target_dir].values())
-            if is_duplicate:
-                n_duplicate += 1
-                mark_seen(seen_cache, msg_hash)
-                continue
+                # Gerenderter/extrahierter Text einer Nachricht aendert sich nie -
+                # aus dem persistenten Cache wiederverwenden, wenn vorhanden
+                # (spart das teure Rendern, das war beim wiederholten Testlauf
+                # der dominante Zeitanteil). pdf_bytes bleibt dann zunaechst
+                # None - erst tatsaechlich rendern, wenn sich unten herausstellt,
+                # dass die Nachricht wirklich neu abgelegt werden muss.
+                if candidate_text is None:
+                    pdf_bytes = render_message(msg, from_raw, to_raw, date_raw, subject_raw)
+                    if pdf_bytes is None:
+                        n_error += 1
+                        continue
+                    candidate_text = normalize_pdf_text(extract_pdf_text(BytesIO(pdf_bytes)))
+                    if message_id:
+                        new_render_rows.append((message_id, candidate_text))
+                        render_cache[message_id] = candidate_text
 
-            if pdf_bytes is None:
-                # Text kam aus dem Cache, aber die Nachricht ist (noch) nicht
-                # abgelegt - jetzt tatsaechlich rendern, um sie speichern zu
-                # koennen.
-                pdf_bytes = render_message(msg, from_raw, to_raw, date_raw, subject_raw)
-                if pdf_bytes is None:
-                    n_error += 1
+                is_duplicate = any(candidate_text == t for t in existing_text_cache[target_dir].values())
+                if is_duplicate:
+                    n_duplicate += 1
                     continue
 
-            gebdat_sql = gebdat_to_sql(patient["FGeburtsdatum"])
-            pdf_path = os.path.join(target_dir, cap_filename_length(base_name + ".pdf"))
-            try:
-                if apply_changes:
-                    os.makedirs(target_dir, exist_ok=True)
-                    suffix = 2
-                    while os.path.exists(pdf_path):
-                        pdf_path = os.path.join(target_dir, cap_filename_length(f"{base_name} ({suffix}).pdf"))
-                        suffix += 1
-                    with open(pdf_path, "wb") as f:
-                        f.write(pdf_bytes)
-                    if mtime_ts is not None:
-                        os.utime(pdf_path, (mtime_ts, mtime_ts))
-                    existing_text_cache[target_dir][pdf_path] = candidate_text
-                    log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
-                                email_adresse=partner_addr)
-                audit.log("Email als PDF abgelegt", fpatnr, neu=os.path.basename(pdf_path), pfad=target_dir)
-                n_created += 1
-            except Exception as e:
-                # Nur Fehlertyp + Patientennummer ausgeben, NIE die Exception-
-                # Nachricht selbst (kann den vollen Dateipfad inkl. Patienten-
-                # name enthalten).
-                n_error += 1
-                print(f"FEHLER bei Email-PDF fuer Patient {fpatnr}: {type(e).__name__}")
-                continue
+                if pdf_bytes is None:
+                    # Text kam aus dem Cache, aber die Nachricht ist (noch) nicht
+                    # bei DIESEM Patienten abgelegt - jetzt tatsaechlich rendern,
+                    # um sie speichern zu koennen.
+                    pdf_bytes = render_message(msg, from_raw, to_raw, date_raw, subject_raw)
+                    if pdf_bytes is None:
+                        n_error += 1
+                        continue
 
-            for att_name, att_data in extract_attachments(msg):
+                gebdat_sql = gebdat_to_sql(patient["FGeburtsdatum"])
+                pdf_path = os.path.join(target_dir, cap_filename_length(base_name + ".pdf"))
                 try:
-                    att_name_disp = decode_header_val(att_name)
-                    att_name_sane = sanitize(att_name_disp)
-                    att_root, att_ext = os.path.splitext(att_name_sane)
-                    att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_name_sane}"))
                     if apply_changes:
+                        os.makedirs(target_dir, exist_ok=True)
                         suffix = 2
-                        while os.path.exists(att_path):
-                            att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_root} ({suffix}){att_ext}"))
+                        while os.path.exists(pdf_path):
+                            pdf_path = os.path.join(target_dir, cap_filename_length(f"{base_name} ({suffix}).pdf"))
                             suffix += 1
-                        with open(att_path, "wb") as f:
-                            f.write(att_data)
+                        with open(pdf_path, "wb") as f:
+                            f.write(pdf_bytes)
                         if mtime_ts is not None:
-                            os.utime(att_path, (mtime_ts, mtime_ts))
+                            os.utime(pdf_path, (mtime_ts, mtime_ts))
+                        existing_text_cache[target_dir][pdf_path] = candidate_text
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                    att_name_disp, os.path.basename(att_path), len(att_data),
-                                    att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
-                    audit.log("Anhang abgelegt", fpatnr, neu=os.path.basename(att_path), pfad=target_dir)
+                                    "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
+                                    email_adresse=partner_addr)
+                    audit.log("Email als PDF abgelegt", fpatnr, neu=os.path.basename(pdf_path), pfad=target_dir)
+                    n_created += 1
                 except Exception as e:
-                    # Nur Fehlertyp + Patientennummer ausgeben, NIE die
-                    # Exception-Nachricht selbst (kann den vollen Dateipfad
-                    # inkl. Patientenname enthalten, z.B. bei OSError).
+                    # Nur Fehlertyp + Patientennummer ausgeben, NIE die Exception-
+                    # Nachricht selbst (kann den vollen Dateipfad inkl. Patienten-
+                    # name enthalten).
                     n_error += 1
-                    print(f"FEHLER bei Anhang fuer Patient {fpatnr}: {type(e).__name__}")
+                    print(f"FEHLER bei Email-PDF fuer Patient {fpatnr}: {type(e).__name__}")
+                    continue
+
+                for att_name, att_data in extract_attachments(msg):
+                    try:
+                        att_name_disp = decode_header_val(att_name)
+                        att_name_sane = sanitize(att_name_disp)
+                        att_root, att_ext = os.path.splitext(att_name_sane)
+                        att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_name_sane}"))
+                        if apply_changes:
+                            suffix = 2
+                            while os.path.exists(att_path):
+                                att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_root} ({suffix}){att_ext}"))
+                                suffix += 1
+                            with open(att_path, "wb") as f:
+                                f.write(att_data)
+                            if mtime_ts is not None:
+                                os.utime(att_path, (mtime_ts, mtime_ts))
+                            log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
+                                        att_name_disp, os.path.basename(att_path), len(att_data),
+                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
+                        audit.log("Anhang abgelegt", fpatnr, neu=os.path.basename(att_path), pfad=target_dir)
+                    except Exception as e:
+                        # Nur Fehlertyp + Patientennummer ausgeben, NIE die
+                        # Exception-Nachricht selbst (kann den vollen Dateipfad
+                        # inkl. Patientenname enthalten, z.B. bei OSError).
+                        n_error += 1
+                        print(f"FEHLER bei Anhang fuer Patient {fpatnr}: {type(e).__name__}")
 
             if apply_changes:
                 mark_seen(seen_cache, msg_hash)
@@ -735,6 +921,8 @@ def main():
     print(f"Fehler (Datum/Parsing/PDF-Rendering): {n_error}")
     print(f"Bereits vorhanden (inhaltlich, uebersprungen): {n_duplicate}")
     print(("Erzeugt" if apply_changes else "Wuerde erzeugt (Trockenlauf)") + f": {n_created}")
+    print(f"Mehrdeutige Adresse (mehrere Patienten) - per Inhalt eingegrenzt: {n_ambiguous_resolved}")
+    print(f"Mehrdeutige Adresse - kein Beleg gefunden, sicherheitshalber bei allen archiviert: {n_ambiguous_fallback_all}")
 
 
 if __name__ == "__main__":

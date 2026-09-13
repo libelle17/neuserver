@@ -34,7 +34,8 @@ from archive_patient_emails import (
     parse_addr_list, sanitize, cap_filename_length, gebdat_to_sql,
     log_dokprot, open_seen_cache, mark_seen, connect_dokprot,
     render_message, extract_attachments, extract_pdf_text, normalize_pdf_text,
-    get_header, build_name_prefix,
+    get_header, build_name_prefix, PATSTAMM_SELECT_FIELDS,
+    resolve_ambiguous_patients, extract_body_html,
 )
 import patient_addresses_db as padb
 import mail_id_cache
@@ -117,24 +118,36 @@ def connect_medoff():
 
 
 def build_by_email():
+    """Adresse -> LISTE der Patienten, die diese Adresse fuehren (nicht ein
+    einzelner Patient - siehe archive_patient_emails.build_by_email(), von
+    der diese Funktion bewusst eine eigene Kopie ist: connect_medoff() ist
+    hier Linux/Windows-plattformabhaengig, siehe oben, waehrend die dortige
+    Version einen Windows-eigenen DPAPI-Zugriff verwendet). Ein frueherer Bug
+    (1:1-Zuordnung per setdefault(), nur der erste Patient gewinnt) haette
+    bei einer inzwischen mehreren Patienten zugeordneten Adresse (Ehepaar,
+    oder eine ueber Abschnitt 3 der Vorschlagsliste bestaetigte gemeinsame
+    Adresse) alle bis auf einen Patienten stillschweigend von neuer
+    Archivierung ausgeschlossen - siehe resolve_ambiguous_patients() in
+    archive_patient_emails.py fuer die Entscheidung, bei WEM konkret eine
+    mehrdeutige Adresse einsortiert wird."""
     conn = connect_medoff()
     cur = conn.cursor()
-    cur.execute("SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
-                "FEmail, FGeburtsdatum FROM patstamm "
-                "WHERE FEmail IS NOT NULL AND FEmail <> ''")
+    cur.execute(f"SELECT {PATSTAMM_SELECT_FIELDS} FROM patstamm "
+                f"WHERE FEmail IS NOT NULL AND FEmail <> ''")
     by_email = {}
+    seen_pairs = set()
     for p in cur.fetchall():
         addr = (p["FEmail"] or "").strip().lower()
         if addr:
-            by_email[addr] = p
+            by_email.setdefault(addr, []).append(p)
+            seen_pairs.add((addr, p["FSurogat"]))
 
     padb_conn = padb.connect()
     staged = padb.addresses_by_patient(padb_conn)
     padb_conn.close()
     if staged:
         placeholders = ",".join(["%s"] * len(staged))
-        cur.execute(f"SELECT FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
-                    f"FEmail, FGeburtsdatum FROM patstamm "
+        cur.execute(f"SELECT {PATSTAMM_SELECT_FIELDS} FROM patstamm "
                     f"WHERE FSurogat IN ({placeholders})", tuple(staged.keys()))
         staged_patients = {str(p["FSurogat"]): p for p in cur.fetchall()}
         for pat_id, addrs in staged.items():
@@ -142,7 +155,12 @@ def build_by_email():
             if info is None:
                 continue
             for addr in addrs:
-                by_email.setdefault(addr.strip().lower(), info)
+                addr_l = addr.strip().lower()
+                key = (addr_l, info["FSurogat"])
+                if key in seen_pairs:
+                    continue
+                seen_pairs.add(key)
+                by_email.setdefault(addr_l, []).append(info)
     conn.close()
     return by_email
 
@@ -300,22 +318,22 @@ def poll_once(pwd, by_email, apply_changes, full=False):
             _, sender_addr = parse_from_header(from_raw) if from_raw else ("", "")
             recipients = parse_addr_list(to_raw) + parse_addr_list(cc_raw)
 
-            patient = None
+            matched_patients = None
             direction = None
             partner_addr = None
             if sender_addr in OWN_ACCOUNT_EMAILS:
                 for r in recipients:
                     if r in by_email:
-                        patient = by_email[r]
+                        matched_patients = by_email[r]
                         direction = "gesan."
                         partner_addr = r
                         break
             elif sender_addr in by_email:
-                patient = by_email[sender_addr]
+                matched_patients = by_email[sender_addr]
                 direction = "angek."
                 partner_addr = sender_addr
 
-            if patient is None:
+            if not matched_patients:
                 continue
             n_relevant += 1
 
@@ -325,110 +343,128 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                 msg_date = None
             if msg_date is None:
                 n_error += 1
-                print(f"FEHLER (kein/ungueltiges Datum) bei Patient {patient['FSurogat']}")
+                print(f"FEHLER (kein/ungueltiges Datum) bei Patient {matched_patients[0]['FSurogat']}")
                 continue
-
-            fpatnr = str(patient["FSurogat"])
-            nachname = sanitize((patient["FNachname"] or "").strip())
-            vorname = sanitize((patient["FVorname"] or "").strip())
-            zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
-            betreff_sane = sanitize(subject_raw)[:100]
-            richtungswort = "von" if direction == "angek." else "an"
-            name_prefix_sane = sanitize(build_name_prefix(patient))
-            base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
-                         f"{zeitstempel}, {betreff_sane}")
             try:
                 mtime_ts = msg_date.timestamp()
             except (OverflowError, OSError, ValueError):
                 mtime_ts = None
 
-            target_dir = os.path.join(DOK_ROOT, fpatnr)
-            existing = {}
-            if os.path.isdir(target_dir):
-                candidates = []
-                for fn in os.listdir(target_dir):
-                    if not (fn.lower().endswith(".pdf") and " email " in fn.lower()):
-                        continue
-                    fp = os.path.join(target_dir, fn)
-                    try:
-                        st = os.stat(fp)
-                    except OSError:
-                        continue
-                    candidates.append((fp, int(st.st_mtime), st.st_size))
-                cached = mail_id_cache.load_dok_text_cache(mail_cache_conn, [c[0] for c in candidates])
-                new_dok_rows = []
-                for fp, mtime_unix, groesse in candidates:
-                    hit = cached.get(fp)
-                    if hit is not None and hit[0] == mtime_unix and hit[1] == groesse:
-                        txt = hit[2]
-                    else:
-                        txt = normalize_pdf_text(extract_pdf_text(fp))
-                        new_dok_rows.append((fp, mtime_unix, groesse, txt))
-                    if txt:
-                        existing[fp] = txt
-                if new_dok_rows:
-                    mail_id_cache.upsert_dok_text_batch(mail_cache_conn, new_dok_rows)
+            if len(matched_patients) == 1:
+                resolved_patients = matched_patients
+            else:
+                # Adresse gehoert (pat_email_adr) zu MEHREREN Patienten -
+                # resolve_ambiguous_patients() (archive_patient_emails.py)
+                # versucht anhand dieser Nachricht herauszufinden, wen sie
+                # betrifft. Ohne jeden Beleg werden sicherheitshalber ALLE
+                # Kandidaten bedient (fehlende Dokumentation waere das
+                # groessere Risiko als eine zusaetzliche Kopie).
+                body_text_raw = extract_body_html(msg)
+                first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
+                resolved_patients = resolve_ambiguous_patients(
+                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data)
+                if not resolved_patients:
+                    resolved_patients = matched_patients
 
+            richtungswort = "von" if direction == "angek." else "an"
+
+            # Nachrichteninhalt (Rendering) ist patientenunabhaengig - einmal
+            # pro Nachricht, nicht pro Patient.
             pdf_bytes = render_message(msg, from_raw, to_raw, date_raw, subject_raw)
             if pdf_bytes is None:
                 n_error += 1
-                print(f"FEHLER (Rendern fehlgeschlagen) bei Patient {patient['FSurogat']}")
+                print(f"FEHLER (Rendern fehlgeschlagen) bei Patient {matched_patients[0]['FSurogat']}")
                 continue
             candidate_text = normalize_pdf_text(extract_pdf_text(BytesIO(pdf_bytes)))
 
-            if any(candidate_text == t for t in existing.values()):
-                n_duplicate += 1
-                if apply_changes:
-                    mark_seen(seen_cache, msg_hash)
-                continue
+            for patient in resolved_patients:
+                fpatnr = str(patient["FSurogat"])
+                nachname = sanitize((patient["FNachname"] or "").strip())
+                vorname = sanitize((patient["FVorname"] or "").strip())
+                zeitstempel = msg_date.strftime("%y%m%d %H%M%S")
+                betreff_sane = sanitize(subject_raw)[:100]
+                name_prefix_sane = sanitize(build_name_prefix(patient))
+                base_name = (f"{name_prefix_sane} Email {richtungswort} {partner_addr} "
+                             f"{zeitstempel}, {betreff_sane}")
 
-            gebdat_sql = gebdat_to_sql(patient["FGeburtsdatum"])
-            pdf_path = os.path.join(target_dir, cap_filename_length(base_name + ".pdf"))
-            try:
-                if apply_changes:
-                    os.makedirs(target_dir, exist_ok=True)
-                    suffix = 2
-                    while os.path.exists(pdf_path):
-                        pdf_path = os.path.join(target_dir, cap_filename_length(f"{base_name} ({suffix}).pdf"))
-                        suffix += 1
-                    with open(pdf_path, "wb") as f:
-                        f.write(pdf_bytes)
-                    if mtime_ts is not None:
-                        os.utime(pdf_path, (mtime_ts, mtime_ts))
-                    log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
-                                email_adresse=partner_addr)
-                audit.log("Email als PDF abgelegt (POP3-Direktabruf)", fpatnr,
-                          neu=os.path.basename(pdf_path), pfad=target_dir)
-                n_created += 1
-            except Exception as e:
-                n_error += 1
-                print(f"FEHLER bei Email-PDF fuer Patient {fpatnr}: {type(e).__name__}")
-                continue
+                target_dir = os.path.join(DOK_ROOT, fpatnr)
+                existing = {}
+                if os.path.isdir(target_dir):
+                    candidates = []
+                    for fn in os.listdir(target_dir):
+                        if not (fn.lower().endswith(".pdf") and " email " in fn.lower()):
+                            continue
+                        fp = os.path.join(target_dir, fn)
+                        try:
+                            st = os.stat(fp)
+                        except OSError:
+                            continue
+                        candidates.append((fp, int(st.st_mtime), st.st_size))
+                    cached = mail_id_cache.load_dok_text_cache(mail_cache_conn, [c[0] for c in candidates])
+                    new_dok_rows = []
+                    for fp, mtime_unix, groesse in candidates:
+                        hit = cached.get(fp)
+                        if hit is not None and hit[0] == mtime_unix and hit[1] == groesse:
+                            txt = hit[2]
+                        else:
+                            txt = normalize_pdf_text(extract_pdf_text(fp))
+                            new_dok_rows.append((fp, mtime_unix, groesse, txt))
+                        if txt:
+                            existing[fp] = txt
+                    if new_dok_rows:
+                        mail_id_cache.upsert_dok_text_batch(mail_cache_conn, new_dok_rows)
 
-            for att_name, att_data in extract_attachments(msg):
+                if any(candidate_text == t for t in existing.values()):
+                    n_duplicate += 1
+                    continue
+
+                gebdat_sql = gebdat_to_sql(patient["FGeburtsdatum"])
+                pdf_path = os.path.join(target_dir, cap_filename_length(base_name + ".pdf"))
                 try:
-                    att_name_disp = decode_header_val(att_name)
-                    att_name_sane = sanitize(att_name_disp)
-                    att_root, att_ext = os.path.splitext(att_name_sane)
-                    att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_name_sane}"))
                     if apply_changes:
+                        os.makedirs(target_dir, exist_ok=True)
                         suffix = 2
-                        while os.path.exists(att_path):
-                            att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_root} ({suffix}){att_ext}"))
+                        while os.path.exists(pdf_path):
+                            pdf_path = os.path.join(target_dir, cap_filename_length(f"{base_name} ({suffix}).pdf"))
                             suffix += 1
-                        with open(att_path, "wb") as f:
-                            f.write(att_data)
+                        with open(pdf_path, "wb") as f:
+                            f.write(pdf_bytes)
                         if mtime_ts is not None:
-                            os.utime(att_path, (mtime_ts, mtime_ts))
+                            os.utime(pdf_path, (mtime_ts, mtime_ts))
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
-                                    att_name_disp, os.path.basename(att_path), len(att_data),
-                                    att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
-                    audit.log("Anhang abgelegt (POP3-Direktabruf)", fpatnr,
-                              neu=os.path.basename(att_path), pfad=target_dir)
+                                    "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
+                                    email_adresse=partner_addr)
+                    audit.log("Email als PDF abgelegt (POP3-Direktabruf)", fpatnr,
+                              neu=os.path.basename(pdf_path), pfad=target_dir)
+                    n_created += 1
                 except Exception as e:
                     n_error += 1
-                    print(f"FEHLER bei Anhang fuer Patient {fpatnr}: {type(e).__name__}")
+                    print(f"FEHLER bei Email-PDF fuer Patient {fpatnr}: {type(e).__name__}")
+                    continue
+
+                for att_name, att_data in extract_attachments(msg):
+                    try:
+                        att_name_disp = decode_header_val(att_name)
+                        att_name_sane = sanitize(att_name_disp)
+                        att_root, att_ext = os.path.splitext(att_name_sane)
+                        att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_name_sane}"))
+                        if apply_changes:
+                            suffix = 2
+                            while os.path.exists(att_path):
+                                att_path = os.path.join(target_dir, cap_filename_length(f"{base_name}; {att_root} ({suffix}){att_ext}"))
+                                suffix += 1
+                            with open(att_path, "wb") as f:
+                                f.write(att_data)
+                            if mtime_ts is not None:
+                                os.utime(att_path, (mtime_ts, mtime_ts))
+                            log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
+                                        att_name_disp, os.path.basename(att_path), len(att_data),
+                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
+                        audit.log("Anhang abgelegt (POP3-Direktabruf)", fpatnr,
+                                  neu=os.path.basename(att_path), pfad=target_dir)
+                    except Exception as e:
+                        n_error += 1
+                        print(f"FEHLER bei Anhang fuer Patient {fpatnr}: {type(e).__name__}")
 
             if apply_changes:
                 mark_seen(seen_cache, msg_hash)
