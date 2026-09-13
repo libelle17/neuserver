@@ -19,6 +19,7 @@
 # angelegt) - PDF-Rendering und Textvergleich laufen aber schon mit, damit
 # die Zahlen realistisch sind.
 import re, os, sys, email, email.header, email.policy, email.utils, html, hashlib, time
+import collections
 import logging, contextlib
 import multiprocessing as mp
 import pymysql
@@ -424,12 +425,25 @@ def _match_candidates_in_text(candidates, text):
     """Prueft fuer jeden Kandidaten (patstamm-Zeile), ob Name, Geburtsdatum
     oder Telefonnummer im (bereits normalize_text()-normalisierten) Text
     vorkommen. Liefert die Teilmenge von candidates mit mindestens einem
-    Treffer."""
+    Treffer.
+
+    WICHTIG (dieselbe Regel wie in find_missing_patient_emails.py, Stichwort
+    nachname_ist_eindeutig): der Nachname zaehlt nur als Signal, wenn er
+    innerhalb DIESER Kandidatengruppe eindeutig ist - bei einer gemeinsamen
+    Adresse tragen Ehepaare/Familien fast immer denselben Nachnamen, so dass
+    ein Nachname-Treffer sonst praktisch JEDES Familienmitglied faelschlich
+    "bestaetigen" wuerde, statt zu unterscheiden. Ist der Nachname geteilt,
+    zaehlen nur noch Vorname, Geburtsdatum oder Telefonnummer."""
+    nachnamen = collections.Counter(
+        normalize_word((c["FNachname"] or "").strip()) for c in candidates
+    )
     hits = []
     for c in candidates:
         nachname = normalize_word((c["FNachname"] or "").strip())
         vorname = normalize_word((c["FVorname"] or "").strip())
-        name_ok = (len(nachname) >= 3 and re.search(r"\b" + re.escape(nachname) + r"\b", text)) or \
+        nachname_eindeutig = nachname and nachnamen[nachname] == 1
+        name_ok = (nachname_eindeutig and len(nachname) >= 3 and
+                   re.search(r"\b" + re.escape(nachname) + r"\b", text)) or \
                   (len(vorname) >= 3 and re.search(r"\b" + re.escape(vorname) + r"\b", text))
         dob_ok = dob_in_text((c["FGeburtsdatum"] or "").strip(), text)
         phone_ok = bool(phone_tails_of_patient(c) & phone_tails_in_text(text))
