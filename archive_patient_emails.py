@@ -354,8 +354,14 @@ def gebdat_to_sql(yyyymmdd):
 
 PATSTAMM_SELECT_FIELDS = (
     "FSurogat, FVorname, FNachname, FTitel, FNamensvorsatz, FNamenszusatz, "
-    "FEmail, FGeburtsdatum, " + ", ".join(PHONE_FIELDS)
+    "FEmail, FGeburtsdatum, FGeschlecht, " + ", ".join(PHONE_FIELDS)
 )
+
+# patstamm.FGeschlecht: '1' = Herr (99,4% der Faelle mit dieser Anrede),
+# '2' = Frau (99,7%) - statistisch ermittelt am 2026-09-14 (Werte '0'/'4'
+# sind selten/uneindeutig, z.B. Firmen/Sammelpatienten, werden ignoriert).
+GESCHLECHT_HERR = "1"
+GESCHLECHT_FRAU = "2"
 
 
 def build_by_email():
@@ -571,6 +577,32 @@ def _match_via_other_messages(candidates, addr):
 
 
 GREETING_WINDOW = 150
+SALUTATION_WINDOW = 100
+
+
+def _match_via_gender(candidates, body_html, direction):
+    """Kriterium 5 (Nutzer-Vorschlag 2026-09-14): bei GESENDETEN Mails
+    verraet die Anrede ('Sehr geehrte Frau ...'/'Sehr geehrter Herr ...',
+    auch 'Fr.') das Geschlecht der/des Angeschriebenen, unabhaengig vom
+    (oft geteilten) Nachnamen - abgeglichen mit patstamm.FGeschlecht der
+    Kandidaten. Nur anwendbar, wenn sich die Kandidaten ueberhaupt im
+    Geschlecht unterscheiden (sonst kein Unterscheidungswert, z.B. zwei
+    Schwestern) UND die Anrede eindeutig (nicht beides oder keins) ein
+    Geschlecht nennt. Empirisch gegen die 242 damals unloesbaren Faelle
+    getestet: 73 (30%) geloest, deutlich staerker als alle anderen
+    Zusatzkriterien."""
+    if direction != "gesan." or not body_html:
+        return []
+    fenster = normalize_text(_html_to_text(body_html))[:SALUTATION_WINDOW]
+    frau_ok = bool(re.search(r"\bfrau\b|\bfr\.", fenster))
+    herr_ok = bool(re.search(r"\bherr[n]?\b", fenster))
+    if frau_ok == herr_ok:
+        return []  # beides oder keins gefunden - keine Aussage moeglich
+    geschlechter = {c.get("FGeschlecht") for c in candidates}
+    if len(geschlechter) < 2:
+        return []  # alle Kandidaten gleiches Geschlecht - kein Unterscheidungswert
+    ziel = GESCHLECHT_FRAU if frau_ok else GESCHLECHT_HERR
+    return [c for c in candidates if c.get("FGeschlecht") == ziel]
 
 
 def _html_to_text(html_content):
@@ -635,10 +667,15 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
       3. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
          Telefon-Pruefung.
       4. OCR des Anhangs (nur wenn 1-3 nichts ergeben haben).
-      5. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
+      5. Bei GESENDETEN Mails: Geschlecht in der Anrede ('Frau'/'Herr'),
+         abgeglichen mit patstamm.FGeschlecht - nur wenn sich die
+         Kandidaten ueberhaupt im Geschlecht unterscheiden, siehe
+         _match_via_gender() (empirisch mit Abstand staerkstes
+         Zusatzkriterium: 73 von 242 sonst unloesbaren Faellen, 30%).
+      6. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
          wenn dieser unter den Kandidaten eindeutig ist) in den letzten
          Zeilen des Textes (Gruss/Signatur) - siehe _match_via_greeting().
-      6. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
+      7. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
          (nur als letzter Ausweg, siehe _match_via_other_messages()).
     Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
     wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
@@ -667,6 +704,10 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
             hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {ocr_text}"))
             if hits:
                 return hits
+
+    hits = _match_via_gender(candidates, body_html, direction)
+    if hits:
+        return hits
 
     hits = _match_via_greeting(candidates, body_html, direction)
     if hits:
