@@ -116,25 +116,32 @@ def build_name_prefix(patient):
 
 
 def log_dokprot(cur, fpatnr, nachname, vorname, gebdat_sql, ursp_name, dat_name,
-                 groesse, typ, laend_dt, email_adresse=None):
+                 groesse, typ, laend_dt, email_adresse=None, message_id=None, in_reply_to=None):
     """Traegt eine erzeugte Datei (Email-PDF oder Anhang) in dokprotlist ein,
     analog zum Vorgehen in DokimpKurz.au3 (Archivierungsmodus, kopart=0 - kein
     Sicherheits-/Zielverzeichnis, da die Datei direkt in P:\\dok landet).
 
     email_adresse: Absenderadresse (empfangene Email) bzw. Empfaengeradresse
     (gesandte Email) - seit der EmailAdresse-Migration 2026-09-12, None fuer
-    alle anderen (nicht email-bezogenen) Aufrufer."""
+    alle anderen (nicht email-bezogenen) Aufrufer.
+
+    message_id/in_reply_to: RFC822-Header der archivierten Nachricht - seit
+    2026-09-14 (Schema-Erweiterung fuer die Faeden-Verkettung, siehe
+    resolve_ambiguous_patients() Kriterium 6 / _match_via_thread()), None
+    fuer alle anderen Aufrufer."""
     pc = os.environ.get("COMPUTERNAME", "")[:10]
     benutzer = os.environ.get("USERNAME", "")[:10]
     patientenname = _mb3_safe(f"{nachname}, {vorname}")[:50]
     ursp_name = _mb3_safe(ursp_name)[:200]
     dat_name = _mb3_safe(dat_name)[:360]
+    message_id = (message_id or "").strip()[:255] or None
+    in_reply_to = (in_reply_to or "").strip()[:255] or None
     cur.execute(
         "INSERT INTO dokprotlist "
         "(kPatN, ntum, nImp, urspnm, Patientenname, Gebdat, Ort, Pat_ID, "
-        " urspName, datName, EmailAdresse, lAend, groesse, Typ, Mitarbeiter, PC, Benutzer, eingetragen) "
-        "VALUES (0, 0, 1, 0, %s, %s, '', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())",
-        (patientenname, gebdat_sql, fpatnr, ursp_name, dat_name, email_adresse,
+        " urspName, datName, EmailAdresse, MessageID, InReplyTo, lAend, groesse, Typ, Mitarbeiter, PC, Benutzer, eingetragen) "
+        "VALUES (0, 0, 1, 0, %s, %s, '', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())",
+        (patientenname, gebdat_sql, fpatnr, ursp_name, dat_name, email_adresse, message_id, in_reply_to,
          laend_dt, groesse, typ[:7], DOKPROT_MITARBEITER, pc, benutzer),
     )
 
@@ -655,8 +662,35 @@ def _match_via_greeting(candidates, body_html, direction):
     return hits_buchstabe
 
 
+def _match_via_thread(candidates, in_reply_to):
+    """Kriterium 6 (Nutzer-Vorschlag 2026-09-14, letzter Ausweg vor dem
+    'andere Nachrichten derselben Adresse'-Fallback): wenn diese Nachricht
+    Teil eines Fadens ist (In-Reply-To zeigt auf eine bereits archivierte
+    Message-ID, siehe dokprotlist.MessageID/InReplyTo), und jene Nachricht
+    EINDEUTIG genau einem einzigen Patienten zugeordnet wurde (nicht selbst
+    eine 'bei allen archiviert'-Mehrfachablage), wird diese Zuordnung
+    uebernommen - besonders wichtig fuer inhaltsleere automatische
+    Antworten/Empfangsbestaetigungen, die sonst kein einziges Signal
+    liefern wuerden."""
+    if not in_reply_to:
+        return []
+    try:
+        conn = padb.connect()
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT Pat_ID FROM dokprotlist WHERE MessageID=%s",
+                    (in_reply_to.strip()[:255],))
+        rows = cur.fetchall()
+        conn.close()
+    except Exception:
+        return []
+    if len(rows) != 1:
+        return []  # nicht gefunden, oder selbst mehrdeutig - kein verlaesslicher Beleg
+    pid = str(rows[0]["Pat_ID"])
+    return [c for c in candidates if str(c["FSurogat"]) == pid]
+
+
 def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes, addr=None,
-                                direction=None):
+                                direction=None, in_reply_to=None):
     """Bei einer Adresse, die zu MEHREREN Patienten gehoert (siehe
     pat_email_adr): versucht anhand des Inhalts DIESER Nachricht
     herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
@@ -675,7 +709,11 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
       6. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
          wenn dieser unter den Kandidaten eindeutig ist) in den letzten
          Zeilen des Textes (Gruss/Signatur) - siehe _match_via_greeting().
-      7. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
+      7. Faeden-Verkettung: In-Reply-To zeigt auf eine bereits eindeutig
+         einem einzigen Patienten zugeordnete Nachricht - siehe
+         _match_via_thread() (wichtig v.a. fuer inhaltsleere automatische
+         Antworten/Empfangsbestaetigungen).
+      8. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
          (nur als letzter Ausweg, siehe _match_via_other_messages()).
     Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
     wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
@@ -710,6 +748,10 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
         return hits
 
     hits = _match_via_greeting(candidates, body_html, direction)
+    if hits:
+        return hits
+
+    hits = _match_via_thread(candidates, in_reply_to)
     if hits:
         return hits
 
@@ -831,6 +873,7 @@ def main():
             if message_id and message_id not in wanted_message_ids and message_id in mail_cache:
                 n_no_patient += 1
                 continue
+            in_reply_to = get_header(raw, "In-Reply-To").strip()
 
             msg_hash = hashlib.sha256(raw).hexdigest()
             if seen_cache.execute("SELECT 1 FROM seen WHERE hash=?", (msg_hash,)).fetchone():
@@ -900,7 +943,7 @@ def main():
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
                     matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
-                    addr=partner_addr, direction=direction)
+                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to)
                 if resolved_patients:
                     n_ambiguous_resolved += 1
                 else:
@@ -1035,7 +1078,7 @@ def main():
                         existing_text_cache[target_dir][pdf_path] = candidate_text
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                     "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
-                                    email_adresse=partner_addr)
+                                    email_adresse=partner_addr, message_id=message_id, in_reply_to=in_reply_to)
                     audit.log("Email als PDF abgelegt", fpatnr, neu=os.path.basename(pdf_path), pfad=target_dir)
                     n_created += 1
                 except Exception as e:
@@ -1063,7 +1106,8 @@ def main():
                                 os.utime(att_path, (mtime_ts, mtime_ts))
                             log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                         att_name_disp, os.path.basename(att_path), len(att_data),
-                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
+                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr,
+                                        message_id=message_id, in_reply_to=in_reply_to)
                         audit.log("Anhang abgelegt", fpatnr, neu=os.path.basename(att_path), pfad=target_dir)
                     except Exception as e:
                         # Nur Fehlertyp + Patientennummer ausgeben, NIE die

@@ -309,6 +309,9 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                 n_error += 1
                 continue
 
+            message_id = get_header(raw, "Message-ID").strip()
+            in_reply_to = get_header(raw, "In-Reply-To").strip()
+
             from_raw = get_header(raw, "From")
             to_raw = get_header(raw, "To")
             cc_raw = get_header(raw, "Cc")
@@ -363,7 +366,7 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
                     matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
-                    addr=partner_addr, direction=direction)
+                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to)
                 if not resolved_patients:
                     resolved_patients = matched_patients
 
@@ -434,7 +437,7 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                             os.utime(pdf_path, (mtime_ts, mtime_ts))
                         log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                     "", os.path.basename(pdf_path), len(pdf_bytes), "pdf", msg_date,
-                                    email_adresse=partner_addr)
+                                    email_adresse=partner_addr, message_id=message_id, in_reply_to=in_reply_to)
                     audit.log("Email als PDF abgelegt (POP3-Direktabruf)", fpatnr,
                               neu=os.path.basename(pdf_path), pfad=target_dir)
                     n_created += 1
@@ -460,7 +463,8 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                                 os.utime(att_path, (mtime_ts, mtime_ts))
                             log_dokprot(dokprot_cur, fpatnr, nachname, vorname, gebdat_sql,
                                         att_name_disp, os.path.basename(att_path), len(att_data),
-                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr)
+                                        att_ext.lstrip("."), msg_date, email_adresse=partner_addr,
+                                        message_id=message_id, in_reply_to=in_reply_to)
                         audit.log("Anhang abgelegt (POP3-Direktabruf)", fpatnr,
                                   neu=os.path.basename(att_path), pfad=target_dir)
                     except Exception as e:
