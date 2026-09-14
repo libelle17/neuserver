@@ -522,7 +522,109 @@ def _ocr_pdf_bytes(pdf_bytes):
         return ""
 
 
-def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes):
+RENDERED_HEADER_RE = re.compile(r"betreff\s*:.*?(\n|$)", re.IGNORECASE)
+
+
+def strip_rendered_header(text):
+    """Die von build_pdf_html() erzeugten Basis-PDFs beginnen mit Von:/An:/
+    Datum:/Betreff:-Kopfzeilen - der Anzeigename der Mailbox (Von:/An:) darf
+    NICHT als Inhaltssignal gewertet werden, da er bei JEDER Nachricht von
+    dieser Adresse identisch ist, unabhaengig davon, wen die konkrete
+    Nachricht betrifft (z.B. "Max & Erika Mustermann" bei einer Ehepaar-
+    Adresse wuerde sonst beide Vornamen faelschlich in jeder Nachricht
+    bestaetigen). Schneidet daher alles bis einschliesslich der ersten
+    'Betreff:'-Zeile ab."""
+    m = RENDERED_HEADER_RE.search(text or "")
+    return text[m.end():] if m else (text or "")
+
+
+def _match_via_other_messages(candidates, addr):
+    """Letzte Kaskadenstufe, NUR wenn diese eine Nachricht selbst (Stufen 1-4)
+    keinerlei Beleg liefert: prueft ANDERE, bereits archivierte Nachrichten
+    DERSELBEN Absenderadresse (ueber dokprotlist.EmailAdresse) auf denselben
+    Name/Geburtsdatum/Telefon-Beleg. Bewusst nur als letzter Ausweg (nicht
+    routinemaessig) - Nutzer-Entscheidung 2026-09-14: ein woanders in der
+    Korrespondenz dieser Adresse gefundener Bezug ist ein schwaches, aber
+    besseres Signal als der blinde 'bei allen archivieren'-Standard."""
+    if not addr:
+        return []
+    try:
+        conn = padb.connect()
+        cur = conn.cursor()
+        cur.execute("SELECT Pat_ID, datName FROM dokprotlist WHERE EmailAdresse=%s "
+                    "AND datName NOT LIKE '%%; %%'", (addr,))
+        rows = cur.fetchall()
+        conn.close()
+    except Exception:
+        return []
+    hit_ids = set()
+    for row in rows:
+        fpath = os.path.join(DOK_ROOT, str(row["Pat_ID"]), row["datName"])
+        if not os.path.isfile(fpath):
+            continue
+        text = strip_rendered_header(extract_pdf_text(fpath))
+        if not text.strip():
+            continue
+        hits = _match_candidates_in_text(candidates, normalize_text(text))
+        hit_ids.update(str(c["FSurogat"]) for c in hits)
+    return [c for c in candidates if str(c["FSurogat"]) in hit_ids]
+
+
+GREETING_WINDOW = 150
+
+
+def _html_to_text(html_content):
+    """Grobe HTML->Text-Umwandlung, nur fuer den Gruss-Fensterausschnitt
+    (Kriterium 4) - muss nicht perfekt sein, nur Tags/Entities weit genug
+    entfernen, dass ein Wort am Ende des sichtbaren Textes nicht durch
+    Markup verdeckt wird."""
+    if not html_content:
+        return ""
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html_content, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    return text
+
+
+def _match_via_greeting(candidates, body_html, direction):
+    """Kriterium 4 (Nutzer-Vorschlag 2026-09-14): bei EMPFANGENEN Mails
+    (direction == 'angek.') steht der Absender-Vorname haeufig - ggf. auf
+    den Anfangsbuchstaben abgekuerzt ('Gruesse, P.' oder auch nur 'P.' ganz
+    ohne Grussformel) - in den letzten Zeilen. Nur der volle Vorname zaehlt
+    hier als eigenstaendig ausreichender Beleg; ein blosser Anfangsbuchstabe
+    ist zu schwach fuer eine alleinige automatische Zuordnung und wird NICHT
+    zurueckgegeben, wenn mehrere Kandidaten denselben Anfangsbuchstaben
+    teilen (sonst kein Gewinn gegenueber dem bisherigen Zustand).
+    Fuer GESENDETE Mails ('gesan.') wurde die spiegelbildliche Idee
+    (Anrede am Anfang) empirisch gegen echte Daten getestet und verworfen -
+    bei einer Ehepaar-/Familienadresse lautet die Anrede praktisch immer
+    'Liebe Familie <gemeinsamer Nachname>' und liefert daher keinen
+    zusaetzlichen, echten Unterscheidungswert (getestet 2026-09-14)."""
+    if direction != "angek." or not body_html:
+        return []
+    fenster = normalize_text(_html_to_text(body_html))[-GREETING_WINDOW:]
+    hits_voll = []
+    letter_to_candidates = {}
+    for c in candidates:
+        vor = normalize_word((c["FVorname"] or "").strip())
+        if not vor:
+            continue
+        if len(vor) >= 3 and re.search(r"\b" + re.escape(vor) + r"\b", fenster):
+            hits_voll.append(c)
+        letter_to_candidates.setdefault(vor[0], []).append(c)
+    if hits_voll:
+        return hits_voll
+    hits_buchstabe = []
+    for letter, cs in letter_to_candidates.items():
+        if len(cs) != 1:
+            continue  # Anfangsbuchstabe nicht eindeutig unter den Kandidaten
+        if re.search(r"\b" + re.escape(letter) + r"\.?\b", fenster):
+            hits_buchstabe.extend(cs)
+    return hits_buchstabe
+
+
+def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes, addr=None,
+                                direction=None):
     """Bei einer Adresse, die zu MEHREREN Patienten gehoert (siehe
     pat_email_adr): versucht anhand des Inhalts DIESER Nachricht
     herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
@@ -533,6 +635,11 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
       3. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
          Telefon-Pruefung.
       4. OCR des Anhangs (nur wenn 1-3 nichts ergeben haben).
+      5. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
+         wenn dieser unter den Kandidaten eindeutig ist) in den letzten
+         Zeilen des Textes (Gruss/Signatur) - siehe _match_via_greeting().
+      6. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
+         (nur als letzter Ausweg, siehe _match_via_other_messages()).
     Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
     wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
     unterscheiden konnte (der Aufrufer archiviert dann sicherheitshalber bei
@@ -543,25 +650,31 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     if hits:
         return hits
 
-    if not attachment_bytes:
-        return []
+    if attachment_bytes:
+        attachment_digest = hashlib.sha256(attachment_bytes).hexdigest()
+        hits = _staff_filed_hash_match(candidates, attachment_digest)
+        if len(hits) == 1:
+            return hits
 
-    attachment_digest = hashlib.sha256(attachment_bytes).hexdigest()
-    hits = _staff_filed_hash_match(candidates, attachment_digest)
-    if len(hits) == 1:
+        native_text = normalize_pdf_text(extract_pdf_text(BytesIO(attachment_bytes)))
+        if native_text:
+            hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {native_text}"))
+            if hits:
+                return hits
+
+        ocr_text = _ocr_pdf_bytes(attachment_bytes)
+        if ocr_text:
+            hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {ocr_text}"))
+            if hits:
+                return hits
+
+    hits = _match_via_greeting(candidates, body_html, direction)
+    if hits:
         return hits
 
-    native_text = normalize_pdf_text(extract_pdf_text(BytesIO(attachment_bytes)))
-    if native_text:
-        hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {native_text}"))
-        if hits:
-            return hits
-
-    ocr_text = _ocr_pdf_bytes(attachment_bytes)
-    if ocr_text:
-        hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {ocr_text}"))
-        if hits:
-            return hits
+    hits = _match_via_other_messages(candidates, addr)
+    if hits:
+        return hits
 
     return []
 
@@ -745,7 +858,8 @@ def main():
                 body_text_raw = extract_body_html(msg)
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
-                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data)
+                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
+                    addr=partner_addr, direction=direction)
                 if resolved_patients:
                     n_ambiguous_resolved += 1
                 else:

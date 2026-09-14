@@ -362,7 +362,8 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                 body_text_raw = extract_body_html(msg)
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
-                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data)
+                    matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
+                    addr=partner_addr, direction=direction)
                 if not resolved_patients:
                     resolved_patients = matched_patients
 
