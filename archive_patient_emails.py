@@ -18,7 +18,7 @@
 # Ohne --apply: reiner Trockenlauf (nur Zaehlung, keine Dateien werden
 # angelegt) - PDF-Rendering und Textvergleich laufen aber schon mit, damit
 # die Zahlen realistisch sind.
-import re, os, sys, email, email.header, email.policy, email.utils, html, hashlib, time
+import re, os, sys, email, email.header, email.policy, email.utils, html, hashlib, time, datetime
 import collections
 import logging, contextlib
 import multiprocessing as mp
@@ -662,7 +662,10 @@ def _match_via_greeting(candidates, body_html, direction):
     return hits_buchstabe
 
 
-def _match_via_thread(candidates, in_reply_to):
+REFERENCES_ID_RE = re.compile(r"<[^<>]+>")
+
+
+def _match_via_thread(candidates, in_reply_to, references=None):
     """Kriterium 6 (Nutzer-Vorschlag 2026-09-14, letzter Ausweg vor dem
     'andere Nachrichten derselben Adresse'-Fallback): wenn diese Nachricht
     Teil eines Fadens ist (In-Reply-To zeigt auf eine bereits archivierte
@@ -671,26 +674,94 @@ def _match_via_thread(candidates, in_reply_to):
     eine 'bei allen archiviert'-Mehrfachablage), wird diese Zuordnung
     uebernommen - besonders wichtig fuer inhaltsleere automatische
     Antworten/Empfangsbestaetigungen, die sonst kein einziges Signal
-    liefern wuerden."""
-    if not in_reply_to:
+    liefern wuerden.
+
+    Erweiterung 2026-09-15 (Nutzer-Beobachtung: Thunderbird zeigt eine
+    Nachricht per 'nach Thema sortieren' als Teil eines Fadens an, obwohl
+    In-Reply-To fehlt): faellt auf den References-Header zurueck, falls
+    In-Reply-To fehlt oder selbst nicht (eindeutig) aufloesbar ist. Prueft
+    ALLE referenzierten Message-IDs (nicht nur die letzte/direkte) gegen
+    dokprotlist.MessageID und sammelt die Menge der dadurch gefundenen
+    Pat_IDs - nur bei GENAU EINER eindeutigen Pat_ID ueber die gesamte
+    Kette hinweg wird aufgeloest (Referenzen auf nicht gefundene Nachrichten
+    werden ignoriert, aber ein Widerspruch zwischen zwei gefundenen
+    Referenzen verhindert die Aufloesung). Empirisch (Adresse mit Pat.
+    51980/67080, 2026-09-14): alle 25 sonst unloesbaren Nachrichten hatten
+    einen References-Header, 9 davon eindeutig aufloesbar, 0 widerspruechlich."""
+    def resolve(message_id):
+        try:
+            conn = padb.connect()
+            cur = conn.cursor()
+            cur.execute("SELECT DISTINCT Pat_ID FROM dokprotlist WHERE MessageID=%s",
+                        (message_id.strip()[:255],))
+            rows = cur.fetchall()
+            conn.close()
+        except Exception:
+            return None
+        if len(rows) != 1:
+            return None  # nicht gefunden, oder selbst mehrdeutig - kein verlaesslicher Beleg
+        return str(rows[0]["Pat_ID"])
+
+    if in_reply_to:
+        pid = resolve(in_reply_to)
+        if pid:
+            return [c for c in candidates if str(c["FSurogat"]) == pid]
+
+    if references:
+        found_pids = set()
+        for ref in REFERENCES_ID_RE.findall(references):
+            pid = resolve(ref)
+            if pid:
+                found_pids.add(pid)
+        if len(found_pids) == 1:
+            pid = next(iter(found_pids))
+            return [c for c in candidates if str(c["FSurogat"]) == pid]
+
+    return []
+
+
+AGE_THRESHOLD_YEARS = 18
+
+
+def _match_via_age(candidates, msg_date):
+    """Kriterium 7 (Nutzer-Vorschlag 2026-09-15): ein Kandidat, der zum
+    Nachrichtenzeitpunkt noch deutlich minderjaehrig war, ist als
+    eigenstaendiger Korrespondenzpartner unplausibel - bleibt nach dessen
+    Ausschluss GENAU EIN Kandidat uebrig, wird dieser als Beleg gewertet.
+    Gilt fuer BEIDE Richtungen (gesendet wie empfangen), siehe Nutzer-
+    Bestaetigung 2026-09-15. AGE_THRESHOLD_YEARS empirisch gewaehlt: unter
+    den offenen Faellen liegt eine klare Luecke zwischen echten
+    Kind-Faellen (durchweg <15 Jahre) und Erwachsenen-Konstellationen (ab
+    25 Jahre) - 18 Jahre liegt sicher in dieser Luecke. Kandidaten ohne
+    auswertbares Geburtsdatum werden NICHT ausgeschlossen (konservativ -
+    lieber kein Treffer als ein falscher)."""
+    if not msg_date:
         return []
-    try:
-        conn = padb.connect()
-        cur = conn.cursor()
-        cur.execute("SELECT DISTINCT Pat_ID FROM dokprotlist WHERE MessageID=%s",
-                    (in_reply_to.strip()[:255],))
-        rows = cur.fetchall()
-        conn.close()
-    except Exception:
-        return []
-    if len(rows) != 1:
-        return []  # nicht gefunden, oder selbst mehrdeutig - kein verlaesslicher Beleg
-    pid = str(rows[0]["Pat_ID"])
-    return [c for c in candidates if str(c["FSurogat"]) == pid]
+    old_enough = []
+    any_excluded = False
+    for c in candidates:
+        gdt_str = (c.get("FGeburtsdatum") or "").strip()
+        gdt = None
+        if len(gdt_str) == 8 and gdt_str.isdigit():
+            try:
+                gdt = datetime.datetime.strptime(gdt_str, "%Y%m%d")
+            except ValueError:
+                gdt = None
+        if gdt is None:
+            old_enough.append(c)  # unbekannt -> nicht ausschliessen
+            continue
+        age = msg_date.year - gdt.year - ((msg_date.month, msg_date.day) < (gdt.month, gdt.day))
+        if age < AGE_THRESHOLD_YEARS:
+            any_excluded = True
+        else:
+            old_enough.append(c)
+    if any_excluded and len(old_enough) == 1:
+        return old_enough
+    return []
 
 
 def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes, addr=None,
-                                direction=None, in_reply_to=None):
+                                direction=None, in_reply_to=None, references=None, msg_date=None):
     """Bei einer Adresse, die zu MEHREREN Patienten gehoert (siehe
     pat_email_adr): versucht anhand des Inhalts DIESER Nachricht
     herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
@@ -709,11 +780,17 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
       6. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
          wenn dieser unter den Kandidaten eindeutig ist) in den letzten
          Zeilen des Textes (Gruss/Signatur) - siehe _match_via_greeting().
-      7. Faeden-Verkettung: In-Reply-To zeigt auf eine bereits eindeutig
-         einem einzigen Patienten zugeordnete Nachricht - siehe
-         _match_via_thread() (wichtig v.a. fuer inhaltsleere automatische
-         Antworten/Empfangsbestaetigungen).
-      8. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
+      7. Faeden-Verkettung: In-Reply-To (oder ersatzweise References, siehe
+         Nutzer-Beobachtung 2026-09-15 zu Thunderbirds 'nach Thema
+         sortieren') zeigt auf eine bereits eindeutig einem einzigen
+         Patienten zugeordnete Nachricht - siehe _match_via_thread()
+         (wichtig v.a. fuer inhaltsleere automatische Antworten/
+         Empfangsbestaetigungen).
+      8. Alter: ein Kandidat, der zum Nachrichtenzeitpunkt noch deutlich
+         minderjaehrig war (< AGE_THRESHOLD_YEARS), scheidet als
+         eigenstaendiger Korrespondenzpartner aus - siehe _match_via_age()
+         (Nutzer-Vorschlag 2026-09-15).
+      9. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
          (nur als letzter Ausweg, siehe _match_via_other_messages()).
     Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
     wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
@@ -751,7 +828,11 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     if hits:
         return hits
 
-    hits = _match_via_thread(candidates, in_reply_to)
+    hits = _match_via_thread(candidates, in_reply_to, references)
+    if hits:
+        return hits
+
+    hits = _match_via_age(candidates, msg_date)
     if hits:
         return hits
 
@@ -874,6 +955,7 @@ def main():
                 n_no_patient += 1
                 continue
             in_reply_to = get_header(raw, "In-Reply-To").strip()
+            references_header = get_header(raw, "References").strip()
 
             msg_hash = hashlib.sha256(raw).hexdigest()
             if seen_cache.execute("SELECT 1 FROM seen WHERE hash=?", (msg_hash,)).fetchone():
@@ -943,7 +1025,8 @@ def main():
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
                     matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
-                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to)
+                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to,
+                    references=references_header, msg_date=msg_date)
                 if resolved_patients:
                     n_ambiguous_resolved += 1
                 else:

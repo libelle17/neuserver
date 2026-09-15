@@ -311,6 +311,7 @@ def poll_once(pwd, by_email, apply_changes, full=False):
 
             message_id = get_header(raw, "Message-ID").strip()
             in_reply_to = get_header(raw, "In-Reply-To").strip()
+            references_header = get_header(raw, "References").strip()
 
             from_raw = get_header(raw, "From")
             to_raw = get_header(raw, "To")
@@ -366,7 +367,8 @@ def poll_once(pwd, by_email, apply_changes, full=False):
                 first_att_name, first_att_data = next(iter(extract_attachments(msg)), (None, None))
                 resolved_patients = resolve_ambiguous_patients(
                     matched_patients, subject_raw, body_text_raw, first_att_name, first_att_data,
-                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to)
+                    addr=partner_addr, direction=direction, in_reply_to=in_reply_to,
+                    references=references_header, msg_date=msg_date)
                 if not resolved_patients:
                     resolved_patients = matched_patients
 
