@@ -140,6 +140,43 @@ def pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes):
     }
 
 
+def entdecke_fehlende_hauptadressen(padb_conn, mcur, apply_changes):
+    """Einmaliger/gelegentlicher Abgleich (Nutzer-Auftrag 2026-09-18, Befund
+    bei Pat. 79070: FEmail in medoff gesetzt, aber NIE eine
+    pat_email_adr-Zeile bekommen): findet medoff.patstamm-Patienten mit
+    gesetzter FEmail, fuer die noch KEINE pat_email_adr-Zeile mit rolle='h'
+    existiert - weder der dbsprot-Cursor (reagiert nur auf NEUE
+    Aenderungen seit dem Bookmark) noch der --full-Abgleich oben (prueft
+    nur bereits vorhandene rolle='h'-Zeilen) koennen so einen Patienten
+    jemals finden, wenn seine FEmail schon vor dem Start des Bookmarks
+    gesetzt wurde (oder auf einem Weg ohne dbsprot-Eintrag). Laeuft als
+    Teil von --full (Windows-Instanz-Empfehlung 2026-09-18: kein eigener
+    Cron-Takt noetig, "gelegentlich" reicht).
+
+    Nutzt sync_from_medoff() mit einer leeren verdraengten Adresse (es gibt
+    ja keine bisherige rolle='h'-Zeile zu verdraengen) - schreibt die neue
+    Zeile mit rolle='h', quelle='s', committed=1 (Absprache mit der
+    Windows-Instanz: quelle='s' fuer Konsistenz mit dem reaktiven Sync,
+    NICHT 'c' wie bei der Vorschlagsliste, da nicht darueber gefunden)."""
+    cur = padb_conn.cursor()
+    cur.execute("SELECT DISTINCT pat_id FROM pat_email_adr WHERE rolle=%s", (padb.ROLLE_HAUPT,))
+    bereits_bekannt = {str(row["pat_id"]) for row in cur.fetchall()}
+
+    mcur.execute("SELECT FSurogat, FEmail FROM patstamm WHERE FEmail IS NOT NULL AND FEmail <> ''")
+    fehlend = [(str(row["FSurogat"]), (row["FEmail"] or "").strip().lower())
+               for row in mcur.fetchall()
+               if (row["FEmail"] or "").strip() and str(row["FSurogat"]) not in bereits_bekannt]
+
+    print(f"medoff-Patienten mit FEmail ohne jede pat_email_adr-Zeile: {len(fehlend)}")
+    for pat_id, email in fehlend:
+        print(f"Fehlende Hauptadresse nachgetragen: Patient {pat_id}")
+        if apply_changes:
+            padb.sync_from_medoff(padb_conn, pat_id, email, "", verdraengte_rolle=padb.ROLLE_ALT)
+            padb.log_audit(padb_conn, "FEmail aus medoff nachtraeglich uebernommen (Entdeckungs-Abgleich)",
+                            pat_id, neu=email, bemerkung="linux1_sync_medoff_changes.py --full (Entdeckung)")
+    return len(fehlend)
+
+
 def main():
     apply_changes = "--apply" in sys.argv
     voller_lauf = "--full" in sys.argv
@@ -166,12 +203,18 @@ def main():
 
     stats = pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes)
 
+    n_entdeckt = 0
+    if voller_lauf:
+        n_entdeckt = entdecke_fehlende_hauptadressen(padb_conn, mcur, apply_changes)
+
     print("=== Ergebnis ===")
     print(f"Geprueft: {len(tracked)}")
     print(f"Unveraendert: {stats['n_unchanged']}")
     print(f"Synchronisiert (direkte medoff-Aenderung uebernommen): {stats['n_synced']}")
     print(f"Geleert (medoff-FEmail entfernt, keine Ersatzadresse): {stats['n_cleared']}")
     print(f"Patient in medoff nicht gefunden: {stats['n_patient_fehlt']}")
+    if voller_lauf:
+        print(f"Neu entdeckt (FEmail ohne jede pat_email_adr-Zeile): {n_entdeckt}")
     if not apply_changes:
         print("Trockenlauf beendet. Zum tatsaechlichen Schreiben erneut mit --apply aufrufen.")
 
