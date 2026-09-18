@@ -30,6 +30,12 @@
 #     (verifiziert). Bookmark liegt in DBSPROT_BOOKMARK_FILE; bei
 #     fehlender Datei wird NICHT rueckwirkend der komplette dbsprot-
 #     Bestand durchsucht, sondern beim aktuellen Maximalwert begonnen.
+#     Ein per dbsprot erkannter Patient OHNE bestehende pat_email_adr-Zeile
+#     (z.B. eine MFA traegt bei der Anmeldung eines neuen Patienten dessen
+#     Email gleich in Medical Office ein) wird noch im selben Zyklus als
+#     NEU entdeckt und nachgetragen (trage_neu_entdeckte_nach(), Nutzer-
+#     wunsch 2026-09-18) - kostet nur eine gezielte IN-Abfrage ueber die
+#     (normalerweise 0-1) frischen Kandidaten, keinen Vollscan.
 #   --full: die urspruengliche, erschoepfende Pruefung (alle committeten
 #     rolle='h'-Zeilen gegen medoff) als taeglicher Backstop, falls
 #     dbsprot aus irgendeinem Grund (z.B. eine Aenderung ausserhalb des
@@ -140,41 +146,52 @@ def pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes):
     }
 
 
-def entdecke_fehlende_hauptadressen(padb_conn, mcur, apply_changes):
-    """Einmaliger/gelegentlicher Abgleich (Nutzer-Auftrag 2026-09-18, Befund
-    bei Pat. 79070: FEmail in medoff gesetzt, aber NIE eine
-    pat_email_adr-Zeile bekommen): findet medoff.patstamm-Patienten mit
-    gesetzter FEmail, fuer die noch KEINE pat_email_adr-Zeile mit rolle='h'
-    existiert - weder der dbsprot-Cursor (reagiert nur auf NEUE
-    Aenderungen seit dem Bookmark) noch der --full-Abgleich oben (prueft
-    nur bereits vorhandene rolle='h'-Zeilen) koennen so einen Patienten
-    jemals finden, wenn seine FEmail schon vor dem Start des Bookmarks
-    gesetzt wurde (oder auf einem Weg ohne dbsprot-Eintrag). Laeuft als
-    Teil von --full (Windows-Instanz-Empfehlung 2026-09-18: kein eigener
-    Cron-Takt noetig, "gelegentlich" reicht).
-
-    Nutzt sync_from_medoff() mit einer leeren verdraengten Adresse (es gibt
-    ja keine bisherige rolle='h'-Zeile zu verdraengen) - schreibt die neue
-    Zeile mit rolle='h', quelle='s', committed=1 (Absprache mit der
-    Windows-Instanz: quelle='s' fuer Konsistenz mit dem reaktiven Sync,
-    NICHT 'c' wie bei der Vorschlagsliste, da nicht darueber gefunden)."""
+def bereits_bekannte_pat_ids(padb_conn):
+    """Alle pat_ids mit IRGENDEINER rolle='h'-Zeile (committed oder nicht) -
+    committed=0 zaehlt bewusst MIT (das ist eine wartende Korrektur, Sache
+    von linux1_commit_medoff.py - hier weder als 'geaendert' noch als 'neu
+    zu entdecken' anzufassen, siehe Modulkopf-Kommentar)."""
     cur = padb_conn.cursor()
     cur.execute("SELECT DISTINCT pat_id FROM pat_email_adr WHERE rolle=%s", (padb.ROLLE_HAUPT,))
-    bereits_bekannt = {str(row["pat_id"]) for row in cur.fetchall()}
+    return {str(row["pat_id"]) for row in cur.fetchall()}
 
-    mcur.execute("SELECT FSurogat, FEmail FROM patstamm WHERE FEmail IS NOT NULL AND FEmail <> ''")
-    fehlend = [(str(row["FSurogat"]), (row["FEmail"] or "").strip().lower())
-               for row in mcur.fetchall()
-               if (row["FEmail"] or "").strip() and str(row["FSurogat"]) not in bereits_bekannt]
 
-    print(f"medoff-Patienten mit FEmail ohne jede pat_email_adr-Zeile: {len(fehlend)}")
-    for pat_id, email in fehlend:
+def trage_neu_entdeckte_nach(padb_conn, kandidaten, apply_changes, herkunft):
+    """kandidaten: {pat_id: email} - Patienten mit gesetzter medoff-FEmail,
+    aber OHNE jede vorhandene rolle='h'-Zeile. Nutzt sync_from_medoff() mit
+    leerer verdraengter Adresse (nichts zu verdraengen) - schreibt rolle='h',
+    quelle='s', committed=1 (Absprache mit der Windows-Instanz 2026-09-18:
+    quelle='s' fuer Konsistenz mit dem reaktiven Sync, NICHT 'c' wie bei der
+    Vorschlagsliste, da nicht darueber gefunden)."""
+    n = 0
+    for pat_id, email in kandidaten.items():
+        if not email:
+            continue
+        n += 1
         print(f"Fehlende Hauptadresse nachgetragen: Patient {pat_id}")
         if apply_changes:
             padb.sync_from_medoff(padb_conn, pat_id, email, "", verdraengte_rolle=padb.ROLLE_ALT)
             padb.log_audit(padb_conn, "FEmail aus medoff nachtraeglich uebernommen (Entdeckungs-Abgleich)",
-                            pat_id, neu=email, bemerkung="linux1_sync_medoff_changes.py --full (Entdeckung)")
-    return len(fehlend)
+                            pat_id, neu=email, bemerkung=herkunft)
+    return n
+
+
+def entdecke_fehlende_hauptadressen(padb_conn, mcur, bereits_bekannt, apply_changes):
+    """Erschoepfender Abgleich (Teil von --full, taeglicher Backstop):
+    findet medoff.patstamm-Patienten mit gesetzter FEmail, fuer die noch
+    KEINE pat_email_adr-Zeile mit rolle='h' existiert. Faengt Faelle ab, bei
+    denen sowohl der dbsprot-Cursor als auch (unwahrscheinlich, aber
+    denkbar) der inkrementelle Entdeckungs-Pfad in main() etwas verpasst
+    haben sollten (z.B. eine Aenderung ausserhalb des normalen MO-Wegs, die
+    keinen dbsprot-Eintrag erzeugt) - volle Kosten (ein Scan von ganz
+    patstamm), deshalb bewusst nur hier, nicht im 2-Minuten-Takt."""
+    mcur.execute("SELECT FSurogat, FEmail FROM patstamm WHERE FEmail IS NOT NULL AND FEmail <> ''")
+    fehlend = {str(row["FSurogat"]): (row["FEmail"] or "").strip().lower()
+               for row in mcur.fetchall()
+               if (row["FEmail"] or "").strip() and str(row["FSurogat"]) not in bereits_bekannt}
+    print(f"medoff-Patienten mit FEmail ohne jede pat_email_adr-Zeile: {len(fehlend)}")
+    return trage_neu_entdeckte_nach(padb_conn, fehlend, apply_changes,
+                                     "linux1_sync_medoff_changes.py --full (Entdeckung)")
 
 
 def main():
@@ -194,18 +211,38 @@ def main():
     mcur = medoff_conn.cursor()
 
     neuer_bookmark = None
+    neue_kandidaten = set()
     if voller_lauf:
         print("Voller Lauf (--full): pruefe ALLE committeten Hauptadressen gegen medoff.")
         tracked = alle_committeten
     else:
         kandidaten, neuer_bookmark = kandidaten_seit_bookmark(mcur)
         tracked = {pid: alle_committeten[pid] for pid in kandidaten if pid in alle_committeten}
+        # Patienten, deren FEmail laut dbsprot GERADE ERST gesetzt wurde (z.B.
+        # MFA traegt bei der Anmeldung eines neuen Patienten die Adresse
+        # gleich in Medical Office ein) tauchen im selben dbsprot-Signal auf
+        # wie eine Aenderung - werden aber oben herausgefiltert, weil sie
+        # noch keine bestehende Zeile zum Vergleichen haben. Nutzerwunsch
+        # 2026-09-18: solche neuen Patienten sollen nicht erst beim
+        # naechtlichen --full-Lauf auftauchen, sondern noch im selben
+        # 2-Minuten-Zyklus - kostet nur eine gezielte IN-Abfrage ueber die
+        # (normalerweise 0-1) frisch erkannten Kandidaten, kein Vollscan.
+        bereits_bekannt = bereits_bekannte_pat_ids(padb_conn)
+        neue_kandidaten = kandidaten - bereits_bekannt
 
     stats = pruefe_und_synchronisiere(padb_conn, mcur, tracked, apply_changes)
 
     n_entdeckt = 0
     if voller_lauf:
-        n_entdeckt = entdecke_fehlende_hauptadressen(padb_conn, mcur, apply_changes)
+        bereits_bekannt = bereits_bekannte_pat_ids(padb_conn)
+        n_entdeckt = entdecke_fehlende_hauptadressen(padb_conn, mcur, bereits_bekannt, apply_changes)
+    elif neue_kandidaten:
+        placeholders = ",".join(["%s"] * len(neue_kandidaten))
+        mcur.execute(f"SELECT FSurogat, FEmail FROM patstamm WHERE FSurogat IN ({placeholders})",
+                     tuple(neue_kandidaten))
+        frisch = {str(row["FSurogat"]): (row["FEmail"] or "").strip().lower() for row in mcur.fetchall()}
+        n_entdeckt = trage_neu_entdeckte_nach(padb_conn, frisch, apply_changes,
+                                               "linux1_sync_medoff_changes.py (dbsprot, Entdeckung)")
 
     print("=== Ergebnis ===")
     print(f"Geprueft: {len(tracked)}")
@@ -213,8 +250,7 @@ def main():
     print(f"Synchronisiert (direkte medoff-Aenderung uebernommen): {stats['n_synced']}")
     print(f"Geleert (medoff-FEmail entfernt, keine Ersatzadresse): {stats['n_cleared']}")
     print(f"Patient in medoff nicht gefunden: {stats['n_patient_fehlt']}")
-    if voller_lauf:
-        print(f"Neu entdeckt (FEmail ohne jede pat_email_adr-Zeile): {n_entdeckt}")
+    print(f"Neu entdeckt (FEmail ohne jede pat_email_adr-Zeile): {n_entdeckt}")
     if not apply_changes:
         print("Trockenlauf beendet. Zum tatsaechlichen Schreiben erneut mit --apply aufrufen.")
 
