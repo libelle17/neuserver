@@ -371,6 +371,16 @@ GESCHLECHT_HERR = "1"
 GESCHLECHT_FRAU = "2"
 
 
+def _connect_medoff():
+    """Direkte Verbindung zur medoff-Datenbank (wser) - gemeinsam genutzt
+    von build_by_email() und _match_via_relatives()."""
+    import secure_pwd
+    password = secure_pwd.read_protected_password(PWD_FILE)
+    return pymysql.connect(host="wser", port=2020, user="medoff", password=password,
+                            database="medoff", connect_timeout=10,
+                            cursorclass=pymysql.cursors.DictCursor)
+
+
 def build_by_email():
     """Adresse (klein geschrieben) -> Liste der Patienten, die diese Adresse
     fuehren (patstamm.FEmail ODER in patient_addresses_db.py gestagt - siehe
@@ -382,12 +392,8 @@ def build_by_email():
     stillschweigend alle bis auf einen Patienten von neuer Archivierung
     ausgeschlossen - siehe resolve_ambiguous_patients() fuer die
     Entscheidung, bei WEM konkret eine mehrdeutige Adresse einsortiert wird."""
-    import secure_pwd
-    password = secure_pwd.read_protected_password(PWD_FILE)
     try:
-        conn = pymysql.connect(host="wser", port=2020, user="medoff", password=password,
-                                database="medoff", connect_timeout=10,
-                                cursorclass=pymysql.cursors.DictCursor)
+        conn = _connect_medoff()
     except Exception as e:
         print(f"FEHLER: medoff-Datenbank (wser) nicht erreichbar: {e}")
         sys.exit(3)
@@ -760,6 +766,105 @@ def _match_via_age(candidates, msg_date):
     return []
 
 
+# patrelation.FRelationtyp - vom Nutzer empirisch ermittelte Codes
+# (2026-09-17, geschlechtsabhaengige Bezeichnung, aber Code identisch je
+# Beziehungspaar, z.B. -11 = Tochter/Sohn). Nur echte persoenliche/familiaere
+# Beziehungen aufgenommen - beruflich/institutionelle Rollen (Aerztin/Arzt,
+# Betreuerin/Betreuer, Pflegedienst, Kostentraeger, Arbeitgeber, Ueberweiser,
+# Hausaerztin/Hausarzt, Heim(bewohner), Vormund/Muendel) und "Freund(in)"
+# (zu unspezifisch/zahlreich) bewusst AUSGESCHLOSSEN, um Fehltreffer zu
+# vermeiden (z.B. der Name der Hausaerztin im Briefkopf eines Arztbriefs
+# haette sonst faelschlich als Beleg gezaehlt).
+FAMILY_RELATIONTYPEN = {
+    -11,  # Tochter/Sohn
+    -12,  # Mutter/Vater
+    -13,  # Stieftochter/Stiefsohn
+    -14,  # Stief-Mutter/Stief-Vater
+    -15,  # Adoptiv-Tochter/Adoptiv-Sohn
+    -16,  # Adoptiv-Mutter/Adoptiv-Vater
+    -17,  # Grossmutter/Grossvater
+    -18,  # Enkelin/Enkel
+    -19,  # Tante/Onkel
+    -20,  # Nichte/Neffe
+    -21,  # Schwester/Bruder
+    -22,  # Halbschwester/Halbbruder
+    -23,  # Stiefschwester/Stiefbruder
+    -24,  # Cousine/Cousin
+    -25,  # Ehefrau/Ehemann
+    -26,  # Lebenspartnerin/Lebenspartner
+    -27,  # Ex-Ehefrau/Ex-Ehemann
+    -36,  # Schwaegerin/Schwager
+    -43,  # Schwieger-Tochter/Schwiegersohn
+    -44,  # Schwieger-Mutter/Schwieger-Vater
+    -45,  # Pflege-Tochter/Pflege-Sohn
+    -46,  # Pflege-Mutter/Pflege-Vater
+}
+
+
+def _relative_ids(cur, pid):
+    """Alle Patientennummern, die laut patrelation (in BEIDE Richtungen
+    gesucht, da die Beziehung mal vom einen, mal vom anderen 'Besitzer'
+    aus eingetragen sein kann) mit pid verwandt/verbunden sind - nur
+    Beziehungstypen aus FAMILY_RELATIONTYPEN. WICHTIG (Nutzer-Korrektur
+    2026-09-17): patrelation.FSurogat ist NUR der interne Zeilenschluessel
+    dieser Tabelle, NICHT die Patientennummer - die ist FPatid (Besitzer
+    der Beziehung) bzw. FReferenzid (Verwandter). Ein frueherer Versuch,
+    ueber FSurogat zu suchen, fand deshalb faelschlich keine Verwandten."""
+    placeholders = ",".join(["%s"] * len(FAMILY_RELATIONTYPEN))
+    cur.execute(
+        f"SELECT FReferenzid AS r FROM patrelation WHERE FPatid=%s AND FRelationtyp IN ({placeholders}) "
+        f"UNION SELECT FPatid AS r FROM patrelation WHERE FReferenzid=%s AND FRelationtyp IN ({placeholders})",
+        (pid, *FAMILY_RELATIONTYPEN, pid, *FAMILY_RELATIONTYPEN))
+    return {str(r["r"]) for r in cur.fetchall()}
+
+
+def _match_via_relatives(candidates, text):
+    """Kriterium (Nutzer-Vorschlag 2026-09-17): wenn der Name eines laut
+    patrelation mit GENAU EINEM Kandidaten verknuepften Verwandten im Text
+    vorkommt (und mit keinem anderen Kandidaten), spricht das fuer diesen
+    Kandidaten - z.B. wird eine Mail, die die Mutter eines minderjaehrigen
+    Patienten beim Namen nennt, diesem Patienten zugeordnet, auch wenn der
+    Patientenname selbst nicht im Text steht. Empirisch bestaetigt (Pat.
+    62053, Eltern in patrelation eingetragen): 7 von 245 bisher unloesbaren
+    Nachrichten sofort aufloesbar - aktuell nur bei dieser einen Adresse,
+    da patrelation bislang kaum gepflegt ist; wird mit besserer Pflege der
+    Verwandtschaftsverhaeltnisse durch die Praxis wertvoller."""
+    try:
+        conn = _connect_medoff()
+        cur = conn.cursor()
+        rel_map = {str(c["FSurogat"]): _relative_ids(cur, str(c["FSurogat"])) for c in candidates}
+        all_rel_ids = set()
+        for s in rel_map.values():
+            all_rel_ids |= s
+        rel_names = {}
+        if all_rel_ids:
+            placeholders = ",".join(["%s"] * len(all_rel_ids))
+            cur.execute(f"SELECT FSurogat, FVorname, FNachname FROM patstamm WHERE FSurogat IN ({placeholders})",
+                        tuple(all_rel_ids))
+            for r in cur.fetchall():
+                rel_names[str(r["FSurogat"])] = (
+                    normalize_word(r["FVorname"] or ""), normalize_word(r["FNachname"] or ""))
+        conn.close()
+    except Exception:
+        return []
+
+    matches = []
+    for c in candidates:
+        pid = str(c["FSurogat"])
+        for rel_id in rel_map.get(pid, ()):
+            names = rel_names.get(rel_id)
+            if not names:
+                continue
+            vorname, nachname = names
+            if (len(nachname) >= 3 and re.search(r"\b" + re.escape(nachname) + r"\b", text)) or \
+               (len(vorname) >= 3 and re.search(r"\b" + re.escape(vorname) + r"\b", text)):
+                matches.append(c)
+                break
+    if len(matches) == 1:
+        return matches
+    return []
+
+
 def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_name, attachment_bytes, addr=None,
                                 direction=None, in_reply_to=None, references=None, msg_date=None):
     """Bei einer Adresse, die zu MEHREREN Patienten gehoert (siehe
@@ -767,30 +872,33 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
     wenn die vorherige(n) noch nichts ergeben haben:
       1. Name/Geburtsdatum/Telefonnummer in Betreff+Body+Anhangname.
-      2. Anhang-Inhalts-Hash bereits (ohne 'Email'-Namensmuster, also von
+      2. Verwandtschaft: Name eines laut patrelation mit GENAU EINEM
+         Kandidaten verknuepften Verwandten im Text - siehe
+         _match_via_relatives() (Nutzer-Vorschlag 2026-09-17).
+      3. Anhang-Inhalts-Hash bereits (ohne 'Email'-Namensmuster, also von
          Hand durch Mitarbeiter) in genau eines Kandidaten P:\\dok-Ordner.
-      3. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
+      4. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
          Telefon-Pruefung.
-      4. OCR des Anhangs (nur wenn 1-3 nichts ergeben haben).
-      5. Bei GESENDETEN Mails: Geschlecht in der Anrede ('Frau'/'Herr'),
+      5. OCR des Anhangs (nur wenn 1-4 nichts ergeben haben).
+      6. Bei GESENDETEN Mails: Geschlecht in der Anrede ('Frau'/'Herr'),
          abgeglichen mit patstamm.FGeschlecht - nur wenn sich die
          Kandidaten ueberhaupt im Geschlecht unterscheiden, siehe
          _match_via_gender() (empirisch mit Abstand staerkstes
          Zusatzkriterium: 73 von 242 sonst unloesbaren Faellen, 30%).
-      6. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
+      7. Bei EMPFANGENEN Mails: Absender-Vorname (ggf. nur Anfangsbuchstabe,
          wenn dieser unter den Kandidaten eindeutig ist) in den letzten
          Zeilen des Textes (Gruss/Signatur) - siehe _match_via_greeting().
-      7. Faeden-Verkettung: In-Reply-To (oder ersatzweise References, siehe
+      8. Faeden-Verkettung: In-Reply-To (oder ersatzweise References, siehe
          Nutzer-Beobachtung 2026-09-15 zu Thunderbirds 'nach Thema
          sortieren') zeigt auf eine bereits eindeutig einem einzigen
          Patienten zugeordnete Nachricht - siehe _match_via_thread()
          (wichtig v.a. fuer inhaltsleere automatische Antworten/
          Empfangsbestaetigungen).
-      8. Alter: ein Kandidat, der zum Nachrichtenzeitpunkt noch deutlich
+      9. Alter: ein Kandidat, der zum Nachrichtenzeitpunkt noch deutlich
          minderjaehrig war (< AGE_THRESHOLD_YEARS), scheidet als
          eigenstaendiger Korrespondenzpartner aus - siehe _match_via_age()
          (Nutzer-Vorschlag 2026-09-15).
-      9. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
+      10. ANDERE bereits archivierte Nachrichten derselben Absenderadresse
          (nur als letzter Ausweg, siehe _match_via_other_messages()).
     Gibt die Teilmenge von 'candidates' zurueck, fuer die ein Beleg gefunden
     wurde - leere Liste, wenn keine Stufe irgendeinen Kandidaten
@@ -799,6 +907,10 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     eine zusaetzliche Kopie, siehe [[project-email-archiving-feature]])."""
     combined = normalize_text(f"{subject_raw} {body_html or ''} {attachment_name or ''}")
     hits = _match_candidates_in_text(candidates, combined)
+    if hits:
+        return hits
+
+    hits = _match_via_relatives(candidates, combined)
     if hits:
         return hits
 
