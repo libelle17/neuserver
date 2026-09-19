@@ -606,7 +606,18 @@ def _match_via_gender(candidates, body_html, direction):
     Zusatzkriterien."""
     if direction != "gesan." or not body_html:
         return []
-    fenster = normalize_text(_html_to_text(body_html))[:SALUTATION_WINDOW]
+    # Vor der ersten Grussformel abschneiden, damit bei kurzen Nachrichten
+    # nicht die eigene Unterschrift ("Fr. Dr. ...") mit ins Anrede-Fenster
+    # rutscht und faelschlich als "beides gefunden" gewertet wird
+    # (Nutzer-Fund 2026-09-19: "Guten Morgen Herr X, ... Mit freundlichen
+    # Gruessen\nFr." - SALUTATION_WINDOW=100 erfasste bisher auch das
+    # "Fr." der eigenen Unterschrift). NICHT einfach auf die erste Zeile
+    # kuerzen - die Anrede geht manchmal ueber 2 Zeilen ("Guten Tag\nHerr
+    # Mueller,"), das hatte ein erster Versuch faelschlich abgeschnitten.
+    fenster_voll = normalize_text(_html_to_text(body_html))[:SALUTATION_WINDOW]
+    m_gruss = re.search(r"mit freundlichen gr|freundliche gr|beste gr|viele gr|liebe gr|herzliche gr",
+                         fenster_voll)
+    fenster = fenster_voll[:m_gruss.start()] if m_gruss else fenster_voll
     frau_ok = bool(re.search(r"\bfrau\b|\bfr\.", fenster))
     herr_ok = bool(re.search(r"\bherr[n]?\b", fenster))
     if frau_ok == herr_ok:
@@ -871,15 +882,29 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     pat_email_adr): versucht anhand des Inhalts DIESER Nachricht
     herauszufinden, wen sie tatsaechlich betrifft. Kaskade, jede Stufe nur
     wenn die vorherige(n) noch nichts ergeben haben:
-      1. Name/Geburtsdatum/Telefonnummer in Betreff+Body+Anhangname.
-      2. Verwandtschaft: Name eines laut patrelation mit GENAU EINEM
+      1. Anhang-Inhalts-Hash bereits (ohne 'Email'-Namensmuster, also von
+         Hand durch Mitarbeiter) in genau eines Kandidaten P:\\dok-Ordner.
+      2. Nativer Text aus dem Anhang (PDF) - Name/Geburtsdatum/Telefon
+         NUR im Anhangtext selbst (nicht mit Betreff/Body vermischt).
+      3. OCR des Anhangs (nur wenn 1-2 nichts ergeben haben).
+      4. Verwandtschaft: Name eines laut patrelation mit GENAU EINEM
          Kandidaten verknuepften Verwandten im Text - siehe
          _match_via_relatives() (Nutzer-Vorschlag 2026-09-17).
-      3. Anhang-Inhalts-Hash bereits (ohne 'Email'-Namensmuster, also von
-         Hand durch Mitarbeiter) in genau eines Kandidaten P:\\dok-Ordner.
-      4. Nativer Text aus dem Anhang (PDF) - dieselbe Name/Geburtsdatum/
-         Telefon-Pruefung.
-      5. OCR des Anhangs (nur wenn 1-4 nichts ergeben haben).
+      5. Name/Geburtsdatum/Telefonnummer in Betreff+Body+Anhangname.
+
+      Reihenfolge 1-5 bewusst so (Umstellung 2026-09-20, Nutzer-Beobachtung
+      + Gegenpruefung): ein Name/Geburtsdatum/Telefon IM FLIESSTEXT
+      identifiziert oft nur den Korrespondenzpartner (z.B. ein Angehoeriger
+      als Ansprechpartner), nicht zwingend, wen der Inhalt betrifft -
+      waehrend Anhang-Inhalt und Verwandtschaft direkter mit dem
+      eigentlichen Thema der Nachricht verknuepft sind. Empirische Probe
+      (96 Nachrichten mit Anhang UND auswertbarem Body-Treffer): bei 9
+      Widerspruechen zwischen Anhang- und Body-Treffer bestaetigte die
+      Verwandtschaftspruefung (wo ueberhaupt ein Votum vorlag) IMMER den
+      Anhang (5 von 5), NIE den Body (0 von 5) - Beispiel: eine an den Sohn
+      adressierte Mail mit den Laborwerten SEINER MUTTER im Anhang wurde
+      bisher faelschlich dem Sohn zugeordnet, weil sein Name in der Anrede
+      stand.
       6. Bei GESENDETEN Mails: Geschlecht in der Anrede ('Frau'/'Herr'),
          abgeglichen mit patstamm.FGeschlecht - nur wenn sich die
          Kandidaten ueberhaupt im Geschlecht unterscheiden, siehe
@@ -906,13 +931,6 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
     ALLEN Kandidaten - fehlende Dokumentation waere das groessere Risiko als
     eine zusaetzliche Kopie, siehe [[project-email-archiving-feature]])."""
     combined = normalize_text(f"{subject_raw} {body_html or ''} {attachment_name or ''}")
-    hits = _match_candidates_in_text(candidates, combined)
-    if hits:
-        return hits
-
-    hits = _match_via_relatives(candidates, combined)
-    if hits:
-        return hits
 
     if attachment_bytes:
         attachment_digest = hashlib.sha256(attachment_bytes).hexdigest()
@@ -922,15 +940,23 @@ def resolve_ambiguous_patients(candidates, subject_raw, body_html, attachment_na
 
         native_text = normalize_pdf_text(extract_pdf_text(BytesIO(attachment_bytes)))
         if native_text:
-            hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {native_text}"))
+            hits = _match_candidates_in_text(candidates, normalize_text(native_text))
             if hits:
                 return hits
 
         ocr_text = _ocr_pdf_bytes(attachment_bytes)
         if ocr_text:
-            hits = _match_candidates_in_text(candidates, normalize_text(f"{combined} {ocr_text}"))
+            hits = _match_candidates_in_text(candidates, normalize_text(ocr_text))
             if hits:
                 return hits
+
+    hits = _match_via_relatives(candidates, combined)
+    if hits:
+        return hits
+
+    hits = _match_candidates_in_text(candidates, combined)
+    if hits:
+        return hits
 
     hits = _match_via_gender(candidates, body_html, direction)
     if hits:
