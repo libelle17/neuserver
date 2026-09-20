@@ -5,17 +5,24 @@
 #include <errno.h> // errno, ENOENT
 #include <fstream> // fstream
 #include <vector> // vector
-#include <stdlib.h> // system
+#include <stdio.h> // rename, perror, sprintf
+#include <unistd.h> // link, unlink, chown
 using namespace std;
 
 // traegt Inhalt von datalist.txt formatiert in anzeig.php ein, falls ersteres neuer
+// Aufruf: phpparse [Verzeichnis]   (Vorgabe: /srv/www/htdocs/php/)
 int main(int argc, char** argv)
 {
   // q=Quelle, v=Vorlage, z=Ziel
   char tbuf[45], obnoetig;
 //  const string verzq="/DATA/down/";
-  const string verzq="/srv/www/htdocs/php/";
-  const string verzz="/srv/www/htdocs/php/";
+  string verz="/srv/www/htdocs/php/";
+  if (argc>1) {
+    verz=argv[1];
+    if (verz.empty() || verz[verz.size()-1]!='/') verz+="/";
+  }
+  const string verzq=verz;
+  const string verzz=verz;
   string dq=verzq+"datalist.html";
   string dv=verzz+"anzeig.php";
   string dz=verzz+"anzeigneu.php";
@@ -89,12 +96,32 @@ int main(int argc, char** argv)
         }
       }
     }
-    if (!system(("mv \""+dv+"\" \""+dv+"_res\"").c_str())) {
-      cout<<("mv \""+dv+"\" \""+dv+"_res\"").c_str()<<" -> erfolgreich"<<endl;
-      if (!system(("mv \""+dz+"\" \""+dv+"\"").c_str())) {
-        cout<<("mv \""+dz+"\" \""+dv+"\"").c_str()<<" -> erfolgreich"<<endl;
-      }
+    ausg.close();
+    if (ausg.fail()) {
+      perror((string("\nFehler beim Schreiben von '")+dz+"'.").c_str());
+      unlink(dz.c_str());
+      return 1;
     }
+    // anzeig.php wird sehr haeufig aufgerufen (Patientenlaufzettel), darf also nie fehlen:
+    // Sicherung anzeig.php_res als harter Link auf die alte Datei, dann die neue mit
+    // einem einzigen rename() (atomar) an ihre Stelle setzen, mit Rechten/Besitzer der alten
+    const string dres=dv+"_res";
+    chmod(dz.c_str(),sv.st_mode&07777);
+    if (chown(dz.c_str(),sv.st_uid,sv.st_gid)) {} // nur als root moeglich, sonst egal
+    unlink(dres.c_str());
+    if (link(dv.c_str(),dres.c_str())) {
+      perror(("Sicherung '"+dres+"' nicht anlegbar").c_str());
+      unlink(dz.c_str());
+      return 1;
+    }
+    cout<<"link \""<<dv<<"\" \""<<dres<<"\" -> erfolgreich"<<endl;
+    if (rename(dz.c_str(),dv.c_str())) {
+      perror(("rename '"+dz+"' -> '"+dv+"' fehlgeschlagen").c_str());
+      unlink(dz.c_str());
+      return 1;
+    }
+    cout<<"rename \""<<dz<<"\" \""<<dv<<"\" -> erfolgreich"<<endl;
   }
+  return 0;
 }
 
