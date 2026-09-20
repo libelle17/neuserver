@@ -109,6 +109,7 @@ commandline() {
   obkonfignl=0; # Konfiguration neu laden
   obcron=0; # crontab sichern/übernehmen
   obvmime=0; # vmime (für vmparse2) aus github frisch bauen
+  obphpparse=0; # phpparse (Auswahllisten in anzeig.php) aus phpparse/phpparse.cpp bauen und nach /root/bin installieren
   obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
   obfachliches=0; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan) einrichten
   gespar="$@"
@@ -122,7 +123,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-patdirs ][-fachliches ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-phpparse ][-patdirs ][-fachliches ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -144,6 +145,7 @@ commandline() {
         printf "  $blau-must$reset:      kopiert vom Musterserver\n";
         printf "  ${blau}-mustneu${reset}:   wie -must, aber überschreibt vorhandene Dateien\n";
         printf "  $blau-vmime$reset:     baut vmime (für vmparse2) frisch aus github\n";
+        printf "  $blau-phpparse$reset:  baut phpparse aus phpparse/phpparse.cpp und installiert es nach /root/bin\n";
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
         printf "  $blau-fachliches$reset: richtet die oeffentlichen Fachliches-Webseiten ein (AID-Vergleich, HbA1c, Dienstplan)\n";
         printf "  -- Weitere Tools --\n";
@@ -187,6 +189,7 @@ commandline() {
           remotepc|rpc) obrpc=1;;
           cron) obcron=1;;
           vmime) obvmime=1;;
+          phpparse) obphpparse=1;;
           patdirs) obpatdirs=1;;
           fachliches) obfachliches=1;;
         esac;;
@@ -221,6 +224,7 @@ commandline() {
     [ "$obcron" = 1 ]&&   printf "obcron: ${blau}1$reset\n"
     [ "$obbw" = 1 ]&&     printf "obbw: ${blau}1$reset\n"
     [ "$obvmime" = 1 ]&&  printf "obvmime: ${blau}1$reset\n"
+    [ "$obphpparse" = 1 ]&&printf "obphpparse: ${blau}1$reset\n"
     [ "$obpatdirs" = 1 ]&&printf "obpatdirs: ${blau}1$reset\n"
 	fi;
 } # commandline
@@ -4015,6 +4019,22 @@ vmime_bauen() {
 	[ -d /root/vmparse2 ]&&ausf "(cd /root/vmparse2 && make -j$(nproc) && make install)" "${blau}";
 } # vmime_bauen
 
+# phpparse_bauen() – baut phpparse aus $instvz/phpparse/phpparse.cpp und
+# installiert es nach /root/bin. phpparse traegt die Auswahllisten aus
+# srv/www/htdocs/php/datalist.html in anzeig.php ein (cron alle 10 Min.).
+# Nicht ueber "make shziel"/ziele: das behielte den Unterverzeichnis-Pfad bei
+# (/root/bin/phpparse/phpparse statt /root/bin/phpparse). Bewusst mit g++
+# direkt und nicht mit dem Makefile hier, damit dessen wildcard *.cpp im
+# Hauptverzeichnis nichts baut (Unterverzeichnis wird nicht erfasst).
+phpparse_bauen() {
+	printf "${dblau}phpparse_bauen$reset()\n";
+	pq="$instvz/phpparse/phpparse.cpp";
+	[ -f "$pq" ]||{ printf "${rot}$pq fehlt$reset\n"; return; };
+	which g++ >/dev/null 2>&1||{ printf "${rot}g++ fehlt (los.sh -prog installiert Compiler)$reset\n"; return; };
+	ausf "g++ -O2 -o $instvz/phpparse/phpparse $pq" "${blau}";
+	ausf "install -m 770 -o root -g $gruppe $instvz/phpparse/phpparse /root/bin/phpparse" "${blau}";
+} # phpparse_bauen
+
 dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset(), immer: $immer\n";
@@ -4150,6 +4170,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obmust = 1 ]&&musterserver;      # Dateien vom Musterserver kopieren
 [ "$obmustneu" = 1 ]&&musterserver neu;
 [ $obteil = 0 -o "$obvmime" = 1 ]&&vmime_bauen;    # vmime (für vmparse2) aus github bauen
+[ $obteil = 0 -o "$obphpparse" = 1 ]&&phpparse_bauen; # phpparse (Listen in anzeig.php) bauen + nach /root/bin
 # ── Weitere Tools ────────────────────────────────────────────────────────
 [ $obteil = 0 -o $obtv = 1 ]&&teamviewer15;        # TeamViewer installieren
 [ $obteil = 0 -o "$obrpc" = 1 ]&&remotepc;         # RemotePC installieren
