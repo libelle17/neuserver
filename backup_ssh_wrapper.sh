@@ -54,6 +54,16 @@ case "$CMD" in
     log "OK-FEST"
     exec bash -c "$CMD"
     ;;
+  # 20.9.2026 ergaenzt: von bulinux.sh (Ziel /DATA) gesendete, bis dahin faelschlich
+  # abgelehnte FESTE Befehle (kein variabler Teil, exakter Textvergleich):
+  "test -d /DATA 2>/dev/null"|"mountpoint -q /DATA 2>/dev/null"|"mountpoint -q /DATA||{ mountpoint -q /DATA||mount /DATA;}")
+    log "OK-FEST-DATA"
+    exec bash -c "$CMD"
+    ;;
+  'semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -m -t httpd_sys_rw_content_t "/var/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -a -t httpd_sys_rw_content_t "/srv/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || semanage fcontext -m -t httpd_sys_rw_content_t "/srv/www/htdocs/(plz|vorb|behand|fertig)(/.*)?" 2>/dev/null || true; restorecon -Rv /srv/www/htdocs/plz /srv/www/htdocs/vorb /srv/www/htdocs/behand /srv/www/htdocs/fertig 2>/dev/null || true')
+    log "OK-SEMANAGE"
+    exec bash -c "$CMD"
+    ;;
   "chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }")
     log "OK-SSH-REPARATUR"
     exec bash -c "$CMD"
