@@ -30,23 +30,55 @@ sicherer_pfad() {
   esac
 }
 
-# --- 1) rsync-Protokoll: nur Ziele innerhalb von /DATA erlauben ---
+# --- 1) rsync-Protokoll (Server-Modus): Zerlegung + Pruefung, Start OHNE Shell ---
+# Frueher: ganzer Text per "bash -c" und nur das LETZTE Wort geprueft -> Einschleusen
+# von Befehlen (";", "$(...)") und Umgehung der Pfadpruefung ("/etc/x\ /DATA/y") moeglich.
+# Jetzt: (a) Metazeichen ausserhalb von Backslash-Maskierungen abgelehnt, (b) Zerlegung
+# in Woerter wie die Shell es taete, (c) Optionen nur aus Whitelist, (d) ALLE Pfadwoerter
+# nach dem "." muessen (nach readlink -m) unter /DATA liegen, (e) exec direkt, ohne Shell.
+# Vorkommende Formen: "rsync --server ..." und "ionice -c2 nice -n10 rsync --server ..."
+# (bugem.sh: --rsync-path='$kopbef').
+rsync_rest=""; rsync_pre=""
 case "$CMD" in
-  "rsync --server"*)
-    letztes_wort="${CMD##* }"
-    aufgeloest=$(readlink -m -- "$letztes_wort" 2>/dev/null)
-    case "$aufgeloest" in
-      /DATA|/DATA/*)
-        log "OK-RSYNC"
-        exec bash -c "$CMD"
-        ;;
-      *)
-        log "ABGELEHNT-RSYNC-AUSSERHALB-DATA"
-        exit 1
-        ;;
-    esac
-    ;;
+  "rsync --server "*)                       rsync_rest="${CMD#rsync --server }";;
+  "ionice -c2 nice -n10 rsync --server "*)  rsync_rest="${CMD#ionice -c2 nice -n10 rsync --server }"
+                                            rsync_pre="ionice -c2 nice -n10";;
 esac
+if [ -n "$rsync_rest" ]; then
+  bereinigt="${CMD//\\?/_}"            # maskierte Zeichen (Backslash + 1 Zeichen) neutralisieren
+  case "$bereinigt" in
+    *[\;\|\&\$\`\<\>\(\)\{\}\*\?\!\"\'\#\~\\\[\]]*|*$'\t'*|*$'\n'*|*$'\r'*)
+      log "ABGELEHNT-RSYNC-METAZEICHEN"; exit 1;;
+  esac
+  IFS=' ' read -a rs_tok <<<"$rsync_rest"      # ohne -r: "\ " bleibt Teil eines Wortes, "\x" -> "x"
+  rs_phase=opt; rs_npfad=0
+  for rs_t in "${rs_tok[@]}"; do
+    if [ "$rs_phase" = opt ]; then
+      if [ "$rs_t" = "." ]; then rs_phase=pfad; continue; fi
+      case "$rs_t" in
+        --sender|--delete|--delete-before|--delete-during|--delete-after|--delete-delay|--delete-excluded|--numeric-ids|--inplace|--partial|--ignore-errors|--no-i-r|--no-inc-recursive|--size-only|--ignore-existing|--existing|--preallocate) ;;
+        -*)
+          if [[ "$rs_t" =~ ^-[vlogDtprzcCiLsxXHAaunNRSPWhkKmdOJyUEq]*(e[.A-Za-z0-9]*)?$ ]] && [ "$rs_t" != "-" ]; then :; else
+            log "ABGELEHNT-RSYNC-OPTION"; exit 1
+          fi;;
+        *) log "ABGELEHNT-RSYNC-OPTION"; exit 1;;
+      esac
+    else
+      case "$rs_t" in -*) log "ABGELEHNT-RSYNC-OPTION"; exit 1;; esac
+      aufgeloest=$(readlink -m -- "$rs_t" 2>/dev/null)
+      case "$aufgeloest" in
+        /DATA|/DATA/*) rs_npfad=$((rs_npfad+1));;
+        *) log "ABGELEHNT-RSYNC-AUSSERHALB-DATA"; exit 1;;
+      esac
+    fi
+  done
+  if [ "$rs_phase" != pfad ] || [ "$rs_npfad" -lt 1 ]; then
+    log "ABGELEHNT-RSYNC-FORM"; exit 1
+  fi
+  log "OK-RSYNC"
+  # shellcheck disable=SC2086
+  exec $rsync_pre rsync --server "${rs_tok[@]}"
+fi
 
 # --- 2) exakte, feste Befehle (kein variabler Teil) ---
 case "$CMD" in
