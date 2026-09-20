@@ -27,6 +27,10 @@ bulinux.sh
 bulinux3.sh
 bumo.sh
 bunacht.sh
+bumonitor.sh
+bupull_aktivieren.sh
+bupull_lernen.sh
+bupull_wrapper.sh
 bupc.sh
 bustate.sh
 butm.sh
