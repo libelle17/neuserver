@@ -202,8 +202,8 @@ ELG=/var/log/cronf.log
 # -0 3,11,13,15 * * * pgrep -c -f "getmail -rbuchrc" || /usr/bin/getmail -rbuchhrc -rfreenetrc -rgmx1rc -rgmx2rc -rgmx3rc -rgmx4rc -rgmx5rc -rgmx6rc -rgmx7rc -rgooglerc -rgoogle2rc -rlrzrc -rmnetrc -rvrwebrc -rweb_rc -rwebrc
 # Faxe von der Fritzbox abholen (wenn Abspeichern in /mnt/diabfb/FRITZ/faxbox funktioniert) und in MySQL eintragen (ab 2020 in autofax)
 # -*/2 * * * * /root/bin/faxord >>$NLG 2>>$ELG
--0 14,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wser/mo7z&&rsync /mnt/wser/mo7z/ /DATA/mo7z/ -dlptgoDvuz --delete
--0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wres/mo7z&&rsync /mnt/wres/mo7z/ /DATA/wresmo7z/ -dlptgoDvuz --delete
+-0 14,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wser/mo7z&&rsync /mnt/wser/mo7z/ /DATA/mo7z/ -dlptgoDvuz --delete >>$NLG 2>>$ELG
+-0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wres/mo7z&&rsync /mnt/wres/mo7z/ /DATA/wresmo7z/ -dlptgoDvuz --delete >>$NLG 2>>$ELG
 -* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/root/bin/sturm_minuetlich.sh" >>$NLG 2>>$ELG
 # -* * * * * su - sturm -c "/usr/bin/ionice -c3 /root/bin/zusalat.sh" # auskommentiert 7.9.26
 # Medical-Office-Dateisicherungen
@@ -237,8 +237,8 @@ ELG=/var/log/cronf.log
 # MO/mp4/wser von /DATB zusaetzlich auf /DATAC sichern (Redundanz bei
 # Ausfall der /DATB-Platte sdc), eingerichtet 3.9.2026, nur auf linux7:
 -30 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&/usr/bin/ionice -c3 /root/bin/datac_sync.sh >>$NLG 2>>$ELG
--0 1 * * * mountpoint -q /mnt/seag && timeout 6h /usr/bin/ionice -c3 /root/bin/copyseag.sh
--40 21 * * 5 mountpoint -q /mnt/seag && /usr/bin/ionice -c3 /root/bin/copyseag.sh
+-0 1 * * * mountpoint -q /mnt/seag && timeout 6h /usr/bin/ionice -c3 /root/bin/copyseag.sh >>$NLG 2>>$ELG
+-40 21 * * 5 mountpoint -q /mnt/seag && /usr/bin/ionice -c3 /root/bin/copyseag.sh >>$NLG 2>>$ELG
 -15 3 * * * /usr/bin/ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
 -*/10 * * * * /root/bin/phpparse >/dev/null 2>>$ELG
 @reboot /sbin/modprobe capi >>$NLG 2>>$ELG
@@ -247,39 +247,39 @@ ELG=/var/log/cronf.log
 */9 * * * * /usr/bin/ionice -c3 /root/bin/wiederherstell.sh >>$NLG 2>>$ELG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$NLG
 * * * * * /usr/bin/date +"Zeitpunkt \%a,\%d.\%m.\%Y \%X" >>$ELG
-*/5 * * * * /root/bin/xlstocsv.sh
+*/5 * * * * /root/bin/xlstocsv.sh >>$NLG 2>>$ELG
 # * * * * * for a in $(find $VL -not -name autofax.log -size +150M 2>/dev/null); do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
 * * * * * find $VL -not -name autofax.log -size +150M 2>/dev/null|while read -r d;do [ -s "$a" ]&&{ tail -n 10000 "$a">"$a-k";mv "$a-k" "$a";}; done
 # */5 * * * * rogerj
-*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 find /DATA/Patientendokumente -maxdepth 1 -type f -mtime +10000 -exec touch {} \;
-0 8 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && /usr/bin/ionice -c3 rsync -avu /opt/turbomed/labor/backup/ /DATA/Patientendokumente/Labor/ >/dev/null
-*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && test -d /custo && /usr/bin/ionice -c3 rsync -avu /custo/ /DATA/Patientendokumente/Datenbanken >/dev/null
-10 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null; }
+*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 find /DATA/Patientendokumente -maxdepth 1 -type f -mtime +10000 -exec touch {} \; >>$NLG 2>>$ELG
+0 8 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && /usr/bin/ionice -c3 rsync -avu /opt/turbomed/labor/backup/ /DATA/Patientendokumente/Labor/ >/dev/null 2>>$ELG
+*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /DATA && test -d /custo && /usr/bin/ionice -c3 rsync -avu /custo/ /DATA/Patientendokumente/Datenbanken >/dev/null 2>>$ELG
+10 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ mountpoint -q /mnt/gmx && /usr/bin/ionice -c3 rsync -avu /gerade/ /mnt/gmx >/dev/null; } 2>>$ELG
 0 1 * * * /usr/bin/ionice -c3 /usr/bin/find /tmp -mindepth 1 -not -path '/tmp/systemd-private-*' -mtime +7 -delete >/dev/null 2>&1
 #0 1 * * * /usr/bin/ionice -c3 /usr/bin/nice -n19 /usr/bin/impgl -noia -cf /root/.impgl.conf >/dev/null 2>&1
-00 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux1/ -o ${HOST\%\%.*}/ = linux7/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,18:C0:4D:EC:A4:F7,74:D4:35:D6:80:82,1C:87:2C:42:80:4F,74:56:3C:99:B9:01,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,94:DE:80:B8:49:2D,04:D4:C4:EE:88:07,E0:D5:5E:0E:66:34,FC:AA:14:CD:88:AC,04:D4:C4:EE:98:F1,04:D4:C4:EE:97:50,04:D4:C4:EE:98:0B,E0:D5:5E:40:A8:DE,9C:6B:00:9F:B0:3C,04:7C:16:E6:F5:AD,D8:5E:D3:9B:A1:06,3C:7C:3F:D7:BD:C0,FC:34:97:11:89:AD,40:8D:5C:52:ED:75,04:D4:C4:01:E7:15,54:B2:03:0F:B3:25,28:C5:C8:2D:90:21>/dev/null; }
+00 06 * * 1-5 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux1/ -o ${HOST\%\%.*}/ = linux7/ ]&&{ /root/bin/weckalle.sh 14:DD:A9:EE:84:37,18:C0:4D:EC:A4:F7,74:D4:35:D6:80:82,1C:87:2C:42:80:4F,74:56:3C:99:B9:01,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,94:DE:80:B8:49:2D,04:D4:C4:EE:88:07,E0:D5:5E:0E:66:34,FC:AA:14:CD:88:AC,04:D4:C4:EE:98:F1,04:D4:C4:EE:97:50,04:D4:C4:EE:98:0B,E0:D5:5E:40:A8:DE,9C:6B:00:9F:B0:3C,04:7C:16:E6:F5:AD,D8:5E:D3:9B:A1:06,3C:7C:3F:D7:BD:C0,FC:34:97:11:89:AD,40:8D:5C:52:ED:75,04:D4:C4:01:E7:15,54:B2:03:0F:B3:25,28:C5:C8:2D:90:21>/dev/null; } 2>>$ELG
 # * * * * 1-5 /root/bin/weckalle.sh 14:DD:A9:EE:84:37,50:E5:49:C6:A1:42,1C:87:2C:42:80:4F,E0:D5:5E:40:A8:A2,1C:87:2C:42:80:D0,D0:27:88:67:1F:AD,94:DE:80:B8:49:2D,94:de:80:0e:41:e2,d0:50:99:68:0c:36,74:D4:35:D6:80:82,94:DE:80:0E:41:E1,E0:D5:5E:0E:66:34,54:B2:03:0F:B3:25,64:5D:86:8E:AE:63,E0:D5:5E:40:A8:A9,FC:AA:14:CD:88:AC,E0:D5:5E:40:A8:DE -zeig >/dev/null
 # Entzerrung 8.7.2026: von 2:00 auf 1:15 Uhr verschoben, s. Analyse bei bunacht.sh.
 15 1 * * * /usr/bin/python3 /root/bin/doppelteimporte.py --delete --no-color >> /var/log/doppelteimporte.log 2>&1
 # */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ Z=/DATA/Patientendokumente;Q=$Z/zuklartext_Bergmann;[ -d $Q ]||mkdir -p $Q;find $Q -name "*.pdf" -printf '\%f\n'|xargs -i sh -c "qpdf -password=J938k3ad -decrypt $Q/'{}' $Z/'{}'_entschluesselt.pdf && rm $Q/'{}';"; }
--5 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutzeTMBack.sh; }
--5 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutze.sh; }
--5 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutzeDBBack.sh; }
+-5 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutzeTMBack.sh; } >>$NLG 2>>$ELG
+-5 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutze.sh; } >>$NLG 2>>$ELG
+-5 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/stutzeDBBack.sh; } >>$NLG 2>>$ELG
 # * * * * * /usr/bin/ionice -c3 /root/bin/stutzMOSich.sh
 
--35 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/komprsql.sh; }
-0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten*
+-35 0 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /root/bin/komprsql.sh; } >>$NLG 2>>$ELG
+0 9 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&rm -f /DATA/Patientendokumente/nichtgefaxt*DMP-Daten* >>$NLG 2>>$ELG
 -*/10 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 cp -a /DATA/Patientendokumente/erinnern/* /DATA/Patientendokumente/zufaxen/ >/dev/null 2>&1
--*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/hatrans.sh; }
--33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var
+-*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/hatrans.sh; } >>$NLG 2>>$ELG
+-33 8 * * * /usr/bin/ionice -c3 rm -rf /opt/turbomed/Papierkorb/Daten/Var >>$NLG 2>>$ELG
 # muss noch geaendert werden, damit er nicht nach den Zugangsdaten fraegt:
 -0 9 * * 1 HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/ionice -c3 /usr/bin/auffaell > /dev/null 2>&1; }
 */5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/labimp -noia -cf /root/.config/labimp.conf >/dev/null 2>&1
 */2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/anrliste -noia -cf /root/.config/anrliste.conf >/dev/null 2>&1
 */1 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/fbfax -noia -cf /root/.config/fbfax.conf >/dev/null 2>&1
 */2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c2 -n7 /usr/bin/nice -n19 /usr/bin/autofax -noia -cf /root/.config/autofax.conf >/dev/null 2>&1
-*/15 * * * * ionice -c3 /root/bin/verhdop.sh /root/bin/massenaenderung_waechter.sh >>/var/log/massenaenderung_waechter.log 2>&1
-*/5 * * * * ionice -c3 /root/bin/verhdop.sh /root/bin/aenderungsrate_erhebung.sh >>/var/log/aenderungsrate_erhebung.log 2>&1
+*/15 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 /root/bin/verhdop.sh /root/bin/massenaenderung_waechter.sh >>/var/log/massenaenderung_waechter.log 2>&1
+*/5 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&ionice -c3 /root/bin/verhdop.sh /root/bin/aenderungsrate_erhebung.sh >>/var/log/aenderungsrate_erhebung.log 2>&1
 -15 4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&/usr/bin/ionice -c3 $RBI/efibootmgr_bereinigen.sh >>$NLG 2>>$ELG
 
 # CPU-Temperatur/Turbo-Waechter, eingerichtet 2026-09-07/08 nach
