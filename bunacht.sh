@@ -29,6 +29,17 @@ ZL=; # dann werden die cifs-Laufwerke verwendet
 # butm.sh statt zu pushen von LINEINS pullen (QL gesetzt, ZL bleibt leer = lokal):
 [ "$buhost"/ = "$LINEINS"/ ]&&ZL=||QL=$LINEINS;
 . ${MUPR%/*}/bugem.sh # commandline-Parameter, $ZL aus commandline, $qssh, $zssh festlegen
+# Mail/ getrennt von der Gesamtkopie und mit --inplace (21.9.2026): grosse Postfachdateien (Kothny-Inbox ~50 GB,
+# Patientenmails, PST) aendern sich taeglich. rsync schreibt eine geaenderte Datei sonst komplett neu (Tempdatei +
+# rename); auf einem Snapper-verwalteten Ziel haelt der Snapshot die alte Fassung, jede Aenderung kostet dann die
+# volle Dateigroesse. Mit --inplace werden nur geaenderte Bloecke geschrieben (Modell auf btrfs, Delta-Modus: 20 MB
+# Anhaengen an eine 300-MB-Datei kosteten 320 MB ohne, 20 MB mit --inplace). Die Schutzdatei (SDLISTE) liegt nur in
+# /DATA, nicht in /DATA/Mail: deshalb $8=1 (kein Schutzdateivergleich fuer diesen Aufruf). Der Schutz bleibt, weil
+# dieser Aufruf nur laeuft, wenn die Gesamtkopie (mit Schutzdateivergleich fuer /DATA) nicht abgelehnt wurde.
+# Profil Praxis und Profil readpst bleiben ausgeschlossen (s. Gesamtkopie). $1 = Name des Zielverzeichnisses ($vz).
+_bn_mail() {
+  kopiermt "/DATA/Mail/" "/$1/Mail/" "/Thunderbird/Profiles/Praxis/,/Thunderbird/Profiles/readpst/" "$obOBDEL --inplace" "" "" "" 1;
+}
 # nurdrei=1;
 # nurzweidrei=1;
 [ "$ZL" ]&&{ printf "Ziel \"$blau$ZL$reset\" wird zurückgesetzt.\n"; ZL=;}
@@ -77,9 +88,10 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
     # sowie aeltere Logs mit Snapshot 15/vrweb).
     # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
     # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
-    # kopiert) und .../Profiles/readpst/. Bereits vorhandene Kopien auf dem Ziel werden dadurch NICHT geloescht.
-    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/Thunderbird/Profiles/Praxis/,/Mail/Thunderbird/Profiles/readpst/" "$obOBDEL" "" ""; # ohne --iconv
-    _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
+    # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
+    # auf dem Ziel werden dadurch NICHT geloescht.
+    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+    _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
 #    mount /mnt/wser/indamed
@@ -97,8 +109,9 @@ else
   # .snapshots/ ausschliessen: s. Kommentar beim Push-Aufruf oben.
   # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
   # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
-  # kopiert) und .../Profiles/readpst/. Bereits vorhandene Kopien auf dem Ziel werden dadurch NICHT geloescht.
-  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/Thunderbird/Profiles/Praxis/,/Mail/Thunderbird/Profiles/readpst/" "$obOBDEL" "" ""; # ohne --iconv
-  _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
+  # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
+    # auf dem Ziel werden dadurch NICHT geloescht.
+  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+  _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;
