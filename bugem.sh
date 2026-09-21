@@ -743,7 +743,7 @@ kopieros() {
 # auf $QL geschrieben, im Push-Modus lokal (da dann auf linux1 gelaufen wird).
 backupstatus() {
   local _bs_status="${1:-OK}";
-  local _bs_skript="$(basename "${MUPR:-$0}")";
+  local _bs_skript="${2:-$(basename "${MUPR:-$0}")}"; # $2 = Skriptname statt des aufrufenden Skripts (z.B. "platz")
   local _bs_ziel="${ZL:-$buhost}";
   local _bs_datei="/DATA/Backup-Status_${_bs_ziel}.txt";
   local _bs_zeile;
@@ -755,7 +755,23 @@ backupstatus() {
   else
     eval "$_bs_cmd" 2>/dev/null;
   fi;
+  # zusaetzlich den freien Platz auf /DATA dieses Rechners melden (Pull-Modus; s. platzstatus)
+  [ "$_bs_skript" != platz ] && platzstatus;
+  return 0;
 } # backupstatus
+
+# platzstatus() - meldet den freien Platz auf /DATA des AUFRUFENDEN Rechners als Pseudo-Skript "platz" in den
+# Heartbeat (linux1:/DATA/Backup-Status_<Rechner>.txt), z.B. "platz  2026-09-21 21:44:12  frei=7% 520GB/7452GB".
+# Auswertung: bumonitor.sh auf linux1 (Warnmail bei zu wenig freiem Platz). Nur im Pull-Modus (ZL leer), weil
+# df lokal misst; im Push-Modus liefe es auf linux1 und wuerde dessen Platz melden. Eingefuehrt 21.9.2026.
+platzstatus() {
+  [ -z "$ZL" ] || return 0;
+  local _p_zahlen _p_txt;
+  _p_zahlen=$(df -Pk /DATA 2>/dev/null | awk 'NR==2 && $2>0 {printf "%.0f %.0f", $4, $2}');
+  [ -n "$_p_zahlen" ] || return 0;
+  _p_txt=$(printf '%s' "$_p_zahlen" | awk '{printf "frei=%d%% %dGB/%dGB", $1*100/$2, $1/1048576, $2/1048576}');
+  backupstatus "$_p_txt" platz;
+} # platzstatus
 
 # kopiert eine einzelne Datei/Verzeichnis $1 unterhalb von /etc per kopiermt()
 kopieretc() {
