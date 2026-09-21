@@ -664,6 +664,15 @@ kopieros() {
   # Bei Verzeichnissen: Schutzdatei im Verzeichnis prüfen (bisheriges Verhalten via kopiermt)
   machssh;
   _ist_datei=;
+  # Sonderfall .getmail: auf linux1 ist /root/.getmail ein Symlink auf "." (= /root, absichtlich: die
+  # getmail-rc-Dateien liegen direkt in /root). "rsync .../.getmail/ /root/" spiegelte deshalb das GANZE
+  # /root (samt .ssh/authorized_keys und privaten Schluesseln!) auf den Zielrechner und scheiterte mit
+  # "could not make way for new symlink" (Code 23 -> FEHLER im Heartbeat). Korrigiert 21.9.2026: nur die
+  # Dateien der obersten Ebene *rc und oldmail-* (ohne .tmp.-Reste und _res), keine Verzeichnisse.
+  _ko_extra=;
+  case "$1" in
+    .getmail) _ko_extra=" --no-r -d --exclude='oldmail-*.tmp.*' --exclude='*_res' --exclude='*/' --include='*rc' --include='oldmail-*' --exclude='*'";;
+  esac;
   # Prüfen ob $1 eine einzelne Datei ist (auf Quellrechner):
 	if eval "$qssh 'test -f /root/$1'" 2>/dev/null; then
 		_ist_datei=1;
@@ -716,10 +725,10 @@ kopieros() {
   else
     # Verzeichnis – --chmod=D0700 setzt /root-Rechte direkt, kein ControlMaster nötig
     if [ "$ZL" ]; then
-      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'$_ko_extra" "" "" 1;
       ssh $(_backup_sshopts "$ZL") "$ZL" 'chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null; [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; }' 2>/dev/null || true;
     else
-      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'" "" "" 1;
+      kopiermt "root/$1" "root" "" "--no-owner --no-group --no-perms --chmod=D0700 --exclude='.*.swp'$_ko_extra" "" "" 1;
       chown root:root /root; chmod 700 /root; setfacl -m mask::x /root 2>/dev/null;
       [ -d /root/.ssh ] && { chown root:root /root/.ssh; chmod 700 /root/.ssh;
         chmod 600 /root/.ssh/authorized_keys 2>/dev/null; };
