@@ -177,6 +177,21 @@ kopiermt "etc/sysconfig/postfix" ... "" "" "" "" 1
 for D in main.cf master.cf sasl_passwd; do
   kopiermt "etc/postfix/$D" ... "" "" "" "" 1
 done;
+# main.cf kommt von linux1 und enthaelt dessen LAN-Adresse in inet_interfaces; los.sh (postfix()) setzt sie je Host auf die EIGENE
+# Adresse ("127.0.0.1, <eigene IP>", damit sich die Server gegenseitig Mail zustellen koennen). Auf linux0/linux7 fuehrte die
+# gespiegelte Zeile zu "postfix: fatal: parameter inet_interfaces: no local interface found for 192.168.178.21": Postfix startete
+# nicht, alle Mails von den Reservern gingen verloren (Boot 20.9.2026 bis Reparatur 21.9.2026). Deshalb nach dem Kopieren die
+# eigene Adresse wieder einsetzen (nur Pull-Modus auf einem Reserver, nur bei Abweichung, ohne Neustart von Postfix).
+if [ -z "$ZL" ] && [ "$buhost" != "$LINEINS" ] && [ -f /etc/postfix/main.cf ]; then
+  declare -A _pf_ip=( [linux0]=192.168.178.20 [linux7]=192.168.178.27 );
+  if [ -n "${_pf_ip[$buhost]}" ]; then
+    _pf_soll="127.0.0.1, ${_pf_ip[$buhost]}";
+    if [ "$(postconf -h inet_interfaces 2>/dev/null)" != "$_pf_soll" ]; then
+      if [ "$obecht" ]; then postconf -e "inet_interfaces = $_pf_soll" && printf "${blau}postfix: inet_interfaces auf \"$_pf_soll\" zurueckgesetzt${reset}\n";
+      else printf "Simulation: postconf -e \"inet_interfaces = $_pf_soll\"\n"; fi;
+    fi;
+  fi;
+fi;
 # selbst erstellte Scripte
 V=/root/bin/;
 altverb=$verb;
