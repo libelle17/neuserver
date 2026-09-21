@@ -204,7 +204,7 @@ ELG=/var/log/cronf.log
 # -*/2 * * * * /root/bin/faxord >>$NLG 2>>$ELG
 -0 14,21 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wser/mo7z&&rsync /mnt/wser/mo7z/ /DATA/mo7z/ -dlptgoDvuz --delete
 -0 23 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q /mnt/wres/mo7z&&rsync /mnt/wres/mo7z/ /DATA/wresmo7z/ -dlptgoDvuz --delete
--* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/root/bin/sturm_minuetlich.sh"
+-* * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&su - sturm -c "/root/bin/sturm_minuetlich.sh" >>$NLG 2>>$ELG
 # -* * * * * su - sturm -c "/usr/bin/ionice -c3 /root/bin/zusalat.sh" # auskommentiert 7.9.26
 # Medical-Office-Dateisicherungen
 # Umgestellt 13.7.2026: statt acht einzelner fester Cron-Zeiten fuer
@@ -314,3 +314,8 @@ ELG=/var/log/cronf.log
 # (Mailbox behaelt Nachrichten auf dem Server, waechst also unbegrenzt -
 # deshalb bewusst nachts, ca. 16 Min. bei ~10000 Nachrichten).
 30 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/opt/mo-emailadr/run_poll_diabetologie.sh --apply --full >>$VL/poll_diabetologie_inbox_full.log 2>&1
+# Sicherungs-Ueberwachung (eingerichtet 20.9.2026): Warnmail an diabetologie@dachau-mail.de, wenn linux0/linux7 nicht richtig gesichert haben
+-30 7 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/bumonitor.sh voll >>$NLG 2>>$ELG
+-30 16 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/bumonitor.sh mittag >>$NLG 2>>$ELG
+# 21.9.2026: haelt /DATA (btrfs, Snapper) auf linux0 frei, loescht bei < 8 % frei die aeltesten Snapshots (Schutz: neueste 3 Tage), Mail bei jedem Loeschen; s. platzwaechter.sh
+-4,19,34,49 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ ]&&/root/bin/platzwaechter.sh >>$VL/platzwaechter.log 2>&1
