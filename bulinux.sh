@@ -301,7 +301,13 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  for A in eigene\\\ Dateien Patientendokumente turbomed shome TMBack rett down DBBack ifap vontosh Oberanger att mariatrans sql; do
   auslass=;
   [ "$obkurz" ]&&case $A in sql|TMBack|DBBack|vontosh|Oberanger|att) auslass=1;; esac;
-	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$OBDEL" || _bu_fehler=1; }
+	# /DATA/sql: Loeschungen auf dem Ziel nachziehen. komprsql.sh (linux1, taeglich 00:35) ersetzt dort alte *.sql
+	# durch *.sql.7z und loescht das Original; ohne --delete behielten die Reserver beide Fassungen. --delete-before
+	# loescht VOR dem Kopieren (gibt zuerst Platz frei); mit --delete faellt kopiermt_delta auf den vollen Abgleich
+	# kopiermt zurueck (noetig, sonst wuerden Loeschungen nie erkannt). Optionale Sicherung: Umgebungsvariable
+	# BU_SQL_MAXDEL=<Anzahl> setzt zusaetzlich --max-delete (Vorgabe: unbegrenzt). Eingefuehrt 21.9.2026.
+	_bu_opt="$OBDEL"; [ "$A" = sql ] && _bu_opt="$OBDEL --delete-before${BU_SQL_MAXDEL:+ --max-delete=$BU_SQL_MAXDEL}";
+	[ -z $auslass ]&&{ bukopierfn "$Dt/$A" "$DtZ/$A/" "" "$_bu_opt" || _bu_fehler=1; }
 #  EXCL=${EXCL}",$A/"; # jetzt in kopiermt schon enthalten
 	if [ "$A"/ = sql/ ]; then
 		if [ "$obecht" ]; then
