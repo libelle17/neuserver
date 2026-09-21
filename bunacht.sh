@@ -75,7 +75,10 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
     # Versuch sie zu loeschen ("Read-only file system") - Millionen Zeilen
     # Logspam bei jedem Lauf (s. Vorfall linux0 01.09.2026, Snapshot 41/wrz,
     # sowie aeltere Logs mit Snapshot 15/vrweb).
-    kopiermt "/DATA/" "/$vz/" ".snapshots/" "$obOBDEL" "" ""; # ohne --iconv
+    # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
+    # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
+    # kopiert) und .../Profiles/readpst/. Bereits vorhandene Kopien auf dem Ziel werden dadurch NICHT geloescht.
+    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/Thunderbird/Profiles/Praxis/,/Mail/Thunderbird/Profiles/readpst/" "$obOBDEL" "" ""; # ohne --iconv
     _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
@@ -92,7 +95,10 @@ else
   wirt=$QL;
   vz=$DATAZIEL;
   # .snapshots/ ausschliessen: s. Kommentar beim Push-Aufruf oben.
-  kopiermt "/DATA/" "/$vz/" ".snapshots/" "$obOBDEL" "" ""; # ohne --iconv
+  # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
+  # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
+  # kopiert) und .../Profiles/readpst/. Bereits vorhandene Kopien auf dem Ziel werden dadurch NICHT geloescht.
+  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/Thunderbird/Profiles/Praxis/,/Mail/Thunderbird/Profiles/readpst/" "$obOBDEL" "" ""; # ohne --iconv
   _bs_ret=$?; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;
