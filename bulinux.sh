@@ -235,7 +235,10 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
         printf "Simulation: mkdir -p /$DtZ/MO/Sich\n";
         printf "Simulation: mkdir -p /$DtZ/MO/INDAMED\n";
       fi;
-      bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "" "" 0 1 1 || _bu_fehler=1
+      # --no-xattrs auch hier (21.9.2026): dieselbe CIFS-Quelle ohne SELinux-Kontext wie bei my.ini/MOSTAT unten; ohne die Option
+      # meldete rsync am 21.9.2026 unter /DATA/MO/Sich ~9.900 x "lremovexattr security.selinux: Permission denied" (laut Log; Wirkung dieser
+      # Aenderung im Nachtlauf noch nicht bestaetigt - restorecon hilft nicht, /DATA/MO/Sich hat schon den Soll-Kontext samba_share_t)
+      bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "--no-xattrs" "" 0 1 1 || _bu_fehler=1
       # --no-xattrs: Quelle ist ein CIFS-Mount ohne SELinux-Kontext, das
       # -X aus dem kopiermt()-Standard versucht trotzdem, das security.selinux-
       # xattr auf dem Ziel zu entfernen/setzen und scheitert dabei staendig mit
