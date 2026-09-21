@@ -103,6 +103,7 @@ permissselten.sh
 ping.sh
 platz.sh
 platzwaechter.sh
+shziel_vorschau.sh
 pruefimp.sh
 pruefimpn.sh
 quelle-resume.sh
