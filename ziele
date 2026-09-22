@@ -105,6 +105,8 @@ platz.sh
 platzwaechter.sh
 shziel_vorschau.sh
 crontab_uebernehmen.sh
+dokrechte.sh
+dokdubletten.py
 pruefimp.sh
 pruefimpn.sh
 quelle-resume.sh

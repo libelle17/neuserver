@@ -169,6 +169,12 @@ ELG=/var/log/cronf.log
 -0 3 * * * /root/bin/permissselten.sh >>$NLG 2>>$ELG
 #-1 1 * * * /root/bin/berecht.sh
 -*/15 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/labpdf_chown.sh >>$NLG 2>>$ELG
+# Dokumentimport (DokimpKurz.au3) arbeitsfaehig halten (22.9.2026): Rechte sturm:praxis 770
+# schnell (oberste Ebene, dok/, eingelesen/-Verzeichnisse, ~1 s) alle 2 min, ganzer Baum (~20 s) alle 4 h;
+# byte-identische "Name (n).ext"-Kopien aus Importwiederholungen stuendlich loeschen (dokdubletten.py)
+-*/2 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/dokrechte.sh >>$NLG 2>>$ELG
+-17 */4 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 nice -n19 /root/bin/dokrechte.sh --voll >>$NLG 2>>$ELG
+-43 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 nice -n19 /root/bin/dokdubletten.py --anwenden >>$NLG 2>>$ELG
 #-59 */2 * * * chmod 774 -R /DATA/Patientendokumente
 -0 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&chown sturm:praxis /DATA/Patientendokumente >/dev/null 2>>$ELG
 -0 1 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && chmod 550 /DATA/eigene\ Dateien/Webseite\ Praxis\ 1/Pumpeneinstellung*.xls >/dev/null 2>>$ELG
