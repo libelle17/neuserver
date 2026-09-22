@@ -3,35 +3,50 @@
 # (linux0/linux7) auf linux1, nach dem Vorbild von backup_ssh_wrapper.sh (Push-Richtung).
 #
 # STAND 22.9.2026: NOCH NICHT SCHARF GESCHALTET. Weder in authorized_keys eingetragen noch nach
-# /root/bin kopiert. Abgeleitet NUR aus den Befehlen im Lernlog (/var/log/backup_pull_wrapper.log,
-# 21.9. 14:15 bis 22.9. 09:xx), die (a) in den Sicherungsfenstern liegen UND (b) zu den vorab als
-# bekannt genannten Sicherungsmustern gehoeren: test/stat/find/mkdir unter /DATA und
-# /var/lib/bustate, rsync --server --sender nur lesend (Ziel unter /DATA, per readlink -m
-# erzwungen - NICHT nur textuell), der Heartbeat-Befehl (Pseudo-Skriptnamen
-# bumo.sh|bulinux.sh|bunacht.sh|platz), sdauffuellen.sh -e, dopweg.sh -e, sowie der
-# Erreichbarkeits-Ping "ssh <Ziel> echo ''" (kommt als "echo " mit Leerzeichen an, s. bugem.sh
-# Zeile 824/830).
+# /root/bin kopiert. Abgeleitet aus den Befehlen im Lernlog (/var/log/backup_pull_wrapper.log,
+# 21.9. 14:15 bis 22.9. 09:xx). Erste Fassung (22.9. morgens) deckte nur die 5 vorab bekannten
+# Sicherungsmuster ab (test/stat/find/mkdir unter /DATA und /var/lib/bustate, rsync --server
+# --sender mit Ziel unter /DATA, Heartbeat, sdauffuellen.sh -e, dopweg.sh -e); 404 von 1156
+# Lernlog-Befehlen waeren damit erlaubt gewesen. Zweite Fassung (22.9. nachmittags, nach
+# Durchsicht der offenen Kategorien) ergaenzt:
+#   - rsync --server --sender auf eine FESTE, exakte Liste von Konfig-/Zugangsdateien und
+#     Windows-Freigaben-Ordnern ausserhalb /DATA (RSYNC_ZIELE_AUSSERHALB_DATA unten) - das sind
+#     taeglich benoetigte, echte Bestandteile der Sicherung (kopieros() in bugem.sh). OHNE sie
+#     wuerde eine Aktivierung die Sicherung BRECHEN.
+#   - mariadb-Abfragen NUR als exakter Volltextvergleich gegen mariadb_erlaubte_abfragen.txt
+#     (reine SELECT/SHOW-Lesebefehle aus bulinux.sh + eine SET GLOBAL-Zeitlimit-Zeile). Diese
+#     Liste muss von Hand nachgezogen werden, wenn Datenbanken hinzukommen/wegfallen (Log:
+#     "ABGELEHNT-MARIADB").
+#   - findmnt/mountpoint auf den bekannten Windows-Freigaben-Pfaden ausserhalb /DATA (rein lesend,
+#     liefert nur ja/nein).
+#   - Existenzpruefungen (test/[ ]) und sha256sum auch ausserhalb /DATA, aber NUR fuer dieselben
+#     Pfade, deren Inhalt ohnehin schon per rsync freigegeben ist (pfad_lesbar_erlaubt()): wer
+#     lesen darf, darf auch wissen, ob es existiert/welchen Hash es hat. sha256sum zusaetzlich
+#     fuer die drei Kanarien-Dateinamen (SDLISTE, Ransomware-Fruehwarnung) an den tatsaechlich
+#     beobachteten Ablageorten (KANARIEN_ORTE) - reine Hash-Ausgabe, keine Inhaltspreisgabe.
+#   Damit waeren rund 790 von 1189 Lernlog-Befehlen erlaubt gewesen (erste Fassung: 404 von 1156).
+#   .getmail bleibt auch hier ausgeschlossen, selbst wenn eine Kanarien-Datei ueber den Symlink-Pfad
+#   angesprochen wird (loest sonst per readlink -m auf einen erlaubten Ort auf, s. Test dazu).
 #
-# ABSICHTLICH NICHT ENTHALTEN (im Lernlog vorhanden, aber nicht in den obigen 5 Kategorien und
-# nicht ohne Rueckfrage aufgenommen - s. Bericht an Gerald):
-#   - rsync --server --sender auf Pfade AUSSERHALB /DATA (u.a. /root/.mysqlrpwd, /root/.7zpassw,
-#     /root/.modbpwd, /root/.mysqlpwd, /root/.fbcredentials, /root/.sturm, /root/.wser,
-#     /root/dbverbfreigabe, /root/.vim, /root/bin/, /root/crontabakt, /root/.getmail/,
-#     /etc/postfix/*, /etc/sysconfig/postfix, /mnt/wser/*, /srv/www/htdocs/*,
-#     /home/schade/.wincredentials): das sind aktuell echte, notwendige Bestandteile der
-#     Sicherung (kopieros() in bugem.sh) - ohne sie wuerde diese strenge Fassung die Sicherung
-#     BRECHEN, wenn sie so aktiviert wuerde. /root/.getmail/ zusaetzlich heikel: die
-#     Einschraenkung auf *rc/oldmail-* passiert erst durch clientseitige rsync-Filter, die im
-#     Protokoll uebertragen werden und in $SSH_ORIGINAL_COMMAND NICHT sichtbar sind - ein Wrapper
-#     kann sie also nicht erzwingen, nur den Pfad selbst.
-#   - mariadb/mariadb-dump-Aufrufe (bulinux.sh: Versionspruefung, SHOW DATABASES, mariadb-dump-Weg)
-#   - mountpoint/findmnt auf Windows-Freigaben ausserhalb /DATA (/mnt/wser/indamed, /mnt/wser/mosich,
-#     /mnt/anmmw)
-#   - /usr/libexec/ssh/sftp-server (Sonderfall, s. Bericht)
+# WEITERHIN BEWUSST NICHT ENTHALTEN:
+#   - /root/.getmail/ (als rsync-Sender-Ziel explizit ausgeschlossen, auch wenn es unter /root/
+#     liegt): die Einschraenkung auf *rc/oldmail-* passiert erst durch clientseitige rsync-Filter,
+#     die im Protokoll uebertragen werden und in $SSH_ORIGINAL_COMMAND NICHT sichtbar sind - ein
+#     Wrapper kann sie nicht erzwingen, nur den Pfad selbst. Empfehlung (noch nicht umgesetzt):
+#     /root/.getmail als echtes Verzeichnis mit nur den noetigen Dateien anlegen statt als
+#     Symlink auf "." - dann waere auch dieser Pfad ungefaehrlich freigebbar.
+#   - /usr/libexec/ssh/sftp-server: das ist SCHREIBENDER Dateizugriff (scp kann jede Datei
+#     anlegen/ueberschreiben, die root schreiben darf) - keine Automatik-Funktion, sondern von
+#     der Schwesterinstanz fuer Notizen/Dateien genutzt. Empfehlung: nicht in den Automatik-
+#     Wrapper aufnehmen, sondern nur ueber einen SEPARATEN, bewusst weniger strengen
+#     "Mitarbeit-Schluessel" erlauben (s. Bericht an Gerald, 22.9.).
 #   - alles Interaktive/Administrative der Schwesterinstanz (crontab -l/-, cd, sed -i, cp -a,
-#     bash -s, cat >.../neuserver/*, git, ls -la, chmod, restorecon, snapper, journalctl, ...)
+#     bash -s, cat >.../neuserver/*, git, ls -la, chmod, restorecon, snapper, journalctl, ...):
+#     das ist die Grundsatzfrage "darf linux0 schreibend auf linux1 arbeiten" - selbe Empfehlung
+#     wie bei sftp-server: separater Schluessel fuer die beaufsichtigte Mitarbeit, NICHT der
+#     unbeaufsichtigte Automatik-Schluessel, der bei diesem Wrapper bleibt.
 #
-# Testschema: teste_bupull_wrapper_streng.sh (Attrappen wie bei backup_ssh_wrapper.sh).
+# Testschema: teste_wrapper_streng.sh (Attrappen wie bei backup_ssh_wrapper.sh).
 
 LOG=/var/log/backup_pull_wrapper_streng.log
 CMD="$SSH_ORIGINAL_COMMAND"
@@ -67,6 +82,57 @@ unter_data_oder_bustate() {
   esac
 }
 
+# feste, ausserhalb /DATA bzw. /var/lib/bustate zusaetzlich erlaubte rsync-Sender-Ziele
+# (kopieros() in bugem.sh - einzelne Konfig-/Zugangsdateien und Windows-Freigaben-Ordner, die
+# taeglich Bestandteil der Sicherung sind). EXAKTER Pfad (kein Praefix), Reihenfolge egal.
+# /root/.getmail/ bleibt bewusst ausgeschlossen (s. Kopfkommentar).
+RSYNC_ZIELE_AUSSERHALB_DATA="
+/root/.mysqlrpwd
+/root/.7zpassw
+/root/.modbpwd
+/root/.mysqlpwd
+/root/.fbcredentials
+/root/.sturm
+/root/.wser
+/root/dbverbfreigabe
+/root/.vim
+/root/bin/
+/root/crontabakt
+/etc/postfix/main.cf
+/etc/postfix/master.cf
+/etc/postfix/sasl_passwd
+/etc/sysconfig/postfix
+/mnt/wser/indamed/
+/mnt/wser/indamed/dat/files/
+/mnt/wser/indamed/dat/medoffDB/
+/mnt/wser/mosich/my.ini
+/srv/www/htdocs/behand/
+/srv/www/htdocs/fachliches/
+/srv/www/htdocs/fertig/
+/srv/www/htdocs/php/
+/srv/www/htdocs/plz/
+/srv/www/htdocs/vorb/
+/home/schade/.wincredentials
+"
+# pfad_lesbar_erlaubt() - wie unter_data_oder_bustate(), zusaetzlich die Liste oben. Fuer ALLES,
+# was nur eine Existenz-/Hash-Aussage ueber einen Pfad liefert (test/[ ]/sha256sum) oder den
+# Pfad per rsync --sender liest: wer den Inhalt lesen darf, darf auch wissen, ob er existiert.
+# NICHT fuer mkdir/stat-mtime/find (bleibt bewusst auf /DATA und /var/lib/bustate beschraenkt,
+# s. unter_data_oder_bustate() - dafuer gibt es ausserhalb keinen bekannten, noetigen Anwendungsfall).
+pfad_lesbar_erlaubt() {
+  local p="$1" aufgeloest z
+  unter_data_oder_bustate "$p" && return 0
+  aufgeloest=$(readlink -m -- "$p" 2>/dev/null)
+  case "$aufgeloest" in
+    /root/.getmail|/root/.getmail/*) return 1;;  # s. Kopfkommentar: Filter nicht per Wrapper erzwingbar
+  esac
+  # readlink -m liefert nie einen abschliessenden Slash - Vergleichsliste ebenso normalisieren,
+  # auch wenn sie dort (als Verzeichnis-Kennzeichnung fuer Menschen) mit "/" eingetragen ist.
+  for z in $RSYNC_ZIELE_AUSSERHALB_DATA; do [ "$aufgeloest" = "${z%/}" ] && return 0; done
+  [[ "$aufgeloest" =~ ^/mnt/wser/mosich/[0-9]{14}/?$ ]] && return 0   # taeglicher MOSICH-Datumsordner
+  return 1
+}
+
 # --- 1) rsync-Protokoll (Server-Modus, --sender: linux1 LIEST und sendet) ---------------------
 rsync_rest=""; rsync_pre=""
 case "$CMD" in
@@ -97,11 +163,12 @@ if [ -n "$rsync_rest" ]; then
       esac
     else
       case "$rs_t" in -*) log "ABGELEHNT-RSYNC-OPTION: $CMD"; exit 1;; esac
-      if ! unter_data_oder_bustate "$rs_t"; then
-        # /var/lib/bustate ist beim eigentlichen Datentransfer nicht vorgesehen, nur /DATA;
-        # unter_data_oder_bustate() wird trotzdem verwendet, damit ein spaeterer Fund keine
-        # Ueberraschung ist - tatsaechlich beobachtete Ziele sind ausschliesslich unter /DATA.
-        log "ABGELEHNT-RSYNC-AUSSERHALB-DATA: $CMD"; exit 1
+      if ! pfad_lesbar_erlaubt "$rs_t"; then
+        case "$(readlink -m -- "$rs_t" 2>/dev/null)" in
+          /root/.getmail|/root/.getmail/*) log "ABGELEHNT-RSYNC-GETMAIL: $CMD";;
+          *) log "ABGELEHNT-RSYNC-ZIEL: $CMD";;
+        esac
+        exit 1
       fi
       rs_npfad=$((rs_npfad+1))
     fi
@@ -116,21 +183,82 @@ fi
 
 # --- 2) exakte, feste Befehle (kein variabler Teil) --------------------------------------------
 case "$CMD" in
-  "/root/bin/sdauffuellen.sh -e"|"/root/bin/dopweg.sh -e"|"echo "|"mountpoint -q /DATA 2>/dev/null"|"mountpoint -q /DATA||mount /DATA")
+  "/root/bin/sdauffuellen.sh -e"|"/root/bin/dopweg.sh -e"|"echo "|"mountpoint -q /DATA 2>/dev/null"|"mountpoint -q /DATA||mount /DATA"|"mountpoint -q /mnt/anmmw")
     log "OK-FEST: $CMD"
     exec bash -c "$CMD"
+    ;;
+esac
+
+# --- 2b) findmnt auf den bekannten Windows-Freigaben-Pfaden (Mount-Pruefung vor dem Kopieren,
+# bugem.sh kopiermt()) - fester Pfad, /mnt/wser/mosich/<Datumsordner> als Muster (14 Ziffern).
+FINDMNT_PFADE="
+/mnt/wser/indamed
+/mnt/wser/indamed/dat
+/mnt/wser/indamed/dat/files
+/mnt/wser/indamed/dat/medoffDB
+/mnt/wser/mosich
+/mnt/wser/mosich/my.ini
+"
+if [[ "$CMD" =~ ^findmnt\ \"(.+)\"\ -n\ \>/dev/null$ ]]; then
+  pfad="${BASH_REMATCH[1]}"; gefunden=
+  for z in $FINDMNT_PFADE; do [ "$pfad" = "$z" ] && gefunden=1; done
+  [[ "$pfad" =~ ^/mnt/wser/mosich/[0-9]{14}$ ]] && gefunden=1
+  if [ -n "$gefunden" ]; then log "OK-FINDMNT: $CMD"; exec findmnt "$pfad" -n >/dev/null; fi
+  log "ABGELEHNT-FINDMNT: $CMD"; exit 1
+fi
+
+# --- 2c) mariadb-Abfragen: NUR exakte, vorab geprueft-gleiche Zeilen aus
+# mariadb_erlaubte_abfragen.txt (s. dort - reine SELECT/SHOW-Lesebefehle + eine SET GLOBAL-
+# Zeitlimit-Zeile, alle aus bulinux.sh). Volltextvergleich, keine erneute Auswertung von $CMD
+# als Muster - ein Treffer bedeutet byteidentisch mit einer vorab von Hand geprueften Zeile.
+MARIADB_LISTE=/root/neuserver/mariadb_erlaubte_abfragen.txt
+case "$CMD" in
+  "mariadb --defaults-extra-file=/root/.mysqlrpwd "*)
+    if [ -f "$MARIADB_LISTE" ] && grep -qxF -- "$CMD" "$MARIADB_LISTE" 2>/dev/null; then
+      log "OK-MARIADB: $CMD"
+      exec bash -c "$CMD"
+    else
+      log "ABGELEHNT-MARIADB: $CMD"; exit 1
+    fi
     ;;
 esac
 
 # --- 3) Befehlsmuster mit eingebettetem Pfad (nur /DATA bzw. /var/lib/bustate) ------------------
 if [[ "$CMD" =~ ^test\ -([edf])\ \"(.+)\"$ ]]; then
   flag="${BASH_REMATCH[1]}"; pfad="${BASH_REMATCH[2]}"
-  unter_data_oder_bustate "$pfad" && { log "OK-TEST-$flag: $CMD"; test "-$flag" "$pfad"; exit $?; }
+  pfad_lesbar_erlaubt "$pfad" && { log "OK-TEST-$flag: $CMD"; test "-$flag" "$pfad"; exit $?; }
 
 elif [[ "$CMD" =~ ^\[\ -([edf])\ \"(.+)\"\ \]$ ]]; then
   # gleichwertig zu "test -X", nur Klammersyntax (kopieros()-Einzeldatei-Vorpruefung in bugem.sh)
   flag="${BASH_REMATCH[1]}"; pfad="${BASH_REMATCH[2]}"
-  unter_data_oder_bustate "$pfad" && { log "OK-BRACKET-$flag: $CMD"; test "-$flag" "$pfad"; exit $?; }
+  pfad_lesbar_erlaubt "$pfad" && { log "OK-BRACKET-$flag: $CMD"; test "-$flag" "$pfad"; exit $?; }
+
+elif [[ "$CMD" =~ ^test\ -([ef])\ (/root/[^\ \"]+)$ ]]; then
+  # unquotiert, kein "/", kein Leerzeichen im Namen (kopieros(): "test -f /root/$1", bugem.sh Zeile ~677/679)
+  flag="${BASH_REMATCH[1]}"; pfad="${BASH_REMATCH[2]}"
+  pfad_lesbar_erlaubt "$pfad" && { log "OK-TEST-ROOT-$flag: $CMD"; test "-$flag" "$pfad"; exit $?; }
+
+elif [[ "$CMD" =~ ^sha256sum\ \"(.+)\"\ 2\>/dev/null$ ]] || [[ "$CMD" =~ ^sha256sum\ (/root/[^\ \"]+)\ 2\>/dev/null$ ]]; then
+  pfad="${BASH_REMATCH[1]}"
+  # Kanarienvogel-Vergleich (SDLISTE in bugem.sh, Ransomware-Fruehwarnung): reine Hash-Ausgabe,
+  # keine Inhaltspreisgabe. Zusaetzlich zu pfad_lesbar_erlaubt() an den tatsaechlich beobachteten
+  # Ablageorten erlaubt (Ordner exakt, nicht als Praefix - neue Orte erst nach Pruefung ergaenzen).
+  KANARIEN_ORTE="
+/root
+/srv/www/htdocs/fachliches
+/mnt/wser/indamed/dat/medoffDB
+/mnt/wser/indamed/dat/files
+"
+  case "$pfad" in */.getmail/*|*/.getmail) pfad="";; esac  # s. Kopfkommentar: .getmail nie als Eingabepfad akzeptieren, auch nicht hier
+  case "${pfad##*/}" in
+    "Schutzdatei_bitte_belassen.doc"|"Auch_eine_Schutzdatei_bitte_belassen.jpg"|"zusätzliche_Schutzdatei_bitte_belassen.pdf")
+      _ko_dir=$(dirname -- "$(readlink -m -- "$pfad" 2>/dev/null)")
+      for _ko_z in $KANARIEN_ORTE; do
+        if [ "$_ko_dir" = "$_ko_z" ]; then log "OK-SHA256-KANARIE: $CMD"; exec sha256sum -- "$pfad" 2>/dev/null; fi
+      done
+      ;;
+  esac
+  pfad_lesbar_erlaubt "$pfad" && { log "OK-SHA256: $CMD"; exec sha256sum -- "$pfad" 2>/dev/null; }
 
 elif [[ "$CMD" =~ ^stat\ -c\ %Y\ \"(.+)\"\ 2\>/dev/null$ ]]; then
   pfad="${BASH_REMATCH[1]}"
