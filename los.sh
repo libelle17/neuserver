@@ -1982,6 +1982,20 @@ D=/etc/profile.local;S=TERM;W=xterm-utf8;[ -f "$D" ]&&grep "$S" "$D"||echo "# $S
     git remote set-url origin  git+ssh://git@github.com/libelle17/$D.git
   done;
   konfig_laden;
+  # labimp laeuft seit 22.9.2026 als sturm statt root (Cron ueber "su - sturm -c ..." in
+  # crontabdump, getestet per --pruefauftraege) statt wie vmparse2 root zu bleiben - sturm
+  # braucht dafuer Lesezugriff auf .config/labimp.conf. konfig_laden setzt *.conf grundsaetzlich
+  # auf 600 zurueck (richtig fuer die anderen root-Programme), deshalb hier gezielt
+  # nachkorrigieren statt konfig_laden selbst zu aendern. /var/log/labimp.log* muss sturm
+  # gehoeren, damit weiter mitprotokolliert werden kann. Idempotent.
+  if [ -f "$HOME/.config/labimp.conf" ]; then
+    setfacl -m g:praxis:x "$HOME/.config";
+    chown root:praxis "$HOME/.config/labimp.conf";
+    chmod 640 "$HOME/.config/labimp.conf";
+  fi;
+  for _f in /var/log/labimp.log /var/log/labimp.log.1.xz; do
+    [ -e "$_f" ] && chown sturm:praxis "$_f";
+  done;
   schutzdatei_verteilen;
   ps1_verteilen;
   postfix;
