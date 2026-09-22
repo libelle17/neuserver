@@ -3,6 +3,8 @@ Description=Dauerdienst: holt neue Nachrichten fuer diabetologie@dachau-mail.de 
 After=network.target mariadb.service
 
 [Service]
+User=sturm
+Group=praxis
 ExecStart=/opt/mo-emailadr/run_poll_diabetologie.sh --daemon
 Restart=always
 RestartSec=10
