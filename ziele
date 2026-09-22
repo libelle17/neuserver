@@ -104,6 +104,7 @@ ping.sh
 platz.sh
 platzwaechter.sh
 shziel_vorschau.sh
+crontab_uebernehmen.sh
 pruefimp.sh
 pruefimpn.sh
 quelle-resume.sh
