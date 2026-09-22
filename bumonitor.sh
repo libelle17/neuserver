@@ -16,6 +16,8 @@
 # "df /DATA" ueber den eingeschraenkten Backup-Schluessel (der Wrapper erlaubt "df /pfad"). Warnung unter
 # BU_MIN_FREI_PROZENT (Vorgabe 10 %), "KRITISCH" unter BU_KRIT_FREI_PROZENT (Vorgabe 3 %). Ist der Reserver aus und
 # die Platzmeldung aelter als 3 Tage, wird nur vermerkt (kein Alarm). Testhilfen: BUMON_STATUSDIR, BUMON_ZUSTAND, BUMON_SSH.
+# Ausserdem (nur Modus voll): crontab-Abgleich - vergleicht den Hash von /root/crontabakt (alle 2h aus
+# "crontab -l" neu geschrieben) zwischen linux1 und jedem Reserver; weicht er ab, s. crontab_uebernehmen.sh.
 # Mailfrequenz: nur wenn sich die Problemliste aendert oder seit der letzten Mail > 24 h vergangen
 # sind; bei Wegfall aller Probleme eine "Entwarnung". Laeuft nur auf linux1.
 EMPFAENGER="diabetologie@dachau-mail.de"
@@ -34,6 +36,21 @@ JETZT=$(date +%s); PROBLEME=""
 add() { PROBLEME="${PROBLEME}${1}"$'\n'; }
 DETAILS=""
 detail() { DETAILS="${DETAILS}${1}"$'\n'; }
+# crontab_pruefen() - vergleicht per Hash von /root/crontabakt (auf jedem Rechner alle 2h aus
+# "crontab -l" neu geschrieben), ob die crontab von $r textlich mit linux1 uebereinstimmt.
+# Jede Zeile traegt eine eigene HOST=$(hostname)-Bedingung, daher kann/soll der Text auf allen
+# Rechnern identisch sein (s. crontab_uebernehmen.sh). Nutzt denselben bereits erlaubten,
+# rein lesenden Befehl wie backup_ssh_wrapper.sh fuer /root-Pfade ("sha256sum /root/... 2>/dev/null"),
+# keine neue Zugriffsart. Eingefuehrt 22.9.2026.
+crontab_pruefen() { # Rechner
+  local r=$1 lokal remote
+  lokal=$(sha256sum /root/crontabakt 2>/dev/null | awk '{print $1}')
+  if [ -z "$lokal" ]; then detail "$r: crontab-Abgleich nicht pruefbar (lokales /root/crontabakt auf linux1 fehlt)"; return; fi
+  remote=$(timeout 25 $BUSSH root@$r 'sha256sum /root/crontabakt 2>/dev/null' 2>/dev/null | awk '{print $1}')
+  if [ -z "$remote" ]; then detail "$r: crontab-Abgleich nicht pruefbar (Rechner nicht erreichbar oder /root/crontabakt fehlt)"; return; fi
+  if [ "$remote" = "$lokal" ]; then detail "$r: crontab textgleich mit linux1"
+  else add "$r: crontab weicht von linux1 ab (Hash von /root/crontabakt unterschiedlich) - crontab_uebernehmen.sh auf $r pruefen"; fi
+}
 platz_pruefen() { # Rechner Statusdatei
   local r=$1 f=$2 live pct gb gbg quelle zeile zt ts al
   live=$(timeout 25 $BUSSH root@$r 'df /DATA' 2>/dev/null | tail -1 | awk 'NF>=5 && $(NF-4)>0 {printf "%d %d", $(NF-2), $(NF-4)}')
@@ -69,7 +86,7 @@ for r in $RESERVER; do
     elif [ "$al" -gt $(( ${MAXH[$s]} * 3600 )) ]; then add "$r: $s veraltet - letzter OK-Lauf am $dd (vor $(alter_text $al), erlaubt ${MAXH[$s]} Stunden)"
     fi
   done
-  [ "$MODUS" = voll ] && platz_pruefen "$r" "$f"
+  [ "$MODUS" = voll ] && { platz_pruefen "$r" "$f"; crontab_pruefen "$r"; }
 done
 sig=$(printf '%s' "$PROBLEME" | sha256sum | cut -c1-16)
 SF="$ZUSTAND/zustand_$MODUS"; letzte_sig=; letzte_zeit=0
