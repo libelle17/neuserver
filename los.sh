@@ -1750,8 +1750,22 @@ proginst() {
   fi;
   if [ ! -f /root/.diabetologie_pop_pwd ]; then
     printf "${rot}/root/.diabetologie_pop_pwd fehlt${reset} - poll_diabetologie_inbox.py kann sich nicht bei pop.mnet-online.de anmelden. Manuell anlegen, z.B.:\n";
-    printf "  read -s -p \"POP3-Passwort: \" pw \&\& printf '%%s' \"\$pw\" > /root/.diabetologie_pop_pwd \&\& chmod 600 /root/.diabetologie_pop_pwd \&\& unset pw\n";
+    printf "  read -s -p \"POP3-Passwort: \" pw \&\& printf '%%s' \"\$pw\" > /root/.diabetologie_pop_pwd \&\& chown root:praxis /root/.diabetologie_pop_pwd \&\& chmod 640 /root/.diabetologie_pop_pwd \&\& unset pw\n";
   fi;
+  # poll-diabetologie-inbox.service laeuft seit 2026-09-22 als sturm statt
+  # root (Ursachenbehebung fuer root-eigene Dateien in P:\dok, siehe
+  # /DATA/down/poll_diabetologie_linux1_sturm_umstellung_status.txt) - sturm
+  # (ueber die praxis-Gruppe) braucht dafuer Lesezugriff auf diese beiden
+  # Zugangsdateien. .mariadbrpwd bewusst NICHT hier (wird vom Poller nicht
+  # gebraucht, nur von linux1_commit_medoff.py/linux1_sync_medoff_changes.py,
+  # die weiterhin per Cron als root laufen). Idempotent, auch wenn schon
+  # korrekt gesetzt.
+  for _f in /root/.diabetologie_pop_pwd /root/.modbpwd; do
+    if [ -f "$_f" ]; then
+      chown root:praxis "$_f";
+      chmod 640 "$_f";
+    fi;
+  done;
   doinst fail2ban;              # Bruteforce-Schutz Basic-Auth (Dienstplan-Login)
   doinst postgresql;
   doinst postgresql-contrib;
@@ -3773,6 +3787,13 @@ cron() {
     # Dauerdienst statt Cron - erlaubt den gewuenschten 2-Minuten-Takt ohne
     # wiederholten teuren patstamm-Vollimport pro Aufruf.
     if [ -f /etc/systemd/system/poll-diabetologie-inbox.service ] && [ -x /opt/mo-emailadr/run_poll_diabetologie.sh ]; then
+      # Dienst laeuft als sturm (User=/Group= im Unit-File) - Arbeitsdateien
+      # muessen ihm gehoeren, sonst kann er den Checkpoint/Seen-Cache/die
+      # Protokolle nicht schreiben. Idempotent.
+      for _f in /opt/mo-emailadr/diabetologie_pop_uidl.txt /opt/mo-emailadr/archive_seen_cache.sqlite; do
+        [ -e "$_f" ] && chown sturm:praxis "$_f";
+      done;
+      [ -d /opt/mo-emailadr/protokolle ] && chown -R sturm:praxis /opt/mo-emailadr/protokolle;
       systemctl daemon-reload;
       systemctl enable --now poll-diabetologie-inbox.service;
       printf "${blau}poll-diabetologie-inbox.service${reset}: aktiviert.\n";
