@@ -111,7 +111,7 @@ ELG=/var/log/cronf.log
 # -7 8,14,21 * * * pgrep -c -f "dorsync.* /mnt/bzo/microbxdata" >>$NLG 2>>$ELG || mountpoint -q "/DATA" && mountpoint -q "/mnt/bzo/microbxdata" && /root/bin/dorsync_nachsamba.sh /mnt/bzo/microbxdata/ /DATA/microbxdata >>$NLG 2>>$ELG
 # # die Sicherungskopie von /gerade einmal taeglich auf /DATA/TMBack sichern
 # die Turbomed-Datenbank einmal taeglich sichern
--40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/ionice -c3 /usr/bin/7z a "/DATA/TMBack/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" /opt/turbomed/StammDB /opt/turbomed/PraxisDB -mx=9 -mtc=on -mmt=on >>$NLG 2>>$ELG
+-40 3 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/systemd-run --scope --quiet -p MemoryMax=10G -p MemorySwapMax=0 /usr/bin/ionice -c3 /usr/bin/7z a "/DATA/TMBack/TM`date +\%Y\%m\%d_\%H\%M\%S`.7z" /opt/turbomed/StammDB /opt/turbomed/PraxisDB -mx=9 -mtc=on -mmt=on -mmemuse=6g >>$NLG 2>>$ELG
 
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA >>$VL/chown-Aufruf.log 2>&1
 # -0 * * * * mountpoint -q "/DATA" && chown firebird:praxis /DATA/firebird >>$VL/chown-Aufruf.log 2>&1
@@ -194,11 +194,14 @@ ELG=/var/log/cronf.log
 # Mails in mysql-Datenbank eintragen und Faxe des diabetologie-Kontos (weitergeleitet durch entspr. Einstellung der Faxfunktion der Fritzbox) auf p: speichern
 
 # folgendes am 7.9.16 inaktiviert, auch 23.2.17
--1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG; }
--52 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG; }
--3,11,19,27,35,39,47,55 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--1,33 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
--52 6 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
+# Speichergrenzen (23.9.2026): vmparse2 -m 0 wuchs am 23.9. auf 21 GB -> OOM, Samba haengt, Neustart noetig.
+# systemd-run --scope -p MemoryMax: harte cgroup-Grenze, bei Ueberschreitung stirbt nur dieser Prozess.
+# Normal braucht vmparse2 ~15 MB; 7z zusaetzlich -mmemuse (teilt sich selbst ein, statt zu sterben).
+-1,5,9,13,17,21,25,29,33,37,41,45,49,53,57 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/systemd-run --scope --quiet -p MemoryMax=4G -p MemorySwapMax=0 /root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 >>$NLG 2>>$ELG; }
+-52 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /usr/bin/systemd-run --scope --quiet -p MemoryMax=4G -p MemorySwapMax=0 /usr/bin/vmparse2 -m 0 >>$NLG 2>>$ELG; }
+-3,11,19,27,35,39,47,55 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/systemd-run --scope --quiet -p MemoryMax=4G -p MemorySwapMax=0 /usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
+-1,33 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/systemd-run --scope --quiet -p MemoryMax=4G -p MemorySwapMax=0 /root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
+-52 6 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/usr/bin/systemd-run --scope --quiet -p MemoryMax=4G -p MemorySwapMax=0 /root/bin/verhdop.sh /usr/bin/ionice -c3 /usr/bin/vmparse2 -m 0 -p /DATA/Mail/EML/MNet -ap "_Telefax" >>$NLG 2>>$ELG
 
 # ... danach Mails in mysql-Datenbank eintragen und Faxe des gmx7-Kontos (032121164856) auf p: speichern
 -*/2 7-22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&{ /root/bin/getmail_gmx7.sh >>$NLG 2>>$ELG; }
@@ -245,7 +248,7 @@ ELG=/var/log/cronf.log
 -30 5 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux7/ ]&&/usr/bin/ionice -c3 /root/bin/datac_sync.sh >>$NLG 2>>$ELG
 -0 1 * * * mountpoint -q /mnt/seag && timeout 6h /usr/bin/ionice -c3 /root/bin/copyseag.sh >>$NLG 2>>$ELG
 -40 21 * * 5 mountpoint -q /mnt/seag && /usr/bin/ionice -c3 /root/bin/copyseag.sh >>$NLG 2>>$ELG
--15 3 * * * /usr/bin/ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
+-15 3 * * * /usr/bin/systemd-run --scope --quiet -p MemoryMax=10G -p MemorySwapMax=0 /usr/bin/ionice -c3 /root/bin/7zdb.sh >>$NLG 2>>$ELG
 -*/10 * * * * /root/bin/phpparse >/dev/null 2>>$ELG
 @reboot /sbin/modprobe capi >>$NLG 2>>$ELG
 @reboot /sbin/modprobe fcpci >>$NLG 2>>$ELG
