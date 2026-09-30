@@ -524,10 +524,16 @@ kopiermt() { # mit test
     # (z.B. smbd) erwarteten - fuehrt sonst zu schwer diagnostizierbaren
     # Zugriffsfehlern statt klarer Fehlermeldungen):
     [ $obaltgepr ]&&attr="avX"||attr="avuX";
+    # 30.9.2026: bei Quellen unter mnt/ (CIFS-Mounts wie /mnt/wser/indamed, ohne
+    # SELinux-Kontext) security.selinux von -X ausnehmen: rsync versuchte sonst,
+    # das Label jeder Zieldatei zu entfernen, scheiterte mit "lremovexattr ...
+    # security.selinux ... Permission denied" (bis 1,5 Mio. Zeilen pro Nachtlauf,
+    # rsync exit 23). Andere Quellen behalten die Kontext-Uebernahme (s.o.).
+    xfilt=;case "${1#/}" in mnt/*) xfilt=" --filter='-x security.selinux'";; esac;
     if [ "$obecht" ]; then
-      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4 $ergae$AUSSCHL" $dblau 1;
+      ausf "$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4$xfilt $ergae$AUSSCHL" $dblau 1;
     else
-      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4 $ergae$AUSSCHL$reset\n";
+      printf "Befehl wäre: $dblau$kopbef $Quelle \"$ZmD/$_ZVofs_real\" -$attr $4$xfilt $ergae$AUSSCHL$reset\n";
     fi;
     ausf "$qssh 'test -d \"/$(echo $QVos|sed s/\\\\//g)\"'" "" "" 1;[ "$ret" = 0 ]&&EXGES=${EXGES},/$QVos/;
     [ "$verb" ]&&printf "EXGES: $blau$EXGES$reset\n";
@@ -641,7 +647,8 @@ kopiermt_delta() {
   _ZVofs_real=$(printf '%s' "$ZVofs_d" | sed 's/\\ / /g');
   _Quelle="${QmD}/${_QVofs_real}";
   [ "$QL" ] && _Quelle="\"$_Quelle\"";
-  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -avX ${4:+$4} ${_ergae:+$_ergae}";
+  local _xfilt=;case "${1#/}" in mnt/*) _xfilt="--filter='-x security.selinux'";; esac; # s. kopiermt (30.9.2026)
+  _bef="$kopbef --files-from=\"$_tmplist\" $_Quelle \"${ZmD}/${_ZVofs_real}\" -avX ${4:+$4} ${_xfilt:+$_xfilt} ${_ergae:+$_ergae}";
   _ret=0;
   if [ "$obecht" ]; then
     ausf "$_bef" "$dblau" 1;
