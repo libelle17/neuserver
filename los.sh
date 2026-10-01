@@ -3838,6 +3838,24 @@ cron() {
   else
     printf "${rot}mysql-restart-watch.service oder $RBI/mysql_restart_watch.sh fehlt${reset} – erst 'make shziel' in /root/neuserver ausfuehren.\n";
   fi;
+  # Dateilesen-Statistik (2026-09-30): arztbriefe_einlesen.py fuellt quelle.arztbriefe
+  # (Briefverfasser fuer den Fallzahlstand), kvb_einlesen.py quelle.kvbgop (KVB-Zusaetze
+  # fuer die GNR-Statistik); beide liegen im Dateilesen-Repo auf /DATA.
+  _dlvz="/DATA/eigene Dateien/Programmierung/Dateilesen";
+  for _dl in "30 2 arztbriefe_einlesen.py" "35 2 kvb_einlesen.py"; do
+    read _dlmin _dlstd _dlpy <<<"$_dl";
+    if ! crontab -l 2>/dev/null | grep -qF "$_dlpy"; then
+      if [ -f "$_dlvz/$_dlpy" ]; then
+        _dlentry="-$_dlmin $_dlstd * * * mountpoint -q \"/DATA\" && /usr/bin/python3 \"$_dlvz/$_dlpy\" >>\$NLG 2>>\$ELG";
+        { crontab -l 2>/dev/null; printf "%s\n" "$_dlentry"; } | crontab -;
+        printf "$_dlpy in ${blau}crontab${reset} eingetragen.\n";
+      else
+        printf "${rot}$_dlpy nicht gefunden in $_dlvz${reset} – crontab-Eintrag übersprungen.\n";
+      fi;
+    else
+      printf "$_dlpy bereits in ${blau}crontab${reset} vorhanden.\n";
+    fi;
+  done;
 
   # 3) Arbeitskopie erstellen:
   [ "$srvhier" ]||srvhier=$(uname -n);
