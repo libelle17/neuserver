@@ -86,11 +86,16 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
     # Versuch sie zu loeschen ("Read-only file system") - Millionen Zeilen
     # Logspam bei jedem Lauf (s. Vorfall linux0 01.09.2026, Snapshot 41/wrz,
     # sowie aeltere Logs mit Snapshot 15/vrweb).
+    # /MO/INDAMED/ ausgeschlossen (2.10.2026): wird von bulinux.sh (dt2) direkt aus dem Windows-Share
+    # /mnt/wser/indamed gefuellt (~418 GB, 1,5 Mio. Dateien); auf linux1 liegen unter /DATA/MO/INDAMED nur
+    # Schutzdateien. Ohne Ausschluss loeschte --delete hier jede Nacht die gesamte INDAMED-Kopie wieder
+    # (linux0: 1.526.045 Dateien am 2.10.), die naechste Nacht kopierte alles neu, die Snapshots hielten den
+    # Umschlag fest und der Platzwaechter musste taeglich Snapshots loeschen.
     # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
     # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
     # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
     # auf dem Ziel werden dadurch NICHT geloescht.
-    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
     _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
@@ -111,7 +116,7 @@ else
   # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
   # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
     # auf dem Ziel werden dadurch NICHT geloescht.
-  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
   _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;
