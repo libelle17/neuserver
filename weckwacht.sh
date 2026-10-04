@@ -72,16 +72,37 @@ while read -r h ip mittag nacht mac; do
   log "$h: nach Wake-on-LAN $(( (JETZT - gz) / 60 )) min ohne Lauf und ohne Ping - schalte Steckdose $sw 20 s aus (vermutlich Haenger beim Abschalten).";
   if [ "$obecht" ]; then
     echo "$P" > "$S/strom_erledigt_$h";
-    /opt/tinytuya/bin/python - "$sw" >> "$LOG" 2>&1 <<'PY'
+    # Antwort der Leiste auswerten: sie erlaubt oft nur EINE lokale Verbindung - ist die App "Smart Life"
+    # auf einem Handy im WLAN geoeffnet, schlaegt das Schalten fehl (festgestellt 4.10.2026).
+    _st_aus=$(/opt/tinytuya/bin/python - "$sw" 2>&1 <<'ENDE_TUYA'
 import json, sys, time, tinytuya
 sw = sys.argv[1]
 x = [d for d in json.load(open("/root/tinytuya/devices.json")) if d["id"] == "0031545070039f0e28e4"][0]
-dev = tinytuya.OutletDevice(x["id"], "192.168.178.73", x["key"], version=3.3); dev.set_socketTimeout(5)
-print(time.strftime("%H:%M:%S"), "switch_%s AUS:" % sw, dev.set_value(sw, False).get("dps"), flush=True)
+dev = tinytuya.OutletDevice(x["id"], "192.168.178.73", x["key"], version=3.3)
+dev.set_socketTimeout(5); dev.set_socketRetryLimit(5)
+def schalte(an):
+    for versuch in range(6):
+        r = dev.set_value(sw, an)
+        if r and r.get("dps", {}).get(sw) == an:
+            return True
+        print(time.strftime("%H:%M:%S"), "switch_%s %s fehlgeschlagen:" % (sw, "EIN" if an else "AUS"), r, flush=True)
+        time.sleep(10)
+    return False
+if not schalte(False):
+    print("FEHLER: Steckdose liess sich nicht ausschalten (App Smart Life offen? Leiste erreichbar?)"); sys.exit(1)
+print(time.strftime("%H:%M:%S"), "switch_%s AUS" % sw, flush=True)
 time.sleep(20)
-print(time.strftime("%H:%M:%S"), "switch_%s EIN:" % sw, dev.set_value(sw, True).get("dps"), flush=True)
-PY
-    mail_an "weckwacht: Strom von $h kurz unterbrochen" "$h hat auch $(( (JETZT - gz) / 60 )) Minuten nach dem Wake-on-LAN-Wecken das Fenster $pz nicht begonnen und antwortete nicht auf Ping (vermutlich Haenger beim Abschalten). linux1 hat seine Steckdose (switch_$sw) 20 Sekunden ausgeschaltet; er sollte jetzt starten und nachholen.";
+if not schalte(True):
+    print("FEHLER: Steckdose liess sich NICHT WIEDER EINSCHALTEN - bitte von Hand/per App einschalten!"); sys.exit(2)
+print(time.strftime("%H:%M:%S"), "switch_%s EIN" % sw, flush=True)
+ENDE_TUYA
+); _st_rc=$?;
+    printf '%s\n' "$_st_aus" >> "$LOG";
+    case $_st_rc in
+      0) mail_an "weckwacht: Strom von $h kurz unterbrochen" "$h hat auch $(( (JETZT - gz) / 60 )) Minuten nach dem Wake-on-LAN-Wecken das Fenster $pz nicht begonnen und antwortete nicht auf Ping (vermutlich Haenger beim Abschalten). linux1 hat seine Steckdose (switch_$sw) 20 Sekunden ausgeschaltet; er sollte jetzt starten und nachholen.";;
+      2) mail_an "weckwacht: DRINGEND - Steckdose von $h bleibt AUS" "linux1 hat die Steckdose von $h (switch_$sw) ausgeschaltet, konnte sie aber nicht wieder einschalten. Bitte per App Smart Life oder von Hand einschalten! Ausgabe: $_st_aus";;
+      *) mail_an "weckwacht: Steckdose von $h nicht schaltbar" "$h haengt vermutlich (kein Lauf, kein Ping nach Wake-on-LAN), aber linux1 konnte seine Steckdose (switch_$sw) nicht schalten - ist die App Smart Life auf einem Handy im WLAN geoeffnet? Bitte $h von Hand aus- und einschalten. Ausgabe: $_st_aus";;
+    esac;
   else log "Simulation: Steckdose switch_$sw 20 s aus, dann ein"; fi;
 done <<'EOF'
 linux0 192.168.178.20 14:18 21:45 FC:34:97:11:89:AD

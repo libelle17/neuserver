@@ -104,7 +104,7 @@
 <li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken.</li>
 <li><b>Rechner antwortet nicht:</b> linux1 hinterlegt eine Notiz (<code>geweckt_&lt;rechner&gt;</code>) und weckt ihn per <b>Wake-on-LAN</b>; Mail.</li>
 <li><b>Nachholen:</b> Der geweckte Rechner erkennt das ausgefallene Fenster (höchstens 12 h alt) und holt es nach (mittags bumo, nachts den vollen Lauf). <b>Abgeschaltet wird danach nur, wenn linux1 ihn für genau dieses Fenster geweckt hat</b> &ndash; hat ihn ein Mensch eingeschaltet, sichert er nach und bleibt an.</li>
-<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. <i>Wird scharf geschaltet, sobald linux0 an switch_1 steckt (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1).</i></li>
+<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. Scharf seit 04.10.2026 (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1; Löschen schaltet Stufe 3 ab). Lässt sich die Steckdose nicht schalten, kommt eine Mail „nicht schaltbar“ bzw. „DRINGEND &ndash; bleibt AUS“.</li>
 </ol>
 <p>Alle Mails gehen an root auf linux1 (weitergeleitet an gschade@dachau-mail.de). Abschalten der Wache: <code>/root/.kein_weckwacht</code> (ganz) bzw. <code>/var/lib/wecklauf/kein_linux0</code> (ein Rechner) auf linux1.</p>
 <h3>Weitere Vorkehrungen gegen Hänger von linux0</h3>
@@ -118,11 +118,12 @@
 <tr><th bgcolor="#eeeeee">Steckdose</th><th bgcolor="#eeeeee">Gerät</th><th bgcolor="#eeeeee">Automatisch geschaltet?</th></tr>
 <tr><td><code>switch_1</code> (Ihr „Stecker 0“)</td><td>linux0</td><td>ja, nur Stufe 3 (Abschnitt 7)</td></tr>
 <tr><td><code>switch_2</code> („Stecker 1“)</td><td>linux1 &ndash; Hauptserver</td><td><b>nie</b>; nur im Notfall von Hand per App</td></tr>
-<tr><td><code>switch_3</code> („Stecker 2“)</td><td>frei</td><td>&ndash;</td></tr>
-<tr><td><code>switch_4</code> („Stecker 3“)</td><td>KoCoBox (TI-Konnektor)</td><td><b>nie</b>; nur im Notfall von Hand, nicht während der Sprechstunde</td></tr>
+<tr><td><code>switch_3</code> („Stecker 2“)</td><td>KoCoBox (TI-Konnektor)</td><td>nein; eine Unterbrechung schadet ihr nicht, danach dauert es einige Minuten, bis Kartenlesen/E-Rezept wieder gehen</td></tr>
+<tr><td><code>switch_4</code> („Stecker 3“)</td><td>Telefonanlage Panasonic KX-NS700</td><td><b>nie</b>; ein Stromschnitt trennt laufende Gespräche</td></tr>
 </table>
 <ul>
 <li>Logilink SH0104, App „Smart Life“; linux1 schaltet lokal über das WLAN (IP 192.168.178.73, Werkzeug <code>tinytuya</code> in <code>/opt/tinytuya</code>, Schlüssel in <code>/root/tinytuya</code>).</li>
+<li><b>Die Leiste erlaubt nur eine lokale Verbindung gleichzeitig:</b> Ist die App „Smart Life“ auf einem Handy im Praxis-WLAN geöffnet, kann linux1 nicht schalten. App nach Gebrauch ganz schließen (aus der Liste der offenen Apps wischen).</li>
 <li>Die Fritzbox und Netzwerkgeräte <b>nicht</b> an die Leiste. In der App das Verhalten nach Stromausfall auf „Ein“ bzw. „Letzter Zustand“.</li>
 <li>Ein harter Stromschnitt an linux1 kann Dateien/Datenbanken beschädigen &ndash; nur, wenn linux1 wirklich nicht mehr reagiert.</li>
 </ul>
