@@ -84,6 +84,28 @@ esac;
 if [ "$testzeit" ]; then JETZT_EPOCHE=$(date -d "today $testzeit" +%s);
 else JETZT_EPOCHE=$(date +%s); fi;
 
+# Weckalarm-Wache (4.10.2026): Jeder Start ausser der Reihe (von Hand, nach "zypper up" usw.) schaltet auf
+# diesen Hauptplatinen den RTC-Alarm ab (alarm_IRQ: no). Neu gesetzt wurde er bisher nur beim Bearbeiten
+# eines Fensters - wer den Rechner vorher wieder ausschaltete, legte den ganzen Fahrplan still (z.B. linux7
+# 1.10., linux0 4.10.). Deshalb bei JEDEM 5-Minuten-Aufruf: ist der Alarm nicht auf das naechste kuenftige
+# Fenster gesetzt, neu setzen. Log nur bei Aenderung. Laeuft vor der Fenster-Erkennung; ein dort spaeter
+# gesetzter Alarm (das jeweils andere Fenster) ueberschreibt diesen wie bisher.
+if [ "$obecht" ] && [ -z "$testzeit" ]; then
+  _wa_soll=;
+  for _wa_tag in today tomorrow; do
+    for _wa_zeit in "$MITTAG" "$NACHT"; do
+      _wa_k=$(date -d "$_wa_tag $_wa_zeit" +%s 2>/dev/null) || continue;
+      [ "$_wa_k" -gt "$JETZT_EPOCHE" ] && { [ -z "$_wa_soll" ] || [ "$_wa_k" -lt "$_wa_soll" ]; } && _wa_soll=$_wa_k;
+    done;
+  done;
+  _wa_ist=$(cat /sys/class/rtc/rtc0/wakealarm 2>/dev/null);
+  if [ -n "$_wa_soll" ] && [ "$_wa_ist" != "$_wa_soll" ]; then
+    _wa_txt="nicht gesetzt"; [ -n "$_wa_ist" ] && _wa_txt="auf $(date -d "@$_wa_ist" '+%d.%m. %H:%M')";
+    log "Weckalarm-Wache: Alarm war $_wa_txt - setze auf naechstes Fenster $(date -d "@$_wa_soll" '+%d.%m. %H:%M')";
+    rtcwake -m no -t "$_wa_soll" 2>&1 | tee -a "$LOG";
+  fi;
+fi;
+
 # Naechstgelegenen Kandidaten unter {MITTAG,NACHT} x {gestern,heute,morgen}
 # suchen (deckt auch Mitternachts-Zeiten wie linux7s NACHT=00:00 robust ab,
 # ohne zyklische Minutenrechnung mit Sonderfaellen):
