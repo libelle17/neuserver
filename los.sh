@@ -3846,7 +3846,8 @@ cron() {
     read _dlmin _dlstd _dlpy <<<"$_dl";
     if ! crontab -l 2>/dev/null | grep -qF "$_dlpy"; then
       if [ -f "$_dlvz/$_dlpy" ]; then
-        _dlentry="-$_dlmin $_dlstd * * * mountpoint -q \"/DATA\" && /usr/bin/python3 \"$_dlvz/$_dlpy\" >>\$NLG 2>>\$ELG";
+        # nur auf linux1 ausfuehren (die crontab ist auf linux0/linux7 identisch, s. crontabdump; 4.10.2026)
+        _dlentry="-$_dlmin $_dlstd * * * HOST=\$(hostname);[ \${HOST\\%\\%.*}/ = linux1/ ]&&mountpoint -q \"/DATA\" && /usr/bin/python3 \"$_dlvz/$_dlpy\" >>\$NLG 2>>\$ELG";
         { crontab -l 2>/dev/null; printf "%s\n" "$_dlentry"; } | crontab -;
         printf "$_dlpy in ${blau}crontab${reset} eingetragen.\n";
       else

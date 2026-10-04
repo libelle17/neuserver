@@ -335,3 +335,7 @@ ELG=/var/log/cronf.log
 -30 16 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/bumonitor.sh mittag >>$NLG 2>>$ELG
 # 21.9.2026: haelt /DATA (btrfs, Snapper) auf linux0/linux7 frei, loescht bei < 8 % frei die aeltesten Snapshots (Schutz: neueste 3 Tage), Mail bei jedem Loeschen; s. platzwaechter.sh
 -4,19,34,49 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux0/ -o ${HOST\%\%.*}/ = linux7/ ]&&/root/bin/platzwaechter.sh >>$VL/platzwaechter.log 2>&1
+# Dateilesen-Statistik (eingetragen von los.sh seit 30.9.2026, ins Repo 4.10.2026): arztbriefe_einlesen.py
+# fuellt quelle.arztbriefe, kvb_einlesen.py quelle.kvbgop; nur auf linux1
+-30 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/arztbriefe_einlesen.py" >>$NLG 2>>$ELG
+-35 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/kvb_einlesen.py" >>$NLG 2>>$ELG

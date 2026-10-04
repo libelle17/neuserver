@@ -118,7 +118,7 @@
 <tr><th bgcolor="#eeeeee">Steckdose</th><th bgcolor="#eeeeee">Gerät</th><th bgcolor="#eeeeee">Automatisch geschaltet?</th></tr>
 <tr><td><code>switch_1</code> (Ihr „Stecker 0“)</td><td>linux0</td><td>ja, nur Stufe 3 (Abschnitt 7)</td></tr>
 <tr><td><code>switch_2</code> („Stecker 1“)</td><td>linux1 &ndash; Hauptserver</td><td><b>nie</b>; nur im Notfall von Hand per App</td></tr>
-<tr><td><code>switch_3</code> („Stecker 2“)</td><td>KoCoBox (TI-Konnektor)</td><td>nein; eine Unterbrechung schadet ihr nicht, danach dauert es einige Minuten, bis Kartenlesen/E-Rezept wieder gehen</td></tr>
+<tr><td><code>switch_3</code> („Stecker 2“)</td><td>KoCoBox (TI-Konnektor)</td><td>nein; eine Unterbrechung ist nur <b>am Wochenende</b> unkritisch &ndash; danach dauert es einige Minuten, bis Kartenlesen/E-Rezept wieder gehen</td></tr>
 <tr><td><code>switch_4</code> („Stecker 3“)</td><td>Telefonanlage Panasonic KX-NS700</td><td><b>nie</b>; ein Stromschnitt trennt laufende Gespräche</td></tr>
 </table>
 <ul>
@@ -159,7 +159,6 @@
 <li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09. und 02.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
 <li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
 <li>Platz auf linux0: <code>/DATA</code> ca. 88 % belegt, seit die Medical-Office-Ablage dort dauerhaft liegt.</li>
-<li>Zwei Cron-Jobs auf linux1 (<code>arztbriefe_einle…</code> 02:30, <code>kvb_einlesen.py</code> 02:35) stehen nicht im Repo (<code>crontabdump</code>); <code>crontab_uebernehmen.sh --anwenden</code> würde sie löschen.</li>
 <li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>
 </ul>
 <p class="stand">Skripte und diese Beschreibung liegen im Repository <code>linux1:/root/neuserver</code> (Änderungen dort, dann <code>make git shziel</code>; auf linux0/linux7 <code>git pull</code> und <code>make shziel</code>).</p>
