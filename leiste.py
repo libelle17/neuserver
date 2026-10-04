@@ -15,11 +15,12 @@ Aufruf:
 
 Vorher die App "Smart Life" auf allen Handys im WLAN ganz schliessen - die Leiste
 erlaubt nur eine Verbindung (sonst Fehler 901).
+Ist eine Leiste unter ihrer IP nicht erreichbar, sucht leiste sie ueber ihre MAC im Netz.
 Einrichtung: los.sh -tuya; Schluessel in /root/tinytuya/devices.json (nicht anzeigen/weitergeben),
 nach Neueinrichtung einer Leiste in der App: steckdosenleiste.sh schluessel.
 Von szn4 (Windows-Konto sturm): leiste.bat mit "@ssh linux1 sudo /usr/local/bin/leiste %*".
 """
-import json, sys
+import json, subprocess, sys
 
 KEYDATEI = "/root/tinytuya/devices.json"
 KONFIG = "/etc/leiste.conf"
@@ -27,7 +28,7 @@ KONFIG = "/etc/leiste.conf"
 DOSEN = {"1": ("1", "9"), "2": ("2", "10"), "3": ("3", "11"), "4": ("4", "12"), "usb": ("5", "13")}
 NAMEN = {"1": "Dose 1", "2": "Dose 2", "3": "Dose 3", "4": "Dose 4", "5": "USB"}
 
-LEISTEN = {}     # Name -> (Geraete-ID, IP)
+LEISTEN = {}     # Name -> (Geraete-ID, IP, MAC oder None)
 ALIASE = {}      # Alias -> (Leiste, Dose) wie in der Datei
 GESCHUETZT = set()
 
@@ -46,8 +47,8 @@ def konfig_lesen():
             abschnitt = z[1:-1].strip().lower()
             continue
         teile = z.replace("=", " ").split()
-        if abschnitt == "leisten" and len(teile) == 3:
-            LEISTEN[teile[0].lower()] = (teile[1], teile[2])
+        if abschnitt == "leisten" and len(teile) in (3, 4):
+            LEISTEN[teile[0].lower()] = (teile[1], teile[2], teile[3].lower() if len(teile) == 4 else None)
         elif abschnitt == "aliase" and len(teile) == 3:
             ALIASE[teile[0].lower()] = (teile[1].lower(), teile[2].lower())
         elif abschnitt == "geschuetzt" and len(teile) == 1:
@@ -93,14 +94,16 @@ def schluessel():
         sys.exit("Schluessel fehlen (%s): %s - auf linux1 einrichten bzw. los.sh -kl, los.sh -tuya" % (KEYDATEI, e))
 
 
-def verbinden(name):
+def verbinden(name, ip=None):
     import tinytuya
-    dev_id, ip = LEISTEN[name]
+    dev_id, ip_konfig, _ = LEISTEN[name]
+    ip = ip or ip_konfig
     keys = schluessel()
     if dev_id not in keys:
         sys.exit("Leiste %s fehlt in %s - steckdosenleiste.sh schluessel" % (name, KEYDATEI))
     dev = tinytuya.OutletDevice(dev_id, ip, keys[dev_id], version=3.3)
     dev.set_socketTimeout(5)
+    dev.set_socketRetryLimit(2)
     return dev
 
 
@@ -114,13 +117,41 @@ def pruefen(antwort):
     return antwort
 
 
+def ip_suchen(mac, ip_alt):
+    """aktuelle IP einer Leiste ueber ihre MAC: alle Adressen im /24-Netz anpingen
+    (fuellt die ARP-Tabelle auch, wenn das Geraet auf Ping nicht antwortet), dann ip neigh"""
+    netz = ip_alt.rsplit(".", 1)[0]
+    pings = [subprocess.Popen(["ping", "-c1", "-W1", "%s.%d" % (netz, i)],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for i in range(1, 255)]
+    for p in pings:
+        p.wait()
+    for z in subprocess.run(["ip", "neigh"], capture_output=True, text=True).stdout.splitlines():
+        if mac in z.lower() and "FAILED" not in z and "INCOMPLETE" not in z:
+            return z.split()[0]
+    return None
+
+
+def ausfuehren(name, aktion):
+    """aktion(dev) an der Leiste ausfuehren; bei Fehler 901 (keine Verbindung) die Leiste
+    ueber ihre MAC suchen und es unter der gefundenen IP noch einmal versuchen"""
+    _, ip, mac = LEISTEN[name]
+    antwort = aktion(verbinden(name))
+    if mac and str((antwort or {}).get("Err")) == "901":
+        neu = ip_suchen(mac, ip)
+        if neu and neu != ip:
+            print("ACHTUNG: Leiste %s hat jetzt die IP %s statt %s - in /root/neuserver/leiste.conf aendern "
+                  "(make shziel) oder in der Fritzbox wieder %s fest zuweisen!" % (name, neu, ip, ip), file=sys.stderr)
+            antwort = aktion(verbinden(name, neu))
+    return pruefen(antwort)
+
+
 def bezeichnung(name, dps):
     g = alias_von(name, dps)
     return "%s (%s)" % (NAMEN[dps], g) if g else NAMEN[dps]
 
 
 def status(name):
-    dps = pruefen(verbinden(name).status())["dps"]
+    dps = ausfuehren(name, lambda d: d.status())["dps"]
     zeilen = ["%s: %s" % (bezeichnung(name, k), "EIN" if dps[k] else "aus") for k in sorted(NAMEN) if k in dps]
     print("%-10s %s" % (name, " | ".join(zeilen)))
 
@@ -150,20 +181,19 @@ def main(argv):
     schalter, countdown = DOSEN[argv[1].lower()]
     befehl = argv[2].lower()
     if befehl == "status":
-        dps = pruefen(verbinden(name).status())["dps"]
+        dps = ausfuehren(name, lambda d: d.status())["dps"]
         return print("%s %s: %s" % (name, bezeichnung(name, schalter), "EIN" if dps.get(schalter) else "aus"))
     if befehl == "aus" and name in GESCHUETZT and "--wirklich" not in argv:
         sys.exit("%s %s: 'aus' bleibt aus, bis jemand per App/von Hand einschaltet - lieber 'neustart'. "
                  "Wenn wirklich gewollt: leiste %s %s aus --wirklich" % (name, bezeichnung(name, schalter), name, argv[1]))
-    dev = verbinden(name)
     if befehl in ("ein", "aus"):
-        pruefen(dev.set_value(schalter, befehl == "ein"))
+        ausfuehren(name, lambda d: d.set_value(schalter, befehl == "ein"))
         print("%s %s: %s" % (name, bezeichnung(name, schalter), befehl.upper()))
     elif befehl == "neustart":
         sek = int(argv[3]) if len(argv) > 3 and argv[3].isdigit() else 10
         # Aus + Countdown in einem Befehl: die Leiste schaltet selbst wieder ein,
         # auch wenn an der Dose die Netzwerkverbindung zu diesem Rechner haengt.
-        pruefen(dev.set_multiple_values({schalter: False, countdown: sek}))
+        ausfuehren(name, lambda d: d.set_multiple_values({schalter: False, countdown: sek}))
         print("%s %s: aus, schaltet in %d s selbst wieder ein" % (name, bezeichnung(name, schalter), sek))
     else:
         hilfe()
