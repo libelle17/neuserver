@@ -10,7 +10,7 @@
 #   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
 #
 # Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
-#                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fachliches|-fritz|-firebird|
+#                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fachliches|-tuya|-fritz|-firebird|
 #                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
 #
@@ -112,6 +112,7 @@ commandline() {
   obphpparse=0; # phpparse (Auswahllisten in anzeig.php) aus phpparse/phpparse.cpp bauen und nach /root/bin installieren
   obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
   obfachliches=0; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan) einrichten
+  obtuya=0; # tinytuya + Befehl leiste (Steckdosenleisten) einrichten
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -123,7 +124,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-phpparse ][-patdirs ][-fachliches ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-phpparse ][-patdirs ][-fachliches ][-tuya ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -148,6 +149,7 @@ commandline() {
         printf "  $blau-phpparse$reset:  baut phpparse aus phpparse/phpparse.cpp und installiert es nach /root/bin\n";
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
         printf "  $blau-fachliches$reset: richtet die oeffentlichen Fachliches-Webseiten ein (AID-Vergleich, HbA1c, Dienstplan)\n";
+        printf "  $blau-tuya$reset:      richtet tinytuya und den Befehl leiste (Steckdosenleisten) ein\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -192,6 +194,7 @@ commandline() {
           phpparse) obphpparse=1;;
           patdirs) obpatdirs=1;;
           fachliches) obfachliches=1;;
+          tuya) obtuya=1;;
         esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -340,6 +343,15 @@ konfig_sichern() {
       geaendert=1;
     };
   done;
+
+  # tinytuya – Schluessel der Steckdosenleisten (fuer leiste/weckwacht.sh auf anderen Servern):
+  [ -f "$HOME/tinytuya/devices.json" ] && {
+    mkdir -p "$TMPDIR_KRYPT/tinytuya";
+    cp -a "$HOME/tinytuya/devices.json" "$TMPDIR_KRYPT/tinytuya/";
+    [ -f "$HOME/tinytuya/tinytuya.json" ] && cp -a "$HOME/tinytuya/tinytuya.json" "$TMPDIR_KRYPT/tinytuya/";
+    printf "vorgemerkt (verschlüsselt): ${blau}tinytuya/${reset}\n";
+    geaendert=1;
+  };
 
   # .gnupg – komplett (privater GPG-Schlüssel!):
   [ -d "$HOME/.gnupg" ] && {
@@ -537,6 +549,12 @@ konfig_laden() {
         else
           printf "Passwort-Datei ${blau}$HOME/$bn${reset} – nie überschreiben\n";
         fi;;
+      # Steckdosenleisten-Schluessel: dateiweise, damit ein vorhandenes ~/tinytuya nicht alles blockiert:
+      tinytuya)
+        mkdir -p "$HOME/tinytuya"; chmod 700 "$HOME/tinytuya";
+        for t in "$f"/*; do
+          _kopierdatei "$t" "$HOME/tinytuya/$(basename "$t")" "sensibel: $HOME/tinytuya/$(basename "$t")";
+        done;;
       # Programmkonfigurationen nach ~/.config/ (dort werden sie erwartet):
       *.conf)
         ziel="$HOME/.config/$bn";
@@ -4089,6 +4107,29 @@ phpparse_bauen() {
 	ausf "install -m 770 -o root -g $gruppe $instvz/phpparse/phpparse /root/bin/phpparse" "${blau}";
 } # phpparse_bauen
 
+# tuya_einrichten() – Steuerung der Tuya-Steckdosenleisten (Logilink SH0104,
+# s. Sicherungskonzept Abschnitt 8): venv /opt/tinytuya mit tinytuya (auch fuer
+# weckwacht.sh und steckdosenleiste.sh), Befehl /usr/local/bin/leiste ->
+# /root/bin/leiste.py, sudo-Regel fuer sturm (leiste.bat auf szn4 ruft
+# "ssh linux1 sudo /usr/local/bin/leiste ..."). Die Schluessel
+# (/root/tinytuya/devices.json, tinytuya.json) kommen verschluesselt ueber
+# konfig_sichern/konfig_laden, deshalb wird /root/tinytuya hier nicht angelegt.
+tuya_einrichten() {
+	printf "${dblau}tuya_einrichten$reset()\n";
+	/opt/tinytuya/bin/python -c "import tinytuya" 2>/dev/null||{
+		ausf "python3 -m venv /opt/tinytuya" "${blau}";
+		ausf "/opt/tinytuya/bin/pip -q install tinytuya" "${blau}";
+	};
+	[ -f /root/bin/leiste.py ]||ausf "install -m 700 $instvz/leiste.py /root/bin/leiste.py" "${blau}";
+	[ "$(readlink /usr/local/bin/leiste)" = /root/bin/leiste.py ]||ausf "ln -sfn /root/bin/leiste.py /usr/local/bin/leiste" "${blau}";
+	[ -f /root/tinytuya/devices.json ]||printf "${rot}/root/tinytuya/devices.json fehlt$reset - Schluessel per ${blau}los.sh -kl$reset (von linux1 mit ${blau}los.sh -ks$reset gesichert) oder ${blau}steckdosenleiste.sh schluessel$reset\n";
+	_sd=/etc/sudoers.d/leiste-sturm; # Datei mit Punkt im Namen ignoriert sudo, daher erst .tmp pruefen
+	if id sturm >/dev/null 2>&1&&[ ! -f $_sd ]; then
+		printf 'sturm ALL=(root) NOPASSWD: /usr/local/bin/leiste\n' >$_sd.tmp;
+		visudo -cf $_sd.tmp >/dev/null&&{ chmod 440 $_sd.tmp;mv $_sd.tmp $_sd;printf "sudo-Regel $blau$_sd$reset angelegt\n";:;}||{ rm -f $_sd.tmp;printf "${rot}sudo-Regel $_sd fehlerhaft, nicht angelegt$reset\n";};
+	fi;
+} # tuya_einrichten
+
 dbinhalt() {
   VZ=/DATA/sql;
 	printf "${dblau}dbinhalt$reset(), immer: $immer\n";
@@ -4234,6 +4275,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;   # Konfiguration verschlüsselt sichern
 [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;    # Konfiguration laden (nur fehlende)
 [ "$obkonfignl" = 1 ]&&konfig_laden neu;               # Konfiguration neu laden (überschreibt)
+[ $obteil = 0 -o "$obtuya" = 1 ]&&tuya_einrichten;    # Steckdosenleisten: tinytuya + leiste (nach konfig_laden wg. Schluesseln)
 [ $obteil = 0 ]&&speichern;                         # Konfiguration in Dateien schreiben
 printf "${dblau}Ende von $0$reset\n";
 
