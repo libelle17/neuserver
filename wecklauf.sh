@@ -158,6 +158,8 @@ log "${blau}wecklauf.sh${reset} auf $buhost: Fenster erkannt (Modus: $BESTER_MOD
 [ "$obecht" ] && echo "$BESTE_EPOCHE" > "$LETZTER_LAUF_DATEI";
 # Beginn an linux1 melden (weckwacht.sh weckt sonst nach 20 min), best effort:
 [ "$obecht" ] && ssh -o ConnectTimeout=20 -o BatchMode=yes linux1 "mkdir -p /var/lib/wecklauf && echo $BESTE_EPOCHE > /var/lib/wecklauf/lauf_$buhost" 2>&1 | tee -a "$LOG";
+# Rechnerschluessel der Uebernahme-Kandidaten auch unter "linux1" bekannt machen (s. hostkeys_uebernahme.sh):
+[ "$obecht" ] && [ -x /root/bin/hostkeys_uebernahme.sh ] && /root/bin/hostkeys_uebernahme.sh -e 2>&1 | tee -a "$LOG";
 
 # Naechsten Alarm bestimmen (das jeweils andere Fenster, naechstes
 # Vorkommen NACH diesem) und ZUERST setzen (s. Kommentar oben):

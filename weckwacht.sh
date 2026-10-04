@@ -32,8 +32,12 @@ mail_an() { { printf 'To: %s\nSubject: %s\nContent-Type: text/plain; charset=UTF
 if [ "$testzeit" ]; then JETZT=$(date -d "$testzeit" +%s); else JETZT=$(date +%s); fi;
 
 # Rechner IP MITTAG NACHT MAC (Weckzeiten wie in wecklauf.sh)
+# Im Notfallbetrieb (uebernahme.sh: dieser Rechner spielt linux1, eigentlich z.B. linux0) die eigene,
+# eigentliche Identitaet nicht pruefen - sonst Fehlalarme bzw. Wecken seiner selbst (4.10.2026).
+EIGEN=$(cat /etc/notfallbetrieb 2>/dev/null);
 while read -r h ip mittag nacht mac; do
   [ -f "$S/kein_$h" ] && continue;
+  [ -n "$EIGEN" ] && [ "$h" = "$EIGEN" ] && continue;
   # juengstes Fenster, dessen Pruefzeit (Zielzeit + FRUEH_S) erreicht ist, hoechstens SPAET_S alt
   P=;
   heute=$(date -d "@$JETZT" +%F); gestern=$(date -d "$heute -1 day" +%F);
