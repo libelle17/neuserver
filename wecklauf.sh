@@ -266,6 +266,16 @@ case "$BESTER_MODUS" in
     _lauf /root/bin/bumo.sh;
     _lauf /root/bin/bulinux.sh -f;
     _lauf /root/bin/bunacht.sh;
+    # Eigene C++-Programme (autofax, anrliste, fbfax ...) auf den neuesten github-Stand
+    # bringen, damit dieser Ersatzrechner bei Ausfall von linux1 sofort bereit ist
+    # (5.10.2026). Nicht ueber _lauf: los.sh kennt kein -e; baut nur Geaendertes.
+    if [ "$obecht" ]; then
+      log "${blau}Starte${reset} los.sh -pa";
+      timeout 2h /root/bin/los.sh -pa 2>&1 | tee -a "$LOG";
+      log "${blau}Ende${reset} los.sh -pa (Exitcode der timeout-Huelle: ${PIPESTATUS[0]})";
+    else
+      log "Simulation: timeout 2h /root/bin/los.sh -pa";
+    fi;
     ;;
 esac;
 
