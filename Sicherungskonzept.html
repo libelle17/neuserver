@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Sicherungskonzept Praxis-Server</title>
+<style>
+  body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; max-width: 52em; margin: 2em auto; padding: 0 1em; }
+  h1, h2, h3 { font-family: "DejaVu Sans", Arial, sans-serif; }
+  h1 { font-size: 18pt; margin-bottom: .2em; }
+  h2 { font-size: 13.5pt; margin-top: 1.6em; border-bottom: 1px solid #999; padding-bottom: .15em; }
+  h3 { font-size: 11.5pt; margin-top: 1.2em; }
+  .stand { color: #555; margin-top: 0; }
+  table { border-collapse: collapse; margin: .6em 0; width: 100%; }
+  th, td { border: 1px solid #aaa; padding: .25em .45em; vertical-align: top; text-align: left; }
+  th { background: #eee; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 9.5pt; background: #f3f3f3; padding: 0 .15em; }
+  .kasten { border: 1px solid #c90; background: #fff8e6; padding: .5em .8em; margin: .8em 0; }
+  .wichtig { border: 1px solid #b00; background: #fdeeee; padding: .5em .8em; margin: .8em 0; }
+  li { margin: .15em 0; }
+  @media print { body { margin: 0; max-width: none; } h2 { page-break-after: avoid; } table { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>Datensicherungskonzept der Praxis-Server</h1>
+<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 04.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
+
+<table class="kasten" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #cc9900"><tr><td bgcolor="#fff8e6" style="background:#fff8e6"><b>In einem Satz:</b> Die Praxisdaten liegen auf den Windows-Servern <b>wser</b>/<b>wres</b> (Medical Office) und dem Linux-Hauptserver <b>linux1</b>. Die beiden Sicherungsrechner <b>linux0</b> und <b>linux7</b> schalten sich zweimal täglich selbst ein, <b>holen</b> sich die Daten von linux1, bewahren ältere Stände als Snapshots auf und schalten sich wieder aus. linux1 selbst kann auf die Sicherungsrechner nicht zugreifen &ndash; ein Verschlüsselungstrojaner auf linux1 oder einem Windows-PC kommt deshalb nicht an die Sicherungen.</td></tr></table>
+
+<h2>1. Die Rechner und ihre Rollen</h2>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee">Rechner</th><th bgcolor="#eeeeee">Rolle</th><th bgcolor="#eeeeee">Standort / Hinweise</th></tr>
+<tr><td><b>wser</b> (Windows-Server)</td><td>Medical Office mit MariaDB-Datenbank, Dokumentenablage <code>d:\indamed</code></td><td>Anmeldung, 2. PC von links</td></tr>
+<tr><td><b>wres</b> (Windows-Reserveserver)</td><td>Replikationsserver für Medical Office, übernimmt, wenn wser nicht erreichbar ist</td><td>Anmeldung, 1. PC von links</td></tr>
+<tr><td><b>linux1</b> (192.168.178.21)</td><td>Linux-Hauptserver: Freigaben <code>/DATA</code> (Patientendokumente, Mail, Datenbanken), MariaDB-Datenbanken, hängt die Freigaben von wser/wres ein; Quelle aller Linux-Sicherungen</td><td>Serverraum, läuft ständig</td></tr>
+<tr><td><b>linux0</b> (192.168.178.20)</td><td>Sicherungsrechner 1</td><td>Serverraum (bei linux1), meist ausgeschaltet; Steckdosenleiste <code>switch_1</code></td></tr>
+<tr><td><b>linux7</b> (192.168.178.27)</td><td>Sicherungsrechner 2</td><td>Raum mit szn4 und amd, meist ausgeschaltet</td></tr>
+</table>
+
+<h2>2. Grundsätze</h2>
+<ul>
+<li><b>Ziehen statt Schieben:</b> Die Sicherungsrechner holen die Daten von linux1 (ssh/rsync). linux1 hat bewusst <b>keinen</b> ssh-Zugang zu linux0/linux7. Wake-on-LAN-Wecken (siehe Abschnitt 7) gibt keinen Zugang.</li>
+<li><b>Ältere Stände bleiben erhalten:</b> Auf linux0 und linux7 liegt <code>/DATA</code> auf btrfs mit Snapper-Snapshots (auf linux0: täglich, 7 Tage). Wird auf linux1 etwas gelöscht oder verschlüsselt, steht der alte Stand noch in den Snapshots.</li>
+<li><b>Platzwächter</b> (<code>platzwaechter.sh</code>, alle 15 min auf linux0/linux7): Fällt der freie Platz auf <code>/DATA</code> unter 8 %, löscht er die ältesten Snapshots, bis 12 % frei sind &ndash; die Snapshots der letzten 3 Tage aber nie. Bricht der freie Platz plötzlich stark ein (mögliche Verschlüsselung), löscht er nichts, sondern meldet sich. Jede Löschung wird gemailt.</li>
+<li><b>Schutzdateien (Frühwarnung):</b> In den gesicherten Verzeichnissen liegen Dateien „Schutzdatei_bitte_belassen…“. Weicht eine davon vor dem Kopieren inhaltlich ab (Hinweis auf Verschlüsselung), wird das Verzeichnis <b>nicht</b> kopiert und eine Warnmail verschickt.</li>
+<li><b>Zwei Sicherungsrechner in zwei Räumen</b>, damit ein Schaden in einem Raum nicht alle Kopien trifft.</li>
+</ul>
+
+<h2>3. Windows-Seite (Medical Office) &ndash; aus der Fassung vom 19.04.2026</h2>
+<ol>
+<li>Medical Office läuft auf <b>wser</b> und <b>wres</b>; wres ist Replikationsserver und kann immer verwendet werden, wenn wser nicht zugreifbar ist.</li>
+<li>Ob beide synchron sind, ist u.a. im Programm <code>dateilese.exe</code> (Patientendaten) erkennbar: in der vorletzten Zeile steht das Datum des jeweils letzten Eintrags.</li>
+<li>Die MariaDB-Datenbank liegt auf wser in <code>d:\indamed\dat\medoffDB</code> (<code>\\wser\indamed\dat\medoffDB</code>), auf wres in <code>d:\medoff\dat\medoffDB</code> (<code>\\wres\medoff\dat\medoffDB</code>).</li>
+<li>Über das Medical-Office-Datenpflegeprogramm auf wser wird die Datenbank nach jedem Arbeitshalbtag und Sa+So abends („Dateisicherung für große Datenbanken“) nach <code>h:\mosich</code> gesichert (nicht ankreuzen: „Sicherungskopie der letzten … Tage vorhalten“).</li>
+<li>Aufgabenplanung (<code>taskschd.msc</code>) auf wser:
+  <ul>
+  <li>täglich 14:00 und 20:30 „MariaDB-Backup-Komprimierung“ (<code>e:\tmexport\backup-compress.ps1</code>): komprimiert die Sicherungen aus <code>h:\mosich</code> nach <code>h:\mo7z</code> und löscht sie bei Erfolg nach drei Tagen;</li>
+  <li>täglich 1:00 „StutzMoSich“ (<code>e:\tmexport\stutzmosich.ps1</code>): verschiebt ältere <code>20*.7z</code> aus <code>h:\mo7z</code> nach <code>h:\mo7z\loe</code> (Aufbewahrungsregeln); dort bei Platzmangel von Hand löschen;</li>
+  <li>täglich 1:50 „Mo spiegeln“ (<code>c:\users\sturm\spiegele.bat</code>): kopiert <code>d:\indamed\</code> nach <code>h:\indamed</code> und <code>c:\users\sturm</code> nach <code>e:\users\sturm</code> (vom BIOS aus kann man auch von <code>e:\</code> starten).</li>
+  </ul>
+  Duplikate der aufgerufenen Dateien liegen in <code>v:\</code>.</li>
+<li>Auf wser liegen Kopien von <code>d:\indamed</code> von 2025/2026 (ohne <code>files</code>) in <code>d:\indamed25</code> und <code>d:\indamed426</code> bzw. komprimiert in <code>h:\mo7z</code> &ndash; auch nutzbar, falls ein Medical-Office-Versionsupdate scheitert (vorher bei gestoppten Datenbankdiensten die aktuelle Datenbank hineinkopieren); parallel auf wres in <code>d:\medoff25</code> und <code>c:\mo7z</code>.</li>
+</ol>
+
+<h2>4. linux1 als Sammelpunkt</h2>
+<ul>
+<li>Cron auf linux1 kopiert die komprimierten Medical-Office-Sicherungen: 14:00 und 21:00 <code>/mnt/wser/mo7z/</code> &rarr; <code>/DATA/mo7z/</code>, 23:00 <code>/mnt/wres/mo7z/</code> &rarr; <code>/DATA/wresmo7z/</code>.</li>
+<li>linux1 hängt die Freigaben von wser ein (u.a. <code>/mnt/wser/indamed</code>, <code>/mnt/wser/mosich</code>). Über diese holen sich die Sicherungsrechner die Medical-Office-Ablage <b>direkt</b> (Abschnitt 5, „dt2“).</li>
+<li>Für den Datenbankabgleich exportiert linux1 seine MariaDB-Datenbanken auf Anforderung eines Sicherungsrechners. Eine Sperre (<code>/tmp/bulinux_db_linux1.lock</code>) verhindert zwei gleichzeitige Exporte; der zweite Rechner <b>wartet</b> (bis 8 h) statt auszulassen.</li>
+</ul>
+
+<h2>5. Was gesichert wird &ndash; Mittags- und Nachtlauf</h2>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee">Lauf</th><th bgcolor="#eeeeee">Skript</th><th bgcolor="#eeeeee">Inhalt</th></tr>
+<tr><td rowspan="1">Mittag</td><td><code>bumo.sh</code></td><td><code>/DATA/Patientendokumente</code>, nur neue/geänderte Dateien (keine Löschungen)</td></tr>
+<tr><td rowspan="5">Nacht</td><td><code>bumo.sh</code></td><td>wie mittags</td></tr>
+<tr><td><code>bulinux.sh -f</code> dt1</td><td>Konfigurationsdateien von linux1 (u.a. <code>/root</code>-Zugänge, Postfix, <code>/srv/www/htdocs</code>, Skripte)</td></tr>
+<tr><td><code>bulinux.sh -f</code> dt2</td><td>Windows-Freigaben: Medical-Office-Ablage von wser (<code>/mnt/wser/indamed</code> &rarr; <code>/DATA/MO/INDAMED</code>, ca. 420 GB), MO-Sicherungen (<code>/DATA/MO/Sich</code>), Outlook-Dateien</td></tr>
+<tr><td><code>bulinux.sh -f</code> dt3 + db</td><td>die <code>/DATA</code>-Verzeichnisse; MariaDB: Export auf linux1, Import auf dem Sicherungsrechner („Dump OK / Awk OK / Import OK“)</td></tr>
+<tr><td><code>bunacht.sh</code></td><td>vollständige Spiegelung von <code>/DATA</code> <b>mit</b> Übernahme von Löschungen; ausgenommen <code>/MO/INDAMED/</code> (kommt aus dt2), <code>/VirtualBox/</code>, <code>.snapshots/</code>; <code>/Mail/</code> getrennt</td></tr>
+</table>
+<p>Jedes Skript darf höchstens <b>8 Stunden</b> laufen. Wird es abgebrochen, steht im Log in Rot „ABGEBROCHEN … Sicherung UNVOLLSTAENDIG!“ und der echte Exitcode (124).</p>
+
+<h2>6. Der Fahrplan: Ein- und Ausschalten</h2>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee"></th><th bgcolor="#eeeeee">Mittag</th><th bgcolor="#eeeeee">Nacht</th></tr>
+<tr><td><b>linux0</b></td><td>14:18</td><td>21:45</td></tr>
+<tr><td><b>linux7</b></td><td>14:48</td><td>00:00</td></tr>
+</table>
+<ul>
+<li>Der Rechner wird von seinem eingebauten <b>Weckalarm</b> (RTC) eingeschaltet. <code>wecklauf.sh</code> läuft alle 5 Minuten (Cron), erkennt ein Fenster bis zu 7 Minuten vor/nach der Weckzeit, startet die Sicherung und setzt den nächsten Weckalarm.</li>
+<li><b>Abgeschaltet wird nur, wenn der Rechner beim Fensterbeginn weniger als 10 Minuten lief</b> (also per Weckalarm gestartet wurde). Läuft er schon länger (jemand arbeitet daran), wird gesichert, aber nicht abgeschaltet.</li>
+<li><b>Weckalarm-Schutz:</b> Jeder Start außer der Reihe (von Hand, nach <code>zypper up</code> usw.) schaltet auf diesen Hauptplatinen den Alarm ab. Deshalb prüft <code>wecklauf.sh</code> bei <b>jedem</b> 5-Minuten-Aufruf und zusätzlich <b>beim Herunterfahren</b> (<code>wecklauf-alarm.service</code>), ob der Alarm auf dem nächsten Fenster steht, und setzt ihn sonst neu.</li>
+</ul>
+<table class="wichtig" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #bb0000"><tr><td bgcolor="#fdeeee" style="background:#fdeeee"><b>Bitte beachten:</b>
+<ul>
+<li>Einen Sicherungsrechner, der <b>weniger als 10 Minuten vor einer Weckzeit</b> eingeschaltet wurde, hält <code>wecklauf.sh</code> für „per Weckalarm gestartet“ und schaltet ihn nach der Sicherung ab (linux0: ca. 14:08&ndash;14:25 und 21:35&ndash;21:52; linux7: ca. 14:38&ndash;14:55 und 23:50&ndash;00:07).</li>
+<li>Wartung: Liegt <code>/root/.kein_wecklauf</code> auf dem Rechner, tut <code>wecklauf.sh</code> gar nichts (kein Sichern, kein Abschalten, kein Alarm). Danach wieder löschen!</li>
+</ul></td></tr></table>
+
+<h2>7. Sicherheitsnetze bei Ausfällen</h2>
+<p><code>weckwacht.sh</code> läuft auf linux1 alle 5 Minuten. Jeder Sicherungsrechner meldet den Beginn eines Fensters an linux1 (<code>/var/lib/wecklauf/lauf_linux0</code> bzw. <code>_linux7</code>). Fehlt diese Meldung 20 Minuten nach der Weckzeit:</p>
+<ol>
+<li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken.</li>
+<li><b>Rechner antwortet nicht:</b> linux1 hinterlegt eine Notiz (<code>geweckt_&lt;rechner&gt;</code>) und weckt ihn per <b>Wake-on-LAN</b>; Mail.</li>
+<li><b>Nachholen:</b> Der geweckte Rechner erkennt das ausgefallene Fenster (höchstens 12 h alt) und holt es nach (mittags bumo, nachts den vollen Lauf). <b>Abgeschaltet wird danach nur, wenn linux1 ihn für genau dieses Fenster geweckt hat</b> &ndash; hat ihn ein Mensch eingeschaltet, sichert er nach und bleibt an.</li>
+<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. <i>Wird scharf geschaltet, sobald linux0 an switch_1 steckt (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1).</i></li>
+</ol>
+<p>Alle Mails gehen an root auf linux1 (weitergeleitet an gschade@dachau-mail.de). Abschalten der Wache: <code>/root/.kein_weckwacht</code> (ganz) bzw. <code>/var/lib/wecklauf/kein_linux0</code> (ein Rechner) auf linux1.</p>
+<h3>Weitere Vorkehrungen gegen Hänger von linux0</h3>
+<ul>
+<li>Hardware-Watchdog (iTCO, 2 min, „nowayout“): setzt linux0 zurück, wenn Linux selbst hängt &ndash; auch beim Herunterfahren.</li>
+<li>netconsole: linux0 schickt seine Kernel- und Herunterfahr-Meldungen an linux1 (<code>/var/log/netconsole-linux0.log</code>). Bisher zeigen alle Hänger: Linux war fertig, der Hänger liegt danach im BIOS/Mainboard (ASUS PRIME B365M-A, BIOS 2208 = neuestes).</li>
+</ul>
+
+<h2>8. Die Steckdosenleiste im Serverraum</h2>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee">Steckdose</th><th bgcolor="#eeeeee">Gerät</th><th bgcolor="#eeeeee">Automatisch geschaltet?</th></tr>
+<tr><td><code>switch_1</code> (Ihr „Stecker 0“)</td><td>linux0</td><td>ja, nur Stufe 3 (Abschnitt 7)</td></tr>
+<tr><td><code>switch_2</code> („Stecker 1“)</td><td>linux1 &ndash; Hauptserver</td><td><b>nie</b>; nur im Notfall von Hand per App</td></tr>
+<tr><td><code>switch_3</code> („Stecker 2“)</td><td>frei</td><td>&ndash;</td></tr>
+<tr><td><code>switch_4</code> („Stecker 3“)</td><td>KoCoBox (TI-Konnektor)</td><td><b>nie</b>; nur im Notfall von Hand, nicht während der Sprechstunde</td></tr>
+</table>
+<ul>
+<li>Logilink SH0104, App „Smart Life“; linux1 schaltet lokal über das WLAN (IP 192.168.178.73, Werkzeug <code>tinytuya</code> in <code>/opt/tinytuya</code>, Schlüssel in <code>/root/tinytuya</code>).</li>
+<li>Die Fritzbox und Netzwerkgeräte <b>nicht</b> an die Leiste. In der App das Verhalten nach Stromausfall auf „Ein“ bzw. „Letzter Zustand“.</li>
+<li>Ein harter Stromschnitt an linux1 kann Dateien/Datenbanken beschädigen &ndash; nur, wenn linux1 wirklich nicht mehr reagiert.</li>
+</ul>
+
+<h2>9. Von Hand nachholen</h2>
+<ul>
+<li>Komplett (wie Nachtlauf, danach Weckalarm setzen und <b>abschalten</b>):<br><code>systemd-run --unit=sicherung-nachholen --collect /root/bin/nachholen.sh</code> auf linux0 bzw. linux7. Nicht starten, wenn dort jemand arbeitet.</li>
+<li>Nur Datenbanken: <code>bulinux.sh -db -e</code>; nur Medical-Office-Ablage: <code>bulinux.sh -f -dt2 -e</code>.</li>
+</ul>
+
+<h2>10. Kontrolle</h2>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee">Was</th><th bgcolor="#eeeeee">Wo</th></tr>
+<tr><td>Ablauf der Sicherungen, Exitcodes, „ABGEBROCHEN“</td><td><code>/var/log/wecklauf.log</code> auf linux0/linux7 (täglich um 07:01 rotiert nach <code>.1.xz</code>)</td></tr>
+<tr><td>Wecken/Steckdose durch linux1</td><td><code>/var/log/weckwacht.log</code> auf linux1, Mails</td></tr>
+<tr><td>Platz und Snapshot-Löschungen</td><td><code>/var/log/platzwaechter.log</code> auf linux0/linux7, Mails</td></tr>
+<tr><td>Herunterfahren von linux0</td><td><code>/var/log/netconsole-linux0.log</code> auf linux1</td></tr>
+<tr><td>Starts und Abschaltungen</td><td><code>last -x | head</code> auf dem jeweiligen Rechner</td></tr>
+</table>
+<p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“.</p>
+
+<h2>11. Notfall: Ein Sicherungsrechner übernimmt linux1</h2>
+<p>Fällt linux1 aus, kann linux0 oder linux7 mit <code>uebernahme.sh</code> seine Rolle übernehmen (Hostname linux1, IP 192.168.178.21, Marker <code>/etc/notfallbetrieb</code> mit der eigentlichen Identität), Rückgabe mit <code>ruecknahme.sh</code>; Ablauf siehe <code>Anleitung_MFA_Notfall_Uebernahme_Rueckgabe</code>. Dabei gilt:</p>
+<ul>
+<li>Der neue Hauptrechner schaltet sich nicht selbst ab und sichert nicht auf sich selbst; der verbleibende Sicherungsrechner sichert weiter von „linux1“.</li>
+<li><code>weckwacht.sh</code> lässt die eigene, eigentliche Identität aus (keine Fehlalarme).</li>
+<li>Die Sicherungsrechner kennen die Rechnerschlüssel von linux0 und linux7 auch unter dem Namen „linux1“ (<code>hostkeys_uebernahme.sh</code>, läuft bei jedem Fenster) &ndash; sonst würden sie den neuen linux1 ablehnen.</li>
+<li>Die Steckdosen-Automatik (Stufe 3) gibt es auf dem neuen Hauptrechner nicht; schalten nur von Hand per App.</li>
+</ul>
+
+<h2>12. Offene Punkte (Stand 04.10.2026)</h2>
+<ul>
+<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09. und 02.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
+<li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
+<li>Platz auf linux0: <code>/DATA</code> ca. 88 % belegt, seit die Medical-Office-Ablage dort dauerhaft liegt.</li>
+<li>Zwei Cron-Jobs auf linux1 (<code>arztbriefe_einle…</code> 02:30, <code>kvb_einlesen.py</code> 02:35) stehen nicht im Repo (<code>crontabdump</code>); <code>crontab_uebernehmen.sh --anwenden</code> würde sie löschen.</li>
+<li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>
+</ul>
+<p class="stand">Skripte und diese Beschreibung liegen im Repository <code>linux1:/root/neuserver</code> (Änderungen dort, dann <code>make git shziel</code>; auf linux0/linux7 <code>git pull</code> und <code>make shziel</code>).</p>
+</body>
+</html>
