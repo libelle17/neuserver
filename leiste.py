@@ -2,14 +2,16 @@
 """Steuerung der Tuya-Steckdosenleisten (Logilink Smart Power Strip SH0104) im Praxisnetz.
 
 Aufruf:
-  leiste                                   Status aller Leisten und diese Hilfe
+  leiste                                   Status aller Leisten, diese Hilfe und die Konfiguration
   leiste <leiste> [status]                 Status einer Leiste
   leiste <leiste> <dose> ein|aus
   leiste <leiste> <dose> neustart [sek]    aus, nach sek Sekunden (Standard 10) schaltet
                                            die Leiste selbst wieder ein
+  leiste <alias> ein|aus|neustart [sek]    wie oben, Alias steht fuer Leiste und Dose
 
-  <leiste>: serverraum | anmeldung | sz2   (eindeutige Abkuerzung genuegt: se, a, sz)
+  <leiste>: Name aus [leisten] der Konfiguration (eindeutige Abkuerzung genuegt)
   <dose>:   1-4 | usb
+  <alias>:  aus [aliase] der Konfiguration, z.B. linux0
 
 Vorher die App "Smart Life" auf allen Handys im WLAN ganz schliessen - die Leiste
 erlaubt nur eine Verbindung (sonst Fehler 901).
@@ -20,24 +22,68 @@ Von szn4 (Windows-Konto sturm): leiste.bat mit "@ssh linux1 sudo /usr/local/bin/
 import json, sys
 
 KEYDATEI = "/root/tinytuya/devices.json"
-LEISTEN = {
-    "serverraum": ("0031545070039f0e28e4", "192.168.178.73"),
-    "anmeldung":  ("0031545070039f0e7f1f", "192.168.178.76"),
-    "sz2":        ("0031545070039f0ecb14", "192.168.178.159"),
-}
-# Was an den Dosen haengt (s. Sicherungskonzept Abschnitt 8); fehlt ein Eintrag, nur "Dose n"
-GERAETE = {
-    "serverraum": {"1": "linux0", "2": "linux1", "3": "KoCoBox", "4": "Telefonanlage"},
-}
+KONFIG = "/etc/leiste.conf"
 # Datenpunkte: Schalter und zugehoeriger Countdown (Countdown schaltet nach Ablauf um)
 DOSEN = {"1": ("1", "9"), "2": ("2", "10"), "3": ("3", "11"), "4": ("4", "12"), "usb": ("5", "13")}
 NAMEN = {"1": "Dose 1", "2": "Dose 2", "3": "Dose 3", "4": "Dose 4", "5": "USB"}
-# "aus" hier nur mit --wirklich: ohne Strom kaeme die Dose nur per App/von Hand wieder an
-KRITISCH = {("serverraum", "1"), ("serverraum", "2"), ("serverraum", "3"), ("serverraum", "4")}
+
+LEISTEN = {}     # Name -> (Geraete-ID, IP)
+ALIASE = {}      # Alias -> (Leiste, Dose) wie in der Datei
+GESCHUETZT = set()
 
 
-def hilfe():
+def konfig_lesen():
+    abschnitt = None
+    try:
+        zeilen = open(KONFIG, encoding="utf-8").read().splitlines()
+    except OSError as e:
+        sys.exit("Konfiguration fehlt: %s (make shziel bzw. /root/neuserver/leiste.conf)" % e)
+    for nr, z in enumerate(zeilen, 1):
+        z = z.split("#")[0].strip()
+        if not z:
+            continue
+        if z.startswith("[") and z.endswith("]"):
+            abschnitt = z[1:-1].strip().lower()
+            continue
+        teile = z.replace("=", " ").split()
+        if abschnitt == "leisten" and len(teile) == 3:
+            LEISTEN[teile[0].lower()] = (teile[1], teile[2])
+        elif abschnitt == "aliase" and len(teile) == 3:
+            ALIASE[teile[0].lower()] = (teile[1].lower(), teile[2].lower())
+        elif abschnitt == "geschuetzt" and len(teile) == 1:
+            GESCHUETZT.add(teile[0].lower())
+        else:
+            print("%s Zeile %d nicht verstanden: %s" % (KONFIG, nr, z), file=sys.stderr)
+
+
+def leiste_finden(kurz):
+    # eindeutige Abkuerzung erlaubt, z.B. "se" oder "a"
+    treffer = [n for n in LEISTEN if n.startswith(kurz.lower())]
+    if kurz.lower() in LEISTEN:
+        return kurz.lower()
+    if len(treffer) != 1:
+        sys.exit("Unbekannte oder mehrdeutige Leiste '%s' (Leisten: %s; Aliase: %s)"
+                 % (kurz, ", ".join(LEISTEN), ", ".join(ALIASE)))
+    return treffer[0]
+
+
+def alias_von(name, dps):
+    for a, (l, d) in ALIASE.items():
+        try:
+            if leiste_finden(l) == name and DOSEN.get(d, (None,))[0] == dps:
+                return a
+        except SystemExit:
+            pass
+    return None
+
+
+def hilfe(mit_konfig=False):
     print(__doc__.split("Einrichtung:")[0].rstrip())
+    if mit_konfig:
+        print("\nKonfiguration %s:" % KONFIG)
+        for z in open(KONFIG, encoding="utf-8").read().splitlines():
+            if z.strip() and not z.lstrip().startswith("#"):
+                print("  " + z)
 
 
 def schluessel():
@@ -69,7 +115,7 @@ def pruefen(antwort):
 
 
 def bezeichnung(name, dps):
-    g = GERAETE.get(name, {}).get(dps)
+    g = alias_von(name, dps)
     return "%s (%s)" % (NAMEN[dps], g) if g else NAMEN[dps]
 
 
@@ -80,6 +126,7 @@ def status(name):
 
 
 def main(argv):
+    konfig_lesen()
     if not argv or argv[0] in ("-h", "--help", "hilfe"):
         if not argv:
             for name in LEISTEN:
@@ -88,13 +135,13 @@ def main(argv):
                 except SystemExit as e:
                     print("%-10s %s" % (name, e))
             print()
-        hilfe()
+        hilfe(mit_konfig=True)
         return
-    # eindeutige Abkuerzung erlaubt, z.B. "se" oder "a"
-    treffer = [n for n in LEISTEN if n.startswith(argv[0].lower())]
-    if len(treffer) != 1:
-        sys.exit("Unbekannte oder mehrdeutige Leiste '%s' (moeglich: %s)" % (argv[0], ", ".join(LEISTEN)))
-    name = treffer[0]
+    if argv[0].lower() in ALIASE:
+        argv = list(ALIASE[argv[0].lower()]) + argv[1:]
+        if len(argv) == 2:
+            argv.append("status")
+    name = leiste_finden(argv[0])
     if argv[1:] in ([], ["status"]):
         return status(name)
     if len(argv) < 3 or argv[1].lower() not in DOSEN:
@@ -102,7 +149,10 @@ def main(argv):
         sys.exit(1)
     schalter, countdown = DOSEN[argv[1].lower()]
     befehl = argv[2].lower()
-    if befehl == "aus" and (name, schalter) in KRITISCH and "--wirklich" not in argv:
+    if befehl == "status":
+        dps = pruefen(verbinden(name).status())["dps"]
+        return print("%s %s: %s" % (name, bezeichnung(name, schalter), "EIN" if dps.get(schalter) else "aus"))
+    if befehl == "aus" and name in GESCHUETZT and "--wirklich" not in argv:
         sys.exit("%s %s: 'aus' bleibt aus, bis jemand per App/von Hand einschaltet - lieber 'neustart'. "
                  "Wenn wirklich gewollt: leiste %s %s aus --wirklich" % (name, bezeichnung(name, schalter), name, argv[1]))
     dev = verbinden(name)

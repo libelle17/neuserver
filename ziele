@@ -201,6 +201,7 @@ autovw8gs.cifs
 autowser.cifs
 my.cnf
 vsftpd.conf
+leiste.conf
 [/etc/auto.master.d]
 gs.autofs
 [/]
