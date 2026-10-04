@@ -191,8 +191,9 @@ if ($ergeb->num_rows >0) {
 }
 }
 
-function tragein($conn, $pat_id, $eintrag) 
+function tragein($conn, $pat_id, $eintrag)
 {
+    $eintrag=substr($eintrag,0,200); // Spalte "Beschreib" ist varchar(200)
     $schondrin=0;
     if (isset($_SESSION['arr'])) 
       for($i=0;$i<count($_SESSION['arr']);$i++) if ($_SESSION['arr'][$i]==$eintrag) {
@@ -222,8 +223,8 @@ function tragein($conn, $pat_id, $eintrag)
       }
       $_SESSION['aut'][]=$aut;
       $sql="INSERT INTO zutun(pat_id,pos,beschreib,AktZeit,AktPC,Person,Vorbereiter,Behandler) ".
-        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$eintrag."',now(),'".$_SERVER['REMOTE_ADDR']
-        ."','".$_SESSION['person']."','".$_SESSION['ma']."','".$_SESSION['bh']."');";
+        "VALUES(".$pat_id.",".count($_SESSION['arr']).",'".$conn->real_escape_string($eintrag)."',now(),'".$_SERVER['REMOTE_ADDR']
+        ."','".$_SESSION['person']."','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."');";
       //    echo $sql."<br>";
       //  $ergeb=$conn->query($sql);
       $ergeb=self::abfrage($conn,$sql);
@@ -265,12 +266,15 @@ include '../../phppwd.php';
   $conn = new mysqli($pc,$user,$pwt,$db);
   if ($conn->connect_error) {
     if ($conn->connect_error=="Connection refused") {
-      $ergeb=shell_exec('sudo systemctl start mysql');
-      if ($ergeb) {
-        echo("Ergebnis beim Versuch, mysql zu starten: <pre>".$ergeb."</pre><br>");
-      } else {
-        $conn = new mysqli($pc,$user,$pwt,$db);
-      }
+      // urspruenglich shell_exec('sudo systemctl start mysql') - unter enforcendem
+      // SELinux verweigert httpd_t aber jeden exec von /bin/sh UND /usr/bin/sudo
+      // (verifiziert 2026-09-12, siehe /DATA/down/linux1_testlauf_befunde.txt) -
+      // das war also wirkungslos. Stattdessen: Trigger-Datei schreiben (reines
+      // Dateischreiben ist httpd_t erlaubt), mysql-restart-watch.service (systemd,
+      // nicht unter httpd_t) reagiert per inotifywait.
+      @file_put_contents("/var/lib/mo-mysql-restart/trigger", (string)time());
+      sleep(2); // dem Watcher kurz Zeit geben, bevor erneut verbunden wird
+      $conn = new mysqli($pc,$user,$pwt,$db);
     }
     echo "Fehler: ".$conn->connect_error."<br>";
     if (substr($conn->connect_error,0,16)=="Unknown database") {
@@ -406,8 +410,8 @@ include '../../phppwd.php';
   $_SESSION['person']=$_SESSION['obvorb']?($_SESSION['anbeh']?"v":"V"):($_SESSION['obbeha']?"B":($_SESSION['anbeh']?"a":"A"));
 
 
-  if(isset($_POST['ma']))  $_SESSION['ma']=$_POST['ma']; else if (!isset($_SESSION['ma'])) $_SESSION['ma']="";
-  if(isset($_POST['bh']))  $_SESSION['bh']=$_POST['bh']; else if (!isset($_SESSION['bh'])) $_SESSION['bh']="";
+  if(isset($_POST['ma']))  $_SESSION['ma']=substr($_POST['ma'],0,5); else if (!isset($_SESSION['ma'])) $_SESSION['ma']="";
+  if(isset($_POST['bh']))  $_SESSION['bh']=substr($_POST['bh'],0,5); else if (!isset($_SESSION['bh'])) $_SESSION['bh']="";
   if (!file_exists(self::$copyq)) {
     copy("..".$_SERVER['PHP_SELF'],self::$copyq);
   }
@@ -423,7 +427,8 @@ include '../../phppwd.php';
   ?> <script>var hist=<?php echo json_encode($_SESSION['history'], JSON_HEX_TAG); ?>;alert("stelle history auf "+hist);</script> <?php
  */
   if ($komaktiv>-1 && isset($_POST['erlknopf0']) && isset($_POST['kommentar'])) {
-    $sql="UPDATE zutun SET kommentar='".$_POST['kommentar'].
+    $_POST['kommentar']=substr($_POST['kommentar'],0,70); // Spalte "Kommentar" ist varchar(70)
+    $sql="UPDATE zutun SET kommentar='".$conn->real_escape_string($_POST['kommentar']).
       "' WHERE pat_id = ".$pat_id." AND DATE(aktzeit)=DATE(now()) AND pos=".($komaktiv+1).";";
     echo $sql."<br>";
     $_SESSION['kom'][$komaktiv]=$_POST['kommentar'];
@@ -665,23 +670,23 @@ include '../../phppwd.php';
       if ($myaktiv) {
         $_SESSION['anwseit']=new DateTime(date("Y-m-d H:i:s"));
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"a":"A")."','".$conn->real_escape_string($_SESSION['ma'])."','".
+          $conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['anwesend']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
       }
       // in Datenbank eintragen, wann Vorbereitung gedrueckt wurde
       if ($myvorb) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$_SESSION['ma']."','".
-          $_SESSION['bh']."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
+          "VALUES(".$pat_id.",'".($_SESSION['anbeh']?"v":"V")."','".$conn->real_escape_string($_SESSION['ma'])."','".
+          $conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obvorb']?"1":"0")."',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //     $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
       }
       // in Datenbank eintragen, wann Behandlung gedrueckt wurde
       if ($mybeh) {
         $sql="INSERT INTO aktiv(pat_id,Person,Vorbereiter,Behandler,ob,AktZeit,AktPC) ".
-          "VALUES(".$pat_id.",'B','".$_SESSION['ma']."','".$_SESSION['bh']."','".($_SESSION['obbeha']?"1":"0").
+          "VALUES(".$pat_id.",'B','".$conn->real_escape_string($_SESSION['ma'])."','".$conn->real_escape_string($_SESSION['bh'])."','".($_SESSION['obbeha']?"1":"0").
           "',now(),'".$_SERVER['REMOTE_ADDR']."');";
         //    $ergeb=$conn->query($sql);
         $ergeb=self::abfrage($conn,$sql);
@@ -805,6 +810,10 @@ function gibaus()
     /*     ?> <script>alert("rolle durch");</script> <?php  */
     // anwesend / ->von vorne
     echo "<button type='submit' style=".$stil." id='anwesend' name='anwesend' accesskey='$accessk'>".$text."</button>";
+    // natives accesskey funktioniert in mancher Browser/OS-Umgebung offenbar gar
+    // nicht (2026-09-12 beim Nutzer beobachtet) - Alt+<aktueller Buchstabe> per
+    // eigenem keydown-Listener, dasselbe bewaehrte Muster wie Alt+M/Alt+E/Alt+Z/Alt+L.
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&e.key.toLowerCase()=='".strtolower($accessk)."'){e.preventDefault();document.getElementById('anwesend').click();}},true);</script>";
 
     if ($_SESSION['obvorb']) {
       $stil=$stilan;
@@ -823,7 +832,10 @@ function gibaus()
       echo "MA: <font color=blue>".$_SESSION['ma']."</font> ";
     }
     // Vorbereiter / Vorbereiter fertig
-    echo "<button type='submit' style=".$stil." name='obvorb' accesskey='v'>".$text."</button>";
+    echo "<button type='submit' style=".$stil." id='obvorb' name='obvorb' accesskey='v'>".$text."</button>";
+    // siehe Kommentar bei 'anwesend' oben - natives accesskey='v' funktioniert
+    // offenbar nicht, Alt+V per eigenem keydown-Listener.
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&(e.key=='v'||e.key=='V'||e.code=='KeyV')){e.preventDefault();document.getElementById('obvorb').click();}},true);</script>";
 
     if (!isset($_SESSION['bh'])) $_SESSION['bh']='';
     if (!$_SESSION['obbeha']) {
@@ -844,7 +856,12 @@ function gibaus()
       $weite=60;
     }
     // Behandler / Behandler fertig
-    echo "<button type='submit' style='width:".$weite.";".$stil."' name='obbeha' accesskey='$accessk'>".$text."</button>";
+    echo "<button type='submit' style='width:".$weite.";".$stil."' id='obbeha' name='obbeha' accesskey='$accessk'>".$text."</button>";
+    // siehe Kommentar bei 'anwesend' oben - natives accesskey funktioniert
+    // offenbar nicht, Alt+<aktueller Buchstabe> per eigenem keydown-Listener.
+    // $accessk kann hier auch '.' sein - ueber e.key statt e.code abgefragt, damit
+    // auch das funktioniert (KeyCode fuer '.' waere layoutabhaengig unzuverlaessig).
+    echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&e.key.toLowerCase()=='".strtolower(addslashes($accessk))."'){e.preventDefault();document.getElementById('obbeha').click();}},true);</script>";
     // if (isset($_SESSION['arr']))
     $welcheda=0;
     $nurwelcheweg=0;

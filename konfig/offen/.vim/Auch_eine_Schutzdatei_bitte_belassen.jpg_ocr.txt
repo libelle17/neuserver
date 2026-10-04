@@ -1,0 +1,5 @@
+Diese Datei sollte bei Sicherungskopien auf Quelle und Ziel identisch sein
+Wird sie etwa auf der Quelle böswillig verschlüsselt, so kann das Sicherungsprogramm (z.B.
+bulinux.sh oder butm.sh) wegen des Unterschieds abbrechen.
+
+Gerald Schade
