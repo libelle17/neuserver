@@ -122,11 +122,67 @@
 <tr><td><code>switch_4</code> („Stecker 3“)</td><td>Telefonanlage Panasonic KX-NS700</td><td><b>nie</b>; ein Stromschnitt trennt laufende Gespräche</td></tr>
 </table>
 <ul>
-<li>Logilink SH0104, App „Smart Life“; linux1 schaltet lokal über das WLAN (IP 192.168.178.73, Werkzeug <code>tinytuya</code> in <code>/opt/tinytuya</code>, Schlüssel in <code>/root/tinytuya</code>).</li>
-<li><b>Die Leiste erlaubt nur eine lokale Verbindung gleichzeitig:</b> Ist die App „Smart Life“ auf einem Handy im Praxis-WLAN geöffnet, kann linux1 nicht schalten. App nach Gebrauch ganz schließen (aus der Liste der offenen Apps wischen).</li>
-<li>Die Fritzbox und Netzwerkgeräte <b>nicht</b> an die Leiste. In der App das Verhalten nach Stromausfall auf „Ein“ bzw. „Letzter Zustand“.</li>
+<li>Gerät: Logilink SH0104 („Serverraum Smart Power Strip SH0104“), im WLAN der Fritzbox, IP-Adresse <b>192.168.178.73</b>, Geräte-ID <code>0031545070039f0e28e4</code>. linux1 schaltet sie direkt über das Praxisnetz (Werkzeug <code>tinytuya</code> in <code>/opt/tinytuya</code>, Schlüssel in <code>/root/tinytuya</code> &ndash; diese Dateien nie anzeigen oder weitergeben).</li>
+<li>Die Fritzbox und Netzwerkgeräte <b>nicht</b> an die Leiste.</li>
 <li>Ein harter Stromschnitt an linux1 kann Dateien/Datenbanken beschädigen &ndash; nur, wenn linux1 wirklich nicht mehr reagiert.</li>
+<li>Ein Verhalten nach Stromausfall („Relaisstatus“) lässt sich bei diesem Modell nach bisherigem Stand nicht einstellen; ob nach einem Stromausfall alle Steckdosen wieder angehen, ist noch nicht getestet.</li>
 </ul>
+
+<table class="wichtig" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #bb0000"><tr><td bgcolor="#fdeeee" style="background:#fdeeee"><b>Die drei wichtigsten Regeln zur Leiste</b>
+<ol>
+<li><b>In der App nie „Gerät entfernen“ antippen.</b> Die Leiste wird dabei auf Werkseinstellungen zurückgesetzt, und linux1 kann sie danach erst wieder schalten, wenn der neue Schlüssel geholt ist (Abschnitt 8.4).</li>
+<li><b>Die App nach Gebrauch ganz schließen</b> (aus der Liste der offenen Apps wischen). Die Leiste erlaubt nur <b>eine</b> Verbindung im Praxisnetz; solange die App offen ist, kann linux1 nicht schalten.</li>
+<li><b>Den Knopf an der Leiste nur drücken, wenn nichts Wichtiges daran hängt.</b> Ein Druck kann alle Steckdosen gleichzeitig ausschalten &ndash; dann wären linux0, linux1, KoCoBox und Telefonanlage ohne Strom.</li>
+</ol></td></tr></table>
+
+<h3>8.1 Zugänge</h3>
+<table border="1" cellspacing="0" cellpadding="4" width="100%">
+<tr><th bgcolor="#eeeeee">Wofür</th><th bgcolor="#eeeeee">Adresse / App</th><th bgcolor="#eeeeee">Benutzer</th></tr>
+<tr><td>Schalten per Handy</td><td>App <b>„Smart Life – Smart Living“</b> (Hersteller Volcano Technology / Tuya; im Play Store bzw. App Store)</td><td>gerald.schade@gmx.de</td></tr>
+<tr><td>Tuya-Plattform (nur nötig, wenn die Leiste neu eingerichtet wurde)</td><td><b>https://platform.tuya.com/cloud/</b> (frühere Adresse iot.tuya.com)</td><td>gerald.schade@gmx.de</td></tr>
+</table>
+<p>Die Passwörter stehen nicht in diesem Dokument; sie liegen beim Praxisinhaber.</p>
+
+<h3>8.2 Steckdose von Hand schalten (Handy)</h3>
+<ol>
+<li>App „Smart Life“ öffnen. Auf der Startseite (unten „Zuhause“) die Kachel <b>„Serverraum Smart Power Strip SH0104“</b> antippen.</li>
+<li>Es erscheinen die einzelnen Schalter. Den gewünschten Schalter antippen (Belegung siehe Tabelle oben). Vorher genau prüfen, welcher es ist!</li>
+<li>Danach die App <b>ganz schließen</b>.</li>
+</ol>
+
+<h3>8.3 Neues Handy</h3>
+<p>Auf einem neuen Handy muss die Leiste <b>nicht</b> neu eingerichtet werden &ndash; sie gehört zum Konto, nicht zum Handy.</p>
+<ol>
+<li>App <b>„Smart Life – Smart Living“</b> installieren und öffnen.</li>
+<li><b>„Mit bestehendem Konto anmelden“</b> bzw. „Anmelden“ wählen (nicht „Neues Konto erstellen“). Land/Region: <b>Deutschland</b>.</li>
+<li>Benutzer <b>gerald.schade@gmx.de</b> und Passwort eingeben (alternativ „Mit Bestätigungscode anmelden“: der Code kommt per Mail an diese Adresse).</li>
+<li>Nach der Anmeldung erscheint die Leiste von selbst unter „Zuhause“. <b>Nicht</b> über „+ / Gerät hinzufügen“ neu hinzufügen.</li>
+<li>Auf dem alten Handy (falls noch vorhanden) bei Bedarf unter „Ich“ &rarr; Zahnrad (Einstellungen) &rarr; „Abmelden“ abmelden &ndash; <b>nicht</b> die Leiste entfernen.</li>
+</ol>
+
+<h3>8.4 Leiste wurde aus der App entfernt bzw. muss neu eingerichtet werden</h3>
+<p>Nur in diesem Fall (oder nach einem Zurücksetzen der Leiste) ist alles Folgende nötig.</p>
+<p><b>A) Leiste in der App neu einrichten</b></p>
+<ol>
+<li>Handy im <b>Praxis-WLAN</b> (2,4-GHz-WLAN der Fritzbox, nicht Gast-WLAN), Bluetooth und Standort am Handy einschalten.</li>
+<li>Prüfen, ob die Lampe an der Leiste <b>schnell blinkt</b> (Einrichtungsmodus; nach „Gerät entfernen“ ist das normalerweise schon so). Nur wenn sie nicht blinkt: Knopf ca. 5 Sekunden gedrückt halten, bis sie schnell blinkt &ndash; <b>vorher</b> linux0 und linux1 herunterfahren bzw. die Geräte direkt in die Wand stecken (siehe Regel 3 oben).</li>
+<li>In der App unter „Zuhause“ oben rechts auf <b>„+“</b> &rarr; <b>„Gerät hinzufügen“</b>. Die App sucht selbst; erscheint die Leiste, auf „Hinzufügen“ tippen. Erscheint sie nicht: „Manuell hinzufügen“ &rarr; Kategorie „Elektrotechnik“ &rarr; „Steckdosenleiste (Wi-Fi)“ und den Anweisungen folgen.</li>
+<li>Das WLAN-Passwort der Praxis eingeben, warten bis „Erfolgreich hinzugefügt“.</li>
+<li>Gerätenamen wieder auf <b>„Serverraum Smart Power Strip SH0104“</b> setzen (Stift-Symbol oben rechts in der Geräteansicht &rarr; Name).</li>
+<li>App ganz schließen.</li>
+</ol>
+<p><b>B) Prüfen, ob die Leiste im Tuya-Projekt angekommen ist</b> (normalerweise automatisch)</p>
+<ol>
+<li><b>https://platform.tuya.com/cloud/</b> öffnen und mit gerald.schade@gmx.de anmelden.</li>
+<li>Links <b>„Cloud“</b> &rarr; <b>„Development“</b> (bzw. „Project Management“) &rarr; das vorhandene Projekt öffnen.</li>
+<li>Reiter <b>„Devices“</b> &rarr; Unterreiter <b>„All Devices“</b>: Die Leiste muss dort stehen.</li>
+<li>Steht sie nicht dort: Reiter „Devices“ &rarr; <b>„Link App Account“</b> (bzw. „Link Tuya App Account“) &rarr; <b>„Add App Account“</b>; im Fenster „Automatic Link“ wählen; der QR-Code mit der App scannen: in der App unten <b>„Ich“</b> &rarr; oben rechts das <b>Scan-Symbol</b> &rarr; QR-Code scannen &rarr; bestätigen.</li>
+<li>Rechenzentrum des Projekts muss <b>„Central Europe Data Center“</b> sein; unter „Service API“ müssen <b>„IoT Core“</b> und <b>„Authorization“</b> aktiv sein (die kostenlose Testversion läuft gelegentlich ab und muss dann unter „Service API“ verlängert werden).</li>
+</ol>
+<p><b>C) Neuen Schlüssel auf linux1 holen</b> (am Bildschirm von linux1 oder per ssh, als root):</p>
+<p><code>/root/bin/steckdosenleiste.sh schluessel</code></p>
+<p>Das Skript holt den neuen Schlüssel (er wird absichtlich nicht angezeigt) und zeigt danach, welche Steckdosen an sind. Erscheint die Liste mit AN/AUS, ist alles in Ordnung. Nachsehen geht jederzeit mit <code>/root/bin/steckdosenleiste.sh status</code> (schaltet nichts).</p>
+<p>Meldungen: <b>Fehler 901</b> = keine Verbindung (App noch offen? Leiste nicht im WLAN?); <b>Fehler 904/914</b> = Schlüssel passt nicht (Schritt C wiederholen); „hat jetzt die IP … statt 192.168.178.73“ = in der Fritzbox unter Heimnetz &rarr; Netzwerk &rarr; Gerät bearbeiten wieder <b>192.168.178.73</b> fest zuweisen („Diesem Netzwerkgerät immer die gleiche IPv4-Adresse zuweisen“).</p>
 
 <h2>9. Von Hand nachholen</h2>
 <ul>
