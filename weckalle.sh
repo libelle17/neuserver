@@ -117,7 +117,7 @@ fragab() {
                printf "${rot}Berechtigungsfehler bei Fritzbox-Abfrage (Versuch $unauthzahl/3, evtl. voruebergehend) - warte $((unauthzahl*3))s und versuche erneut.${reset}\n";
                sleep $((unauthzahl*3));
              else
-               echo "Berechtigungsfehler bei Fritzbox-Abfrage: crede: $crede";
+               echo "Berechtigungsfehler bei Fritzbox-Abfrage mit Benutzer ${crede%%:*} aus $credfile";
                obneu=1;
                authorize;
                unauthzahl=0;
@@ -286,8 +286,10 @@ commandline() {
 authorize() {
 	# in $credfile werden in dem Verzeichnis, in dem auch private SSH-Schlüssel untergebracht sind, Benutzer und Passwort für die Fritzbox gespeichert
   # auf mint geht logname nicht mehr, dafür Ersatzbefehl
-	credfile="$(getent passwd $(logname 2>/dev/null||loginctl user-status|sed -n '1s/\(.*\) .*/\1/p'||whoami)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
-	crede=$(cat $credfile 2>/dev/null); # der Inhalt von crede
+	# seit 4.10.2026 einzige Datei mit den Fritzbox-Zugangsdaten (auch fuer /etc/fstab, .fbcredentials ist ein Verweis darauf)
+	credfile=/root/.fbcred;
+	crede="$(sed -n 's/^username=//p' $credfile 2>/dev/null):$(sed -n 's/^password=//p' $credfile 2>/dev/null)";
+	[ "$crede" = ":" ]&&crede=;
 	if [ -z "$crede" -o $obneu = 1 ]; then # falls Inhalt leer oder erneuert werden soll ...
 		# Analyse (Auswertung /var/mail/root, Stand 8.7.2026):
 		# fragab() setzt bei JEDER "Unauthorized"-Antwort der Fritzbox obneu=1 und
@@ -306,7 +308,7 @@ authorize() {
 		 printf "Please enter the fritz box user/Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 		 printf "Please enter the password for/Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 		 crede="$fbuser:$fbpwd";
-		 printf "$crede" >"$credfile";
+		 printf 'username=%s\npassword=%s\n' "$fbuser" "$fbpwd" >"$credfile";chmod 600 "$credfile";
 		else
 		 printf "${rot}Fritzbox weist die in $credfile hinterlegten Zugangsdaten zurück (Unauthorized) und es ist kein Terminal für eine Rückfrage vorhanden (z.B. Cron).${reset}\n" >&2;
 		 printf "${rot}Bitte einmal interaktiv \"$0 -neu\" ausführen und die aktuellen Fritzbox-Zugangsdaten eingeben. Breche ab.${reset}\n" >&2;

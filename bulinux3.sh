@@ -3,7 +3,7 @@
 # basierendes) Sicherungsskript speziell zwischen linux1 und linux3:
 # kopiert per rsync -avu (Push von linux1 nach linux3:, oder umgekehrt
 # Pull, je nach $HOST) /opt/turbomed, ausgewählte /root-Dateien (.vim,
-# .fbcredentials, crontabakt, .getmail sowie /root/bin/*.sh), alle
+# .fbcred, crontabakt, .getmail sowie /root/bin/*.sh), alle
 # /DATA-Unterverzeichnisse aus einer festen Liste (Patientendokumente,
 # turbomed, shome, eigene Dateien, sql, Mail, TMBack, rett, down, DBBack,
 # ifap, vontosh, Oberanger, att) sowie danach /DATA selbst (ohne diese
@@ -46,7 +46,7 @@ chown root:root -R /root/.ssh
 chmod 600 -R /root/.ssh
 kopier "opt/turbomed" "opt/"
 kopieros "root/.vim"
-kopieros "root/.fbcredentials"
+kopieros "root/.fbcred"
 kopieros "root/crontabakt"
 kopieros "root/.getmail"
 V=/root/bin/;ionice -c3 nice -n19 rsync -avu --prune-empty-dirs --include="*/" --include="*.sh" --exclude="*" "$Q$V" "$Z$V"

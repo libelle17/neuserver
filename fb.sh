@@ -5,7 +5,7 @@
 # CreateUrlSID, Geräteliste, Anruf auslösen, Filelinks) - wirksam ist nur
 # der jeweils LETZTE Block vor der eigentlichen Anfrage bzw. das, was per
 # -c/-s/-a überschrieben wird. Fragt bei Bedarf Fritzbox-Zugangsdaten ab
-# (~/.tr64cred) und führt die SOAP/TR-064-Anfrage per curl aus (erst
+# (/root/.fbcred) und führt die SOAP/TR-064-Anfrage per curl aus (erst
 # ipv6, dann ipv4); liefert die Antwort ein "*.lua"-Redirect, wird
 # zusätzlich diese URL abgerufen und nach $Ausgabe (neueurl.xml)
 # geschrieben. Aufruf: fb.sh [-neu] [-c <controlURL>] [-s <serviceType>]
@@ -77,13 +77,14 @@ printf "Action: $blau$Action$reset\n"
 [ -n "$ParIn" ]&&printf "Parin: $blau$ParIn$reset\n";
 [ -n "$Inhalt" ]&&printf "Inhalt: $blau$Inhalt$reset\n";
 
-credfile="$(getent passwd $(logname)|cut -d: -f6)/.tr64cred"; # ~  # $HOME
-crede=$(cat $credfile 2>/dev/null);
+credfile=/root/.fbcred; # einzige Datei mit den Fritzbox-Zugangsdaten (username=/password=, auch fuer /etc/fstab)
+crede="$(sed -n 's/^username=//p' $credfile 2>/dev/null):$(sed -n 's/^password=//p' $credfile 2>/dev/null)";
+[ "$crede" = ":" ]&&crede=;
 if [ -z "$crede" -o $obneu = 1 ]; then
 	 printf "Bitte Fritzboxbenutzer eingeben: ";read fbuser;
 	 printf "Bitte Passwort für $blau$fbuser$reset eingeben: ";read fbpwd;
 	 crede="$fbuser:$fbpwd";
-	 printf "$crede" >"$credfile";
+	 printf 'username=%s\npassword=%s\n' "$fbuser" "$fbpwd" >"$credfile";chmod 600 "$credfile";
 fi;
 
 Soap="http://schemas.xmlsoap.org/soap";

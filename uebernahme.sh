@@ -10,7 +10,7 @@
 #   und IP-Adresse zu uebernehmen (NetworkManager + Gratuitous ARP, kein
 #   Fritzbox-DHCP-Umbau noetig), Samba gezielt zu aktivieren, die auf linux7
 #   abweichende /DATA-Pfadtiefe in der Samba-Freigabe zu korrigieren und
-#   optional per TR-064 (.tr64cred) den Fritzbox-Hosteintrag umzubenennen.
+#   optional per TR-064 (/root/.fbcred) den Fritzbox-Hosteintrag umzubenennen.
 #
 # Aufruf (als root auf dem Reserveserver, der uebernehmen soll):
 #   uebernahme.sh <alter-hostname> <alte-ip> [-e] [-f] [-v]
@@ -52,7 +52,7 @@
 #      Verschluesselungsvirus).
 #   8. Weist nur auf die MariaDB-Aktualitaet hin (siehe unten) - promotet NICHTS
 #      automatisch.
-#   9. Best-effort per TR-064 (.tr64cred, Format wie fb.sh: "user:pass"): benennt
+#   9. Best-effort per TR-064 (/root/.fbcred, username=/password=): benennt
 #      den Host-Eintrag in der Fritz!Box kosmetisch um. Fehler werden ignoriert,
 #      da nicht alle Fritz!Box-Firmwares SetHostNameByIP unterstuetzen und dieser
 #      Schritt fuer den eigentlichen Netzbetrieb nicht erforderlich ist.
@@ -282,11 +282,11 @@ fi
 printf "  Bitte vor Produktivbetrieb pruefen: ${blau}bulinux.sh -dberg${reset} (Vergleich gegen %s falls erreichbar)\n" "$alterhost"
 
 # 9) Best-effort: Fritzbox-Hosteintrag kosmetisch umbenennen (TR-064)
-credfile="$HOME/.tr64cred"
+credfile=/root/.fbcred # username=/password=, einzige Datei mit den Fritzbox-Zugangsdaten
 if [ -f "$credfile" ]; then
   if [ -n "$obecht" ]; then
     printf "${dblau}Fritzbox-Hosteintrag umbenennen${reset} (best effort, TR-064) ...\n"
-    crede=$(cat "$credfile")
+    crede="$(sed -n 's/^username=//p' "$credfile"):$(sed -n 's/^password=//p' "$credfile")"
     xml='<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 <s:Body><u:SetHostNameByIP xmlns:u="urn:dslforum-org:service:Hosts:1">

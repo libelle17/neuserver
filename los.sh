@@ -259,6 +259,22 @@ variablen() {
 # Aufruf: los.sh -ks
 # ------------------------------------------------------------
 
+# fbcred_verweis() – ~/.fbcred (username=/password=) ist seit 4.10.2026 die einzige
+# Datei mit den Fritzbox-Zugangsdaten (TR-064: weckalle.sh, fb.sh, tr64.sh,
+# uebernahme.sh; CIFS: /etc/fstab). ~/.fbcredentials (frueherer Name, steht noch in
+# /etc/fstab und in autofax-erzeugten fstab-Zeilen) wird zum Verweis darauf; eine
+# alte Datei dieses Namens bleibt als .fbcredentials.alt erhalten. Die frueheren
+# ~/.tr64cred (user:pass) werden nicht mehr gelesen.
+fbcred_verweis() {
+  [ -f "$HOME/.fbcred" ]||{ [ -f "$HOME/.fbcredentials" ]&&[ ! -L "$HOME/.fbcredentials" ]&&mv "$HOME/.fbcredentials" "$HOME/.fbcred"; };
+  [ -f "$HOME/.fbcred" ]||return 0;
+  chmod 600 "$HOME/.fbcred";
+  [ -L "$HOME/.fbcredentials" ]&&return 0;
+  [ -f "$HOME/.fbcredentials" ]&&mv "$HOME/.fbcredentials" "$HOME/.fbcredentials.alt";
+  ln -s .fbcred "$HOME/.fbcredentials";
+  printf "Verweis ${blau}$HOME/.fbcredentials${reset} -> .fbcred angelegt\n";
+} # fbcred_verweis
+
 konfig_sichern() {
   printf "${dblau}konfig_sichern${reset}()\n";
   KVZB="$instvz/konfig";
@@ -320,7 +336,7 @@ konfig_sichern() {
   for f in \
     "$HOME/.7zpassw" \
     "$HOME/.bashrc" \
-    "$HOME/.fbcredentials" \
+    "$HOME/.fbcred" \
     "$HOME/.dircolors" \
     "$HOME/.gpgpass" \
     "$HOME/.gitconfig" \
@@ -332,7 +348,6 @@ konfig_sichern() {
     "$HOME/.mysqlrpwd" \
     "$HOME/.netrwhist" \
     "$HOME/.sturm" \
-    "$HOME/.tr64cred" \
     "$HOME/.wser" \
     "$HOME/.wget-hsts" \
     "$instvz/crontabakt" \
@@ -567,6 +582,7 @@ konfig_laden() {
   done;
 
   rm -rf "$TMPDIR_KRYPT";
+  fbcred_verweis;
   printf "${gruen}konfig_laden abgeschlossen.${reset}\n";
 } # konfig_laden
 
@@ -652,6 +668,7 @@ HOOKEOF
       --exclude=".mariadbrpwd" \
       --exclude=".modbpwd" \
       --exclude=".fbcredentials" \
+      --exclude=".fbcred" \
       --exclude=".tr64cred" \
       --exclude=".loscred" \
       --exclude=".sturm" \
@@ -3114,8 +3131,9 @@ fritzbox() {
   fbnameklein=$(echo "$fbname"|tr '[:upper:]' '[:lower:]'|tr ' ' '_');
   mkdir -p "/mnt/$fbnameklein";
 
-  # Credentials prüfen / abfragen:
-  credfile="$HOME/.fbcredentials";
+  # Credentials prüfen / abfragen (seit 4.10.2026 einzige Datei: ~/.fbcred, s. fbcred_verweis):
+  fbcred_verweis;
+  credfile="$HOME/.fbcred";
   if [ ! -f "$credfile" ]; then
     printf "Bitte Fritzbox-Benutzer eingeben: "; read fbuser;
     printf "Bitte Passwort fuer %b%s%b eingeben: " "$blau" "$fbuser" "$reset";
@@ -3260,7 +3278,7 @@ musterserver() {
     if [ -f "$instvz/konfig/verschluesselt/sensibel.tar.gpg" ]; then
       printf "konfig-Archiv vorhanden – überspringe scp für Credentials.\n";
     else
-      for dt in .fbcredentials .loscred .mysqlpwd .mysqlrpwd .tr64cred; do
+      for dt in .fbcred .loscred .mysqlpwd .mysqlrpwd; do
         if [ -f "/root/$dt" ]; then
           printf "${blau}/root/$dt${reset} bereits vorhanden – übersprungen\n";
         else
