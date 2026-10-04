@@ -41,6 +41,7 @@
 #
 # -e: echt (Alarm setzen, Skripte mit -e aufrufen, ggf. am Ende abschalten)
 # ohne -e: Trockenlauf (nur anzeigen, nichts schalten/abschalten/merken)
+# -alarm: nur den Weckalarm auf das naechste Fenster pruefen/setzen und beenden (wecklauf-alarm.service)
 # -zeit "HH:MM": Testzeit statt der echten Uhrzeit verwenden (fuer Tests ohne
 #   auf die richtige Tageszeit warten zu muessen; Datum bleibt real)
 
@@ -52,6 +53,7 @@ testzeit=;
 while [ $# -gt 0 ]; do
   case "$1" in
     -e) obecht=1;;
+    -alarm) nuralarm=1;; # nur Weckalarm-Wache, dann Ende (wecklauf-alarm.service beim Herunterfahren)
     -zeit) shift; testzeit="$1";;
   esac;
   shift;
@@ -91,10 +93,13 @@ else JETZT_EPOCHE=$(date +%s); fi;
 # Fenster gesetzt, neu setzen. Log nur bei Aenderung. Laeuft vor der Fenster-Erkennung; ein dort spaeter
 # gesetzter Alarm (das jeweils andere Fenster) ueberschreibt diesen wie bisher.
 if [ "$obecht" ] && [ -z "$testzeit" ]; then
-  _wa_soll=;
+  _wa_soll=; _wa_erledigt=$(cat "$LETZTER_LAUF_DATEI" 2>/dev/null);
   for _wa_tag in today tomorrow; do
     for _wa_zeit in "$MITTAG" "$NACHT"; do
       _wa_k=$(date -d "$_wa_tag $_wa_zeit" +%s 2>/dev/null) || continue;
+      # schon bearbeitetes Fenster ueberspringen (es wird bis zu 7 min VOR der Zielzeit bearbeitet,
+      # liegt dann also noch "in der Zukunft" - sonst wuerde der Rechner dazu erneut geweckt):
+      [ "$_wa_k" = "$_wa_erledigt" ] && continue;
       [ "$_wa_k" -gt "$JETZT_EPOCHE" ] && { [ -z "$_wa_soll" ] || [ "$_wa_k" -lt "$_wa_soll" ]; } && _wa_soll=$_wa_k;
     done;
   done;
@@ -105,6 +110,7 @@ if [ "$obecht" ] && [ -z "$testzeit" ]; then
     rtcwake -m no -t "$_wa_soll" 2>&1 | tee -a "$LOG";
   fi;
 fi;
+[ "$nuralarm" ] && exit 0; # -alarm: nur die Wache (z.B. beim Herunterfahren), keine Fenster-Bearbeitung
 
 # Naechstgelegenen Kandidaten unter {MITTAG,NACHT} x {gestern,heute,morgen}
 # suchen (deckt auch Mitternachts-Zeiten wie linux7s NACHT=00:00 robust ab,

@@ -1,0 +1,16 @@
+# Setzt beim Herunterfahren den RTC-Weckalarm auf das naechste Sicherungsfenster (wecklauf.sh -e -alarm),
+# damit auch ein nur kurz (< 5 min) laufender Rechner nie ohne Alarm ausgeht. Eingerichtet 4.10.2026,
+# nur auf linux0/linux7 aktivieren ("systemctl enable --now wecklauf-alarm"); auf anderen Rechnern
+# beendet sich wecklauf.sh ohnehin sofort.
+[Unit]
+Description=Weckalarm beim Herunterfahren auf das naechste Sicherungsfenster setzen
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/root/bin/wecklauf.sh -e -alarm
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target
