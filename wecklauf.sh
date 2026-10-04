@@ -64,7 +64,8 @@ LOG=/var/log/wecklauf.log;
 log() { printf '%s %b\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG"; }
 
 TOLERANZ_S=$((7 * 60)); # Toleranzfenster um die Zielzeiten, groesser als das 5-Minuten-Pollintervall
-UPTIME_SCHWELLE_S=$((10 * 60)); # nur abschalten, wenn seit weniger als 10 Min. gebootet
+UPTIME_SCHWELLE_S=$((10 * 60));
+NACHHOL_MAX_S=$((12 * 3600)); # ausgefallene Fenster hoechstens so alt nachholen # nur abschalten, wenn seit weniger als 10 Min. gebootet
 GRACE_DATEI=/root/.kein_wecklauf;
 LETZTER_LAUF_DATEI=/root/.wecklauf_letzter_lauf_epoche; # zuletzt behandeltes Fenster (Ziel-Epoche)
 
@@ -127,15 +128,36 @@ for tag in yesterday today tomorrow; do
   done;
 done;
 
-[ "$BESTER_ABSTAND" -gt "$TOLERANZ_S" ] && exit 0; # kein Fenster gerade - still beenden
+# Nachholen (4.10.2026): liegt gerade kein Fenster an, aber das juengste vergangene Fenster (hoechstens
+# NACHHOL_MAX_S alt) wurde nicht bearbeitet - Rechner war aus/hing, wurde von linux1 (weckwacht.sh) per
+# Wake-on-LAN/Steckdose oder von Hand gestartet -, dann dieses Fenster jetzt nachholen.
+NACHHOLEN=;
+if [ "$BESTER_ABSTAND" -gt "$TOLERANZ_S" ]; then
+  _nh_p=; _nh_m=;
+  _nh_heute=$(date -d "@$JETZT_EPOCHE" +%F); _nh_gestern=$(date -d "$_nh_heute -1 day" +%F);
+  for _nh_tag in "$_nh_gestern" "$_nh_heute"; do
+    for _nh_e in "mittag:$MITTAG" "nacht:$NACHT"; do
+      _nh_k=$(date -d "$_nh_tag ${_nh_e#*:}" +%s 2>/dev/null) || continue;
+      [ "$_nh_k" -le "$JETZT_EPOCHE" ] && { [ -z "$_nh_p" ] || [ "$_nh_k" -gt "$_nh_p" ]; } && { _nh_p=$_nh_k; _nh_m=${_nh_e%%:*}; };
+    done;
+  done;
+  _nh_letzt=$(cat "$LETZTER_LAUF_DATEI" 2>/dev/null);
+  if [ -z "$_nh_p" ] || [ $((JETZT_EPOCHE - _nh_p)) -gt "$NACHHOL_MAX_S" ] || { [ -n "$_nh_letzt" ] && [ "$_nh_letzt" -ge "$_nh_p" ]; }; then
+    exit 0; # kein Fenster gerade und nichts nachzuholen - still beenden
+  fi;
+  NACHHOLEN=1; BESTE_EPOCHE=$_nh_p; BESTER_MODUS=$_nh_m; BESTER_ABSTAND=$((JETZT_EPOCHE - _nh_p));
+fi;
 
 LETZTER_LAUF=$(cat "$LETZTER_LAUF_DATEI" 2>/dev/null);
 [ "$LETZTER_LAUF" = "$BESTE_EPOCHE" ] && exit 0; # dieses Fenster schon behandelt - still beenden
 
+[ "$NACHHOLEN" ] && log "${rot}Ausgefallenes Fenster wird nachgeholt:${reset}";
 log "${blau}wecklauf.sh${reset} auf $buhost: Fenster erkannt (Modus: $BESTER_MODUS, Zielzeit $(date -d "@$BESTE_EPOCHE" '+%Y-%m-%d %H:%M:%S'), Abstand ${BESTER_ABSTAND}s)";
 # Als behandelt markieren, BEVOR die (evtl. lange) Sicherung laeuft, damit
 # der naechste 5-Minuten-Tick waehrenddessen nicht erneut auslöst:
 [ "$obecht" ] && echo "$BESTE_EPOCHE" > "$LETZTER_LAUF_DATEI";
+# Beginn an linux1 melden (weckwacht.sh weckt sonst nach 20 min), best effort:
+[ "$obecht" ] && ssh -o ConnectTimeout=20 -o BatchMode=yes linux1 "mkdir -p /var/lib/wecklauf && echo $BESTE_EPOCHE > /var/lib/wecklauf/lauf_$buhost" 2>&1 | tee -a "$LOG";
 
 # Naechsten Alarm bestimmen (das jeweils andere Fenster, naechstes
 # Vorkommen NACH diesem) und ZUERST setzen (s. Kommentar oben):
@@ -166,6 +188,20 @@ if [ -n "$UPTIME_BEIM_START_S" ] && [ "$UPTIME_BEIM_START_S" -lt "$UPTIME_SCHWEL
 else
   OB_FRISCH_GEBOOTET=;
   log "Uptime beim Fenster-Start: ${UPTIME_BEIM_START_S:-?}s >= ${UPTIME_SCHWELLE_S}s - laeuft schon laenger (vermutlich von Hand eingeschaltet/in Benutzung), wird am Ende NICHT abgeschaltet.";
+fi;
+
+# Beim Nachholen entscheidet nicht die Uptime: abgeschaltet wird nur, wenn linux1 (weckwacht.sh) den Rechner
+# fuer genau dieses Fenster geweckt hat (Notiz /var/lib/wecklauf/geweckt_<host> auf linux1). Hat ihn ein
+# Mensch eingeschaltet, wird nachgeholt, aber nicht abgeschaltet.
+if [ "$NACHHOLEN" ]; then
+  _nh_geweckt=$(ssh -o ConnectTimeout=20 -o BatchMode=yes linux1 "cat /var/lib/wecklauf/geweckt_$buhost 2>/dev/null" 2>/dev/null);
+  if [ "$_nh_geweckt" = "$BESTE_EPOCHE" ]; then
+    OB_FRISCH_GEBOOTET=1;
+    log "Nachholen: von linux1 fuer dieses Fenster geweckt - wird am Ende abgeschaltet.";
+  else
+    OB_FRISCH_GEBOOTET=;
+    log "Nachholen: nicht von linux1 geweckt (vermutlich von Hand eingeschaltet) - wird am Ende NICHT abgeschaltet.";
+  fi;
 fi;
 
 _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen

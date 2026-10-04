@@ -35,6 +35,18 @@ systemd-inhibit --what=shutdown:sleep --who=nachholen --why="Nachholen der Siche
 ';
 rm -f "$GRACE";
 
+# juengstes vergangenes Fenster als erledigt eintragen und linux1 melden (4.10.2026) - sonst wuerde
+# wecklauf.sh es gleich noch einmal nachholen bzw. weckwacht.sh auf linux1 den Rechner wecken
+jetzt=$(date +%s); letzt=;
+for t in "yesterday $MITTAG" "yesterday $NACHT" "today $MITTAG" "today $NACHT"; do
+  e=$(date -d "$t" +%s); [ $e -le $jetzt ] && { [ -z "$letzt" ] || [ $e -gt $letzt ]; } && letzt=$e;
+done;
+if [ -n "$letzt" ]; then
+  echo "$letzt" > /root/.wecklauf_letzter_lauf_epoche;
+  ssh -o ConnectTimeout=20 -o BatchMode=yes linux1 "mkdir -p /var/lib/wecklauf && echo $letzt > /var/lib/wecklauf/lauf_$HOST" 2>&1 | tee -a "$LOG";
+  log "Fenster $(date -d @$letzt '+%d.%m. %H:%M') als erledigt eingetragen.";
+fi;
+
 # naechsten regulaeren Weckzeitpunkt mind. 15 Min. in der Zukunft
 jetzt=$(date +%s); ziel=;
 for t in "today $MITTAG" "today $NACHT" "tomorrow $MITTAG" "tomorrow $NACHT"; do
