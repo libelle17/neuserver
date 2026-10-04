@@ -9,7 +9,7 @@
 #   - Konfigurationsdateien verschlüsselt sichern/laden (GitHub)
 #   - Fritzbox einbinden, RemotePC installieren, Git-Repos klonen
 #
-# Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-mariau|-maria|
+# Aufruf: los.sh [-bs|-bw|-host|-prompt|-mt|-prog|-pa|-mariau|-maria|
 #                 -mariai|-marianeu|-smb|-must|-vmime|-patdirs|-fachliches|-tuya|-fritz|-firebird|
 #                 -teamviewer|-remotepc|-ks|-kl|-knl|-cron|-v|-h]
 # Ohne Parameter: vollständige Einrichtung
@@ -113,6 +113,7 @@ commandline() {
   obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
   obfachliches=0; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan) einrichten
   obtuya=0; # tinytuya + Befehl leiste (Steckdosenleisten) einrichten
+  obprogakt=0; # eigene C++-Programme von github aktualisieren und neu bauen
   gespar="$@"
   verb=0;
 	while [ $# -gt 0 ]; do
@@ -124,7 +125,7 @@ commandline() {
         printf "Programm $blau$0$reset: konfiguriert einen (neuen) Linuxserver, oder ruft mit Befehlszeilenparametern Teile davon auf,\n";
         printf "  zusammengeschrieben von: Gerald Schade 2018-22. Benutzung:\n";
         printf "  Reihenfolge für Neuinstallation:\n";
-				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-phpparse ][-patdirs ][-fachliches ][-tuya ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
+				printf "$blau$0 [-bs ][-bw ][-host ][-prompt ][-prog ][-pa ][-mt ][-mariau ][-maria ][-mariai ][-marianeu ][-smb ][-turbomed ][-fritz ][-must ][-mustneu ][-vmime ][-phpparse ][-patdirs ][-fachliches ][-tuya ][-firebird ][-teamviewer ][-remotepc ][-cron ][-ks ][-kl ][-knl ][-v ][-h ]$reset\n";
 				printf "  -- Basis --\n";
 				printf "  $blau-bs$reset:        richtet den Bildschirm ein\n";
         printf "  $blau-bw$reset:        verhindert Suspend/Hibernate/Bildschirmschoner\n";
@@ -132,6 +133,7 @@ commandline() {
         printf "  $blau-prompt$reset:    richtet die Eingabeaufforderung ein\n";
         printf "  -- Programme & Laufwerke --\n";
         printf "  $blau-prog$reset:      lädt notwendige Programme aus dem Repository und von github\n";
+        printf "  $blau-pa$reset:        aktualisiert die eigenen C++-Programme (autofax, anrliste, fbfax ...) von github und baut geaenderte neu\n";
         printf "  $blau-mt$reset:        konfiguriert /etc/fstab zum Mounten der Laufwerke (benötigt -prog: exfatprogs)\n";
         printf "  -- Datenbank --\n";
         printf "  $blau-mariau$reset:    richtet mariadb ein (Benutzer/Konfiguration)\n";
@@ -177,6 +179,7 @@ commandline() {
           kl) obkonfiglad=1;;
           knl) obkonfignl=1;;
           prog) obprog=1;;
+          pa|progakt) obprogakt=1;;
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
 					maria|mariadb|mysql) obmysql=1;;
@@ -4125,6 +4128,34 @@ phpparse_bauen() {
 	ausf "install -m 770 -o root -g $gruppe $instvz/phpparse/phpparse /root/bin/phpparse" "${blau}";
 } # phpparse_bauen
 
+# progaktualisieren() – proginst() holt und baut die eigenen C++-Programme nur, wenn sie
+# fehlen; vorhandene bleiben auf altem Stand. Auf den Ersatzrechnern (linux0, linux7), wo
+# sie per cron nicht laufen, aber bei Ausfall von linux1 sofort gebraucht werden, holt
+# diese Funktion den neuen Stand von github (nur fast-forward) und baut/installiert ein
+# Programm nur, wenn sich etwas geaendert hat (fehlt es nur in /usr/bin, wird das gemeldet).
+progaktualisieren() {
+  printf "${dblau}progaktualisieren$reset()\n";
+  for D in autofax anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
+    [ -d "$HOME/$D/.git" ]||{ printf "${rot}$HOME/$D fehlt$reset - erst ${blau}los.sh -prog$reset\n"; continue; };
+    cd "$HOME/$D"||continue;
+    _pa_vor=$(git rev-parse HEAD);
+    # fetch+merge statt pull: pull.rebase=true verweigert sonst jede lokale Aenderung (inst.log, man_* vom Bauen)
+    git fetch -q&&git merge -q --ff-only '@{u}' 2>/dev/null||{ printf "${rot}$D: neuer Stand nicht uebernehmbar (lokale Aenderung an einer auch auf github geaenderten Datei?) - uebersprungen$reset\n"; continue; };
+    if [ "$_pa_vor" = "$(git rev-parse HEAD)" ]; then
+      [ -s "/usr/bin/$D" ]&&printf "$D: aktuell\n"||printf "$D: aktuell, aber nicht in /usr/bin installiert\n";
+      continue;
+    fi;
+    printf "$D: baue ${blau}$(git log -1 --format='%h %s')$reset\n";
+    if [ -d cmake ]; then
+      mkdir -p build&&cd build&&{ [ -f Makefile ]||cmake ..; }&&make&&make install;
+    else
+      [ -f vars ]||sh configure;
+      make&&make install;
+    fi||printf "${rot}$D: Bauen/Installieren fehlgeschlagen$reset\n";
+  done;
+  cd "$instvz";
+} # progaktualisieren
+
 # tuya_einrichten() – Steuerung der Tuya-Steckdosenleisten (Logilink SH0104,
 # s. Sicherungskonzept Abschnitt 8): venv /opt/tinytuya mit tinytuya (auch fuer
 # weckwacht.sh und steckdosenleiste.sh), Befehl /usr/local/bin/leiste ->
@@ -4267,6 +4298,7 @@ echo Starte mit los.sh...
 # ── Programme & Laufwerke ────────────────────────────────────────────────
 [ "$obteil" = 0 -o "$obprog" = 1 -o "$obmysql" = 1 -o "$obmyuser" = 1 -o "$obmysqlneu" = 1 -o "$obmysqli" = 1 -o "$obsmb" = 1 ]&&setzinstprog; # Paketverwaltungs-Variablen setzen
 [ $obteil = 0 -o $obprog = 1 ]&&proginst;          # Programme installieren + Git-Repos klonen (inkl. exfatprogs)
+[ "$obprogakt" = 1 ]&&progaktualisieren;          # eigene C++-Programme aktualisieren (z.B. auf linux0/linux7 als Ersatz bereithalten)
 [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;      # Laufwerke in fstab eintragen (benötigt exfatprogs aus -prog)
 # ── Datenbank ────────────────────────────────────────────────────────────
 [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 -o $obmysqli = 1 ]&&richtmariadbein; # MariaDB einrichten
