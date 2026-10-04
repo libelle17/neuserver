@@ -145,7 +145,12 @@ _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
   if [ "$obecht" ]; then
     log "${blau}Starte${reset} $skript $* -e";
     timeout "${WECKLAUF_TIMEOUT:-8h}" "$skript" "$@" -e 2>&1 | tee -a "$LOG";
-    log "${blau}Ende${reset} $skript (Exitcode der timeout-Huelle: $?)";
+    # Bugfix 4.10.2026: frueher "$?" = Exitcode von tee (immer 0) - ein Abbruch durch die
+    # Zeitbegrenzung (bulinux.sh in der Nacht 3./4.10. auf linux0 UND linux7) erschien als
+    # "Exitcode 0". Jetzt der echte Exitcode von timeout/Skript; 124 = Zeitbegrenzung erreicht.
+    local rc=${PIPESTATUS[0]};
+    log "${blau}Ende${reset} $skript (Exitcode der timeout-Huelle: $rc)";
+    [ "$rc" = 124 ] && log "${rot}ABGEBROCHEN:${reset} $skript nach ${WECKLAUF_TIMEOUT:-8h} durch die Zeitbegrenzung beendet - Sicherung UNVOLLSTAENDIG!";
   else
     log "Simulation: timeout ${WECKLAUF_TIMEOUT:-8h} $skript $* -e";
   fi;
