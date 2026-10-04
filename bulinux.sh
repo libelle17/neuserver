@@ -478,12 +478,51 @@ if _bu_ob_db && [ -z "$sdneu" ]; then
   # ── Lock AUF linux1 (Quellrechner): verhindert parallele DB-Exporte
   # von beliebigen Rechnern – Lock via $qssh = lokal oder ssh linux1
   _bu_lockfile="/tmp/bulinux_db_${LINEINS}.lock";
-  _bu_lock_info_str="${USER:-root}@${HOSTNAME:-$(hostname)} pid=$$ $(date +'%Y-%m-%d %H:%M:%S')";
-  # Atomic: set -C (noclobber) schlägt fehl wenn Datei schon existiert
-  if ! eval "$qssh '( set -C; printf "%s" "$_bu_lock_info_str" > "$_bu_lockfile" ) 2>/dev/null'"; then
+  # Inhalt ohne Leerzeichen (wird ueber ssh/eval weitergereicht; mit Leerzeichen kam frueher
+  # "root@linux0pid=32892026-10-0300:17:00" an, nicht auswertbar):
+  _bu_lock_info_str="${USER:-root}@$(hostname -s):pid=$$:$(date +%Y-%m-%dT%H:%M:%S)";
+  # 4.10.2026: Ist die Sperre belegt, WARTEN statt den DB-Abschnitt zu ueberspringen (am 3.10.
+  # hielt linux0 beim Nachholen die Sperre, linux7 uebersprang deshalb seinen DB-Abgleich).
+  # Eine Sperre besteht hoechstens so lange wie der DB-Abschnitt des Inhabers, und der wird
+  # spaetestens von dessen 8-h-Zeitbegrenzung (wecklauf.sh) beendet -> bis zu 8 h warten
+  # (BULINUX_DB_SPERRE_MAX_S), alle 2 min neu versuchen. Verwaiste Sperren (Inhaberprozess
+  # nachweislich beendet, oder Sperre aelter als die Hoechstdauer) werden entfernt.
+  _bu_lock_max_s=${BULINUX_DB_SPERRE_MAX_S:-28800};
+  _bu_lock_t0=$(date +%s); _bu_lock_ok=; _bu_lock_gemeldet=;
+  while :; do
+    if eval "$qssh '( set -C; printf "%s" "$_bu_lock_info_str" > "$_bu_lockfile" ) 2>/dev/null'"; then
+      _bu_lock_ok=1; break;
+    fi;
     _bu_lock_info=$(eval "$qssh 'cat "$_bu_lockfile" 2>/dev/null'");
-    printf "${rot}DB-Export läuft bereits auf %s${reset} (Lock: ${blau}%s${reset})\n" \
-      "${QL:-lokal}" "$_bu_lockfile";
+    _bu_lh=$(printf '%s' "$_bu_lock_info" | sed -n 's/^[^@]*@\([^:.]*\)[^:]*:pid=.*/\1/p');
+    _bu_lp=$(printf '%s' "$_bu_lock_info" | sed -n 's/.*:pid=\([0-9][0-9]*\):.*/\1/p');
+    _bu_lz=$(printf '%s' "$_bu_lock_info" | sed -n 's/.*:pid=[0-9]*:\(.*\)$/\1/p');
+    _bu_lalter=; [ "$_bu_lz" ] && _bu_lalter=$(( $(date +%s) - $(date -d "$_bu_lz" +%s 2>/dev/null || date +%s) ));
+    _bu_lverwaist=;
+    if [ "$_bu_lalter" ] && [ "$_bu_lalter" -gt "$_bu_lock_max_s" ]; then
+      _bu_lverwaist="aelter als $((_bu_lock_max_s/3600)) h";
+    elif [ "$_bu_lh" ] && [ "$_bu_lp" ]; then
+      if [ "$_bu_lh" = "$(hostname -s)" ]; then
+        kill -0 "$_bu_lp" 2>/dev/null || _bu_lverwaist="Prozess $_bu_lp auf $_bu_lh beendet";
+      else
+        # nur als verwaist werten, wenn der Inhaber erreichbar ist und den Prozess sicher nicht mehr hat
+        _bu_lantw=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$_bu_lh" "kill -0 $_bu_lp 2>/dev/null && echo lebt || echo weg" 2>/dev/null);
+        [ "$_bu_lantw" = weg ] && _bu_lverwaist="Prozess $_bu_lp auf $_bu_lh beendet";
+      fi;
+    fi;
+    if [ "$_bu_lverwaist" ]; then
+      printf "${rot}Verwaiste DB-Sperre entfernt${reset} (%s): ${blau}%s${reset}\n" "$_bu_lverwaist" "$_bu_lock_info";
+      eval "$qssh 'rm -f "$_bu_lockfile"'"; continue;
+    fi;
+    if [ $(( $(date +%s) - _bu_lock_t0 )) -ge "$_bu_lock_max_s" ]; then break; fi;
+    [ "$_bu_lock_gemeldet" ] || { printf "${blau}DB-Export laeuft bereits${reset} (Sperre ${blau}%s${reset}: %s) - warte bis zu %d h ...\n" "$_bu_lockfile" "$_bu_lock_info" "$((_bu_lock_max_s/3600))"; _bu_lock_gemeldet=1; };
+    sleep 120;
+  done;
+  [ "$_bu_lock_ok" ] && [ "$_bu_lock_gemeldet" ] && printf "DB-Sperre nach %d min Wartezeit erhalten.\n" $(( ($(date +%s) - _bu_lock_t0) / 60 ));
+  if [ -z "$_bu_lock_ok" ]; then
+    _bu_lock_info=$(eval "$qssh 'cat "$_bu_lockfile" 2>/dev/null'");
+    printf "${rot}DB-Export laeuft nach %d h Wartezeit immer noch auf %s${reset} (Lock: ${blau}%s${reset})\n" \
+      "$((_bu_lock_max_s/3600))" "${QL:-lokal}" "$_bu_lockfile";
     printf "Gestartet von: ${blau}%s${reset}\n" "$_bu_lock_info";
     printf "${rot}DB-Abschnitt übersprungen.${reset} Lock manuell löschen: ${blau}%s rm %s${reset}\n" \
       "${QL:+ssh $QL}" "$_bu_lockfile";
