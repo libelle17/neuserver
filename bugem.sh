@@ -467,7 +467,12 @@ kopiermt() { # mit test
     rest=$(_int "$rest"); rest=${rest:-0};
     echo $rest|LC_ALL=de_DE.UTF-8 awk '{printf "verfügbar           : '$blau'%'"'"'15d'$reset' kB\n", $1}';
     if [ "${rest:-0}" -gt 0 ] 2>/dev/null; then
-      ausf "$zssh 'test -d \"/$ZVos\"&&{ du /$ZVos -d0 2>/dev/null;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
+      # 5.10.2026: Ziel mit "du -x" messen - auf einem Snapper-btrfs-Ziel (linux0/linux7: /DATA/.snapshots) sind die
+      # Snapshots eigene Subvolumes (eigenes st_dev), "du -x" steigt nicht hinein. Vorher zaehlte du jeden Snapshot
+      # voll mit (linux7: "schonda" 50,6 TB bei 9,2 TB Platte, Messung 45 min); entstand waehrenddessen ein neuer
+      # Snapshot (stuendliche Timeline), war der spaeter abgezogene .snapshots-Wert um eine ganze Kopie groesser ->
+      # "Nach Kopie verfuegbar" -3,1 TB, bunacht.sh "Kopieren nicht begonnen" trotz 2,7 TB frei.
+      ausf "$zssh 'test -d \"/$ZVos\"&&{ du -x /$ZVos -d0 2>/dev/null;:;}||{ stat /$ZVos -c %s 2>/dev/null||echo 0;}'|awk -F $'\t' '{print \$1*1}'" "" "" 1; schonda=${resu:-0};
       schonda=$(_int "$schonda"); schonda=${schonda:-0};
       echo $schonda|LC_ALL=de_DE.UTF-8 awk '{printf "schonda             : '$blau'%'"'"'15d'$reset' kB\n", $1}';
       ausf "$qssh 'test -f \"/$QVos\"&&{ stat /$QVos -c %s||echo 0;:;}||du /$QVos -d0 2>/dev/null;'|awk '{print \$1*1}'" "" "" 1; zukop=${resu:-0};
@@ -476,9 +481,11 @@ kopiermt() { # mit test
       rest=$(( rest - zukop + schonda ));
       [ "$EX" ]&&for E in $(echo $EX|sed 's/ //g;s/,/ /g');do
          E=$(echo $E|sed 's/\\/\\ /g');
-         case $E in /*) zQ=/${E#/};zZ=$zQ;;*) zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};;esac;
+         # 5.10.2026: auch mit "/" beginnende Ausschluesse sind fuer rsync relativ zur Quelle ("/Mail/" bei Quelle
+         # /DATA/ = /DATA/Mail), nicht zum Dateisystem-Wurzelverzeichnis - frueher wurde /Mail gemessen (= 0).
+         zQ=/$QVos/${E#/};zZ=/$ZVos/${E#/};
          echo E: $E, QVos: $QVos, ZVos: $ZVos, zZ: $zZ, zQ: $zQ;
-         ausf "$zssh 'test -d \"$zZ\" && du $zZ -d0 2>/dev/null'|awk '{print \$1*1}'" "" "" 1; papz=${resu:-0};
+         ausf "$zssh 'test -d \"$zZ\" && du -x $zZ -d0 2>/dev/null'|awk '{print \$1*1}'" "" "" 1; papz=${resu:-0};
          papz=$(_int "$papz"); papz=${papz:-0};
          ausf "$qssh 'test -d \"$zQ\" && du $zQ -d0 2>/dev/null'|awk '{print \$1*1}'" "" "" 1; papq=${resu:-0};
          papq=$(_int "$papq"); papq=${papq:-0};
