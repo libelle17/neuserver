@@ -33,6 +33,10 @@
 # wird dadurch verzoegert, bis die Sicherung fertig ist - hoechstens
 # aber um $InhibitDelayMaxSec aus logind.conf(.d/) (Standard nur 5s!,
 # muss dort ausreichend hoch gesetzt sein, damit das wirkt).
+# Damit ein so verzoegerter Shutdown nicht wie ein Haenger aussieht (Vorfall
+# 5.10.2026 auf linux7: "The system will power off now!" und dann 20 min
+# nichts), meldet eine Shutdown-Wache waehrenddessen per wall, worauf
+# gewartet wird und bis wann laengstens (s. _shutdown_wache).
 #
 # Jeder Sicherungslauf ist mit "timeout" gegen unbegrenztes Haengen
 # abgesichert. Ohne -e wird alles nur simuliert (rtcwake -Ausgabe, kein
@@ -209,6 +213,7 @@ fi;
 _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
   local skript="$1"; shift;
   if [ "$obecht" ]; then
+    echo "$skript" > "$AKTUELL_DATEI" 2>/dev/null;
     log "${blau}Starte${reset} $skript $* -e";
     timeout "${WECKLAUF_TIMEOUT:-8h}" "$skript" "$@" -e 2>&1 | tee -a "$LOG";
     # Bugfix 4.10.2026: frueher "$?" = Exitcode von tee (immer 0) - ein Abbruch durch die
@@ -241,7 +246,41 @@ fi;
 # Abbruch von wecklauf.sh selbst (z.B. Strg-C bei einem manuellen Test)
 # nicht dauerhaft haengen bleibt.
 INHIBIT_PID=;
+AKTUELL_DATEI=/run/wecklauf_aktuell; # gerade laufendes Sicherungsskript, fuer die Shutdown-Wache
+# Shutdown-Wache (5.10.2026): solange der Inhibitor gehalten wird, alle 10 s bei logind nachsehen, ob
+# ein Shutdown/Neustart angefordert wurde und nur wegen des Inhibitors wartet (PreparingForShutdown).
+# Dann per wall melden, worauf gewartet wird und wann spaetestens trotzdem abgeschaltet wird
+# (Anforderung + InhibitDelayMaxSec); Wiederholung alle 10 min. Ausgabe nicht nach stdout, damit
+# die Wache keine Pipe offenhaelt.
+WACHE_PID=;
+_shutdown_wache() {
+  local seit= letzte=0 jetzt max akt text;
+  while sleep 10; do
+    if [ "$(busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+           org.freedesktop.login1.Manager PreparingForShutdown 2>/dev/null)" != "b true" ]; then
+      seit=; continue;
+    fi;
+    jetzt=$(date +%s);
+    [ "$seit" ] || { seit=$jetzt; letzte=0; };
+    [ $((jetzt - letzte)) -ge 600 ] || continue;
+    letzte=$jetzt;
+    max=$(busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+          org.freedesktop.login1.Manager InhibitDelayMaxUSec 2>/dev/null | awk '{print int($2/1000000)}');
+    akt=$(cat "$AKTUELL_DATEI" 2>/dev/null); akt=${akt##*/};
+    text="$buhost: Herunterfahren/Neustart ist angefordert (seit $(date -d "@$seit" '+%H:%M')), wartet aber auf die laufende Sicherung (${akt:-wecklauf.sh}, Fenster $BESTER_MODUS).";
+    [ "${max:-0}" -gt 0 ] && text="$text Spaetestens um $(date -d "@$((seit + max))" '+%d.%m. %H:%M') wird trotzdem abgeschaltet.";
+    text="$text Kein Haenger - bitte nicht hart ausschalten. Anzeigen: systemd-inhibit --list";
+    printf '%s\n' "$text" | wall 2>/dev/null;
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "Shutdown-Wache: $text" >> "$LOG";
+  done;
+}
 _inhibit_freigeben() {
+  if [ "$WACHE_PID" ]; then
+    kill "$WACHE_PID" 2>/dev/null;
+    wait "$WACHE_PID" 2>/dev/null;
+    WACHE_PID=;
+  fi;
+  rm -f "$AKTUELL_DATEI";
   if [ "$INHIBIT_PID" ]; then
     kill "$INHIBIT_PID" 2>/dev/null;
     wait "$INHIBIT_PID" 2>/dev/null;
@@ -256,6 +295,8 @@ if [ "$obecht" ] && command -v systemd-inhibit >/dev/null 2>&1; then
     sleep infinity &
   INHIBIT_PID=$!;
   log "Shutdown/Sleep-Inhibitor gesetzt (PID $INHIBIT_PID) - schuetzt die folgenden Sicherungslaeufe.";
+  _shutdown_wache </dev/null >/dev/null 2>&1 &
+  WACHE_PID=$!;
 fi;
 
 case "$BESTER_MODUS" in
@@ -270,6 +311,7 @@ case "$BESTER_MODUS" in
     # bringen, damit dieser Ersatzrechner bei Ausfall von linux1 sofort bereit ist
     # (5.10.2026). Nicht ueber _lauf: los.sh kennt kein -e; baut nur Geaendertes.
     if [ "$obecht" ]; then
+      echo /root/bin/los.sh > "$AKTUELL_DATEI" 2>/dev/null;
       log "${blau}Starte${reset} los.sh -pa";
       timeout 2h /root/bin/los.sh -pa 2>&1 | tee -a "$LOG";
       log "${blau}Ende${reset} los.sh -pa (Exitcode der timeout-Huelle: ${PIPESTATUS[0]})";
