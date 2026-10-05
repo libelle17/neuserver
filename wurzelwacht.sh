@@ -199,7 +199,7 @@ Beim Umstieg (nach dem ersten Start von diesem Laufwerk):
  5. eigene Programme:    aus $w/programme_ohne_paket.txt sind kopiert; ggf. cd /root/neuserver && ./los.sh
  6. crontab:             liegt mit /var/spool/cron schon da; danach crontab_uebernehmen.sh
  7. /DATA, /etc/fstab:   fstab des Ersatzes um die /DATA-Eintraege aus $w/etc_aktuell/fstab ergaenzen
- 8. Markierung:          rm /$MARKE (sonst haelt sich das neue System selbst nicht fuer die Wurzel)
+ 8. Markierung:          /$MARKE darf bleiben (auf der laufenden Wurzel wird sie ignoriert)
 EOF
   [ "$fehler" = 0 ] && { mkdir -p "$ZUSTAND"; echo "$JETZT" > "$ZUSTAND/letzte_kopie"; }
   sync; aushaengen
