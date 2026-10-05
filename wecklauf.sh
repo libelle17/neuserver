@@ -321,6 +321,9 @@ case "$BESTER_MODUS" in
     ;;
 esac;
 
+# Wurzelplatte pruefen und ggf. das Ersatzsystem befuellen (6.10.2026), noch unter dem Inhibitor:
+[ -x /root/bin/wurzelwacht.sh ] && _lauf /root/bin/wurzelwacht.sh;
+
 _inhibit_freigeben;
 
 # Entscheidung nutzt die beim Fenster-START gemerkte Uptime (s.o.), nicht

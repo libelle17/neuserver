@@ -339,3 +339,5 @@ ELG=/var/log/cronf.log
 # fuellt quelle.arztbriefe, kvb_einlesen.py quelle.kvbgop; nur auf linux1
 -30 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/arztbriefe_einlesen.py" >>$NLG 2>>$ELG
 -35 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/kvb_einlesen.py" >>$NLG 2>>$ELG
+# 6.10.2026: prueft die Systemplatte per SMART und haelt ggf. ein markiertes Ersatz-Betriebssystem aktuell (linux0/linux7: aus wecklauf.sh); s. wurzelwacht.sh
+53 6,18 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/wurzelwacht.sh -e >>$VL/wurzelwacht.log 2>&1
