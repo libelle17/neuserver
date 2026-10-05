@@ -15,7 +15,8 @@
 #     schreibgeschuetzt einhaengen und /etc/os-release vergleichen (ID und VERSION_ID wie hier).
 #     Beschrieben wird ein Kandidat NUR, wenn dort die Markierungsdatei /etc/ersatzwurzel liegt und als erstes
 #     Wort den Kurznamen dieses Rechners enthaelt - einmal von Hand anlegen, z.B.:
-#        mount /dev/sdX2 /mnt && echo linux7 > /mnt/etc/ersatzwurzel && umount /mnt
+#        d=$(mktemp -d) && mount /dev/sdX2 $d && echo linux7 > $d/etc/ersatzwurzel && umount $d && rmdir $d
+#     (nicht /mnt verwenden: das wuerde dort eingehaengte Freigaben wie /mnt/wser verdecken)
 #     (Schutz davor, versehentlich in ein fremdes installiertes System zu schreiben.)
 #  3. Kopieren, wenn ein Ausfall droht, sonst mindestens alle KOPIE_TAGE Tage (Platten fallen oft ohne
 #     SMART-Vorwarnung aus), oder mit -k. Das Ersatzsystem wird mit allen Subvolumes/Partitionen laut SEINER
@@ -108,7 +109,7 @@ while read -r zeile; do
     if [ "$os" != "$EIGEN_OS" ]; then log "Kandidat $NAME: $os - andere Distribution/Version, nicht verwendet"
     elif [ "$marke" != "$h" ]; then
       log "Kandidat $NAME: $os, aber ohne Markierung fuer $h - nicht verwendet. Freigeben mit:"
-      log "   mount $NAME /mnt && echo $h > /mnt/$MARKE && umount /mnt"
+      log "   d=\$(mktemp -d) && mount $NAME \$d && echo $h > \$d/$MARKE && umount \$d && rmdir \$d"
     elif [ -z "$ERSATZ" ]; then ERSATZ=$NAME; ERSATZ_FS=$FSTYPE; ERSATZ_MP=$MOUNTPOINT; log "${blau}Ersatzsystem: $NAME ($os)${reset}"
     fi
   fi
