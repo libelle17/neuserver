@@ -287,6 +287,7 @@ migrate_dokprotlist_email_adresse.py
 migrate_dokprotlist_message_id.py
 export_skipped_emails_for_review.py
 [/etc/systemd/system]
+mariadb.service.d/data.conf
 wecklauf-alarm.service
 mo-emailadr-commit-watch.service
 mysql-restart-watch.service

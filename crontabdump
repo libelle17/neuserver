@@ -42,7 +42,8 @@ ELG=/var/log/cronf.log
 # @reboot mount /w12.2
 # @reboot mount /res2 >>$NLG 2>>$ELG
 # @reboot mount /linres >>$NLG 2>>$ELG
-@reboot for P in /DATA /DAT3 /DAT2 /mnt/diabfb /mnt/gmx /mnt/usb /mnt/toshz /mnt/toshz /mnt/seag /mnt/SeagateExpansionDrive /mnt/verbatim /mnt/wd /mnt/MyPassport /mnt/szs1tmexport /mnt/szon1tmexport /szoo1texport /Wiederherstellung /wrz /boot/efi /win;do sed -n '/^#/d;s/ \+/ /g;s/[^ ]\+ \([^ ]\+\).*/\1/;/^[^/]/d;/\/$/d;/^'$(echo $P|sed s:/:\\\\\/:g)'$/q1' /etc/fstab||{ mountpoint -q $P||mount $P >>$NLG 2>>$ELG;};done
+# 6.10.2026: systemctl start statt mount - schliesst sich einem laufenden systemd-Mount an, statt doppelt einzuhaengen (linux7: btrfs-/DATA braucht ~25 s)
+@reboot for P in /DATA /DAT3 /DAT2 /mnt/diabfb /mnt/gmx /mnt/usb /mnt/toshz /mnt/toshz /mnt/seag /mnt/SeagateExpansionDrive /mnt/verbatim /mnt/wd /mnt/MyPassport /mnt/szs1tmexport /mnt/szon1tmexport /szoo1texport /Wiederherstellung /wrz /boot/efi /win;do sed -n '/^#/d;s/ \+/ /g;s/[^ ]\+ \([^ ]\+\).*/\1/;/^[^/]/d;/\/$/d;/^'$(echo $P|sed s:/:\\\\\/:g)'$/q1' /etc/fstab||{ mountpoint -q $P||systemctl start "$(systemd-escape -p --suffix=mount $P)" >>$NLG 2>>$ELG;};done
 # @reboot mount /mnt/sam >>$NLG 2>>$ELG
 # @reboot P=/mnt/verbatim; mountpoint -q $P||mount $P >>$NLG 2>>$ELG
 # @reboot systemctl start cifs >>$NLG 2>>$ELG

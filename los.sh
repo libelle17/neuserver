@@ -940,6 +940,8 @@ fstb=$resu;
 # blkvar=$(lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE="" LABEL=""\|FSTYPE="swap"');
 ausf "lsblk -bisnPfo NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT -x SIZE|grep -v 'raid_member\|FSTYPE=\"\" LABEL=\"\"\|FSTYPE=\"swap\"'";
 blkvar=$resu;
+HOSTK=$(hostname -s); HDATA=; # s. "<Rechner>DATA" weiter unten
+echo "$blkvar"|grep -Eq "LABEL=\"${HOSTK}DATA[0-9]*\""&&HDATA=1;
 # bisherige Labels DATA, DAT1 usw. und bisherige Mounpoints /DATA, /DAT1 usw. ausschließen 
 # z.B. "2|1|3|A"
 # bishDAT=$(echo "$blkvar"|awk '/=\"DAT/{printf substr($4,11,length($4)-11)"|";}/=\"\/DAT/{printf substr($6,17,length($6)-17)"|";}'|awk '{print substr($0,0,length($0)-1);}'); # "<- dieses Zeichen steht nur hier fuer die vi-Faerbung
@@ -1071,6 +1073,17 @@ while read -r zeile; do
 	fi;
 	# printf "zeile: $blau$zeile$reset\n"
 	# echo "mtp: \"$mtp\"";
+  # 6.10.2026: Reserver haben /DATA auf einer Platte "<Rechner>DATA" bzw. "<Rechner>DATA<Ziffern>" (btrfs mit
+  # Snapper, z.B. linux7DATA2), weitere als "<Rechner>DATA<Buchstaben>" (linux7DATAC -> /DATAC). Gibt es eine
+  # solche, bekommt eine Platte mit dem Namen "DATA" /DATB - frueher landete sie auf /DATA und die Sicherungs-
+  # platte unter /mnt/linux7DATA2 (Umstieg linux7 auf neue Systemplatte, 6.10.2026).
+  if [ -z "$mtp" ]; then
+    case $lbl in
+      ${HOSTK}DATA|${HOSTK}DATA[0-9]*) mtp=/DATA;;
+      ${HOSTK}DATA[A-Za-z]*) mtp=/DATA${lbl#${HOSTK}DATA};;
+      DATA) [ "$HDATA" ]&&mtp=/DATB;;
+    esac;
+  fi;
   case $lbl in 
    DAT*|wrz*|win*)
 	   [ "$mtp" ]||mtp="/"$(echo $lbl|sed 's/[[:space:]]//g');;
@@ -1488,7 +1501,7 @@ datadirsetzen() {
   if [ ! -f "$_od" ]; then
     mkdir -p "$(dirname $_od)";
     printf "[Unit]\nRequiresMountsFor=/DATA\nConditionPathIsMountPoint=/DATA\n" >"$_od";
-    printf "[Service]\nExecStart=\nExecStart=/usr/sbin/mariadbd --defaults-file=/etc/my.cnf --user=mysql --socket=/run/mysql/mysql.sock\n" >"$_od";
+    printf "[Service]\nExecStart=\nExecStart=/usr/sbin/mariadbd --defaults-file=/etc/my.cnf --user=mysql --socket=/run/mysql/mysql.sock\n" >>"$_od"; # 6.10.2026: ">>" statt ">", ueberschrieb sonst den [Unit]-Teil
     systemctl daemon-reload;
     printf "systemd-Schutz aktiv: MariaDB startet nur wenn ${blau}/DATA${reset} gemountet.\n";
   else
@@ -1765,6 +1778,8 @@ proginst() {
   doinst exfatprogs;   # exFAT-Datenträger labeln (mountlaufwerke)
   doinst mtools;       # vfat mlabel
   doinst dosfstools;   # vfat dosfslabel / mkfs.fat
+  doinst smartmontools; # smartctl fuer wurzelwacht.sh (6.10.2026)
+  doinst gptfdisk;     # sgdisk, z.B. neue GUIDs fuer geklonte Platten (s. bootpruefung)
   doinst apache2;
   doinst apache2-mod_php8;
   doinst php8-mysql;
@@ -3748,6 +3763,48 @@ backup() {
 #      [ $obteil = 0 -o "$obcron" = 1 ]&&cron;
 # ============================================================
 
+# reserverdienste() - systemd-Einheiten aus ziele ([/etc/systemd/system], per "make shziel" kopiert) wirksam
+# machen: daemon-reload (z.B. fuer mariadb.service.d/data.conf), auf den Reservern wecklauf-alarm.service
+# aktivieren (setzt beim Herunterfahren den Weckalarm). Eingefuehrt 6.10.2026: nach dem Umstieg von linux7 auf
+# eine neue Systemplatte fehlten beide, MariaDB startete nicht.
+reserverdienste() {
+  printf "${dblau}reserverdienste${reset}()\n";
+  systemctl daemon-reload;
+  case "$(hostname -s)" in
+    linux0|linux7)
+      if [ -f /etc/systemd/system/wecklauf-alarm.service ]; then
+        systemctl enable --now wecklauf-alarm.service&&printf "${blau}wecklauf-alarm.service${reset}: aktiviert.\n";
+      else
+        printf "${rot}wecklauf-alarm.service fehlt${reset} - erst 'make shziel' in /root/neuserver ausfuehren.\n";
+      fi;;
+  esac;
+} # reserverdienste
+
+# bootpruefung() - warnt vor Fallen nach dem Klonen/Tauschen von Platten (Umstieg linux7, 6.10.2026):
+# doppelte Dateisystem-UUIDs oder PARTUUIDs (Firmware/fstab koennen die falsche Platte nehmen), /boot/efi auf
+# einer anderen Platte als / (Booten haengt an der anderen Platte), grub.cfg der EFI-Partition sucht eine andere
+# Wurzel als die laufende. Aendert nichts.
+bootpruefung() {
+  printf "${dblau}bootpruefung${reset}()\n";
+  local d w e u g ok=1;
+  d=$(lsblk -rno UUID,FSTYPE|awk '$1!="" && $2!~/_member$/ && $2!="btrfs"{print $1}'|sort|uniq -d);
+  [ "$d" ]&&{ ok=; printf "${rot}doppelte Dateisystem-UUID(s):${reset} %s\n" $d; };
+  d=$(lsblk -rno PARTUUID|grep .|sort|uniq -d);
+  [ "$d" ]&&{ ok=; printf "${rot}doppelte PARTUUID(s):${reset} %s - z.B. 'sgdisk -G /dev/<nicht benutzte Platte>'\n" $d; };
+  w=$(lsblk -rspno NAME,TYPE "$(findmnt -no SOURCE /|sed 's/\[.*//')"|awk '$2=="disk"{print $1}');
+  e=$(findmnt -no SOURCE /boot/efi 2>/dev/null);
+  if [ "$e" ]; then
+    e=$(lsblk -rspno NAME,TYPE "$e"|awk '$2=="disk"{print $1}');
+    [ "$e" != "$w" ]&&{ ok=; printf "${rot}/boot/efi liegt auf $e, / auf $w${reset} - Booten haengt an $e\n"; };
+  fi;
+  u=$(findmnt -no UUID /);
+  # nur die grub.cfg der eigenen Distribution (z.B. EFI/opensuse bei ID=opensuse-leap), nicht fremde (ubuntu ...):
+  for g in $(. /etc/os-release; find /boot/efi/EFI -maxdepth 2 -ipath "*/EFI/${ID%%-*}/grub.cfg" 2>/dev/null); do
+    grep -q "fs-uuid.*$u" "$g"||{ ok=; printf "${rot}$g sucht nicht die laufende Wurzel ($u)${reset} - update-bootloader --reinit\n"; };
+  done;
+  [ "$ok" ]&&printf "Platten-Kennungen und Bootkette: ${blau}in Ordnung${reset}\n";
+} # bootpruefung
+
 cron() {
   printf "${dblau}cron${reset}()\n";
     # Quellserver abfragen falls nicht gesetzt und interaktiv:
@@ -4300,6 +4357,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obprog = 1 ]&&proginst;          # Programme installieren + Git-Repos klonen (inkl. exfatprogs)
 [ "$obprogakt" = 1 ]&&progaktualisieren;          # eigene C++-Programme aktualisieren (z.B. auf linux0/linux7 als Ersatz bereithalten)
 [ $obteil = 0 -o $obmt = 1 ]&&mountlaufwerke;      # Laufwerke in fstab eintragen (benötigt exfatprogs aus -prog)
+[ $obteil = 0 -o $obmt = 1 ]&&bootpruefung;        # doppelte Platten-Kennungen, Bootkette pruefen (nur Warnungen)
 # ── Datenbank ────────────────────────────────────────────────────────────
 [ $obteil = 0 -o $obmyuser = 1 -o $obmysql = 1 -o $obmysqlneu = 1 -o $obmysqli = 1 ]&&richtmariadbein; # MariaDB einrichten
 [ "$obteil" = 0 -o "$obmysql" = 1 -o "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ [ "$obmysqli" = 1 -o "$obmysqlneu" = 1 ]&&{ dbinhalt immer;:; }||{ [ "$obmysql" = 1 ]&&dbinhalt; } } # Datenbankinhalt importieren
@@ -4322,6 +4380,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obfb = 1 ]&&firebird;            # Firebird-Datenbank einrichten
 # ── Konfiguration ────────────────────────────────────────────────────────
 [ $obteil = 0 -o "$obcron" = 1 ]&&cron;            # crontab vom Quellserver übernehmen
+[ $obteil = 0 -o "$obcron" = 1 ]&&reserverdienste; # systemd-Einheiten aus ziele wirksam machen (wecklauf-alarm)
 [ $obteil = 0 -o $obkonfigsp = 1 ]&&konfig_sichern;   # Konfiguration verschlüsselt sichern
 [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;    # Konfiguration laden (nur fehlende)
 [ "$obkonfignl" = 1 ]&&konfig_laden neu;               # Konfiguration neu laden (überschreibt)
