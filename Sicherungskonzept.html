@@ -23,7 +23,7 @@
 <body>
 
 <h1>Datensicherungskonzept der Praxis-Server</h1>
-<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 04.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
+<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 06.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
 
 <table class="kasten" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #cc9900"><tr><td bgcolor="#fff8e6" style="background:#fff8e6"><b>In einem Satz:</b> Die Praxisdaten liegen auf den Windows-Servern <b>wser</b>/<b>wres</b> (Medical Office) und dem Linux-Hauptserver <b>linux1</b>. Die beiden Sicherungsrechner <b>linux0</b> und <b>linux7</b> schalten sich zweimal täglich selbst ein, <b>holen</b> sich die Daten von linux1, bewahren ältere Stände als Snapshots auf und schalten sich wieder aus. linux1 selbst kann auf die Sicherungsrechner nicht zugreifen &ndash; ein Verschlüsselungstrojaner auf linux1 oder einem Windows-PC kommt deshalb nicht an die Sicherungen.</td></tr></table>
 
@@ -34,16 +34,17 @@
 <tr><td><b>wres</b> (Windows-Reserveserver)</td><td>Replikationsserver für Medical Office, übernimmt, wenn wser nicht erreichbar ist</td><td>Anmeldung, 1. PC von links</td></tr>
 <tr><td><b>linux1</b> (192.168.178.21)</td><td>Linux-Hauptserver: Freigaben <code>/DATA</code> (Patientendokumente, Mail, Datenbanken), MariaDB-Datenbanken, hängt die Freigaben von wser/wres ein; Quelle aller Linux-Sicherungen</td><td>Serverraum, läuft ständig</td></tr>
 <tr><td><b>linux0</b> (192.168.178.20)</td><td>Sicherungsrechner 1</td><td>Serverraum (bei linux1), meist ausgeschaltet; Steckdosenleiste <code>switch_1</code></td></tr>
-<tr><td><b>linux7</b> (192.168.178.27)</td><td>Sicherungsrechner 2</td><td>Raum mit szn4 und amd, meist ausgeschaltet</td></tr>
+<tr><td><b>linux7</b> (192.168.178.27)</td><td>Sicherungsrechner 2</td><td>Raum mit szn4 und amd, meist ausgeschaltet; Systemplatte seit 06.10.2026 WD 500 GB (<code>sda</code>), die alte NVMe ist defekt (SMART FAILED), noch eingebaut, aber unbenutzt (Abschnitt 12)</td></tr>
 </table>
 
 <h2>2. Grundsätze</h2>
 <ul>
-<li><b>Ziehen statt Schieben:</b> Die Sicherungsrechner holen die Daten von linux1 (ssh/rsync). linux1 hat bewusst <b>keinen</b> ssh-Zugang zu linux0/linux7. Wake-on-LAN-Wecken (siehe Abschnitt 7) gibt keinen Zugang.</li>
+<li><b>Ziehen statt Schieben:</b> Die Sicherungsrechner holen die Daten von linux1 (ssh/rsync). linux1 hat bewusst <b>keinen</b> ssh-Zugang zu linux0/linux7. Wake-on-LAN-Wecken (siehe Abschnitt 7) gibt keinen Zugang. Einzige Ausnahme für die Überwachung (<code>bumonitor.sh</code>, Abschnitt 10): ein eingeschränkter Schlüssel, mit dem linux1 auf den Sicherungsrechnern nur lesend messen darf (freier Platz, Prüfsumme der crontab; <code>backup_ssh_wrapper.sh</code>).</li>
 <li><b>Ältere Stände bleiben erhalten:</b> Auf linux0 und linux7 liegt <code>/DATA</code> auf btrfs mit Snapper-Snapshots (auf linux0: täglich, 7 Tage). Wird auf linux1 etwas gelöscht oder verschlüsselt, steht der alte Stand noch in den Snapshots.</li>
 <li><b>Platzwächter</b> (<code>platzwaechter.sh</code>, alle 15 min auf linux0/linux7): Fällt der freie Platz auf <code>/DATA</code> unter 8 %, löscht er die ältesten Snapshots, bis 12 % frei sind &ndash; die Snapshots der letzten 3 Tage aber nie. Bricht der freie Platz plötzlich stark ein (mögliche Verschlüsselung), löscht er nichts, sondern meldet sich. Jede Löschung wird gemailt.</li>
 <li><b>Schutzdateien (Frühwarnung):</b> In den gesicherten Verzeichnissen liegen Dateien „Schutzdatei_bitte_belassen…“. Weicht eine davon vor dem Kopieren inhaltlich ab (Hinweis auf Verschlüsselung), wird das Verzeichnis <b>nicht</b> kopiert und eine Warnmail verschickt.</li>
 <li><b>Zwei Sicherungsrechner in zwei Räumen</b>, damit ein Schaden in einem Raum nicht alle Kopien trifft.</li>
+<li><b>Systemplatte überwacht:</b> <code>wurzelwacht.sh</code> prüft auf allen drei Linux-Rechnern die Systemplatte (SMART) und hält ein vorbereitetes Ersatz-Betriebssystem auf einer zweiten Platte aktuell (Abschnitt 12).</li>
 </ul>
 
 <h2>3. Windows-Seite (Medical Office) &ndash; aus der Fassung vom 19.04.2026</h2>
@@ -96,6 +97,7 @@
 <ul>
 <li>Einen Sicherungsrechner, der <b>weniger als 10 Minuten vor einer Weckzeit</b> eingeschaltet wurde, hält <code>wecklauf.sh</code> für „per Weckalarm gestartet“ und schaltet ihn nach der Sicherung ab (linux0: ca. 14:08&ndash;14:25 und 21:35&ndash;21:52; linux7: ca. 14:38&ndash;14:55 und 23:50&ndash;00:07).</li>
 <li>Wartung: Liegt <code>/root/.kein_wecklauf</code> auf dem Rechner, tut <code>wecklauf.sh</code> gar nichts (kein Sichern, kein Abschalten, kein Alarm). Danach wieder löschen!</li>
+<li><b>Herunterfahren während einer Sicherung wird verzögert</b>, bis die Sicherung fertig ist (höchstens 8 Stunden). Nach „The system will power off now!“ scheint der Rechner dann zu hängen &ndash; <b>das ist kein Hänger, bitte nicht hart ausschalten.</b> Auf Terminals erscheint alle 10 Minuten eine Meldung, worauf gewartet wird und bis wann längstens; anzeigen mit <code>systemd-inhibit --list</code>. Auf der grafischen Oberfläche erscheint diese Meldung nicht.</li>
 </ul></td></tr></table>
 
 <h2>7. Sicherheitsnetze bei Ausfällen</h2>
@@ -198,8 +200,11 @@
 <tr><td>Platz und Snapshot-Löschungen</td><td><code>/var/log/platzwaechter.log</code> auf linux0/linux7, Mails</td></tr>
 <tr><td>Herunterfahren von linux0</td><td><code>/var/log/netconsole-linux0.log</code> auf linux1</td></tr>
 <tr><td>Starts und Abschaltungen</td><td><code>last -x | head</code> auf dem jeweiligen Rechner</td></tr>
+<tr><td>Ergebnis jedes Laufs (OK/FEHLER, Zeitpunkt, freier Platz)</td><td><code>/DATA/Backup-Status_linux0.txt</code> bzw. <code>_linux7.txt</code> auf linux1</td></tr>
+<tr><td>Tägliche Prüfung aller Läufe: 07:30 voll (auch Platz und crontab-Abgleich), 16:30 nur Mittagslauf</td><td><code>bumonitor.sh</code> auf linux1; Warnmail an diabetologie@dachau-mail.de, wenn ein Lauf fehlt, FEHLER meldet oder zu alt ist</td></tr>
+<tr><td>Systemplatte und Ersatzsystem</td><td><code>/var/log/wurzelwacht.log</code> (linux1), <code>wecklauf.log</code> (linux0/linux7); Warnmail an diabetologie@dachau-mail.de</td></tr>
 </table>
-<p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“.</p>
+<p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“. „Kopieren nicht begonnen“ heißt: die Platzprüfung vor dem Kopieren hielt den Platz für zu knapp (bis 05.10.2026 auf linux7 ein Rechenfehler durch die Snapshots, behoben).</p>
 
 <h2>11. Notfall: Ein Sicherungsrechner übernimmt linux1</h2>
 <p>Fällt linux1 aus, kann linux0 oder linux7 mit <code>uebernahme.sh</code> seine Rolle übernehmen (Hostname linux1, IP 192.168.178.21, Marker <code>/etc/notfallbetrieb</code> mit der eigentlichen Identität), Rückgabe mit <code>ruecknahme.sh</code>; Ablauf siehe <code>Anleitung_MFA_Notfall_Uebernahme_Rueckgabe</code>. Dabei gilt:</p>
@@ -210,11 +215,27 @@
 <li>Die Steckdosen-Automatik (Stufe 3) gibt es auf dem neuen Hauptrechner nicht; schalten nur von Hand per App.</li>
 </ul>
 
-<h2>12. Offene Punkte (Stand 04.10.2026)</h2>
+<h2>12. Systemplatte: Überwachung, Ersatzsystem, Umstieg</h2>
+<p><code>wurzelwacht.sh</code> prüft per SMART, ob die Platte mit dem Betriebssystem auszufallen droht (Gesamtbewertung, defekte/ausstehende Sektoren, bei NVMe Warnflag, Verschleiß, Medienfehler). Es läuft auf linux0/linux7 am Ende jedes Sicherungsfensters, auf linux1 um 06:53 und 18:53.</p>
+<ul>
+<li><b>Ersatzsystem:</b> eine zweite Platte mit derselben Linux-Version (z.B. openSUSE Leap 16.0). Sie wird nur beschrieben, wenn dort einmal von Hand die Freigabe-Datei angelegt wurde; den genauen Befehl zeigt <code>wurzelwacht.sh</code> (ohne <code>-e</code>) an, z.B.<br><code>d=$(mktemp -d) &amp;&amp; mount /dev/sdX3 $d &amp;&amp; echo linux7 &gt; $d/etc/ersatzwurzel &amp;&amp; umount $d &amp;&amp; rmdir $d</code></li>
+<li><b>Was kopiert wird</b> (bei Warnung jedes Mal, sonst wöchentlich; sofort mit <code>wurzelwacht.sh -e -k</code>): <code>/root</code>, <code>/home</code>, <code>/opt</code>, <code>/srv</code>, <code>/usr/local</code>, <code>/var/spool</code> (Faxe, Mail, crontab), Samba-Benutzer, ausgewählte Einstellungen aus <code>/etc</code> (u.a. ssh, samba, postfix, systemd-Dienste), selbst gebaute Programme (autofax, fbfax, labimp …), ein MariaDB-Dump sowie Paket- und Benutzerlisten. Kernel, Bootloader und fstab des Ersatzes bleiben unverändert. Auf dem Ersatz steht in <code>/root/wurzelwacht/LIESMICH.txt</code>, was beim Umstieg zu tun ist.</li>
+</ul>
+<table class="wichtig" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #bb0000"><tr><td bgcolor="#fdeeee" style="background:#fdeeee"><b>Umstieg auf die Ersatzplatte &ndash; Lehren vom 06.10.2026 (linux7):</b>
+<ol>
+<li>Vorher <code>touch /root/.kein_wecklauf</code>, damit keine Sicherung auf eine falsch eingehängte Platte läuft; erst am Schluss wieder löschen.</li>
+<li><b>fstab prüfen:</b> <code>/DATA</code> muss die Sicherungsplatte sein (linux7: <code>LABEL=linux7DATA2</code>, btrfs; linux0 entsprechend), nicht eine Platte namens <code>DATA</code>. Vergleich mit <code>/root/wurzelwacht/etc_aktuell/fstab</code>; danach <code>findmnt /DATA</code>.</li>
+<li><b>Bootkette prüfen:</b> War die neue Platte ein Klon der alten, tragen beide dieselben Kennungen &ndash; dann bootet der Rechner womöglich weiter über die alte Platte. Abhilfe: der <i>alten, nicht eingehängten</i> Platte neue Kennungen geben (<code>sgdisk -G /dev/&lt;alt&gt;</code>, <code>fatlabel -i -r /dev/&lt;alt&gt;1</code>), dann <code>update-bootloader --reinit</code> und einmal <b>ohne Auswahl im Bootmenü</b> neu starten; <code>cat /proc/cmdline</code> muss die neue Wurzel zeigen. <code>los.sh -mt</code> warnt vor diesen Fallen.</li>
+<li><code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel</code>, <code>crontab_uebernehmen.sh --anwenden</code>, <code>los.sh -cron</code> (aktiviert <code>wecklauf-alarm.service</code>), <code>systemctl daemon-reload</code>; prüfen: <code>systemctl --failed</code> (MariaDB!), <code>cat /sys/class/rtc/rtc0/wakealarm</code>.</li>
+</ol></td></tr></table>
+
+<h2>13. Offene Punkte (Stand 06.10.2026)</h2>
 <ul>
 <li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09. und 02.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
 <li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
-<li>Platz auf linux0: <code>/DATA</code> ca. 88 % belegt, seit die Medical-Office-Ablage dort dauerhaft liegt.</li>
+<li>Platz auf linux0: <code>/DATA</code> ca. 90 % belegt (06.10.: 771 GB frei), seit die Medical-Office-Ablage dort dauerhaft liegt.</li>
+<li>Alte NVMe in linux7 (Intel 256 GB, SMART FAILED) ausbauen; bis dahin bleibt sie als Notfall-System im Bootmenü („on /dev/nvme0n1p3“).</li>
+<li>Am 05.10. mittags startete linux7 weder per Weckalarm noch per Wake-on-LAN (wahrscheinlich Folge einer einmaligen Sonderregelung in der Nacht davor); seitdem funktioniert beides &ndash; beobachten.</li>
 <li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>
 </ul>
 <p class="stand">Skripte und diese Beschreibung liegen im Repository <code>linux1:/root/neuserver</code> (Änderungen dort, dann <code>make git shziel</code>; auf linux0/linux7 <code>git pull</code> und <code>make shziel</code>).</p>
