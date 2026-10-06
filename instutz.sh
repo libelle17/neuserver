@@ -65,8 +65,18 @@ commandline() {
 zeit() {
   # dieses Programm soll nicht mit vielleicht falsch eingestelltem Datum laufen => Internet-Zeit holen
   # bef="ntpdate ptbtime1.ptb.de";
-  bef="/sbin/chronyd -q 'server ptbtime1.ptb.de iburst maxsamples 1'&&/sbin/hwclock --systohc"
-  [ "$verb" ]&&{ eval "$bef"||exit;:;}||{ eval "$bef" >/dev/null 2>&1||exit;};
+  # Läuft chronyd schon als Dienst, scheitert ein zweites "chronyd -q" ("Another chronyd may already be running"),
+  # und das Skript endete hier bisher stumm - so blieben seit ca. 5/2026 alle stutze*.sh-Rotationen aus
+  # (sql/DBBack wuchsen um ~800 GB). Dann nur per chronyc warten, bis der Dienst synchron ist (Abweichung < 1 s,
+  # höchstens 6 Versuche à 10 s); sonst wie bisher einmalig selbst stellen. 6.10.2026
+  if pgrep -x chronyd >/dev/null; then
+    bef="/usr/bin/chronyc -n waitsync 6 1.0&&/sbin/hwclock --systohc"
+  else
+    bef="/sbin/chronyd -q 'server ptbtime1.ptb.de iburst maxsamples 1'&&/sbin/hwclock --systohc"
+  fi;
+  # bei Fehlschlag nicht mehr stumm aufhören, sondern nach stderr (landet per crontab in $ELG) melden
+  if [ "$verb" ]; then eval "$bef"; else eval "$bef" >/dev/null 2>&1; fi||{
+    printf "%s: Uhrzeit nicht synchron (%s) - keine Rotation\n" "$0" "$bef" >&2; exit 1; };
   # auch die Bios-Uhr korrigieren
   # /sbin/hwclock --systohc 
   # jetzt in Sekunden umrechnen
