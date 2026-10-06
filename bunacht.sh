@@ -95,7 +95,11 @@ if [ "$buhost"/ = "$LINEINS"/ ]; then
     # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
     # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
     # auf dem Ziel werden dadurch NICHT geloescht.
-    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+    # /sqlloe/, /DBBackloe/, /TMBackloe/, /TMExportloe/ ausgeschlossen (6.10.2026): dorthin verschieben die stutze*.sh
+    # aussortierte Dumps nur zur Durchsicht vor dem endgueltigen Loeschen. Gespiegelt kaemen sie auf dem Ziel als neue Dateien
+    # an, waehrend die Snapshots die Originale noch festhalten - der erste Lauf nach der Reparatur von instutz.sh haette
+    # so ~590 GB auf einmal nach linux0 geschrieben (dort 772 GB frei, Platzwaechter bei > 250 GB Sprung gesperrt).
+    kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/,/sqlloe/,/DBBackloe/,/TMBackloe/,/TMExportloe/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
     _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
 #    ZL=;
 #    ZmD=;
@@ -115,8 +119,8 @@ else
   # Zusaetzlich ausgeschlossen (21.9.2026, mit "/" am Anfang = nur unter /DATA): /VirtualBox/ (122 GB, alte VM, seit 2024
   # unveraendert), Mail/Thunderbird/Profiles/Praxis/ (Praxis-Postfach wird von bulinux.sh in einer eigenen Schleife
   # kopiert) und .../Profiles/readpst/ (beide jetzt im Mail-Aufruf _bn_mail ausgeschlossen, dort steht /Mail/). Bereits vorhandene Kopien
-    # auf dem Ziel werden dadurch NICHT geloescht.
-  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
+    # auf dem Ziel werden dadurch NICHT geloescht. /*loe/-Ausschluesse: s. Kommentar beim Push-Aufruf oben.
+  kopiermt "/DATA/" "/$vz/" ".snapshots/,/VirtualBox/,/Mail/,/MO/INDAMED/,/sqlloe/,/DBBackloe/,/TMBackloe/,/TMExportloe/" "$obOBDEL" "" ""; # ohne --iconv; /Mail/ folgt getrennt mit --inplace (_bn_mail)
   _bs_ret=$?; [ "$_bs_ret" -eq 0 ] && { _bn_mail "$vz"; _bs_ret=$?; }; [ "$obecht" ] && [ -z "$sdneu" ] && backupstatus "$([ $_bs_ret -eq 0 ] && echo OK || echo FEHLER)"; # nur bei echtem Lauf, nicht bei Trockenlauf-Tests
   EXGES="";
 fi;
