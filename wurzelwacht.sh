@@ -39,7 +39,9 @@
 EMPFAENGER=${WW_EMPFAENGER:-diabetologie@dachau-mail.de}
 KOPIE_TAGE=${WW_KOPIE_TAGE:-7}
 VERZEICHNISSE=${WW_VERZEICHNISSE:-/root /home /opt /srv /usr/local /var/spool /var/lib/samba /var/lib/wecklauf /var/lib/bumonitor /var/lib/platzwaechter}
-ETC_AUSWAHL="hostname hosts exports auto.master samba postfix ssh cups zypp/repos.d leiste.conf"
+ETC_AUSWAHL="hostname hosts exports auto.master samba postfix ssh cups zypp/repos.d leiste.conf
+  systemd/system sudoers.d logrotate.d my.cnf my.cnf.d" # 6.10.2026: systemd/system usw. ergaenzt (beim Umstieg
+  # auf linux7 fehlten mariadb.service.d/data.conf -> MariaDB startete nicht, und wecklauf-alarm.service)
 ZUSTAND=${WW_ZUSTAND:-/var/lib/wurzelwacht}
 BASIS=/run/wurzelwacht
 MARKE=etc/ersatzwurzel
@@ -168,7 +170,8 @@ kopieren() {
   $RS /etc/ "$Z$w/etc_aktuell/" || { bericht "Kopie /etc nach $w/etc_aktuell fehlerhaft"; fehler=1; }
   for e in $ETC_AUSWAHL; do
     [ -e "/etc/$e" ] || continue
-    if [ -d "/etc/$e" ]; then mkdir -p "$Z/etc/$e"; $RS "/etc/$e/" "$Z/etc/$e/"; else rsync -aAX "/etc/$e" "$Z/etc/$e"; fi \
+    # ergaenzend, ohne --delete: eigene Dateien des Ersatzes (z.B. Dienst-Aktivierungen in systemd/system) bleiben
+    if [ -d "/etc/$e" ]; then mkdir -p "$Z/etc/$e"; rsync -aAXH "/etc/$e/" "$Z/etc/$e/"; else rsync -aAX "/etc/$e" "$Z/etc/$e"; fi \
       || { bericht "Kopie /etc/$e fehlerhaft"; fehler=1; }
   done
   # selbst gebaute Programme (keinem Paket zugehoerig)
