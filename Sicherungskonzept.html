@@ -68,6 +68,9 @@
 <li>Cron auf linux1 kopiert die komprimierten Medical-Office-Sicherungen: 14:00 und 21:00 <code>/mnt/wser/mo7z/</code> &rarr; <code>/DATA/mo7z/</code>, 23:00 <code>/mnt/wres/mo7z/</code> &rarr; <code>/DATA/wresmo7z/</code>.</li>
 <li>linux1 hängt die Freigaben von wser ein (u.a. <code>/mnt/wser/indamed</code>, <code>/mnt/wser/mosich</code>). Über diese holen sich die Sicherungsrechner die Medical-Office-Ablage <b>direkt</b> (Abschnitt 5, „dt2“).</li>
 <li>Für den Datenbankabgleich exportiert linux1 seine MariaDB-Datenbanken auf Anforderung eines Sicherungsrechners. Eine Sperre (<code>/tmp/bulinux_db_linux1.lock</code>) verhindert zwei gleichzeitige Exporte; der zweite Rechner <b>wartet</b> (bis 8 h) statt auszulassen.</li>
+<li>Datenbank-Dumps auf linux1: 1:40 und 14:15 <code>mariadb-dump</code> aller Praxis-Datenbanken nach <code>/DATA/sql/</code>, nach 14 Tagen mit 7z gepackt (<code>komprsql.sh</code>, 0:35); dazu <code>/DATA/DBBack/</code> (u.a. <code>Diaries_*</code>, <code>custo_*</code>) und <code>/DATA/TMBack/</code>.</li>
+<li>Ausdünnen dieser Dumps (Großvater-Vater-Sohn): <code>stutzeTMBack.sh</code> 22:05, <code>stutze.sh</code> (<code>sql</code>) 23:05, <code>stutzeDBBack.sh</code> 0:05 behalten je nach Alter alle, einen pro Tag, vier pro Monat (1./8./15./22.), einen pro Monat, einen pro Jahr. Aussortiertes wird nur nach <code>/DATA/sqlloe</code>, <code>DBBackloe</code>, <code>TMBackloe</code> verschoben; <code>leereloe.sh</code> (21:45) löscht es dort nach 30 Tagen endgültig. Die <code>*loe</code>-Ordner werden nicht auf die Sicherungsrechner gespiegelt.</li>
+<li>Bis 06.10.2026 lief das Ausdünnen seit etwa Mai nicht (die Zeitprüfung in <code>instutz.sh</code> brach stumm ab, weil <code>chronyd</code> als Dienst läuft); dadurch wuchsen <code>sql</code> und <code>DBBack</code> um ca. 800 GB. Behoben am 06.10.2026, Rückstau (ca. 590 GB) gelöscht. Fehler beim Ausdünnen stehen jetzt in <code>/var/log/cronf.log</code>.</li>
 </ul>
 
 <h2>5. Was gesichert wird &ndash; Mittags- und Nachtlauf</h2>
@@ -78,7 +81,7 @@
 <tr><td><code>bulinux.sh -f</code> dt1</td><td>Konfigurationsdateien von linux1 (u.a. <code>/root</code>-Zugänge, Postfix, <code>/srv/www/htdocs</code>, Skripte)</td></tr>
 <tr><td><code>bulinux.sh -f</code> dt2</td><td>Windows-Freigaben: Medical-Office-Ablage von wser (<code>/mnt/wser/indamed</code> &rarr; <code>/DATA/MO/INDAMED</code>, ca. 420 GB), MO-Sicherungen (<code>/DATA/MO/Sich</code>), Outlook-Dateien</td></tr>
 <tr><td><code>bulinux.sh -f</code> dt3 + db</td><td>die <code>/DATA</code>-Verzeichnisse; MariaDB: Export auf linux1, Import auf dem Sicherungsrechner („Dump OK / Awk OK / Import OK“)</td></tr>
-<tr><td><code>bunacht.sh</code></td><td>vollständige Spiegelung von <code>/DATA</code> <b>mit</b> Übernahme von Löschungen; ausgenommen <code>/MO/INDAMED/</code> (kommt aus dt2), <code>/VirtualBox/</code>, <code>.snapshots/</code>; <code>/Mail/</code> getrennt</td></tr>
+<tr><td><code>bunacht.sh</code></td><td>vollständige Spiegelung von <code>/DATA</code> <b>mit</b> Übernahme von Löschungen; ausgenommen <code>/MO/INDAMED/</code> (kommt aus dt2), <code>/VirtualBox/</code>, <code>.snapshots/</code>, die Durchsichtsordner <code>/sqlloe/</code>, <code>/DBBackloe/</code>, <code>/TMBackloe/</code>, <code>/TMExportloe/</code> (Abschnitt 4); <code>/Mail/</code> getrennt</td></tr>
 </table>
 <p>Jedes Skript darf höchstens <b>8 Stunden</b> laufen. Wird es abgebrochen, steht im Log in Rot „ABGEBROCHEN … Sicherung UNVOLLSTAENDIG!“ und der echte Exitcode (124).</p>
 
@@ -233,7 +236,9 @@
 <ul>
 <li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09. und 02.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
 <li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
-<li>Platz auf linux0: <code>/DATA</code> ca. 90 % belegt (06.10.: 771 GB frei), seit die Medical-Office-Ablage dort dauerhaft liegt.</li>
+<li>Platz auf linux0: <code>/DATA</code> ca. 90 % belegt (06.10.: 771 GB frei). Hauptursache war das seit Mai ausgefallene Ausdünnen der Datenbank-Dumps (Abschnitt 4), behoben am 06.10.; die gelöschten ca. 590 GB werden auf linux0 erst frei, wenn die letzten Snapshots mit ihnen abgelaufen sind (etwa 13./14.10.) &ndash; bis dahin kann der Platzwächter alte Snapshots löschen. Beobachten.</li>
+<li>Die geänderten Skripte vom 06.10. (<code>bunacht.sh</code> ohne <code>*loe</code>-Ordner, <code>instutz.sh</code>, <code>rett.sh</code>) müssen auf linux0 und linux7 noch per <code>git pull</code> und <code>make shziel</code> übernommen werden.</li>
+<li>In <code>/DATA/rett</code>, <code>/DATA/rett0</code> und <code>/DATA/wrz</code> liegen noch alte Passwort- und Schlüsseldateien (u.a. <code>.mysqlpwd</code>, <code>.7zpassw</code>, <code>shadow</code>, <code>id_rsa</code>, Samba-<code>passdb.tdb</code>, <code>*.cifs</code>), lesbar für die Gruppe <code>praxis</code> und mitgespiegelt. <code>rett.sh</code> kopiert seit 06.10. keine Passwortdateien mehr (sie sichert <code>los.sh -ks</code> verschlüsselt); die vorhandenen sind noch zu löschen.</li>
 <li>Alte NVMe in linux7 (Intel 256 GB, SMART FAILED) ausbauen; bis dahin bleibt sie als Notfall-System im Bootmenü („on /dev/nvme0n1p3“).</li>
 <li>Am 05.10. mittags startete linux7 weder per Weckalarm noch per Wake-on-LAN (wahrscheinlich Folge einer einmaligen Sonderregelung in der Nacht davor); seitdem funktioniert beides &ndash; beobachten.</li>
 <li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>

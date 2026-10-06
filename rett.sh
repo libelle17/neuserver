@@ -3,8 +3,8 @@
 # (nicht der Patientendaten selbst) nach /DATA/rett, für den Fall eines
 # Systemausfalls: /etc/{samba,hosts,vsftpd*.conf,my.cnf,fstab,capisuite,
 # sysconfig/isdn,openvpn}, /usr/lib64/capisuite, /opt/turbomed (ohne
-# Papierkorb, mit --delete), diverse /root-Dateien (.vimrc, Credentials,
-# bin, crontabakt), sowie /mnt und /amnt (nur oberste Ebene, -x = bleibt im
+# Papierkorb, mit --delete), diverse /root-Dateien (.vimrc, bin, crontabakt;
+# Passwortdateien seit 6.10.2026 nicht mehr, s. los.sh -ks), sowie /mnt und /amnt (nur oberste Ebene, -x = bleibt im
 # Dateisystem) und /obsl*/ungera. Ein testweiser Komplettabgleich nach
 # /DAT3 ist über "if [ 0 -eq 1 ]" fest deaktiviert. Läuft nur, wenn /DATA
 # gemountet ist; setzt am Ende Eigentümer/Rechte für /DATA/rett zurück.
@@ -28,7 +28,10 @@ if $(mountpoint -q /DATA); then
   ionice -c3 nice -n19 rsync -avu /usr/lib64/capisuite /DATA/rett/usr/lib64
   ionice -c3 nice -n19 rsync -avu /etc/openvpn /DATA/rett/etc 
   ionice -c3 nice -n19 rsync -avu --delete --exclude "Papierkorb" /opt/turbomed/ /DATA/rett/turbomed/
-  ionice -c3 nice -n19 rsync -avu /root/.vimrc /root/.fbcred /root/.getmail /root/.mysqlpwd /root/.7zpassw /root/bin /root/crontabakt /DATA/rett/root/
+  # 6.10.2026: keine Passwortdateien mehr (.fbcred, .mysqlpwd, .7zpassw) - /DATA ist per Samba fuer die Gruppe praxis
+  # freigegeben und wird nach linux0/linux7 gespiegelt; die Dateien sichert los.sh -ks GPG-verschluesselt im Repository.
+  # /root/.getmail ist nur noch ein Verweis auf /root selbst und entfaellt ebenfalls.
+  ionice -c3 nice -n19 rsync -avu /root/.vimrc /root/bin /root/crontabakt /DATA/rett/root/
   ionice -c3 nice -n19 rsync -avu -x /mnt/ /DATA/rett/mnt
   ionice -c3 nice -n19 rsync -avu -x /amnt/ /DATA/rett/amnt
   ionice -c3 nice -n19 rsync -avu /obsl* /DATA/rett/
