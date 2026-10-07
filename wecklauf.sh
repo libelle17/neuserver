@@ -109,7 +109,9 @@ if [ "$obecht" ] && [ -z "$testzeit" ]; then
     done;
   done;
   _wa_ist=$(cat /sys/class/rtc/rtc0/wakealarm 2>/dev/null);
-  if [ -n "$_wa_soll" ] && [ "$_wa_ist" != "$_wa_soll" ]; then
+  # Toleranz +-2 min (7.10.2026): die RTC speichert den Alarm manchmal 1 s frueher (14:17:59 statt 14:18:00),
+  # ein sekundengenauer Vergleich setzte ihn dann bei jedem 5-Minuten-Aufruf unnoetig neu.
+  if [ -n "$_wa_soll" ] && { [ -z "$_wa_ist" ] || [ $((_wa_ist - _wa_soll)) -gt 120 ] || [ $((_wa_soll - _wa_ist)) -gt 120 ]; }; then
     _wa_txt="nicht gesetzt"; [ -n "$_wa_ist" ] && _wa_txt="auf $(date -d "@$_wa_ist" '+%d.%m. %H:%M')";
     log "Weckalarm-Wache: Alarm war $_wa_txt - setze auf naechstes Fenster $(date -d "@$_wa_soll" '+%d.%m. %H:%M')";
     rtcwake -m no -t "$_wa_soll" 2>&1 | tee -a "$LOG";

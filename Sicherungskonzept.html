@@ -198,7 +198,8 @@
 <h2>10. Kontrolle</h2>
 <table border="1" cellspacing="0" cellpadding="4" width="100%">
 <tr><th bgcolor="#eeeeee">Was</th><th bgcolor="#eeeeee">Wo</th></tr>
-<tr><td>Ablauf der Sicherungen, Exitcodes, „ABGEBROCHEN“</td><td><code>/var/log/wecklauf.log</code> auf linux0/linux7 (täglich um 07:01 rotiert nach <code>.1.xz</code>)</td></tr>
+<tr><td><b>Ergebnis je Sicherungsskript</b> (OK/FEHLER mit Uhrzeit) und freier Platz &ndash; auch wenn der Sicherungsrechner aus ist</td><td><code>/DATA/Backup-Status_linux0.txt</code> bzw. <code>_linux7.txt</code> auf linux1 (von jedem Lauf aktualisiert); Beginn des letzten Fensters: <code>/var/lib/wecklauf/lauf_linux0</code> bzw. <code>_linux7</code> auf linux1</td></tr>
+<tr><td>Ablauf der Sicherungen im Einzelnen, Exitcodes, „ABGEBROCHEN“</td><td><code>/var/log/wecklauf.log</code> auf linux0/linux7 (täglich um 07:01 rotiert nach <code>.1.xz</code>)</td></tr>
 <tr><td>Wecken/Steckdose durch linux1</td><td><code>/var/log/weckwacht.log</code> auf linux1, Mails</td></tr>
 <tr><td>Platz und Snapshot-Löschungen</td><td><code>/var/log/platzwaechter.log</code> auf linux0/linux7, Mails</td></tr>
 <tr><td>Herunterfahren von linux0</td><td><code>/var/log/netconsole-linux0.log</code> auf linux1</td></tr>
