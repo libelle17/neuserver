@@ -222,7 +222,7 @@ commandline() {
 				printf "  $blau-neu$reset: frägt Fritzboxbenutzer und -passwort neu ab\n";
         printf "  $blau-grue$reset: weckt gruendlicher (alle MAC, die je seit Beginn der Aufzeichnungen diese/n IP/Namen hatten\n";
         printf "  $blau-nicht$reset: spart die angegebenen PCs (Mac,IP,Hostname,Interface) aus\n";
-				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken\n";
+				printf "  $blau[<PC1>[,PC2...]]$reset: versucht bloß die angegebenen PCs (Mac,IP,Hostname,Interface) statt alle zu wecken (mit Komma oder Leerzeichen getrennt)\n";
 				printf "                    Wenn bloß MAC-Adressen angegeben werden, so arbeitet das Programm ohne Geräteliste (und schneller).\n";
 				printf "  $blau-verbo$reset: berücksichtigt die mit Komma getrennten Interfaces nicht ('-' für leeres Interface)\n";
 				printf "  $blau-erl$reset: berücksichtigt allenfalls die mit Komma getrennten Interfaces\n";
@@ -250,7 +250,7 @@ commandline() {
 				printf "  $blau-ol$reset: updates the list of the devices not so often\n";
 				printf "  $blau-vi$reset: loads the device list and this script in vi\n";
 			exit;;
-			*) pcs="$para";;
+			*) pcs="${pcs:+$pcs,}$para";; # mehrere PCs auch mit Leerzeichen getrennt (weckalle.sh linux0 linux7), 7.10.2026
 		esac;
 		[ "$verb" ]&&printf "Parameter: $blau$para$reset\n";
 		shift;
