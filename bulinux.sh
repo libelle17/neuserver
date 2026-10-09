@@ -253,7 +253,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
       # --no-xattrs auch hier (21.9.2026): dieselbe CIFS-Quelle ohne SELinux-Kontext wie bei my.ini/MOSTAT unten; ohne die Option
       # meldete rsync am 21.9.2026 unter /DATA/MO/Sich ~9.900 x "lremovexattr security.selinux: Permission denied" (laut Log; Wirkung dieser
       # Aenderung im Nachtlauf noch nicht bestaetigt - restorecon hilft nicht, /DATA/MO/Sich hat schon den Soll-Kontext samba_share_t)
-      bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "--no-xattrs" "" 0 1 1 || _bu_fehler=1
+      bukopierfn "$mouvz"/ /$DtZ/MO/Sich/ "" "--no-xattrs --inplace" "" 0 1 1 || _bu_fehler=1 # --inplace s. dt3
       # --no-xattrs: Quelle ist ein CIFS-Mount ohne SELinux-Kontext, das
       # -X aus dem kopiermt()-Standard versucht trotzdem, das security.selinux-
       # xattr auf dem Ziel zu entfernen/setzen und scheitert dabei staendig mit
@@ -266,7 +266,7 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
         # --no-xattrs: gleicher Grund wie bei my.ini oben (CIFS-Quelle ohne SELinux-Kontext)
         kopiermt ${mostat:1} /$DtZ/MO/INDAMED/dat/ "" "--no-xattrs" "" 0 1
       fi
-      bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
+      bukopierfn mnt/wser/indamed/dat/medoffDB /$DtZ/MO/INDAMED/dat/ "" "--inplace" "" 0 1 || _bu_fehler=1 # --inplace s. dt3
       bukopierfn mnt/wser/indamed/dat/files /$DtZ/MO/INDAMED/dat/ "" "" "" 0 1 || _bu_fehler=1
     }
 	if $qssh "mountpoint -q /mnt/anmmw"; then
@@ -348,7 +348,8 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
      [ "$sdneu" ]||echo inbox: "$inbox";
      # eine Woche
      [ "$obforce" ]&&testdat=||testdat=${inbox##/$qverz/};
-		 bukopierfn $qverz ... "" -d "$testdat" 604800 || _bu_fehler=1;
+		 # --inplace (9.10.2026): s. Kommentar beim dt3-Aufruf
+		 bukopierfn $qverz ... "" "-d --inplace" "$testdat" 604800 || _bu_fehler=1;
 		 break;
    done;
   fi;
@@ -365,7 +366,12 @@ if $qssh "mountpoint -q /$Dt 2>/dev/null" && \
  fi;
  EXCL=${EXCL}",TMBackloe/,DBBackloe/,sqlloe/,TMExportloe/,Thunderbird/Profiles/,TMBack0/,TMBacka/,VirtualBox/,VMs/,Documents/,mp4/";
  [ "$obkurz" ]&&EXCL=$EXCL",ausgelagert/,Oberanger/,Mail/Sylpheed,Mail/Exp/,Mail/Mail/,lost+found/,szn4vonAlterPlatte/,DBBack/,TMBack/";
- bukopierfn "$Dt" "$DtZ/" "$EXCL" "-W $OBDEL" || _bu_fehler=1;
+# --inplace (9.10.2026): ohne schreibt rsync eine geaenderte Datei als neue Kopie; die Snapshots auf dem
+# Ziel halten dann die ganze alte Fassung 7 Tage fest. Messung Nacht 8./9.10. auf linux0: 173,5 GB neu,
+# davon ~140 GB durch wenige grosse, nur zu ~1 % geaenderte Dateien (Thunderbird-Inbox Kothny 55 GB,
+# Outlook-PST 24 GB, MO-Tabellen ltag.ibd/dbsprot.ibd je 2x). Mit --inplace nur die geaenderten Bloecke.
+ # Dafuer hier -W (ganze Datei, kein Delta - seit 2020, Grund nicht vermerkt) durch --inplace ersetzt.
+ bukopierfn "$Dt" "$DtZ/" "$EXCL" "--inplace $OBDEL" || _bu_fehler=1;
  # Schreibschutz auf Zielverzeichnisse aufheben:
  # ── chattr: +i wiederherstellen wo es vorher gesetzt war ─────────────────
  if [ "$obecht" ]; then
