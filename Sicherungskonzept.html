@@ -34,7 +34,7 @@
 <tr><td><b>wres</b> (Windows-Reserveserver)</td><td>Replikationsserver für Medical Office, übernimmt, wenn wser nicht erreichbar ist</td><td>Anmeldung, 1. PC von links</td></tr>
 <tr><td><b>linux1</b> (192.168.178.21)</td><td>Linux-Hauptserver: Freigaben <code>/DATA</code> (Patientendokumente, Mail, Datenbanken), MariaDB-Datenbanken, hängt die Freigaben von wser/wres ein; Quelle aller Linux-Sicherungen</td><td>Serverraum, läuft ständig</td></tr>
 <tr><td><b>linux0</b> (192.168.178.20)</td><td>Sicherungsrechner 1</td><td>Serverraum (bei linux1), meist ausgeschaltet; Steckdosenleiste <code>switch_1</code></td></tr>
-<tr><td><b>linux7</b> (192.168.178.27)</td><td>Sicherungsrechner 2</td><td>Raum mit szn4 und amd, meist ausgeschaltet; Systemplatte seit 06.10.2026 WD 500 GB (<code>sda</code>), die alte NVMe ist defekt (SMART FAILED), noch eingebaut, aber unbenutzt (Abschnitt 12)</td></tr>
+<tr><td><b>linux7</b> (192.168.178.27)</td><td>Sicherungsrechner 2</td><td>Raum mit szn4 und amd, meist ausgeschaltet; Systemplatte WD 500 GB (<code>sda</code>); die alte NVMe ist defekt (SMART FAILED), noch eingebaut, aber unbenutzt (Abschnitt 12)</td></tr>
 </table>
 
 <h2>2. Grundsätze</h2>
@@ -70,7 +70,7 @@
 <li>Für den Datenbankabgleich exportiert linux1 seine MariaDB-Datenbanken auf Anforderung eines Sicherungsrechners. Eine Sperre (<code>/tmp/bulinux_db_linux1.lock</code>) verhindert zwei gleichzeitige Exporte; der zweite Rechner <b>wartet</b> (bis 8 h) statt auszulassen.</li>
 <li>Datenbank-Dumps auf linux1: 1:40 und 14:15 <code>mariadb-dump</code> aller Praxis-Datenbanken nach <code>/DATA/sql/</code>, nach 14 Tagen mit 7z gepackt (<code>komprsql.sh</code>, 0:35); dazu <code>/DATA/DBBack/</code> (u.a. <code>Diaries_*</code>, <code>custo_*</code>) und <code>/DATA/TMBack/</code>.</li>
 <li>Ausdünnen dieser Dumps (Großvater-Vater-Sohn): <code>stutzeTMBack.sh</code> 22:05, <code>stutze.sh</code> (<code>sql</code>) 23:05, <code>stutzeDBBack.sh</code> 0:05 behalten je nach Alter alle, einen pro Tag, vier pro Monat (1./8./15./22.), einen pro Monat, einen pro Jahr. Aussortiertes wird nur nach <code>/DATA/sqlloe</code>, <code>DBBackloe</code>, <code>TMBackloe</code> verschoben; <code>leereloe.sh</code> (21:45) löscht es dort nach 30 Tagen endgültig. Die <code>*loe</code>-Ordner werden nicht auf die Sicherungsrechner gespiegelt.</li>
-<li>Bis 06.10.2026 lief das Ausdünnen seit etwa Mai nicht (die Zeitprüfung in <code>instutz.sh</code> brach stumm ab, weil <code>chronyd</code> als Dienst läuft); dadurch wuchsen <code>sql</code> und <code>DBBack</code> um ca. 800 GB. Behoben am 06.10.2026, Rückstau (ca. 590 GB) gelöscht. Fehler beim Ausdünnen stehen jetzt in <code>/var/log/cronf.log</code>.</li>
+<li><b>Voraussetzung: richtige Uhrzeit.</b> Alle Ausdünn-Skripte (<code>stutze.sh</code>, <code>stutzeDBBack.sh</code>, <code>stutzeTMBack.sh</code>) nutzen <code>instutz.sh</code>, und das sortiert nur aus, wenn die Uhrzeit bestätigt ist: Läuft <code>chronyd</code> als Dienst, wartet es (bis ca. 1 min), bis dieser synchron ist; läuft er nicht, stellt es die Uhr einmalig selbst (<code>ptbtime1.ptb.de</code>). Gelingt beides nicht, wird nichts ausgedünnt &ndash; dann wachsen <code>/DATA/sql</code>, <code>/DATA/DBBack</code> und <code>/DATA/TMBack</code> um mehrere GB pro Tag (auf linux1 und, über die Snapshots, auf den Sicherungsrechnern). Solche Fehler stehen in <code>/var/log/cronf.log</code> auf linux1 („Uhrzeit nicht synchron … keine Rotation“).</li>
 </ul>
 
 <h2>5. Was gesichert wird &ndash; Mittags- und Nachtlauf</h2>
@@ -106,16 +106,16 @@
 <h2>7. Sicherheitsnetze bei Ausfällen</h2>
 <p><code>weckwacht.sh</code> läuft auf linux1 alle 5 Minuten. Jeder Sicherungsrechner meldet den Beginn eines Fensters an linux1 (<code>/var/lib/wecklauf/lauf_linux0</code> bzw. <code>_linux7</code>). Fehlt diese Meldung 20 Minuten nach der Weckzeit:</p>
 <ol>
-<li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken. Ausnahme: Hat linux1 ihn selbst für dieses Fenster geweckt (Wake-on-LAN oder Steckdose) und ist das noch keine 15 Minuten her, startet er gerade und holt nach &ndash; dann keine Mail (seit 10.10.2026; vorher kam am 09.10. ein solcher Fehlalarm).</li>
+<li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken. Ausnahme: Hat linux1 ihn selbst für dieses Fenster geweckt (Wake-on-LAN oder Steckdose) und ist das noch keine 15 Minuten her, startet er gerade und holt nach &ndash; dann keine Mail.</li>
 <li><b>Rechner antwortet nicht:</b> linux1 hinterlegt eine Notiz (<code>geweckt_&lt;rechner&gt;</code>) und weckt ihn per <b>Wake-on-LAN</b>; Mail.</li>
 <li><b>Nachholen:</b> Der geweckte Rechner erkennt das ausgefallene Fenster (höchstens 12 h alt) und holt es nach (mittags bumo, nachts den vollen Lauf). <b>Abgeschaltet wird danach nur, wenn linux1 ihn für genau dieses Fenster geweckt hat</b> &ndash; hat ihn ein Mensch eingeschaltet, sichert er nach und bleibt an.</li>
-<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. Scharf seit 04.10.2026 (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1; Löschen schaltet Stufe 3 ab). Lässt sich die Steckdose nicht schalten, kommt eine Mail „nicht schaltbar“ bzw. „DRINGEND &ndash; bleibt AUS“. <b>Im Ernstfall bewährt am 09.10.2026:</b> linux0 hing nach dem Ausschalten um 17:40, Wake-on-LAN um 22:05 half nicht, linux1 schaltete um 22:25 die Steckdose aus und ein, linux0 holte den Nachtlauf vollständig nach und schaltete sich um 00:34 ab.</li>
+<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. Scharf, solange auf linux1 die Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> besteht (Löschen schaltet Stufe 3 ab; <code>los.sh -rechner</code> legt sie an). Lässt sich die Steckdose nicht schalten, kommt eine Mail „nicht schaltbar“ bzw. „DRINGEND &ndash; bleibt AUS“. Wake-on-LAN allein hilft bei einem solchen Hänger nicht, erst der Stromschnitt.</li>
 </ol>
 <p>Alle Mails gehen an root auf linux1 (weitergeleitet an gschade@dachau-mail.de). Abschalten der Wache: <code>/root/.kein_weckwacht</code> (ganz) bzw. <code>/var/lib/wecklauf/kein_linux0</code> (ein Rechner) auf linux1.</p>
 <h3>Weitere Vorkehrungen gegen Hänger von linux0</h3>
 <ul>
 <li>Hardware-Watchdog (iTCO, 2 min, „nowayout“): setzt linux0 zurück, wenn Linux selbst hängt &ndash; auch beim Herunterfahren.</li>
-<li>netconsole: linux0 schickt seine Kernel- und Herunterfahr-Meldungen an linux1 (<code>/var/log/netconsole-linux0.log</code>). Bisher zeigen alle Hänger: Linux war fertig, der Hänger liegt danach im BIOS/Mainboard (ASUS PRIME B365M-A, BIOS 2208 = neuestes). Nach dem nächtlichen Rotieren der Logs wird der Empfänger auf linux1 neu gestartet (<code>logrotate.conf</code>); vorher schrieb er vom 05. bis 10.10. ins Leere.</li>
+<li>netconsole: linux0 schickt seine Kernel- und Herunterfahr-Meldungen an linux1 (<code>/var/log/netconsole-linux0.log</code>). Die bisherigen Hänger zeigen: Linux war fertig, der Hänger liegt danach im BIOS/Mainboard (ASUS PRIME B365M-A, BIOS 2208 = neuestes). Der Empfänger auf linux1 muss nach dem Rotieren der Logs neu gestartet werden, sonst schreibt er in die alte, gelöschte Datei (erledigt <code>logrotate.conf</code>).</li>
 </ul>
 <h3>Rechnerspezifische Einstellungen (<code>los.sh -rechner</code>)</h3>
 <p>Einige Einstellungen gelten nur für einen bestimmten Rechner. Sie liegen im Repository unter <code>rechner/&lt;rechner&gt;/</code> mit ihrem vollen Zielpfad und werden mit <code>los.sh -rechner</code> eingerichtet (läuft auch beim vollständigen <code>los.sh</code> mit). Es legt <b>nur Fehlendes</b> an; weicht eine vorhandene Datei ab, meldet es das nur. Im Notfallbetrieb (<code>/etc/notfallbetrieb</code>, Abschnitt 11) tut es nichts.</p>
@@ -125,7 +125,7 @@
 <tr><td>linux0</td><td><code>netconsole-linux1.service</code> (aktiviert)</td><td>schickt Kernel- und Herunterfahr-Meldungen an linux1</td></tr>
 <tr><td>linux1</td><td><code>netconsole-empfang.service</code> (aktiviert), <code>socat</code>, Firewall-Regel UDP 6666 nur von linux0</td><td>Empfang nach <code>/var/log/netconsole-linux0.log</code></td></tr>
 <tr><td>linux1</td><td><code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code>, falls sie fehlt</td><td>Stufe 3 für linux0 (<code>switch_1</code>) scharf</td></tr>
-<tr><td>linux7</td><td><code>/etc/fstab</code>: <code>x-systemd.mount-timeout=180</code> bei <code>/DATA</code> und <code>/DATAC</code> (vorher Sicherungskopie der fstab)</td><td>das Einhängen der großen btrfs-Platte dauert ca. 50 s; ohne die Option brach systemd es ab und MariaDB startete ohne <code>/DATA</code> (02.10.2026)</td></tr>
+<tr><td>linux7</td><td><code>/etc/fstab</code>: <code>x-systemd.mount-timeout=180</code> bei <code>/DATA</code> und <code>/DATAC</code> (vorher Sicherungskopie der fstab)</td><td>das Einhängen der großen btrfs-Platte dauert ca. 50 s; ohne die Option bricht systemd es ab und MariaDB startet nicht</td></tr>
 </table>
 
 <h2>8. Die Steckdosenleiste im Serverraum</h2>
@@ -214,11 +214,10 @@
 <tr><td>Platz und Snapshot-Löschungen</td><td><code>/var/log/platzwaechter.log</code> auf linux0/linux7, Mails</td></tr>
 <tr><td>Herunterfahren von linux0</td><td><code>/var/log/netconsole-linux0.log</code> auf linux1</td></tr>
 <tr><td>Starts und Abschaltungen</td><td><code>last -x | head</code> auf dem jeweiligen Rechner</td></tr>
-<tr><td>Ergebnis jedes Laufs (OK/FEHLER, Zeitpunkt, freier Platz)</td><td><code>/DATA/Backup-Status_linux0.txt</code> bzw. <code>_linux7.txt</code> auf linux1</td></tr>
 <tr><td>Tägliche Prüfung aller Läufe: 07:30 voll (auch Platz und crontab-Abgleich), 16:30 nur Mittagslauf</td><td><code>bumonitor.sh</code> auf linux1; Warnmail an diabetologie@dachau-mail.de, wenn ein Lauf fehlt, FEHLER meldet oder zu alt ist</td></tr>
 <tr><td>Systemplatte und Ersatzsystem</td><td><code>/var/log/wurzelwacht.log</code> (linux1), <code>wecklauf.log</code> (linux0/linux7); Warnmail an diabetologie@dachau-mail.de</td></tr>
 </table>
-<p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“. „Kopieren nicht begonnen“ heißt: die Platzprüfung vor dem Kopieren hielt den Platz für zu knapp (bis 05.10.2026 auf linux7 ein Rechenfehler durch die Snapshots, behoben).</p>
+<p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“. „Kopieren nicht begonnen“ heißt: die Platzprüfung vor dem Kopieren hielt den Platz für zu knapp.</p>
 
 <h2>11. Notfall: Ein Sicherungsrechner übernimmt linux1</h2>
 <p>Fällt linux1 aus, kann linux0 oder linux7 mit <code>uebernahme.sh</code> seine Rolle übernehmen (Hostname linux1, IP 192.168.178.21, Marker <code>/etc/notfallbetrieb</code> mit der eigentlichen Identität), Rückgabe mit <code>ruecknahme.sh</code>; Ablauf siehe <code>Anleitung_MFA_Notfall_Uebernahme_Rueckgabe</code>. Dabei gilt:</p>
@@ -235,7 +234,7 @@
 <li><b>Ersatzsystem:</b> eine zweite Platte mit derselben Linux-Version (z.B. openSUSE Leap 16.0). Sie wird nur beschrieben, wenn dort einmal von Hand die Freigabe-Datei angelegt wurde; den genauen Befehl zeigt <code>wurzelwacht.sh</code> (ohne <code>-e</code>) an, z.B.<br><code>d=$(mktemp -d) &amp;&amp; mount /dev/sdX3 $d &amp;&amp; echo linux7 &gt; $d/etc/ersatzwurzel &amp;&amp; umount $d &amp;&amp; rmdir $d</code></li>
 <li><b>Was kopiert wird</b> (bei Warnung jedes Mal, sonst wöchentlich; sofort mit <code>wurzelwacht.sh -e -k</code>): <code>/root</code>, <code>/home</code>, <code>/opt</code>, <code>/srv</code>, <code>/usr/local</code>, <code>/var/spool</code> (Faxe, Mail, crontab), Samba-Benutzer, ausgewählte Einstellungen aus <code>/etc</code> (u.a. ssh, samba, postfix, systemd-Dienste), selbst gebaute Programme (autofax, fbfax, labimp …), ein MariaDB-Dump sowie Paket- und Benutzerlisten. Kernel, Bootloader und fstab des Ersatzes bleiben unverändert. Auf dem Ersatz steht in <code>/root/wurzelwacht/LIESMICH.txt</code>, was beim Umstieg zu tun ist.</li>
 </ul>
-<table class="wichtig" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #bb0000"><tr><td bgcolor="#fdeeee" style="background:#fdeeee"><b>Umstieg auf die Ersatzplatte &ndash; Lehren vom 06.10.2026 (linux7):</b>
+<table class="wichtig" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #bb0000"><tr><td bgcolor="#fdeeee" style="background:#fdeeee"><b>Umstieg auf die Ersatzplatte &ndash; worauf zu achten ist:</b>
 <ol>
 <li>Vorher <code>touch /root/.kein_wecklauf</code>, damit keine Sicherung auf eine falsch eingehängte Platte läuft; erst am Schluss wieder löschen.</li>
 <li><b>fstab prüfen:</b> <code>/DATA</code> muss die Sicherungsplatte sein (linux7: <code>LABEL=linux7DATA2</code>, btrfs; linux0 entsprechend), nicht eine Platte namens <code>DATA</code>. Vergleich mit <code>/root/wurzelwacht/etc_aktuell/fstab</code>; danach <code>findmnt /DATA</code>.</li>
@@ -245,15 +244,9 @@
 
 <h2>13. Offene Punkte (Stand 10.10.2026)</h2>
 <ul>
-<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09., 02.10. und 09.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
-<li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
-<li>Platz auf linux0: <code>/DATA</code> ca. 90 % belegt (06.10.: 771 GB frei). Hauptursache war das seit Mai ausgefallene Ausdünnen der Datenbank-Dumps (Abschnitt 4), behoben am 06.10.; die gelöschten ca. 590 GB werden auf linux0 erst frei, wenn die letzten Snapshots mit ihnen abgelaufen sind (etwa 13./14.10.) &ndash; bis dahin kann der Platzwächter alte Snapshots löschen. Beobachten.</li>
-<li>Die geänderten Skripte vom 06.10. (<code>bunacht.sh</code> ohne <code>*loe</code>-Ordner, <code>instutz.sh</code>, <code>rett.sh</code>) müssen auf linux0 und linux7 noch per <code>git pull</code> und <code>make shziel</code> übernommen werden.</li>
-<li>Alte Kopien von Zugangsdaten in den Rettungsverzeichnissen unter <code>/DATA</code> am 06.10. entfernt; <code>rett.sh</code> kopiert keine Passwortdateien mehr (sie sichert <code>los.sh -ks</code> verschlüsselt). Noch offen: Zugangsdaten erneuern (Einzelheiten nur intern).</li>
+<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09., 02.10. und 09.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit). Bis dahin fängt Stufe 3 (Abschnitt 7) die Hänger ab.</li>
+<li>Zugangsdaten erneuern (Einzelheiten nur intern).</li>
 <li>Alte NVMe in linux7 (Intel 256 GB, SMART FAILED) ausbauen; bis dahin bleibt sie als Notfall-System im Bootmenü („on /dev/nvme0n1p3“).</li>
-<li>Am 05.10. mittags startete linux7 weder per Weckalarm noch per Wake-on-LAN (wahrscheinlich Folge einer einmaligen Sonderregelung in der Nacht davor); seitdem funktioniert beides &ndash; beobachten.</li>
-<li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>
-<li>linux7 muss die Änderungen vom 10.10. (<code>weckwacht.sh</code>, <code>los.sh -rechner</code>) noch übernehmen: <code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel &amp;&amp; ./los.sh -rechner</code>.</li>
 </ul>
 <p class="stand">Skripte und diese Beschreibung liegen im Repository <code>linux1:/root/neuserver</code> (Änderungen dort, dann <code>make git shziel</code>; auf linux0/linux7 <code>git pull</code> und <code>make shziel</code>).</p>
 </body>
