@@ -113,6 +113,7 @@ commandline() {
   obpatdirs=0; # Patientendokumente-Unterverzeichnisse anlegen
   obfachliches=0; # Fachliches-Webseiten (AID-Vergleich, HbA1c, Dienstplan) einrichten
   obtuya=0; # tinytuya + Befehl leiste (Steckdosenleisten) einrichten
+  obrechner=0; # rechnerspezifische Systemeinstellungen aus rechner/<host>/ (Watchdog, netconsole, fstab, Stufe 3)
   obprogakt=0; # eigene C++-Programme von github aktualisieren und neu bauen
   gespar="$@"
   verb=0;
@@ -152,6 +153,7 @@ commandline() {
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
         printf "  $blau-fachliches$reset: richtet die oeffentlichen Fachliches-Webseiten ein (AID-Vergleich, HbA1c, Dienstplan)\n";
         printf "  $blau-tuya$reset:      richtet tinytuya und den Befehl leiste (Steckdosenleisten) ein\n";
+        printf "  $blau-rechner$reset:   richtet fehlende rechnerspezifische Einstellungen ein (rechner/<host>/: Watchdog, netconsole, fstab, Stufe 3)\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -198,6 +200,7 @@ commandline() {
           patdirs) obpatdirs=1;;
           fachliches) obfachliches=1;;
           tuya) obtuya=1;;
+          rechner) obrechner=1;;
         esac;;
 		esac;
 		[ "$verb" = 1 ]&&printf "Parameter: $blau-v$reset => gesprächig\n";
@@ -3780,6 +3783,56 @@ reserverdienste() {
   esac;
 } # reserverdienste
 
+# rechnereinstellungen() - nur fuer diesen Rechner geltende Systemeinstellungen (Sicherungskonzept, 10.10.2026).
+# Dateien liegen im Repo unter rechner/<hostname -s>/ mit vollem Zielpfad (z.B. rechner/linux0/etc/modprobe.d/...).
+# Fehlende werden angelegt, vorhandene NICHT ueberschrieben (Abweichung nur gemeldet). Dazu je Rechner:
+#  linux0: Watchdog auch beim Poweroff scharf (Haenger beim Abschalten -> Reset), netconsole-Sender zu linux1
+#  linux1: netconsole-Empfaenger (socat, UDP 6666 nur von linux0), Stufe 3 von weckwacht.sh fuer linux0 (switch_1)
+#  linux7: /DATA,/DATAC mit x-systemd.mount-timeout=180 (btrfs-Mount dauert ~50 s, DefaultTimeoutStartSec=10s
+#          brach ihn ab, MariaDB startete dann ohne /DATA - 2.10.2026)
+rechnereinstellungen() {
+  printf "${dblau}rechnereinstellungen${reset}()\n";
+  local h q z neu= dracut= dienst;
+  h=$(hostname -s);
+  [ -f /etc/notfallbetrieb ]&&{ printf "${rot}Notfallbetrieb${reset} (/etc/notfallbetrieb) - rechnerspezifische Einstellungen uebersprungen.\n"; return; };
+  if [ -d "$instvz/rechner/$h" ]; then
+    while read -r q; do
+      z=${q#$instvz/rechner/$h};
+      if [ ! -f "$z" ]; then
+        ausf "install -D -m 644 $q $z" "${blau}";
+        command -v restorecon >/dev/null&&restorecon "$z";
+        neu=1; case "$z" in /etc/modprobe.d/*) dracut=1;; esac;
+      elif ! cmp -s "$q" "$z"; then
+        printf "${rot}$z${reset} weicht von ${blau}$q${reset} ab - nicht ueberschrieben (diff $q $z).\n";
+      fi;
+    done < <(find "$instvz/rechner/$h" -type f|sort);
+  fi;
+  [ "$neu" ]&&systemctl daemon-reload;
+  [ "$dracut" ]&&ausf "dracut -f" "${blau}"; # modprobe-Optionen (iTCO_wdt nowayout) auch im initrd
+  for dienst in netconsole-linux1 netconsole-empfang; do
+    [ -f /etc/systemd/system/$dienst.service ]&&! systemctl -q is-enabled $dienst.service 2>/dev/null&&ausf "systemctl enable --now $dienst.service" "${blau}";
+  done;
+  case "$h" in
+    linux1)
+      command -v socat >/dev/null||doinst socat;
+      if command -v firewall-cmd >/dev/null&&firewall-cmd -q --state 2>/dev/null; then
+        local regel='rule family="ipv4" source address="192.168.178.20/32" port port="6666" protocol="udp" accept';
+        firewall-cmd -q --permanent --query-rich-rule="$regel"||{
+          firewall-cmd -q --permanent --add-rich-rule="$regel"&&firewall-cmd -q --reload&&printf "Firewall: netconsole von ${blau}linux0${reset} (UDP 6666) erlaubt.\n"; };
+      fi;
+      # Stufe 3 (weckwacht.sh): linux0 haengt an switch_1 der Leiste SH0104; linux1 (switch_2) und
+      # Telefonanlage (switch_4) nie automatisch schalten
+      [ -f /var/lib/wecklauf/strom_linux0 ]||{ mkdir -p /var/lib/wecklauf; echo 1 >/var/lib/wecklauf/strom_linux0; printf "Stufe 3 fuer ${blau}linux0${reset} (switch_1) eingeschaltet.\n"; };;
+    linux7)
+      if awk '($2=="/DATA"||$2=="/DATAC")&&$4!~/x-systemd.mount-timeout/{f=1}END{exit !f}' /etc/fstab; then
+        ausf "cp -p /etc/fstab /etc/fstab.vor_mounttimeout_$(date +%Y%m%d_%H%M%S)" "${blau}";
+        sed -i -E '/^[^#]\S*\s+\/DATAC?\s/{/x-systemd.mount-timeout/!s/^(\S+\s+\S+\s+\S+\s+)(\S+)/\1\2,x-systemd.mount-timeout=180/}' /etc/fstab;
+        printf "${blau}/etc/fstab${reset}: /DATA,/DATAC mit x-systemd.mount-timeout=180.\n";
+        systemctl daemon-reload;
+      fi;;
+  esac;
+} # rechnereinstellungen
+
 # bootpruefung() - warnt vor Fallen nach dem Klonen/Tauschen von Platten (Umstieg linux7, 6.10.2026):
 # doppelte Dateisystem-UUIDs oder PARTUUIDs (Firmware/fstab koennen die falsche Platte nehmen), /boot/efi auf
 # einer anderen Platte als / (Booten haengt an der anderen Platte), grub.cfg der EFI-Partition sucht eine andere
@@ -4385,6 +4438,7 @@ echo Starte mit los.sh...
 [ $obteil = 0 -o $obkonfiglad = 1 ]&&konfig_laden;    # Konfiguration laden (nur fehlende)
 [ "$obkonfignl" = 1 ]&&konfig_laden neu;               # Konfiguration neu laden (überschreibt)
 [ $obteil = 0 -o "$obtuya" = 1 ]&&tuya_einrichten;    # Steckdosenleisten: tinytuya + leiste (nach konfig_laden wg. Schluesseln)
+[ $obteil = 0 -o "$obrechner" = 1 ]&&rechnereinstellungen; # Watchdog/netconsole/fstab/Stufe 3 je Rechner (rechner/<host>/)
 [ $obteil = 0 ]&&speichern;                         # Konfiguration in Dateien schreiben
 printf "${dblau}Ende von $0$reset\n";
 

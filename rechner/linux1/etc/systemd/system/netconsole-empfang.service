@@ -1,0 +1,15 @@
+# Empfaengt netconsole-Meldungen von linux0 (UDP 6666), v.a. um Haenger in
+# der spaeten Shutdown-Phase zu sehen, die im Journal von linux0 fehlen.
+# Sender dort: netconsole-linux1.service. Eingerichtet 30.09.2026.
+[Unit]
+Description=netconsole-Empfang von linux0 -> /var/log/netconsole-linux0.log
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/socat -u UDP4-RECV:6666,range=192.168.178.20/32 OPEN:/var/log/netconsole-linux0.log,creat,append
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

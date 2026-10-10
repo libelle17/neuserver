@@ -1,0 +1,21 @@
+# Kernel- und spaete Shutdown-Meldungen per UDP an linux1 (192.168.178.21:6666)
+# senden, Empfaenger dort: netconsole-empfang.service -> /var/log/netconsole-linux0.log.
+# Eingerichtet 30.09.2026 wegen Shutdown-Haenger 27.09.2026 (Journal endet
+# vor dem eigentlichen Haenger, s. wecklauf.sh Sicherheitsprinzip 3).
+# MAC von linux1 ist fest eingetragen (netconsole kann kein ARP) - bei
+# Tausch der Netzkarte von linux1 anpassen.
+[Unit]
+Description=netconsole zu linux1 (Shutdown-Diagnose)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/modprobe netconsole netconsole=+6665@192.168.178.20/enp3s0,6666@192.168.178.21/04:d4:c4:01:e7:15
+# Beim Herunterfahren alle Meldungen (auch systemd-Info nach Ende von journald)
+# auf die Konsolen und damit ueber netconsole ausgeben; Modul bleibt geladen.
+ExecStop=/sbin/sysctl -q -w kernel.printk="8 4 1 7"
+
+[Install]
+WantedBy=multi-user.target
