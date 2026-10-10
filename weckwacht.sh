@@ -52,6 +52,11 @@ while read -r h ip mittag nacht mac; do
   lauf=$(cat "$S/lauf_$h" 2>/dev/null); [ -n "$lauf" ] && [ "$lauf" -ge "$P" ] && continue; # Fenster lief
   if ping -c1 -W2 "$ip" >/dev/null 2>&1; then
     [ "$(cat "$S/gemeldet_$h" 2>/dev/null)" = "$P" ] && continue;
+    # selbst fuer dieses Fenster geweckt (WOL/Steckdose) und das ist noch keine STROM_NACH_S her: der Rechner
+    # startet gerade und holt nach, sein lauf_<host> kommt erst mit dem naechsten wecklauf-Aufruf - nicht melden
+    # (Fehlalarm 9.10.2026 22:30, 5 min nach dem Stromschnitt)
+    gz=$(cat "$S/geweckt_zeit_$h" 2>/dev/null);
+    [ "$(cat "$S/geweckt_$h" 2>/dev/null)" = "$P" ] && [ -n "$gz" ] && [ $((JETZT - gz)) -lt "$STROM_NACH_S" ] && continue;
     log "$h: Fenster $pz nicht begonnen, Rechner laeuft aber (Wartungsdatei? Fehler?) - wecke nicht.";
     [ "$obecht" ] && { echo "$P" > "$S/gemeldet_$h"; mail_an "weckwacht: $h hat Sicherungsfenster $pz nicht begonnen" "$h laeuft (antwortet auf Ping), hat das Sicherungsfenster $pz aber nicht begonnen. Bitte /var/log/wecklauf.log auf $h pruefen (Wartungsdatei /root/.kein_wecklauf?)."; };
     continue;
@@ -60,7 +65,9 @@ while read -r h ip mittag nacht mac; do
     log "$h: Fenster $pz nicht begonnen und Rechner aus/haengt - wecke per Wake-on-LAN ($mac).";
     if [ "$obecht" ]; then
       echo "$P" > "$S/geweckt_$h"; date +%s > "$S/geweckt_zeit_$h";
-      /root/bin/weckalle.sh "$mac" >> "$LOG" 2>&1;
+      # weckalle.sh schreibt Farbcodes und eine mit \r ueberschriebene Fortschrittszeile ohne Zeilenende - sonst
+      # haengt die naechste Logzeile dahinter und ist in less/tail unsichtbar (10.10.2026)
+      /root/bin/weckalle.sh "$mac" 2>&1 | sed 's/\x1b\[[0-9;]*m//g; s/\r/\n/g' | grep -v '^ *$' >> "$LOG";
       mail_an "weckwacht: $h fuer ausgefallenes Fenster $pz geweckt" "$h hat das Sicherungsfenster $pz nicht begonnen und antwortete nicht auf Ping. linux1 hat ihn per Wake-on-LAN geweckt; er sollte die Sicherung nachholen und sich danach abschalten.";
     else log "Simulation: weckalle.sh $mac"; fi;
     continue;
@@ -98,6 +105,8 @@ print(time.strftime("%H:%M:%S"), "switch_%s EIN" % sw, flush=True)
 ENDE_TUYA
 ); _st_rc=$?;
     printf '%s\n' "$_st_aus" >> "$LOG";
+    # Stromschnitt gilt als neues Wecken (Schonfrist fuer die "laeuft aber"-Meldung, s.o.)
+    [ "$_st_rc" = 0 ] && date +%s > "$S/geweckt_zeit_$h";
     case $_st_rc in
       0) mail_an "weckwacht: Strom von $h kurz unterbrochen" "$h hat auch $(( (JETZT - gz) / 60 )) Minuten nach dem Wake-on-LAN-Wecken das Fenster $pz nicht begonnen und antwortete nicht auf Ping (vermutlich Haenger beim Abschalten). linux1 hat seine Steckdose (switch_$sw) 20 Sekunden ausgeschaltet; er sollte jetzt starten und nachholen.";;
       2) mail_an "weckwacht: DRINGEND - Steckdose von $h bleibt AUS" "linux1 hat die Steckdose von $h (switch_$sw) ausgeschaltet, konnte sie aber nicht wieder einschalten. Bitte per App Smart Life oder von Hand einschalten! Ausgabe: $_st_aus";;
