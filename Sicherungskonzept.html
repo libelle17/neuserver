@@ -23,7 +23,7 @@
 <body>
 
 <h1>Datensicherungskonzept der Praxis-Server</h1>
-<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 06.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
+<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 10.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
 
 <table class="kasten" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #cc9900"><tr><td bgcolor="#fff8e6" style="background:#fff8e6"><b>In einem Satz:</b> Die Praxisdaten liegen auf den Windows-Servern <b>wser</b>/<b>wres</b> (Medical Office) und dem Linux-Hauptserver <b>linux1</b>. Die beiden Sicherungsrechner <b>linux0</b> und <b>linux7</b> schalten sich zweimal täglich selbst ein, <b>holen</b> sich die Daten von linux1, bewahren ältere Stände als Snapshots auf und schalten sich wieder aus. linux1 selbst kann auf die Sicherungsrechner nicht zugreifen &ndash; ein Verschlüsselungstrojaner auf linux1 oder einem Windows-PC kommt deshalb nicht an die Sicherungen.</td></tr></table>
 
@@ -106,17 +106,27 @@
 <h2>7. Sicherheitsnetze bei Ausfällen</h2>
 <p><code>weckwacht.sh</code> läuft auf linux1 alle 5 Minuten. Jeder Sicherungsrechner meldet den Beginn eines Fensters an linux1 (<code>/var/lib/wecklauf/lauf_linux0</code> bzw. <code>_linux7</code>). Fehlt diese Meldung 20 Minuten nach der Weckzeit:</p>
 <ol>
-<li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken.</li>
+<li><b>Rechner antwortet auf Ping</b> (läuft, sichert aber nicht, z.B. Wartungsdatei): einmal Mail, kein Wecken. Ausnahme: Hat linux1 ihn selbst für dieses Fenster geweckt (Wake-on-LAN oder Steckdose) und ist das noch keine 15 Minuten her, startet er gerade und holt nach &ndash; dann keine Mail (seit 10.10.2026; vorher kam am 09.10. ein solcher Fehlalarm).</li>
 <li><b>Rechner antwortet nicht:</b> linux1 hinterlegt eine Notiz (<code>geweckt_&lt;rechner&gt;</code>) und weckt ihn per <b>Wake-on-LAN</b>; Mail.</li>
 <li><b>Nachholen:</b> Der geweckte Rechner erkennt das ausgefallene Fenster (höchstens 12 h alt) und holt es nach (mittags bumo, nachts den vollen Lauf). <b>Abgeschaltet wird danach nur, wenn linux1 ihn für genau dieses Fenster geweckt hat</b> &ndash; hat ihn ein Mensch eingeschaltet, sichert er nach und bleibt an.</li>
-<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. Scharf seit 04.10.2026 (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1; Löschen schaltet Stufe 3 ab). Lässt sich die Steckdose nicht schalten, kommt eine Mail „nicht schaltbar“ bzw. „DRINGEND &ndash; bleibt AUS“.</li>
+<li><b>Stufe 3 &ndash; Steckdose</b> (nur linux0, an <code>switch_1</code>): Antwortet linux0 auch 15 Minuten nach dem Wecken nicht (typisch: Hänger beim Ausschalten, Lüfter laufen, nichts reagiert), schaltet linux1 seine Steckdose 20 Sekunden aus und wieder ein. Im BIOS steht „Restore AC Power Loss = Power On“, linux0 startet dann und holt nach. Je Fenster höchstens einmal; Mail. Scharf seit 04.10.2026 (Datei <code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code> auf linux1; Löschen schaltet Stufe 3 ab). Lässt sich die Steckdose nicht schalten, kommt eine Mail „nicht schaltbar“ bzw. „DRINGEND &ndash; bleibt AUS“. <b>Im Ernstfall bewährt am 09.10.2026:</b> linux0 hing nach dem Ausschalten um 17:40, Wake-on-LAN um 22:05 half nicht, linux1 schaltete um 22:25 die Steckdose aus und ein, linux0 holte den Nachtlauf vollständig nach und schaltete sich um 00:34 ab.</li>
 </ol>
 <p>Alle Mails gehen an root auf linux1 (weitergeleitet an gschade@dachau-mail.de). Abschalten der Wache: <code>/root/.kein_weckwacht</code> (ganz) bzw. <code>/var/lib/wecklauf/kein_linux0</code> (ein Rechner) auf linux1.</p>
 <h3>Weitere Vorkehrungen gegen Hänger von linux0</h3>
 <ul>
 <li>Hardware-Watchdog (iTCO, 2 min, „nowayout“): setzt linux0 zurück, wenn Linux selbst hängt &ndash; auch beim Herunterfahren.</li>
-<li>netconsole: linux0 schickt seine Kernel- und Herunterfahr-Meldungen an linux1 (<code>/var/log/netconsole-linux0.log</code>). Bisher zeigen alle Hänger: Linux war fertig, der Hänger liegt danach im BIOS/Mainboard (ASUS PRIME B365M-A, BIOS 2208 = neuestes).</li>
+<li>netconsole: linux0 schickt seine Kernel- und Herunterfahr-Meldungen an linux1 (<code>/var/log/netconsole-linux0.log</code>). Bisher zeigen alle Hänger: Linux war fertig, der Hänger liegt danach im BIOS/Mainboard (ASUS PRIME B365M-A, BIOS 2208 = neuestes). Nach dem nächtlichen Rotieren der Logs wird der Empfänger auf linux1 neu gestartet (<code>logrotate.conf</code>); vorher schrieb er vom 05. bis 10.10. ins Leere.</li>
 </ul>
+<h3>Rechnerspezifische Einstellungen (<code>los.sh -rechner</code>)</h3>
+<p>Einige Einstellungen gelten nur für einen bestimmten Rechner. Sie liegen im Repository unter <code>rechner/&lt;rechner&gt;/</code> mit ihrem vollen Zielpfad und werden mit <code>los.sh -rechner</code> eingerichtet (läuft auch beim vollständigen <code>los.sh</code> mit). Es legt <b>nur Fehlendes</b> an; weicht eine vorhandene Datei ab, meldet es das nur. Im Notfallbetrieb (<code>/etc/notfallbetrieb</code>, Abschnitt 11) tut es nichts.</p>
+<table border="1" cellspacing="0" cellpadding="5" width="100%">
+<tr><th>Rechner</th><th>Einstellung</th><th>Zweck</th></tr>
+<tr><td>linux0</td><td><code>/etc/systemd/system.conf.d/10-shutdown-watchdog.conf</code>, <code>/etc/modprobe.d/60-itco-nowayout.conf</code> (danach <code>dracut -f</code>)</td><td>Hardware-Watchdog auch beim Herunterfahren scharf</td></tr>
+<tr><td>linux0</td><td><code>netconsole-linux1.service</code> (aktiviert)</td><td>schickt Kernel- und Herunterfahr-Meldungen an linux1</td></tr>
+<tr><td>linux1</td><td><code>netconsole-empfang.service</code> (aktiviert), <code>socat</code>, Firewall-Regel UDP 6666 nur von linux0</td><td>Empfang nach <code>/var/log/netconsole-linux0.log</code></td></tr>
+<tr><td>linux1</td><td><code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code>, falls sie fehlt</td><td>Stufe 3 für linux0 (<code>switch_1</code>) scharf</td></tr>
+<tr><td>linux7</td><td><code>/etc/fstab</code>: <code>x-systemd.mount-timeout=180</code> bei <code>/DATA</code> und <code>/DATAC</code> (vorher Sicherungskopie der fstab)</td><td>das Einhängen der großen btrfs-Platte dauert ca. 50 s; ohne die Option brach systemd es ab und MariaDB startete ohne <code>/DATA</code> (02.10.2026)</td></tr>
+</table>
 
 <h2>8. Die Steckdosenleiste im Serverraum</h2>
 <table border="1" cellspacing="0" cellpadding="4" width="100%">
@@ -230,12 +240,12 @@
 <li>Vorher <code>touch /root/.kein_wecklauf</code>, damit keine Sicherung auf eine falsch eingehängte Platte läuft; erst am Schluss wieder löschen.</li>
 <li><b>fstab prüfen:</b> <code>/DATA</code> muss die Sicherungsplatte sein (linux7: <code>LABEL=linux7DATA2</code>, btrfs; linux0 entsprechend), nicht eine Platte namens <code>DATA</code>. Vergleich mit <code>/root/wurzelwacht/etc_aktuell/fstab</code>; danach <code>findmnt /DATA</code>.</li>
 <li><b>Bootkette prüfen:</b> War die neue Platte ein Klon der alten, tragen beide dieselben Kennungen &ndash; dann bootet der Rechner womöglich weiter über die alte Platte. Abhilfe: der <i>alten, nicht eingehängten</i> Platte neue Kennungen geben (<code>sgdisk -G /dev/&lt;alt&gt;</code>, <code>fatlabel -i -r /dev/&lt;alt&gt;1</code>), dann <code>update-bootloader --reinit</code> und einmal <b>ohne Auswahl im Bootmenü</b> neu starten; <code>cat /proc/cmdline</code> muss die neue Wurzel zeigen. <code>los.sh -mt</code> warnt vor diesen Fallen.</li>
-<li><code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel</code>, <code>crontab_uebernehmen.sh --anwenden</code>, <code>los.sh -cron</code> (aktiviert <code>wecklauf-alarm.service</code>), <code>systemctl daemon-reload</code>; prüfen: <code>systemctl --failed</code> (MariaDB!), <code>cat /sys/class/rtc/rtc0/wakealarm</code>.</li>
+<li><code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel</code>, <code>crontab_uebernehmen.sh --anwenden</code>, <code>los.sh -cron</code> (aktiviert <code>wecklauf-alarm.service</code>), <code>los.sh -rechner</code> (Abschnitt 7), <code>systemctl daemon-reload</code>; prüfen: <code>systemctl --failed</code> (MariaDB!), <code>cat /sys/class/rtc/rtc0/wakealarm</code>.</li>
 </ol></td></tr></table>
 
-<h2>13. Offene Punkte (Stand 06.10.2026)</h2>
+<h2>13. Offene Punkte (Stand 10.10.2026)</h2>
 <ul>
-<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09. und 02.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
+<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09., 02.10. und 09.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit).</li>
 <li>Die Nacht 03./04.10. war auf beiden Sicherungsrechnern sehr langsam (bulinux nach 8 h abgebrochen); Ursache unklar, vermutlich auf linux1/wser.</li>
 <li>Platz auf linux0: <code>/DATA</code> ca. 90 % belegt (06.10.: 771 GB frei). Hauptursache war das seit Mai ausgefallene Ausdünnen der Datenbank-Dumps (Abschnitt 4), behoben am 06.10.; die gelöschten ca. 590 GB werden auf linux0 erst frei, wenn die letzten Snapshots mit ihnen abgelaufen sind (etwa 13./14.10.) &ndash; bis dahin kann der Platzwächter alte Snapshots löschen. Beobachten.</li>
 <li>Die geänderten Skripte vom 06.10. (<code>bunacht.sh</code> ohne <code>*loe</code>-Ordner, <code>instutz.sh</code>, <code>rett.sh</code>) müssen auf linux0 und linux7 noch per <code>git pull</code> und <code>make shziel</code> übernommen werden.</li>
@@ -243,6 +253,7 @@
 <li>Alte NVMe in linux7 (Intel 256 GB, SMART FAILED) ausbauen; bis dahin bleibt sie als Notfall-System im Bootmenü („on /dev/nvme0n1p3“).</li>
 <li>Am 05.10. mittags startete linux7 weder per Weckalarm noch per Wake-on-LAN (wahrscheinlich Folge einer einmaligen Sonderregelung in der Nacht davor); seitdem funktioniert beides &ndash; beobachten.</li>
 <li>Herkunft eines ungeplanten Starts von linux7 am 02.10. um 06:18 ungeklärt.</li>
+<li>linux7 muss die Änderungen vom 10.10. (<code>weckwacht.sh</code>, <code>los.sh -rechner</code>) noch übernehmen: <code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel &amp;&amp; ./los.sh -rechner</code>.</li>
 </ul>
 <p class="stand">Skripte und diese Beschreibung liegen im Repository <code>linux1:/root/neuserver</code> (Änderungen dort, dann <code>make git shziel</code>; auf linux0/linux7 <code>git pull</code> und <code>make shziel</code>).</p>
 </body>
