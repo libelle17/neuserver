@@ -19,6 +19,7 @@ session_start();
 
 $pc = "localhost";
 include '../../phppwd.php';
+mysqli_report(MYSQLI_REPORT_OFF); // 12.10.26: seit PHP 8.1 werfen Verbindungs-/Abfragefehler sonst mysqli_sql_exception (Fatal error), die connect_error-/Rueckgabepruefungen hier griffen nie
 $db = "quelle";
 $conn = new mysqli($pc, $user, $pwt, $db);
 if ($conn->connect_error) {

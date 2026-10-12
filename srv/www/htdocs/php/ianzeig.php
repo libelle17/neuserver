@@ -232,6 +232,7 @@ function verarbeite($pat_id,$telnr)
   self::$copyq="../plz/".self::$basen;
   $pc="localhost";      // $pc=$_SERVER['SERVER_NAME'];
 include '../../phppwd.php';
+mysqli_report(MYSQLI_REPORT_OFF); // 12.10.26: seit PHP 8.1 werfen Verbindungs-/Abfragefehler sonst mysqli_sql_exception (Fatal error), die connect_error-/Rueckgabepruefungen hier griffen nie
   $db="quelle";
   date_default_timezone_set("Europe/Berlin");
   // $link = mysqli_connect($pc,$user,$pwt) or die ("Keine Verbindung zu $pc als $user moeglich");
@@ -239,7 +240,7 @@ include '../../phppwd.php';
   // echo "pc: ".$pc." user: ".$user." pwt: ".$pwt." db: ".$db."<br>";
   $conn = new mysqli($pc,$user,$pwt,$db);
   if ($conn->connect_error) {
-    if ($conn->connect_error=="Connection refused") {
+    if ($conn->connect_error=="Connection refused" || $conn->connect_error=="No such file or directory") { // 12.10.26: auch fehlender Socket (DB gestoppt)
       // urspruenglich shell_exec('sudo systemctl start mysql') - unter enforcendem
       // SELinux verweigert httpd_t aber jeden exec von /bin/sh UND /usr/bin/sudo
       // (verifiziert 2026-09-12, siehe /DATA/down/linux1_testlauf_befunde.txt) -
