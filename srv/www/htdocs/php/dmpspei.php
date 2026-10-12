@@ -10,7 +10,7 @@
 // SQL-Statement im Klartext - nur zur Fehlersuche, nicht für den
 // Produktivbetrieb gedacht) als JSON zurück. Zugangsdaten kommen aus
 // phppwd.php (von setmariadbpwdfuerpraxis.sh gepflegt).
-	$servername = "linux1";
+	$servername = "localhost"; // 12.10.26: statt "linux1" - TCP verbietet SELinux (httpd_can_network_connect_db=off), localhost geht ueber den Socket wie in anzeig.php
 include '../../phppwd.php';
 mysqli_report(MYSQLI_REPORT_OFF); // 12.10.26: seit PHP 8.1 werfen Verbindungs-/Abfragefehler sonst mysqli_sql_exception (Fatal error), die connect_error-/Rueckgabepruefungen hier griffen nie
 	$db="quelle";
