@@ -267,6 +267,7 @@ mysqli_report(MYSQLI_REPORT_OFF); // 12.10.26: seit PHP 8.1 werfen Verbindungs-/
   } // $conn->connect_error
   if ($conn->connect_error) {
     echo("Datenbankverbindung zu '".$pc."' als '".$user."' fehlgeschlagen: ".$conn->connect_error."<br>");
+    return false; // 12.10.26: ohne DB nicht weitermachen (sonst Fatal "mysqli object is already closed" und Rest des Laufzettels fehlt)
   } else {
     $sql="CREATE TABLE if not exists `zutun` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, `Pat_ID` int(10) unsigned NOT NULL,".
       "`pos` int(10) unsigned NOT NULL,".
@@ -626,7 +627,7 @@ function __construct()
 {
     global $pat_id; // globale Definition und Zuweisung außerhalb dieses scripts
     global $telnr;
-    self::verarbeite($pat_id,$telnr);
+    if (self::verarbeite($pat_id,$telnr)===false) return; // 12.10.26: DB nicht erreichbar
 //    self::gibaus();
   }
 } // class zutun
