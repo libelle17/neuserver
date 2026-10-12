@@ -3245,23 +3245,31 @@ setzgitssh() {
     cat "${GITKEY}.pub";
     printf "\nDanach Enter drücken ...\n"; read dummy;
   fi;
-  # 2) ssh-agent starten falls nicht aktiv
-  if [ -z "$SSH_AUTH_SOCK" ]; then
-    eval "$(ssh-agent -s)" >/dev/null;
-  fi;
-  # 3) Schlüssel laden falls noch nicht geladen
-  ssh-add -l 2>/dev/null | grep -q "$GITKEY" || ssh-add "$GITKEY" 2>/dev/null;
-  # 4) Dauerhaft in /etc/profile.d/ eintragen
+  # 2) Agent-Autostart dauerhaft in /etc/profile.d/ eintragen: ein gemeinsamer Agent mit festem Socket fuer alle
+  #    root-Sitzungen (12.10.26: vorher startete jede Login-Shell einen eigenen, nie beendeten Agenten - nach einer
+  #    Woche 11036 ssh-agent-Prozesse mit 12,6 GB, trug zum OOM-Kill von mariadb bei); alte Fassung (ohne agent.sock) ersetzen
   PPD=/etc/profile.d/ssh-agent-git.sh;
-  if [ ! -f "$PPD" ] || ! grep -q "id_ed25519_git" "$PPD" 2>/dev/null; then
-    printf '# SSH-Agent fuer GitHub automatisch starten (gesetzt von los.sh)\n' >"$PPD";
-    printf 'if [ "$(id -u)" = "0" ] && [ -z "$SSH_AUTH_SOCK" ]; then\n' >>"$PPD";
-    printf '  eval "$(ssh-agent -s)" >/dev/null\n' >>"$PPD";
-    printf '  ssh-add /root/.ssh/id_ed25519_git 2>/dev/null\n' >>"$PPD";
-    printf 'fi\n' >>"$PPD";
+  if [ ! -f "$PPD" ] || ! grep -q "agent.sock" "$PPD" 2>/dev/null; then
+    cat >"$PPD" <<'PPDENDE'
+# SSH-Agent fuer GitHub: ein gemeinsamer Agent fuer alle root-Sitzungen (gesetzt von los.sh, setzgitssh)
+# frueher startete jede Login-Shell einen eigenen Agenten, der nie beendet wurde (12.10.26: 11036 Agenten, 12,6 GB)
+if [ "$(id -u)" = "0" ] && [ -z "$SSH_AUTH_SOCK" ]; then
+  export SSH_AUTH_SOCK=/root/.ssh/agent.sock
+  (
+    flock 9
+    ssh-add -l >/dev/null 2>&1; rc=$?
+    # 2 = kein Agent erreichbar -> neu starten, 1 = Agent ohne Schluessel -> Schluessel laden
+    if [ $rc -eq 2 ]; then rm -f "$SSH_AUTH_SOCK"; ssh-agent -a "$SSH_AUTH_SOCK" >/dev/null 9>&-; rc=1; fi
+    [ $rc -eq 1 ] && ssh-add /root/.ssh/id_ed25519_git 2>/dev/null
+  ) 9>/root/.ssh/agent.lock
+fi
+PPDENDE
     printf "SSH-Agent-Autostart in $blau$PPD$reset eingetragen.\n";
   fi;
-  # 5) Verbindung testen
+  # 3) gemeinsamen Agenten auch in dieser Sitzung verwenden (startet ihn bei Bedarf und laedt den Schluessel)
+  [ "$SSH_AUTH_SOCK" = /root/.ssh/agent.sock ] || unset SSH_AUTH_SOCK;
+  . "$PPD";
+  # 4) Verbindung testen
   printf "Teste GitHub-Verbindung ...\n";
   ssh -T git@github.com 2>&1 | grep -q "successfully authenticated" && \
     printf "${gruen}GitHub-Verbindung OK$reset\n" || \
