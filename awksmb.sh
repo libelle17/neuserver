@@ -18,6 +18,8 @@
 function ltrim(s) { sub(/^[[:space:]]+/,"",s);return s}
 function rtrim(s) { sub(/[ \t\r\n]+$/,"",s);return s}
 function trim(s) { return rtrim(ltrim(s));}
+# gilt die Freigabe-Vorgabe Na[i] fuer den Abschnitt nm? (NaNur[i] leer = fuer alle, sonst nur fuer diesen)
+function gilt(i,nm) { return !(i in NaNur) || NaNur[i]=="" || tolower(NaNur[i])==tolower(nm) }
 function druckNaZeile(i,Pfad,j) {
 		printf "   %s = ",Na[i];
 		if (i==0) printf "%s (los.sh %s)\n", Pfad,datum;
@@ -58,15 +60,15 @@ FS="=";
 	if (infstab==1) {
 		infstab=0;
 		kommentiert=0;
+		# alle fehlenden Vorgaben (frueher nur die erste je Lauf), danach wird die Kopfzeile wie jede
+		# andere geprueft und abgeschrieben
 		for(i in Na) {
-			if (fertig[i]==0) {
+			if (fertig[i]==0 && gilt(i,Name)) {
 				if (!kommentiert) {
 					printf "# hinzugefügt (los.sh %s):\n", datum;
 					kommentiert=1;
 				}
 				druckNaZeile(i,Pfad);
-				print $0;
-				next;
 			}
 		}
 	}
@@ -78,7 +80,8 @@ FS="=";
 #			printf "# °°°°°°°°°°°°°°° %s °°°°°°°°°°°°°°\n",Name;
       Pfad=P[i];
 			delete fertig;
-			break;
+			# kein break: steht derselbe Abschnitt in awksmbap.inc doppelt, gelten alle als vorhanden (sonst
+			# legte END ihn ein zweites Mal an)
 		}
 	}
 #	for (i in A) { printf "# i: %i, A[i]: %s\n",i,A[i]; }
@@ -106,7 +109,7 @@ FS="=";
 		trn=trim($1);
 		tri=trim($2);
 		for(i in Na) {
-			if (trn==Na[i]) {
+			if (trn==Na[i] && gilt(i,Name)) {
 				# i==0: comment, i==1:path, i==2:directory mask
 #				if (tri==Ia[i]||(i==0&&tri!="")||(i==1&&tri=Pfad)||(i==2&&tri!="")) KLA
         if (tri==Ia[i]||(i==0&&tri!="")||(i==1&&tri=Pfad)) {
@@ -128,12 +131,25 @@ FS="=";
 	print $0;
 }
 END {
+# der letzte Abschnitt der Datei endet ohne folgende Kopfzeile: fehlende Vorgaben hier nachtragen
+if (infstab==1) {
+	kommentiert=0;
+	for(i in Na) {
+		if (fertig[i]==0 && gilt(i,Name)) {
+			if (!kommentiert) {
+				printf "# hinzugefügt (los.sh %s):\n", datum;
+				kommentiert=1;
+			}
+			druckNaZeile(i,Pfad);
+		}
+	}
+}
 for (j in A) {
 	if (afertig[j]==0) {
 		printf "# Abschnitt ergänzt (los.sh %s):\n", datum;
 		print A[j];
 		for (i in Na)  {
-			druckNaZeile(i,P[j],j);
+			if (gilt(i,A[j])) druckNaZeile(i,P[j],j);
 		}
 	}
 }

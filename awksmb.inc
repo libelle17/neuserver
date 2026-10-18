@@ -30,4 +30,10 @@ Na[6]="recycle:versions";					Ia[6]="Yes";
 Na[7]="recycle:keeptree";					Ia[7]="Yes";
 Na[8]="recycle:repository";				Ia[8]="Papierkorb";
 Na[9]="available";								Ia[9]="Yes";
+# nur fuer [daten] (/DATA, p:): neue Dateien wie bei dokrechte.sh 770 und Gruppe praxis, damit alle
+# Praxisbenutzer sie bearbeiten koennen (z.B. Sperrdatei palock.xml von Smart Pix); nicht fuer [php] u.a.,
+# dort braeuchte der Webserver Leserechte fuer andere
+Na[10]="create mask";							Ia[10]="0770";	NaNur[10]="[daten]";
+Na[11]="force create mode";				Ia[11]="0770";	NaNur[11]="[daten]";
+Na[12]="force group";							Ia[12]="praxis";	NaNur[12]="[daten]";
 }
