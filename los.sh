@@ -350,6 +350,7 @@ konfig_sichern() {
     "$HOME/.mariadbpwd" \
     "$HOME/.mariadbrpwd" \
     "$HOME/.modbpwd" \
+    "$HOME/.mogspwd" \
     "$HOME/.mysqlpwd" \
     "$HOME/.mysqlrpwd" \
     "$HOME/.netrwhist" \
@@ -564,7 +565,7 @@ konfig_laden() {
     [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
     case "$bn" in
       # Passwort-Dateien nie überschreiben:
-      .mysqlpwd|.mysqlrpwd|.mariadbpwd|.mariadbrpwd|.modbpwd)
+      .mysqlpwd|.mysqlrpwd|.mariadbpwd|.mariadbrpwd|.modbpwd|.mogspwd)
         if [ ! -e "$HOME/$bn" ]; then
           _kopierdatei "$f" "$HOME/$bn" "sensibel: $HOME/$bn";
         else
@@ -673,6 +674,7 @@ HOOKEOF
       --exclude=".mariadbpwd" \
       --exclude=".mariadbrpwd" \
       --exclude=".modbpwd" \
+      --exclude=".mogspwd" \
       --exclude=".fbcredentials" \
       --exclude=".fbcred" \
       --exclude=".tr64cred" \
