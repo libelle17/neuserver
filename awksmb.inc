@@ -36,4 +36,8 @@ Na[9]="available";								Ia[9]="Yes";
 Na[10]="create mask";							Ia[10]="0770";	NaNur[10]="[daten]";
 Na[11]="force create mode";				Ia[11]="0770";	NaNur[11]="[daten]";
 Na[12]="force group";							Ia[12]="praxis";	NaNur[12]="[daten]";
+# Sperr-, Zwischen- und Sicherungsdateien nicht in den Papierkorb: Smart Pix legt palock.xml.lck je Patient
+# an und loescht sie wieder; bei recycle:versions sucht Samba dafuer jedes Mal die naechste freie "Copy #N",
+# bei zehntausenden Kopien so langsam, dass Smart Pix "Kein Schreibzugriff" meldet (19.10.2026); Test??????.txt = Schreibproben von Smart Pix
+Na[13]="recycle:exclude";					Ia[13]="*.lck,*.rmlock,*.tmp,Test??????.txt,palist.xml.bak,*.dia.bak,*.scj.bak";	NaNur[13]="[daten]";
 }
