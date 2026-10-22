@@ -540,26 +540,50 @@ konfig_laden() {
     return 0;
   };
 
-  # Passphrase abfragen falls fehlend:
-  if [ ! -f "$GPGPASS_FILE" ]; then
-    printf "GPG-Passphrase für ${blau}$ARCHIV_GPG${reset} eingeben:\n";
-    stty -echo; read GPGPASS; stty echo; printf "\n";
-    printf "%s" "$GPGPASS" >"$GPGPASS_FILE";
-    chmod 600 "$GPGPASS_FILE";
-  fi;
-
+  # Passphrase aus $GPGPASS_FILE, sonst abfragen; eine neu eingegebene wird erst nach
+  # erfolgreicher Entschluesselung gespeichert. Passt die gespeicherte nicht (z.B. frueher
+  # vertippt), wird (interaktiv, bis zu 3 Mal) neu gefragt und die Datei dann ersetzt.
   TMPDIR_KRYPT=$(mktemp -d);
-  gpg --batch --yes --passphrase-file "$GPGPASS_FILE" \
-    --decrypt "$ARCHIV_GPG" | tar xf - -C "$TMPDIR_KRYPT" 2>/dev/null;
-  if [ $? -ne 0 ]; then
-    printf "${rot}Entschlüsselung fehlgeschlagen – Passphrase prüfen!${reset}\n";
+  passdatei="$GPGPASS_FILE";
+  [ -f "$passdatei" ]||passdatei=;
+  versuch=0;
+  while :; do
+    if [ -z "$passdatei" ]; then
+      [ -t 0 ]||{ printf "${rot}Keine passende GPG-Passphrase${reset} und keine Eingabe möglich – ${blau}los.sh -kl${reset} interaktiv aufrufen\n"; rm -rf "$TMPDIR_KRYPT"; return 1; };
+      versuch=$((versuch+1));
+      [ $versuch -gt 3 ]&&{ printf "${rot}Entschlüsselung nach 3 Versuchen aufgegeben.${reset}\n"; rm -rf "$TMPDIR_KRYPT"; return 1; };
+      printf "GPG-Passphrase für ${blau}$ARCHIV_GPG${reset} eingeben:\n";
+      stty -echo; read GPGPASS; stty echo; printf "\n";
+      passdatei="$TMPDIR_KRYPT/.gpgpass";
+      printf "%s" "$GPGPASS" >"$passdatei"; unset GPGPASS;
+    fi;
+    if gpg --batch --yes --passphrase-file "$passdatei" -o "$TMPDIR_KRYPT/sensibel.tar" \
+         --decrypt "$ARCHIV_GPG" 2>/dev/null; then
+      break;
+    fi;
+    rm -f "$TMPDIR_KRYPT/sensibel.tar";
+    if [ "$passdatei" = "$GPGPASS_FILE" ]; then
+      printf "${rot}Gespeicherte Passphrase in ${blau}$GPGPASS_FILE${rot} passt nicht.${reset}\n";
+    else
+      printf "${rot}Passphrase falsch.${reset}\n";
+    fi;
+    passdatei=;
+  done;
+  if [ "$passdatei" != "$GPGPASS_FILE" ]; then
+    mv "$passdatei" "$GPGPASS_FILE"; chmod 600 "$GPGPASS_FILE";
+    printf "Passphrase gespeichert in ${blau}$GPGPASS_FILE${reset}\n";
+  fi;
+  mkdir "$TMPDIR_KRYPT/inhalt";
+  if ! tar xf "$TMPDIR_KRYPT/sensibel.tar" -C "$TMPDIR_KRYPT/inhalt" 2>/dev/null; then
+    printf "${rot}Entschlüsseltes Archiv nicht lesbar: ${blau}$ARCHIV_GPG${reset}\n";
     rm -rf "$TMPDIR_KRYPT";
     return 1;
   fi;
+  rm -f "$TMPDIR_KRYPT/sensibel.tar";
 
   # Dateien kopieren:
   mkdir -p "$HOME/.config";
-  for f in "$TMPDIR_KRYPT/"* "$TMPDIR_KRYPT/".*; do
+  for f in "$TMPDIR_KRYPT/inhalt/"* "$TMPDIR_KRYPT/inhalt/".*; do
     [ -e "$f" ] || continue;
     bn=$(basename "$f");
     [ "$bn" = "." ] || [ "$bn" = ".." ] && continue;
