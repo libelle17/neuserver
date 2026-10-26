@@ -828,8 +828,11 @@ function gibaus()
     if (!isset($_SESSION['ma'])) $_SESSION['ma']='';
     if (!$_SESSION['obvorb']) {
       // Mitarbeiter (1): Vorbereiter
-      echo "<u>M</u>A: <input type='text' name='ma' accesskey='m' style='width:30px;background-color:peachpuff;' ".
+      // Alt+: (Alt+Umsch+Punkt), nicht mehr accesskey='m': Alt+M oeffnet den Patienten in MO, Alt+Umsch+M den
+      // Medikationsverlauf (natives accesskey wirkt in Firefox auf Alt+Umsch)
+      echo "MA<u>:</u> <input type='text' id='maFeld' name='ma' style='width:30px;background-color:peachpuff;' ".
         "value='".$_SESSION['ma']."' ".$focus2."/> ";
+      echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&!e.ctrlKey&&e.key==':'){e.preventDefault();document.getElementById('maFeld').focus();}},true);</script>";
     } else {
       echo "MA: <font color=blue>".$_SESSION['ma']."</font> ";
     }
@@ -842,7 +845,9 @@ function gibaus()
     if (!isset($_SESSION['bh'])) $_SESSION['bh']='';
     if (!$_SESSION['obbeha']) {
       // Behandler
-      echo "Bh: <input type='text' name='bh' accesskey='m' style='width:30px;background-color:peachpuff;' value='".$_SESSION['bh']."' ".$focus3."/> ";
+      // Alt+H statt accesskey='m' (s. MA oben)
+      echo "B<u>h</u>: <input type='text' id='bhFeld' name='bh' style='width:30px;background-color:peachpuff;' value='".$_SESSION['bh']."' ".$focus3."/> ";
+      echo "<script>document.addEventListener('keydown',function(e){if(e.altKey&&!e.ctrlKey&&!e.shiftKey&&(e.key=='h'||e.key=='H')){e.preventDefault();document.getElementById('bhFeld').focus();}},true);</script>";
     } else {
       echo "Bh: <font color=blue>".$_SESSION['bh']."</font> ";
     }
@@ -1105,18 +1110,8 @@ $zutun = new zutun_cls();
 </datalist>
 
 <script>
-  // define a handler
-function doc_keyUp(e) {
-    if (e.altKey && e.code === "KeyT") { // Dateien im Explorer öffnen
-        oeffne('<?php echo $_SESSION["pat_id"]; ?>');
-    }
-}
-// register the handler
-document.addEventListener('keyup', doc_keyUp, false);
-
-function oeffne(patid) {
-  location.href="oeffneverz:"+patid;
-}
+// 26.10.26: Alt+T (Dateien im Explorer) entfernt; den Explorer oeffnet jetzt Strg+Alt+D (s. Laufzettelneu.bas in
+// Dateilesen), Alt+T springt nach oben
 
 function ansEnde(el) {
   window.setTimeout(function () {
