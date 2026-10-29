@@ -74,9 +74,11 @@
 <a href="http://linux1/vorb" accesskey='1'>V</a>
 <a href="http://linux1/behand" accesskey='2'>B</a>
 <a href="http://linux1/fertig" accesskey='3'>F</a>
-<a href="http://linux1/plz" accesskey='z' id='plzListeLink'>&#8598;</a>
+<a href="http://linux1/plz" accesskey='&uuml;' id='plzListeLink' title='Liste der Patientenlaufzettel (Alt+&Uuml;, uebergeordnetes Verzeichnis)'>&#8598;</a>
 <!-- <a href="http://linux1/plz" accesskey='z'>A</a> -->
-<script>document.addEventListener("keydown",function(e){if(e.altKey&&(e.key=="z"||e.key=="Z"||e.code=="KeyZ")){e.preventDefault();location.href=document.getElementById("plzListeLink").href;}},true);</script>
+<!-- Alt+Ue: Liste der Laufzettel (Alt+Z ruft seit 18.10.26 die Zuckerportale ab, s. MOMarkierungen in Dateilesen); -->
+<!-- Alt+Bild runter/hoch: eine Fensterhoehe weiter (wirkt auch, wenn der Cursor im Aufgabenfeld steht) -->
+<script>document.addEventListener("keydown",function(e){if(e.altKey&&(e.key=="\u00fc"||e.key=="\u00dc"||e.code=="BracketLeft")){e.preventDefault();location.href=document.getElementById("plzListeLink").href;}if(e.altKey&&(e.key=="PageDown"||e.key=="PageUp")){e.preventDefault();window.scrollBy(0,(e.key=="PageDown"?1:-1)*Math.max(40,window.innerHeight-40));}},true);</script>
 <?php
 // Vereinfachte Rueckkehr zum vorherigen Patientenlaufzettel: merkt sich in der
 // Session die zuletzt aufgerufene Laufzettel-URL und zeigt hier - solange sie sich
@@ -91,7 +93,7 @@ $_aktuelle_lz_url = $_SERVER['REQUEST_URI'];
 $_vorherige_lz_url = isset($_SESSION['letztes_laufzettel']) ? $_SESSION['letztes_laufzettel'] : null;
 if ($_vorherige_lz_url && $_vorherige_lz_url !== $_aktuelle_lz_url) {
   echo '<a href="'.htmlspecialchars($_vorherige_lz_url).'" id="vorherigerLzLink" title="zurueck zum vorherigen Patientenlaufzettel (Alt+L)">&#8249;</a>';
-  echo '<script>document.addEventListener("keydown",function(e){if(e.altKey&&(e.key=="l"||e.key=="L"||e.code=="KeyL")){e.preventDefault();location.href=document.getElementById("vorherigerLzLink").href;}},true);</script>';
+  echo '<script>document.addEventListener("keydown",function(e){if(e.altKey&&!e.shiftKey&&!e.ctrlKey&&(e.key=="l"||e.key=="L")){e.preventDefault();location.href=document.getElementById("vorherigerLzLink").href;}},true);</script>';
 }
 $_SESSION['letztes_laufzettel'] = $_aktuelle_lz_url;
 ?>
