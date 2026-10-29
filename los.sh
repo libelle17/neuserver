@@ -4023,9 +4023,10 @@ cron() {
   fi;
   # Dateilesen-Statistik (2026-09-30): arztbriefe_einlesen.py fuellt quelle.arztbriefe
   # (Briefverfasser fuer den Fallzahlstand), kvb_einlesen.py quelle.kvbgop (KVB-Zusaetze
-  # fuer die GNR-Statistik); beide liegen im Dateilesen-Repo auf /DATA.
+  # fuer die GNR-Statistik); abdata_einlesen.py (28.10.2026, 22 Uhr) den ABDATA-Arzneimittelstamm aus MO
+  # (quelle.abdata_*, VS in medplan/rezepteintraege); alle liegen im Dateilesen-Repo auf /DATA.
   _dlvz="/DATA/eigene Dateien/Programmierung/Dateilesen";
-  for _dl in "30 2 arztbriefe_einlesen.py" "35 2 kvb_einlesen.py"; do
+  for _dl in "30 2 arztbriefe_einlesen.py" "35 2 kvb_einlesen.py" "0 22 abdata_einlesen.py"; do
     read _dlmin _dlstd _dlpy <<<"$_dl";
     if ! crontab -l 2>/dev/null | grep -qF "$_dlpy"; then
       if [ -f "$_dlvz/$_dlpy" ]; then
