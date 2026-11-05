@@ -65,16 +65,16 @@
       $text=$text."HbA1c";
       echo "<button class='".$stil."' name='HbA1c'>".$text."</button>";
     }
-    IF ($_SESSION['obUzu, Fqmin(6)=0/a']) {
-      IF ($_SESSION['Uzu, Fqmin(6)=0/a']) {
+    IF ($_SESSION['obUzu, Fqmin(6)=4/a']) {
+      IF ($_SESSION['Uzu, Fqmin(6)=4/a']) {
         $stil='cave';
         $text = "&Oslash ";
       } ELSE {
         $stil='unauff';
         $text="";
       }
-      $text=$text."Uzu, Fqmin(6)=0/a";
-      echo "<button class='".$stil."' name='Uzu, Fqmin(6)=0/a'>".$text."</button>";
+      $text=$text."Uzu, Fqmin(6)=4/a";
+      echo "<button class='".$stil."' name='Uzu, Fqmin(6)=4/a'>".$text."</button>";
     }
     IF ($_SESSION['obHypo']) {
       IF ($_SESSION['Hypo']) {
@@ -383,6 +383,17 @@
       }
       $text=$text."fT3";
       echo "<button class='".$stil."' name='fT3'>".$text."</button>";
+    }
+    IF ($_SESSION['obSchuleintr']) {
+      IF ($_SESSION['Schuleintr']) {
+        $stil='cave';
+        $text = "&Oslash ";
+      } ELSE {
+        $stil='unauff';
+        $text="";
+      }
+      $text=$text."Schuleintr";
+      echo "<button class='".$stil."' name='Schuleintr'>".$text."</button>";
     }
     IF ($_SESSION['obHb']) {
       IF ($_SESSION['Hb']) {

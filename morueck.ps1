@@ -2,7 +2,62 @@
 .SYNOPSIS
     Sucht auf USB-Sticks nach definierten Unterverzeichnissen und synchronisiert
     diese mit einer lokalen Platte (Volume "DATneu"), wenn alle Schutzdateien identisch sind.
+
+.NOTES
+    Korrekturen vom 18.09.2026 (uebernommen aus morueck9.ps1, das dasselbe auf
+    dem zweiten PC mit dem Volume "NVMe-Daten" macht):
+
+    1. SHA256 wird pur in .NET gebildet statt mit Get-FileHash, und ein
+       fehlgeschlagener Hash-Vergleich fuehrt zu "nicht kopieren". Vorher galt
+       bei einem Ausfall von Get-FileHash ($null -eq $null) alles als
+       "identisch", der Inhaltsvergleich fiel also still weg und es blieb nur
+       Groesse + Datum. (Get-FileHash steckt im Modul
+       Microsoft.PowerShell.Utility, dessen Autoload scheitern kann.)
+    2. Die Marker-Datei wird von robocopy ausgeschlossen (/xf). Vorher wurde sie
+       als normale Datei aus dem Quellverzeichnis mitkopiert, gleich am Anfang
+       des Lauf. Ein Abbruch mitten im Kopieren (Strom weg, Stick abgezogen)
+       liess das halbfertige Ziel danach als "aktuell" gelten - es waere nie
+       vollstaendig geworden.
+    3. Die Marker-Datei auf dem Stick wird nicht mehr veraendert; gesetzt wird
+       nur noch der Marker im Ziel, mit dem Zeitstempel der Quelle. Die Sticks
+       werden inzwischen von zwei PCs zurueckgesichert. Schreibt dieser PC den
+       Stick-Zeitstempel neu, haelt der andere seine fertige Kopie fuer veraltet
+       und laeuft alles noch einmal durch. Der Zeitstempel auf dem Stick kommt
+       allein von mokopr.ps1 aus der Praxis.
+    4. Der Marker wird nur nach erfolgreichem robocopy gesetzt (Exit-Code < 8).
+       Vorher wurde er auch nach einem Fehler geschrieben, der fehlgeschlagene
+       Lauf galt damit als erledigt und wurde nie wiederholt. Ausserdem liefert
+       das Skript jetzt einen eigenen Exit-Code (0 = sauber, 1 = Probleme) statt
+       den Exit-Code des letzten robocopy durchzulassen.
+
+    Ergaenzung vom 10.10.2026: medoffDB-Varianten und Altbestaende unter
+    indamed\dat\files kommen nicht mehr auf den Stick (mokopr.ps1). Diese
+    Verzeichnisse sind hier per /xd ($NichtSpiegeln) ausgenommen, damit /mir
+    die Kopien im Ziel nicht loescht. mo7z wird ohnehin nur ergaenzt (/e).
+    Alte mo7z-Archive loescht morueck9.ps1 auf linux9 vom Stick - deshalb
+    muss dieses Skript auf hss VOR morueck9.ps1 laufen.
+
+    Nebenbei: Get-CimInstance statt Get-WmiObject - HSS laeuft mit PowerShell 7,
+    dort ist Get-WmiObject nur noch eine Proxy-Funktion, die im Hintergrund eine
+    Windows-PowerShell-5.1-Sitzung startet und die Objekte serialisiert
+    durchreicht. Die beiden ungenutzten Varianten Get-USB-Laufwerke-Alt und
+    Get-USB-Laufwerke-2 sind entfallen.
 #>
+
+# PSModulePath bereinigen: wird dieses Skript von Windows PowerShell 5.1 aus
+# einer PowerShell-7-Umgebung heraus gestartet (geerbte Umgebungsvariable), so
+# versucht die 5.1-Engine PS7-Module zu laden. Das Laden von
+# Microsoft.PowerShell.Utility scheitert dann mit einem Typdaten-Konflikt
+# ("Das Element 'AuditToString' ist bereits vorhanden") und Cmdlets wie
+# Get-FileHash fehlen anschliessend still. Darum die PS7-Pfade entfernen.
+if ($PSVersionTable.PSEdition -eq 'Desktop' -and $env:PSModulePath) {
+    $env:PSModulePath = (($env:PSModulePath -split ';' | Where-Object {
+        $_ -and $_ -notmatch '\\PowerShell\\7' -and $_ -notmatch '\\Program Files\\PowerShell'
+    }) -join ';')
+}
+
+# Zaehler fuer den Exit-Code (0 = sauber, 1 = Probleme)
+$script:Fehleranzahl = 0
 
 # Protokoll mitschreiben (Task Scheduler zeigt nur, ob powershell.exe selbst
 # abgestuerzt ist, nicht was das Skript intern entschieden hat). Log-Rotation von
@@ -29,6 +84,14 @@ $SchutzdateiListe = @("Schutzdatei_bitte_belassen.doc","Auch_eine_Schutzdatei_bi
 # Name der Marker-Datei (zeigt letzten erfolgreichen Kopiervorgang an)
 $MarkerDatei = "gesichert"
 
+# Verzeichnisse, die mokopr.ps1 nicht (mehr) auf den Stick kopiert bzw. dort
+# loescht, um Platz zu sparen. Hier per /XD ausgenommen, damit /mir die schon
+# vorhandenen Kopien im Ziel nicht loescht. Namen mit Platzhaltern, gelten
+# fuer Verzeichnisse dieses Namens irgendwo unterhalb des Suchverzeichnisses.
+$NichtSpiegeln = @{
+    "indamed" = @("*medoffDB*", "x01641915300_*")
+}
+
 # Volume-Name der lokalen Zielplatte
 $ZielVolumeName = "DATneu"
 
@@ -39,54 +102,16 @@ $Mo7zZiel        = "m:\mozip\"
 # --- Hilfsfunktion: Laufwerksbuchstabe anhand Volume-Name ermitteln ---
 function Get-LaufwerkNachVolume {
     param([string]$VolumeName)
-    $laufwerk = Get-WmiObject Win32_LogicalDisk | Where-Object {
+    $laufwerk = Get-CimInstance Win32_LogicalDisk | Where-Object {
         $_.VolumeName -eq $VolumeName
     }
     if ($laufwerk) {
-        return $laufwerk.DeviceID  # z.B. "M:"
+        return @($laufwerk)[0].DeviceID  # z.B. "M:"
     }
     return $null
 }
 
 # --- Hilfsfunktion: USB-Laufwerke ermitteln ---
-# Drei Anläufe für dieselbe Aufgabe; tatsächlich verwendet wird nur die
-# letzte, modernste Fassung (Get-USB-Laufwerke, per Get-Disk/BusType "USB").
-# Get-USB-Laufwerke-Alt und Get-USB-Laufwerke-2 sind ältere, nicht mehr
-# aufgerufene Anläufe (WMI-basiert) und bleiben als Referenz/Debug-Code stehen.
-function Get-USB-Laufwerke-Alt {
-    # DriveType 2 = Wechseldatenträger
-    $usbLaufwerke = Get-WmiObject Win32_LogicalDisk | Where-Object {
-        $_.DriveType -eq 2
-    }
-    return $usbLaufwerke | Select-Object -ExpandProperty DeviceID
-}
-
-function Get-USB-Laufwerke-2 {
-    $usbLaufwerke = @()
-
-    # Alle physischen Datenträger mit USB-Interface ermitteln
-    $usbDisks = Get-WmiObject Win32_DiskDrive # | Where-Object {        $_.InterfaceType -eq "USB"    }
-
-    foreach ($disk in $usbDisks) {
-		write-host $disk
-        # Zugehörige Partitionen finden
-        $partitionen = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskDrive.DeviceID='$($disk.DeviceID -replace '\\','\\')'}
-            WHERE AssocClass=Win32_DiskDriveToDiskPartition"
-        write-host ( $partitionen -eq $null )
-        foreach ($partition in $partitionen) {
-            # Zugehörige logische Laufwerke (Buchstaben) finden
-            $logischeLaufwerke = Get-WmiObject -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID='$($partition.DeviceID)'}
-                WHERE AssocClass=Win32_LogicalDiskToPartition"
-
-            foreach ($laufwerk in $logischeLaufwerke) {
-                $usbLaufwerke += $laufwerk.DeviceID
-            }
-        }
-    }
-
-    return $usbLaufwerke
-}
-
 function Get-USB-Laufwerke {
     $usbLaufwerke = @()
 
@@ -107,15 +132,40 @@ function Get-USB-Laufwerke {
     return $usbLaufwerke
 }
 
+# --- Hilfsfunktion: SHA256 einer Datei, ohne Get-FileHash (siehe .NOTES Punkt 1) ---
+function Get-DateiHash {
+    param([string]$Pfad)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $strom = [System.IO.File]::Open($Pfad, [System.IO.FileMode]::Open,
+                                    [System.IO.FileAccess]::Read,
+                                    [System.IO.FileShare]::ReadWrite)
+    try {
+        return [BitConverter]::ToString($sha.ComputeHash($strom)).Replace("-","")
+    } finally {
+        $strom.Dispose()
+        $sha.Dispose()
+    }
+}
+
 # --- Hilfsfunktion: Zwei Dateien inhaltlich vergleichen ---
+#     Im Zweifel $false: laesst sich ein Hash nicht bilden, wird nicht kopiert.
 function Vergleiche-DateiInhalt {
     param(
         [string]$Pfad1,
         [string]$Pfad2
     )
-    $hash1 = Get-FileHash -Path $Pfad1 -Algorithm SHA256
-    $hash2 = Get-FileHash -Path $Pfad2 -Algorithm SHA256
-    return ($hash1.Hash -eq $hash2.Hash)
+    try {
+        $hash1 = Get-DateiHash -Pfad $Pfad1
+        $hash2 = Get-DateiHash -Pfad $Pfad2
+    } catch {
+        Write-Warning "  Hash konnte nicht gebildet werden: $($_.Exception.Message)"
+        return $false
+    }
+    if (-not $hash1 -or -not $hash2) {
+        Write-Warning "  Hash leer - Vergleich nicht moeglich, es wird nicht kopiert."
+        return $false
+    }
+    return ($hash1 -eq $hash2)
 }
 
 # --- Hilfsfunktion: Schutzdatei auf Größe, Datum und Inhalt prüfen ---
@@ -131,8 +181,8 @@ function Pruefe-Schutzdatei {
         return $false
     }
     if (-not (Test-Path $ZielPfad)) {
-        Write-Host "  Schutzdatei nicht gefunden (Ziel): $ZielPfad - Ziel frisch, Kopie wird durchgeführt" -ForegroundColor Yellow
-        return $true
+        Write-Warning "  Schutzdatei nicht gefunden (Ziel): $ZielPfad"
+        return $false
     }
 
     $quelle = Get-Item $QuellPfad
@@ -251,36 +301,41 @@ foreach ($USB in $USBLaufwerke) {
 					}
 				}
 
-				# Robocopy und anschließendes Aktualisieren der Marker-Dateien
+				# Robocopy und anschließendes Setzen der Ziel-Marker-Datei
 				if ($robocopyAusfuehren) {
-					$RobocopyCmd = "robocopy `"$QuellVerz\`" `"$ZielVerz`" /s /mir /r:3 /w:3"
+					# /xf $MarkerDatei: die Marker-Datei darf nicht mitkopiert
+					# werden (siehe .NOTES Punkt 2). Geprueft: /xf schuetzt die
+					# Datei im Ziel auch vor dem Aufraeumen durch /mir.
+					$XdArgs = @()
+					if ($NichtSpiegeln[$Verzeichnis]) { $XdArgs = @("/xd") + $NichtSpiegeln[$Verzeichnis] }
+					$RobocopyCmd = "robocopy `"$QuellVerz\`" `"$ZielVerz`" /s /mir /r:3 /w:3 /xf $MarkerDatei $($XdArgs -join ' ')"
 					Write-Host "  Befehl: $RobocopyCmd" -ForegroundColor DarkGray
 
 					# Robocopy ausführen
-					& robocopy "$QuellVerz\" "$ZielVerz" /s /mir /r:3 /w:3
+					& robocopy "$QuellVerz\" "$ZielVerz" /s /mir /r:3 /w:3 /xf $MarkerDatei @XdArgs
 					# Robocopy Exit-Codes: 0-7 = OK/Info, 8+ = Fehler
 					if ($LASTEXITCODE -lt 8) {
 						Write-Host "  Robocopy erfolgreich (Exit-Code: $LASTEXITCODE)" -ForegroundColor Green
+
+						# Nur den Marker im ZIEL setzen, mit dem Zeitstempel der
+						# Quelle - der Stick bleibt unangetastet (.NOTES Punkt 3).
+						$Zeitstempel = (Get-Item $QuelleMarker).LastWriteTime
+						[System.IO.File]::WriteAllBytes($ZielMarker, @())
+						(Get-Item $ZielMarker).LastWriteTime = $Zeitstempel
+
+						Write-Host "Ziel-Marker $ZielMarker gesetzt auf Zeitstempel der Quelle: $Zeitstempel"
 					} else {
+						# Kein Marker nach einem Fehler, sonst gilt der
+						# fehlgeschlagene Lauf als erledigt (.NOTES Punkt 4).
 						Write-Warning "  Robocopy meldet Fehler (Exit-Code: $LASTEXITCODE)"
+						Write-Warning "  Marker nicht gesetzt - beim nächsten Lauf wird erneut kopiert."
+						$script:Fehleranzahl++
 					}
-
-					# Gemeinsamen Zeitstempel festlegen
-					$Zeitstempel = Get-Date
-
-					# Marker-Datei im Quellverzeichnis aktualisieren (0 Bytes)
-					[System.IO.File]::WriteAllBytes($QuelleMarker, @())
-					(Get-Item $QuelleMarker).LastWriteTime = $Zeitstempel
-
-					# Marker-Datei im Zielverzeichnis aktualisieren (0 Bytes)
-					[System.IO.File]::WriteAllBytes($ZielMarker, @())
-					(Get-Item $ZielMarker).LastWriteTime = $Zeitstempel
-
-					Write-Host "Marker-Dateien aktualisiert mit Zeitstempel: $Zeitstempel"
 				}
 
             } else {
                 Write-Host "  Schutzdateien stimmen NICHT überein - Kopieren wird übersprungen." -ForegroundColor Red
+                $script:Fehleranzahl++
             }
 
         } else {
@@ -321,34 +376,33 @@ foreach ($USB in $USBLaufwerke) {
                 }
 
                 if ($Mo7zRobocopyAusfuehren) {
-                    $RobocopyMo7zCmd = "robocopy `"$Mo7zQuellVerz`" `"$Mo7zZiel`" /e /r:3 /w:3"
+                    # /xf $MarkerDatei und Marker nur bei Erfolg - siehe oben
+                    # uebertragen-linux9.txt: Quittung von morueck9.ps1, gehoert nicht ins Ziel
+                    $RobocopyMo7zCmd = "robocopy `"$Mo7zQuellVerz`" `"$Mo7zZiel`" /e /r:3 /w:3 /xf $MarkerDatei uebertragen-linux9.txt"
                     Write-Host "  Befehl: $RobocopyMo7zCmd" -ForegroundColor DarkGray
 
-                    & robocopy "$Mo7zQuellVerz" "$Mo7zZiel" /e /r:3 /w:3
+                    & robocopy "$Mo7zQuellVerz" "$Mo7zZiel" /e /r:3 /w:3 /xf $MarkerDatei uebertragen-linux9.txt
                     # Robocopy Exit-Codes: 0-7 = OK/Info, 8+ = Fehler
                     if ($LASTEXITCODE -lt 8) {
                         Write-Host "  Robocopy (mo7z) erfolgreich (Exit-Code: $LASTEXITCODE)" -ForegroundColor Green
+
+                        # Nur der Marker im ZIEL, Zeitstempel aus der Quelle
+                        $Mo7zZeitstempel = (Get-Item $Mo7zQuelleMarker).LastWriteTime
+                        [System.IO.File]::WriteAllBytes($Mo7zZielMarker, @())
+                        (Get-Item $Mo7zZielMarker).LastWriteTime = $Mo7zZeitstempel
+
+                        Write-Host "  Ziel-Marker (mo7z) gesetzt auf Zeitstempel der Quelle: $Mo7zZeitstempel"
                     } else {
                         Write-Warning "  Robocopy (mo7z) meldet Fehler (Exit-Code: $LASTEXITCODE)"
+                        Write-Warning "  Marker nicht gesetzt - beim nächsten Lauf wird erneut kopiert."
+                        $script:Fehleranzahl++
                     }
-
-                    # Gemeinsamen Zeitstempel festlegen
-                    $Mo7zZeitstempel = Get-Date
-
-                    # Marker-Datei im Quellverzeichnis aktualisieren (0 Bytes)
-                    [System.IO.File]::WriteAllBytes($Mo7zQuelleMarker, @())
-                    (Get-Item $Mo7zQuelleMarker).LastWriteTime = $Mo7zZeitstempel
-
-                    # Marker-Datei im Zielverzeichnis aktualisieren (0 Bytes)
-                    [System.IO.File]::WriteAllBytes($Mo7zZielMarker, @())
-                    (Get-Item $Mo7zZielMarker).LastWriteTime = $Mo7zZeitstempel
-
-                    Write-Host "  Marker-Dateien (mo7z) aktualisiert mit Zeitstempel: $Mo7zZeitstempel"
                 }
             }
 
         } else {
             Write-Host "  Schutzdateien (mo7z) stimmen NICHT überein - Kopieren wird übersprungen." -ForegroundColor Red
+            $script:Fehleranzahl++
         }
 
     } else {
@@ -358,6 +412,13 @@ foreach ($USB in $USBLaufwerke) {
     Write-Host ""
 }
 
-Write-Host "=== USB-Synchronisation abgeschlossen ===" -ForegroundColor Cyan
+if ($script:Fehleranzahl -eq 0) {
+    Write-Host "=== USB-Synchronisation abgeschlossen (keine Probleme) ===" -ForegroundColor Cyan
+} else {
+    Write-Host "=== USB-Synchronisation abgeschlossen, $script:Fehleranzahl Problem(e) - siehe Meldungen oben ===" -ForegroundColor Yellow
+}
 
 Stop-Transcript
+# Eigener Exit-Code, damit der Task Scheduler nicht den Exit-Code des letzten
+# robocopy sieht (robocopy liefert z.B. 1 = "Dateien kopiert", kein Fehler).
+exit ([int]($script:Fehleranzahl -gt 0))

@@ -10,6 +10,13 @@
 # per SSH ein 7z-Archiv von medoffDB und kopiert dieses auf den Stick.
 # Aufruf: interaktiv oder per Task Scheduler, ohne Parameter.
 #
+# Stick-Platz (seit 10.10.2026): von \\wser\mo7z kommen nur die neuesten
+# $Mo7zBehalten Archive auf den Stick plus alle noch nicht nach linux9
+# uebertragenen; aeltere loescht morueck9.ps1 nach der Uebertragung. Per /XD
+# ausgeschlossene Verzeichnisse (medoffDB-Varianten, Altbestaende unter
+# indamed\dat\files) werden vom Stick entfernt. Der Marker "gesichert" wird nur
+# noch nach fehlerfreiem robocopy (Exit-Code < 8) gesetzt.
+#
 # HINWEIS zum Code-Zustand: dieses Skript ist erkennbar unfertiger/
 # experimenteller als spiegele.ps1/morueck.ps1 - es enthaelt Debug-
 # Write-Host-Reste, eine ungenutzte Alternativimplementierung
@@ -44,6 +51,18 @@ $minSize=10
 $usbDrive = $null
 $usbDeviceID = $null
 $VglListe = @("Schutzdatei_bitte_belassen.doc","Auch_eine_Schutzdatei_bitte_belassen.jpg","zusätzliche_Schutzdatei_bitte_belassen.pdf") # muessen alle uebereinstimmen, bevor kopiert wird
+# Stick-Platz begrenzen: von den Sicherungsarchiven in \\wser\mo7z (Namen wie
+# 20261009133000.7z, sortiert nach Namen = nach Datum) kommen auf den Stick die
+# neuesten $Mo7zBehalten sowie alle, die noch nicht nach linux9 uebertragen
+# sind (laut Quittungsdatei, die morueck9.ps1 schreibt). Geloescht werden
+# Archive auf dem Stick nur von morueck9.ps1. Werte in morueck9.ps1 gleich halten.
+$Mo7zBehalten = 14
+$Mo7zArchivFilter = "2*.7z"
+$Mo7zQuittung = "uebertragen-linux9.txt"
+# Verzeichnisse unter indamed\dat\files, die nicht (mehr) auf den Stick sollen
+# (Altbestaende vom Maerz 2025, zusammen ~370 GB, liegen zu Hause schon vor).
+# morueck/morueck9 schliessen sie ebenfalls aus, damit /mir sie dort nicht loescht.
+$FilesAusschlussFilter = "x01641915300_*"
 $data="\\linux1\daten"
 $v = if (Get-PSDrive -Name "V" -ErrorAction SilentlyContinue) { "V:" } else { "$data\down" }
 $p = if (Get-PSDrive -Name "P" -ErrorAction SilentlyContinue) { "P:" } else { "$data\Patientendokumente" }
@@ -234,7 +253,10 @@ function tukop{
 		[Parameter(Mandatory=$true)]
 		[string]$qvz,
 		[string]$zvz,
-		[string[]]$avz = @()
+		[string[]]$avz = @(),
+		# >0: von den Archiven $Mo7zArchivFilter im Wurzelverzeichnis von $qvz nur
+		# die neuesten N auf den Stick, aeltere dort loeschen (Stick-Platz)
+		[int]$NeuesteArchive = 0
 	)
 #	$drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -match '^[A-Z]:\\$' }
 	write-col "green" "1" "Suche " "`"$qvz`"" " auf ..."
@@ -320,9 +342,67 @@ function tukop{
 			$xdArgs += "/XD"
 			$xdArgs += "$qvz\$a"
 		}
-		Write-host "robocopy `"$qvz\`" `"$usbDrive$zvz\`" /s /mir /MT:16 /w:3 /r:3 $($xdArgs -join ' ')"
+
+		# Ausgeschlossene Verzeichnisse vom Stick entfernen: /mir laesst per /XD
+		# ausgeschlossene Verzeichnisse im Ziel stehen, sie wuerden sonst als
+		# veraltete Reste ewig Platz belegen (z.B. indamed\dat\medoffDB, 50 GB).
+		foreach ($a in $avz) {
+			if (-not $a -or $a -match '\.\.') { continue }
+			$rest = Join-Path "$usbDrive$zvz" $a
+			if (Test-Path -LiteralPath $rest -PathType Container) {
+				Write-Host "Entferne ausgeschlossenes Verzeichnis vom Stick: $rest" -ForegroundColor Yellow
+				Remove-Item -LiteralPath $rest -Recurse -Force -ErrorAction Continue
+			}
+		}
+
+		# Archive: alte vom Stick loeschen (vor dem Kopieren, damit Platz frei
+		# wird), im Haupt-robocopy per /XF ausnehmen, die neuesten danach einzeln
+		# kopieren. /XF schuetzt die Archive im Ziel zugleich vor /mir.
+		$xfArgs = @()
+		$behalten = @()
+		if ($NeuesteArchive -gt 0) {
+			# Archive werden hier NIE geloescht - das macht morueck9.ps1 auf linux9,
+			# nachdem es sie dorthin uebertragen hat. Damit bleibt z.B. waehrend
+			# eines Urlaubs alles auf dem Stick, was noch nicht zu Hause ist.
+			# Kopiert werden die neuesten $NeuesteArchive sowie alle, die neuer
+			# sind als das in der Quittung genannte (zuletzt nach linux9
+			# uebertragene) Archiv. Aeltere kommen nicht wieder auf den Stick,
+			# sonst holte /mir die von morueck9.ps1 geloeschten jedes Mal zurueck.
+			$quittung = Join-Path "$usbDrive$zvz" $Mo7zQuittung
+			$grenze = $null
+			if (Test-Path -LiteralPath $quittung) {
+				$grenze = (Get-Content -LiteralPath $quittung -TotalCount 1).Trim()
+				Write-Host "Quittung: zuletzt nach linux9 uebertragen bis $grenze"
+			} else {
+				Write-Host "Keine Quittung $quittung - kopiere nur die neuesten $NeuesteArchive Archive." -ForegroundColor Yellow
+			}
+			$alle = @(Get-ChildItem -LiteralPath $qvz -File -Filter $Mo7zArchivFilter | Sort-Object Name -Descending)
+			for ($i = 0; $i -lt $alle.Count; $i++) {
+				$n = $alle[$i].Name
+				if ($i -lt $NeuesteArchive -or ($grenze -and $n -gt $grenze)) { $behalten += $n }
+			}
+			if ($behalten.Count -gt 0) {
+				Write-Host "Archive fuer den Stick: $($behalten.Count) ($($behalten[-1]) .. $($behalten[0]))"
+			}
+			# /XF schuetzt die Archive (und die Quittung) im Ziel vor /mir
+			$xfArgs = @("/XF", $Mo7zArchivFilter, $Mo7zQuittung)
+		}
+
+		Write-host "robocopy `"$qvz\`" `"$usbDrive$zvz\`" /s /mir /MT:16 /w:3 /r:3 $($xdArgs -join ' ') $($xfArgs -join ' ')"
 		$script:tukopUsbDrive = $usbDrive
-		robocopy "$qvz\" "$usbDrive$zvz\" /s /mir /MT:16 /w:3 /r:3 @xdArgs
+		robocopy "$qvz\" "$usbDrive$zvz\" /s /mir /MT:16 /w:3 /r:3 @xdArgs @xfArgs
+		$roboOK = $LASTEXITCODE -lt 8
+		if ($behalten.Count -gt 0) {
+			Write-host "robocopy `"$qvz\`" `"$usbDrive$zvz\`" <$($behalten.Count) neueste Archive> /w:3 /r:3"
+			robocopy "$qvz\" "$usbDrive$zvz\" @behalten /w:3 /r:3
+			$roboOK = $roboOK -and ($LASTEXITCODE -lt 8)
+		}
+		if (-not $roboOK) {
+			# Kein Marker nach einem Fehler: sonst uebernehmen morueck/morueck9 zu
+			# Hause per /mir einen halbfertigen Stand als "aktuell".
+			Write-Host "Robocopy meldet Fehler (Exit-Code $LASTEXITCODE) - Marker wird NICHT aktualisiert." -ForegroundColor Red
+			return
+		}
 					# Zeitstempel festlegen
 					$Zeitstempel = Get-Date
 					# Pfade zur Marker-Datei
@@ -365,12 +445,12 @@ function tumedoff {
 	Write-Host "  Vergleichsdateien identisch – starte serverseitige Vorbereitung ..." -ForegroundColor Green
 
 	# 3) ssh: robocopy medoffDB -> medoffDBKop auf dem Server
-	$sshRobo = 'robocopy d:\indamed\dat\medoffDB\ d:\indamed\dat\medoffDBKop\ /s /copy:dat'
+	$sshRobo = 'robocopy d:\indamed\dat\medoffDB\ d:\indamed\dat\medoffDBKop\ /s /mir /copy:dat'
 	Write-Host "  ssh wser $sshRobo"
 	ssh wser $sshRobo
 
 	# 4) ssh: 7z-Archiv auf dem Server erstellen/aktualisieren
-	$sshZip  = '"C:\Program Files\7-Zip\7z.exe" u -t7z -mx=5 -pdiabdachau d:\indamed\dat\medoffDB.7z d:\indamed\dat\medoffDBKop\'
+	$sshZip  = '"C:\Program Files\7-Zip\7z.exe" u -t7z -mx=5 -up1q0x2y2z1w1 -pdiabdachau d:\indamed\dat\medoffDB.7z d:\indamed\dat\medoffDBKop\'
 	Write-Host "  ssh wser $sshZip"
 	ssh wser $sshZip
 
@@ -383,11 +463,20 @@ if (1) {
 tukop -qvz "p:\dok" -zvz "\dok"
 tukop -qvz "p:\datenbanken" -zvz "\datenbanken"
 $script:tukopUsbDrive = $null
-tukop -qvz "\\wser\indamed" -zvz "\indamed" -avz "dat\medoffDB","dat\medoffDBKop"
+# Alle direkten Unterverzeichnisse von dat, die "medoffDB" im Namen haben (medoffDBKop, "medoffDB - Kopie" usw.),
+# werden ausgelassen; "medoffDB" selbst steht wie bisher fest in der Liste (wird per 7z-Archiv gesichert, s. tumedoff)
+$medoffVarianten = @(Get-ChildItem "\\wser\indamed\dat" -Directory -Filter "*medoffDB*" -ErrorAction SilentlyContinue |
+	Where-Object { $_.Name -ne "medoffDB" } | ForEach-Object { "dat\$($_.Name)" })
+Write-Host "Ausgelassene medoffDB-Varianten: $($medoffVarianten -join ', ')"
+# Altbestaende unter dat\files (siehe $FilesAusschlussFilter) ebenfalls auslassen
+$filesAusschluss = @(Get-ChildItem "\\wser\indamed\dat\files" -Directory -Filter $FilesAusschlussFilter -ErrorAction SilentlyContinue |
+	ForEach-Object { "dat\files\$($_.Name)" })
+Write-Host "Ausgelassene Verzeichnisse unter dat\files: $($filesAusschluss -join ', ')"
+tukop -qvz "\\wser\indamed" -zvz "\indamed" -avz (@("dat\medoffDB") + $medoffVarianten + $filesAusschluss)
 if ($script:tukopUsbDrive) { tumedoff -usbDrive $script:tukopUsbDrive }  # serverseitige Vorbereitung + Kopie medoffDB.7z
 tukop -qvz "p:\eingelesen" -zvz "\eingelesen"
 }
-tukop -qvz "\\wser\mo7z" -zvz "\mo7z" -avz "loe"
+tukop -qvz "\\wser\mo7z" -zvz "\mo7z" -avz "loe" -NeuesteArchive $Mo7zBehalten
 Stop-Transcript
 exit 0
 

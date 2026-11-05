@@ -29,18 +29,29 @@ $KeepCount  = 2
 # Unterordner, die bei der neuen Sicherung komplett ausgelassen werden (volle Pfade unter $SourceRoot).
 $ExcludeDirs = @(
     (Join-Path $SourceRoot 'dat\files')
-    (Join-Path $SourceRoot 'dat\medoffDBKop')
     (Join-Path $SourceRoot 'gehtso')
 )
 
+# Zusaetzlich: alle direkten Unterordner von dat\, deren Name "medoffDB" enthalten, AUSSER dem echten
+# dat\medoffDB selbst. Deckt kuenftige Duplikate/Kopien der Datenbank automatisch ab, unabhaengig vom
+# genauen Namen (z.B. "medoffDBKop", "medoffDB - Kopie", "medoffDB_alt" etc.) - Grund: am 24.09.2026
+# lag neben dem regulaeren dat\medoffDBKop ein weiterer, unbeabsichtigter Duplikat-Ordner
+# "dat\medoffDB - Kopie" vor, der nicht in der (damals statischen) Liste stand und die Sicherung um
+# >30 GB aufblies und die Laufzeit massiv verlaengerte.
+$DatRoot = Join-Path $SourceRoot 'dat'
+if (Test-Path -LiteralPath $DatRoot -PathType Container) {
+    $MedoffDBDupes = Get-ChildItem -LiteralPath $DatRoot -Directory -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like '*medoffDB*' -and $_.Name -ne 'medoffDB' } |
+        Select-Object -ExpandProperty FullName
+    $ExcludeDirs += $MedoffDBDupes
+}
+
 # Datei-Muster, die bei der neuen Sicherung ausgelassen werden.
 # Hinweis: robocopy /XF akzeptiert nur Dateinamen/Wildcards, keine vollen Pfade - das Muster gilt daher
-# ueberall im kopierten Baum. Alle Muster unten sind spezifisch genug (medical office / indamed
-# Dump-/Backup-Dateien), um Kollisionen ausserhalb ihrer eigentlichen Ordner praktisch auszuschliessen.
+# ueberall im kopierten Baum. "moupd*.exe" ist spezifisch genug (Update-Installer von medical office),
+# um Kollisionen ausserhalb von Update\ praktisch auszuschliessen.
 $ExcludeFilePatterns = @(
     'moupd*.exe'
-    'medoffdump*.sql'
-    'medoffDB.7z'
 )
 
 # --- Vorbereitung --------------------------------------------------------
@@ -48,15 +59,6 @@ $ExcludeFilePatterns = @(
 if (-not (Test-Path -LiteralPath $SourceRoot -PathType Container)) {
     throw "Quellordner '$SourceRoot' wurde nicht gefunden."
 }
-
-# Zielordner fuer die heutige Sicherung schon jetzt bestimmen: Wurde das Skript heute bereits
-# (erfolgreich oder abgebrochen) gestartet, existiert dieser Ordner bereits. In dem Fall soll er
-# weder bei der Zaehlung der zu behaltenden/loeschenden Sicherungsordner mitgerechnet noch geloescht
-# werden - stattdessen wird die laufende Sicherung unten per robocopy fortgesetzt/aktualisiert.
-$today          = Get-Date -Format 'yyyyMMdd'
-$newBackupName  = "indamed$today"
-$newBackupPath  = Join-Path $ParentDir $newBackupName
-$resumingToday  = Test-Path -LiteralPath $newBackupPath
 
 function Get-CopySizeBytes {
     param(
@@ -108,17 +110,9 @@ function Get-BackupFolders {
         Sort-Object Date -Descending
 }
 
-$backups = @(Get-BackupFolders | Where-Object {
-    -not $_.Item.FullName.Equals($newBackupPath, [System.StringComparison]::OrdinalIgnoreCase)
-})
+$backups = @(Get-BackupFolders)
 
-if ($resumingToday) {
-    Write-Host "Hinweis: '$newBackupName' existiert bereits (Skript wurde heute schon gestartet)."
-    Write-Host "Dieser Ordner wird bei der folgenden Zaehlung nicht mitgerechnet und unten per robocopy aktualisiert."
-    Write-Host ""
-}
-
-Write-Host "Gefundene Sicherungsordner (neueste zuerst, ohne heutigen Ordner):"
+Write-Host "Gefundene Sicherungsordner (neueste zuerst):"
 $backups | ForEach-Object { Write-Host ("  {0}  ({1:yyyy-MM-dd})" -f $_.Item.Name, $_.Date) }
 
 $toDelete = @($backups | Select-Object -Skip $KeepCount)
@@ -158,13 +152,16 @@ else {
 
 # --- Neue Sicherung erstellen --------------------------------------------
 
+$today          = Get-Date -Format 'yyyyMMdd'
+$newBackupName  = "indamed$today"
+$newBackupPath  = Join-Path $ParentDir $newBackupName
+
+if (Test-Path -LiteralPath $newBackupPath) {
+    throw "Zielordner '$newBackupPath' existiert bereits. Bitte pruefen/loeschen und erneut starten."
+}
+
 Write-Host ""
-if ($resumingToday) {
-    Write-Host "Setze heutige Sicherung fort/aktualisiere sie: $SourceRoot -> $newBackupPath"
-}
-else {
-    Write-Host "Erstelle neue Sicherung: $SourceRoot -> $newBackupPath"
-}
+Write-Host "Erstelle neue Sicherung: $SourceRoot -> $newBackupPath"
 Write-Host "Ausgeschlossene Ordner:"
 $ExcludeDirs | ForEach-Object { Write-Host "  $_" }
 Write-Host "Ausgeschlossene Dateimuster:"
@@ -188,14 +185,6 @@ $robocopyArgs = @(
     "/LOG:$logFile"
     '/TEE'               # Ausgabe zusaetzlich auf der Konsole
 )
-
-if ($resumingToday) {
-    # Heutiger Ordner existiert schon (Skript wurde heute schon einmal gestartet): mit /PURGE
-    # werden im Ziel auch Dateien/Ordner entfernt, die im Quellbaum nicht mehr vorhanden sind -
-    # das robocopy-Aequivalent zu "rsync --delete" unter Linux.
-    $robocopyArgs += '/PURGE'
-    Write-Host "Heutiger Sicherungsordner existiert bereits -> robocopy laeuft mit /PURGE (loescht im Ziel, was in der Quelle fehlt)."
-}
 
 if ($DryRun) {
     $robocopyArgs += '/L'   # nur auflisten, nichts kopieren
@@ -223,7 +212,26 @@ else {
 
     Write-Host ""
     Write-Host "Starte robocopy ..."
-    $proc = Start-Process -FilePath 'robocopy' -ArgumentList $robocopyArgs -NoNewWindow -PassThru
+    # Start-Process -ArgumentList quotet Elemente mit Leerzeichen NICHT automatisch (anders als der
+    # Aufrufoperator "&"). Ohne dieses manuelle Quoting zerfaellt z.B. "dat\medoffDB - Kopie" in drei
+    # separate Argumente und robocopy bricht mit "Ungueltiger Parameter" ab, OHNE etwas zu kopieren.
+    $robocopyArgsQuoted = $robocopyArgs | ForEach-Object {
+        if ($_ -match '\s') { '"{0}"' -f $_ } else { $_ }
+    }
+    # WICHTIG: robocopy bekommt eine EIGENE, umgeleitete Ausgabe statt sich per -NoNewWindow die
+    # Konsole mit diesem PowerShell-Prozess zu teilen. Grund (Vorfall 24.09.2026): Bei geteilter
+    # Konsole kann eine simple Textmarkierung/QuickEdit-Aktion im Konsolenfenster robocopys komplette
+    # Ausgabe (und damit faktisch den Kopiervorgang) fuer beliebig lange Zeit blockieren, UND zusaetzlich
+    # wurde dabei $proc.ExitCode danach zuverlaessig leer/$null statt der echten Zahl - selbst nach
+    # einem sauber durchgelaufenen robocopy (0 Fehler laut robocopy-Log!). Mit umgeleiteten Streams
+    # gibt es keine geteilte Konsole mehr und $proc.ExitCode kommt korrekt zurueck.
+    $stdOutFile = Join-Path $ParentDir "vorupdate_stdout_$today.log"
+    $stdErrFile = Join-Path $ParentDir "vorupdate_stderr_$today.log"
+    foreach ($f in @($stdOutFile, $stdErrFile)) {
+        if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Force }
+    }
+    $proc = Start-Process -FilePath 'robocopy' -ArgumentList $robocopyArgsQuoted -NoNewWindow -PassThru `
+        -RedirectStandardOutput $stdOutFile -RedirectStandardError $stdErrFile
 
     $pollSeconds = 20
     while (-not $proc.HasExited) {
@@ -238,8 +246,15 @@ else {
     $rc = $proc.ExitCode
 
     # Robocopy-Exitcodes 0-7 sind Erfolg (siehe robocopy /?), ab 8 ist ein Fehler aufgetreten.
-    if ($rc -ge 8) {
-        throw "robocopy meldet Fehler (Exitcode $rc). Details im Log: $logFile"
+    # $rc kann bei sehr schnell scheiternden Prozessen (z.B. sofortiger Argumentfehler) leer/$null
+    # zurueckkommen ($null -ge 8 waere $false!) - das wurde am 24.09.2026 zu einem falschen "FERTIG"
+    # trotz komplett fehlgeschlagenem robocopy-Aufruf. Deshalb $null explizit als Fehler werten und
+    # zusaetzlich pruefen, dass ueberhaupt etwas im Zielordner angekommen ist.
+    if ($null -eq $rc -or $rc -ge 8) {
+        throw "robocopy meldet Fehler (Exitcode '$rc'). Details im Log: $logFile"
+    }
+    if (-not (Test-Path -LiteralPath $newBackupPath) -or (Get-FolderSizeBytes -Path $newBackupPath) -eq 0) {
+        throw "robocopy hat Exitcode '$rc' gemeldet, aber '$newBackupPath' ist leer oder fehlt. Details im Log: $logFile"
     }
 
     Write-Host ""

@@ -725,8 +725,10 @@ function gibaus()
             } else {
               $breite=45;
             }
-            echo "<li><div style=\"height:1.2rem;overflow:hidden;padding-top:1px;float:left;padding-right:0.1rem;\">".
-              "<div style=\"".$stil."width:".$breite.
+            // zuZeile/data-nr/data-erl/zuText/zuKn/zuTaste: Tastaturbedienung mit Alt+Pfeil, s. Skript nach new zutun_cls()
+            echo "<li class='zuZeile' data-nr='".$nr."' data-erl='".($_SESSION['erl'][$nr]?"1":"0")."'>".
+              "<div style=\"height:1.2rem;overflow:hidden;padding-top:1px;float:left;padding-right:0.1rem;\">".
+              "<div class='zuText' style=\"".$stil."width:".$breite.
               "rem;white-space:nowrap;float:left;font-size:0.9rem;height:1.85rem;padding-right:1rem;overflow:auto;position:relative;\">".
               $value."</div>";
             if ($_SESSION['obk'][$nr]) {
@@ -738,18 +740,18 @@ function gibaus()
             }
             echo "</div>";
             // erledigt/aktivier
-            echo "<button type=\"submit\" style=\"width:2.9rem;font-size:0.7rem;height:1.3rem\" name=\"erlknopf".$nr."\">".
-              ($_SESSION['erl'][$nr]?"aktivier":"erledigt")."</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:2.9rem;font-size:0.7rem;height:1.3rem\" name=\"erlknopf".$nr."\">".
+              ($_SESSION['erl'][$nr]?"aktivier":"erledigt")."<span class='zuTaste'>E</span></button>";
             // ändern
-            echo "<button type=\"submit\" style=\"width:2.9rem;font-size:0.7rem;height:1.3rem\" name =\"aenknopf".$nr."\">ändern</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:2.9rem;font-size:0.7rem;height:1.3rem\" name =\"aenknopf".$nr."\">ändern<span class='zuTaste'>&Auml;</span></button>";
             // aufwärtss
-            echo "<button type=\"submit\" style=\"width:1rem;font-size:0.7rem;height:1.3rem\" name =\"aufknopf".$nr."\">&uarr;</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:1rem;font-size:0.7rem;height:1.3rem\" name =\"aufknopf".$nr."\">&uarr;<span class='zuTaste'>&uarr;</span></button>";
             // abwärts
-            echo "<button type=\"submit\" style=\"width:1rem;font-size:0.7rem;height:1.3rem\" name =\"abknopf".$nr."\">&darr;</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:1rem;font-size:0.7rem;height:1.3rem\" name =\"abknopf".$nr."\">&darr;<span class='zuTaste'>&darr;</span></button>";
             // löschen
-            echo "<button type=\"submit\" style=\"width:3rem;font-size:0.7rem;height:1.3rem\" name =\"gelknopf".$nr."\">löschen</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:3rem;font-size:0.7rem;height:1.3rem\" name =\"gelknopf".$nr."\">löschen<span class='zuTaste'>L</span></button>";
             // Kommentar
-            echo "<button type=\"submit\" style=\"width:4rem;font-size:0.7rem;height:1.3rem\" name =\"komknopf".$nr."\">Kommentar</button>";
+            echo "<button type=\"submit\" class=\"zuKn\" style=\"width:4rem;font-size:0.7rem;height:1.3rem\" name =\"komknopf".$nr."\">Kommentar<span class='zuTaste'>K</span></button>";
             // Autor
             echo "<span style='background-color:cornsilk;color:".($_SESSION['per'][$nr]=="V"||$_SESSION['per'][$nr]=="v"?"gray":"silver").
               ";float:left;width:15;'>".$_SESSION['aut'][$nr]."</span>";
@@ -950,6 +952,100 @@ function __construct()
 
 $zutun = new zutun_cls();
 ?>
+
+<!-- 5.11.26: Aufgabenzeilen per Tastatur: Alt+Pfeil hoch markiert die Zeile ueber der Eingabezeile bzw. ueber der markierten,
+     Alt+Pfeil runter geht zurueck (unter der untersten Zeile wieder in die Eingabezeile). Bei markierter Zeile hat die Eingabezeile
+     keinen Fokus, die Tasten wirken dann ohne Alt: E erledigt/aktivieren, Ae aendern, Pfeil hoch/runter verschieben, L loeschen,
+     K Kommentar, Esc zurueck in die Eingabezeile. Die Knoepfe laden die Seite neu, daher merkt sessionStorage kurz die danach zu
+     markierende Zeile (nr, -1 = Eingabezeile, fehlt = nichts) und den noch nicht abgeschickten Text der Eingabezeile. -->
+<style>
+@media screen {
+  .zuTaste { display:none; }
+  li.zuMark, li.zuMark .zuText { background-color:#b3d9ff !important; }
+  li.zuMark[data-erl='1'], li.zuMark[data-erl='1'] .zuText { background-color:#c8e6c9 !important; }
+  li.zuMark[data-erl='1'] .zuText { color:#555 !important; }
+  li.zuMark .zuKn { position:relative; overflow:visible; }
+  li.zuMark .zuTaste { display:block; position:absolute; top:-0.4rem; right:-0.1rem; z-index:5; padding:0 1px; font-size:0.6rem; line-height:0.7rem;
+    font-weight:bold; color:#000; background-color:#ffeb3b; border:1px solid #b59b00; border-radius:2px; pointer-events:none; }
+}
+</style>
+<script>
+(function () {
+  var schl = 'zuMark<?php echo (int)$_SESSION['pat_id']; ?>', mark = null, abgeschickt = false;
+  function zeilen() { return Array.prototype.slice.call(document.querySelectorAll('li.zuZeile')); }
+  function eingabe() { return document.querySelector("input[name='aufgaben']"); }
+  function setze(li) {
+    if (mark) mark.classList.remove('zuMark');
+    mark = li;
+    if (li) {
+      li.classList.add('zuMark');
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+      li.scrollIntoView({block: 'nearest'});
+    }
+  }
+  function zurEingabe() {
+    setze(null);
+    var f = eingabe();
+    if (f) { f.focus(); ansEnde(f); }
+  }
+  // klickt den Knopf der markierten Zeile; ziel: nach dem Neuladen zu markierende Zeile (s.o.)
+  function drueck(knopf, ziel) {
+    var kn = mark.querySelector("button[name='" + knopf + mark.getAttribute('data-nr') + "']"), f = eingabe();
+    if (!kn || abgeschickt) return;
+    abgeschickt = true;
+    try {
+      sessionStorage.setItem(schl, JSON.stringify({nr: ziel, text: f ? f.value : '', zeit: Date.now()}));
+    } catch (x) {}
+    kn.click();
+  }
+  document.addEventListener('keydown', function (e) {
+    if (document.querySelector('dialog[open]')) return;
+    var z = zeilen(), i = z.indexOf(mark), k = e.key, nr = mark ? parseInt(mark.getAttribute('data-nr'), 10) : -1;
+    if (e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && (k == 'ArrowUp' || k == 'ArrowDown')) {
+      if (document.activeElement && document.activeElement.name == 'kommentar') return;
+      if (k == 'ArrowUp') {
+        if (!z.length) return;
+        e.preventDefault();
+        if (i < 0) setze(z[z.length - 1]); else if (i > 0) setze(z[i - 1]);
+      } else if (i >= 0) { // ohne Markierung bleibt Alt+Pfeil runter der Browser-Auswahlliste der Eingabezeile
+        e.preventDefault();
+        if (i < z.length - 1) setze(z[i + 1]); else zurEingabe();
+      }
+      return;
+    }
+    if (!mark || e.altKey || e.ctrlKey || e.metaKey) return;
+    var darunter = i < z.length - 1 ? parseInt(z[i + 1].getAttribute('data-nr'), 10) : -1;
+    k = k.toLowerCase();
+    if (k == 'escape') { e.preventDefault(); zurEingabe(); return; }
+    if (k != 'e' && k != 'ä' && k != 'arrowup' && k != 'arrowdown' && k != 'l' && k != 'k') return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (k == 'e') drueck('erlknopf', darunter);
+    else if (k == 'ä') drueck('aenknopf');
+    else if (k == 'arrowup') { if (i > 0) drueck('aufknopf', nr - 1); }
+    else if (k == 'arrowdown') { if (i < z.length - 1) drueck('abknopf', nr + 1); }
+    else if (k == 'l') drueck('gelknopf', darunter);
+    else drueck('komknopf');
+  }, true);
+  // Klick in ein Eingabefeld beendet die Markierung, damit die Tasten dort wieder Text sind
+  document.addEventListener('focusin', function (e) {
+    if (mark && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) setze(null);
+  });
+  window.addEventListener('load', function () {
+    var d = null;
+    try {
+      d = JSON.parse(sessionStorage.getItem(schl));
+      sessionStorage.removeItem(schl);
+    } catch (x) {}
+    if (!d || Date.now() - d.zeit > 15000) return;
+    var f = eingabe();
+    if (f && d.text && !f.value) f.value = d.text;
+    if (d.nr === undefined) return;
+    var li = document.querySelector("li.zuZeile[data-nr='" + d.nr + "']");
+    if (li) setze(li); else zurEingabe();
+  });
+}());
+</script>
 
 <!-- Auswahllisten fuer 'aufgaben' -->
 <datalist id="li0">
