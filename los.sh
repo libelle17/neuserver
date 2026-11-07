@@ -3832,9 +3832,10 @@ reserverdienste() {
 snapper_data() {
   printf "${dblau}snapper_data${reset}()\n";
   local k=/etc/snapper/configs/data v=$instvz/rechner/reserver/snapper-data s=/etc/sysconfig/snapper;
-  [ "$OSNR" = 4 ]||{ printf "Snapper nur unter openSUSE eingerichtet (OSNR: ${blau}$OSNR${reset}) - uebersprungen.\n"; return; };
+  # nicht $OSNR: das ist bei "los.sh -rechner" allein (noch) nicht gesetzt
+  grep -Eqi '^ID(_LIKE)?=.*suse' /etc/os-release||{ printf "Snapper nur unter openSUSE eingerichtet - uebersprungen.\n"; return; };
   [ "$(findmnt -no FSTYPE /DATA)" = btrfs ]||{ printf "${rot}/DATA ist nicht (eingehaengt als) btrfs${reset} - Snapper uebersprungen.\n"; return; };
-  command -v snapper >/dev/null||{ [ "$insg" ]||setzinstprog; doinst snapper; };
+  command -v snapper >/dev/null||{ [ "$insg" ]||{ [ "$OSNR" ]||variablen; setzinstprog; }; doinst snapper; };
   command -v snapper >/dev/null||{ printf "${rot}snapper nicht installierbar${reset}\n"; return; };
   if [ ! -f "$k" ]; then
     [ -d /DATA/.snapshots ]||ausf "snapper -c data create-config /DATA" "${blau}";
@@ -3876,7 +3877,7 @@ rechnereinstellungen() {
   case "$h" in linux0|linux7) snapper_data;; esac;
   case "$h" in
     linux1)
-      command -v socat >/dev/null||{ [ "$insg" ]||setzinstprog; doinst socat; };
+      command -v socat >/dev/null||{ [ "$insg" ]||{ [ "$OSNR" ]||variablen; setzinstprog; }; doinst socat; };
       if command -v firewall-cmd >/dev/null&&firewall-cmd -q --state 2>/dev/null; then
         local regel='rule family="ipv4" source address="192.168.178.20/32" port port="6666" protocol="udp" accept';
         firewall-cmd -q --permanent --query-rich-rule="$regel"||{
