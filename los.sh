@@ -4260,17 +4260,47 @@ turbomed() {
 	fi;
 } # turbomed
 
+# vmime_zurueck() – stellt beim Abbruch von vmime_bauen den alten Stand aus $VMALT wieder her.
+# Bibliothek und Header nur, wenn sie schon ersetzt wurden ($VMGEWECHSELT): davor koennte ein noch laufender
+# alter vmparse2-Lauf sie gerade benutzen. vmparse2 zuletzt, damit es erst wieder startet, wenn alles zusammenpasst.
+vmime_zurueck() {
+	printf "${rot}vmime: Abbruch, stelle den alten Stand aus $VMALT wieder her$reset\n";
+	[ "$VMHATALT" = 1 ]||{ printf "${rot}vmime: es gibt keinen alten Stand zum Wiederherstellen$reset\n"; return; };
+	if [ "$VMGEWECHSELT" = 1 ]; then
+		cp -a $VMALT/libvmime* /usr/local/lib64/;
+		rm -rf /usr/local/include/vmime;
+		tar -C /usr/local/include -xzf $VMALT/include_vmime.tgz;
+		ldconfig;
+	fi;
+	cp -a $VMALT/vmparse2 $VMPZ.alt&&mv -f $VMPZ.alt $VMPZ;
+} # vmime_zurueck
+
 # vmime_bauen() – baut vmime frisch aus github und installiert es nach
 # /usr/local. Grund: vmparse2.cpp (Fax-/Labor-Mailimport für Turbomed)
 # braucht die neuere vmime::shared_ptr-API; die archivierten Snapshots
 # (2013/2014, u.a. /DATA/down/vmime-master) haben noch die alte
 # vmime::ref-API und passen nicht mehr dazu. libgsasl-devel wird vorher
 # benötigt (sonst bricht cmake mit GSASL_INCLUDE_DIR-NOTFOUND ab).
+#
+# Darf auch im laufenden Betrieb auf linux1 aufgerufen werden, wo der Cron vmparse2 alle paar Minuten startet und
+# vmparse2 dabei Maildateien umbenennt. Zwischen dem Installieren der neuen Bibliothek und dem des neuen vmparse2
+# passen beide nicht zusammen (geaenderte Header), und "make install" von vmparse2 beendet laufende vmparse2 mit
+# killall -9. Darum:
+# 1) erst bauen; schlaegt das fehl, ist nichts am Betrieb veraendert
+# 2) alten Stand nach $VMALT sichern (bleibt liegen, wird beim naechsten Aufruf ersetzt)
+# 3) /usr/bin/vmparse2 gegen einen Platzhalter tauschen, der nichts tut, und warten, bis kein Lauf mehr aktiv ist
+#    (hoechstens $VMIME_WARTE_S Sekunden, sonst Abbruch: der laufende Import wird nicht abgeschossen)
+# 4) Bibliothek installieren, vmparse2 neu bauen und installieren, Ergebnis pruefen
+# Bei jedem Fehler und bei Abbruch (Strg+C) stellt vmime_zurueck den alten Stand wieder her.
 vmime_bauen() {
 	printf "${dblau}vmime_bauen$reset()\n";
 	ausf "$instp gsasl-devel";
 	VMSRC=/usr/local/src/vmime;
 	VMBUILD=/usr/local/src/vmime-build;
+	VMALT=/usr/local/src/vmime-alt; # letzter Stand vor dem Wechsel
+	VMPQ=/root/vmparse2; # Quelle von vmparse2
+	VMPZ=/usr/bin/vmparse2; # installiertes vmparse2
+	VMMARKE="Platzhalter-vmime-Wechsel"; # erkennt einen von einem frueheren Abbruch (z.B. Stromausfall) liegengebliebenen Platzhalter
 	if [ -d "$VMSRC/.git" ]; then
 		# flacher Klon nur zum Bauen: "pull" scheitert dort an scheinbar abweichender Historie (und es wurde dann still
 		# die alte Quelle gebaut); lokale Aenderungen in $VMSRC gibt es nicht
@@ -4279,16 +4309,60 @@ vmime_bauen() {
 		ausf "rm -rf $VMSRC";
 		ausf "git clone --depth 1 https://github.com/kisli/vmime.git $VMSRC";
 	fi;
+	[ "$ret" = 0 ]||{ printf "${rot}vmime: Quelle nicht geholt, alter Stand bleibt$reset\n"; return 1; };
 	ausf "cmake -S $VMSRC -B $VMBUILD -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib64";
+	[ "$ret" = 0 ]||{ printf "${rot}vmime: cmake fehlgeschlagen, alter Stand bleibt$reset\n"; return 1; };
 	ausf "cmake --build $VMBUILD -j$(nproc)";
-	ausf "cmake --install $VMBUILD";
-	ausf "ldconfig";
-	ausf "pkg-config --modversion vmime" "${blau}";
-	# vmparse2 selbst gegen die frisch gebaute vmime neu bauen und installieren
-	# (nach /usr/bin, per Makefile-install-Target); (cd ...) statt ausf-eval,
-	# damit das cd nicht den cwd von los.sh selbst verändert.
-	# -B: die Makefile-Abhaengigkeiten kennen die vmime-Header nicht; ohne -B bliebe vmparse2 auf den alten Headern
-	[ -d /root/vmparse2 ]&&ausf "(cd /root/vmparse2 && make -B -j$(nproc) && make install)" "${blau}";
+	[ "$ret" = 0 ]||{ printf "${rot}vmime: Bauen fehlgeschlagen, alter Stand bleibt$reset\n"; return 1; };
+	# ein installiertes vmparse2 ohne Quelle liesse sich nicht neu bauen und passte nicht mehr zur neuen Bibliothek
+	[ -x $VMPZ -a ! -d $VMPQ ]&&{ printf "${rot}vmime: $VMPQ fehlt, alter Stand bleibt$reset\n"; return 1; };
+	# Teilprozess: die Fallen (trap) sollen nur fuer den Wechsel gelten, nicht fuer den Rest von los.sh
+	(
+		VMHATALT=0; VMGEWECHSELT=0; VMFERTIG=0;
+		trap '[ "$VMFERTIG" = 1 ]||vmime_zurueck' EXIT;
+		trap 'exit 1' INT TERM HUP;
+		if [ -x $VMPZ ]; then
+			if grep -q "$VMMARKE" $VMPZ; then
+				# liegengebliebener Platzhalter: der gesicherte Stand ist der echte und darf nicht ueberschrieben werden
+				[ -f $VMALT/vmparse2 ]&&VMHATALT=1;
+			else
+				rm -rf $VMALT.neu;
+				mkdir -p $VMALT.neu&&cp -a $VMPZ /usr/local/lib64/libvmime* $VMALT.neu/&&tar -C /usr/local/include -czf $VMALT.neu/include_vmime.tgz vmime||{ printf "${rot}vmime: Sichern fehlgeschlagen$reset\n"; rm -rf $VMALT.neu; exit 1; };
+				rm -rf $VMALT;
+				mv $VMALT.neu $VMALT;
+				VMHATALT=1;
+			fi;
+			printf '#!/bin/sh\n# %s: siehe vmime_bauen in los.sh\nexit 0\n' "$VMMARKE" >$VMPZ.platzh;
+			chmod 755 $VMPZ.platzh;
+			mv -f $VMPZ.platzh $VMPZ; # mv: Cron sieht immer ein vollstaendiges Programm
+			VMWARTE=0;
+			while pgrep -x vmparse2 >/dev/null; do
+				[ "$VMWARTE" -ge "${VMIME_WARTE_S:-300}" ]&&{ printf "${rot}vmime: vmparse2 laeuft nach ${VMWARTE} s noch$reset\n"; exit 1; };
+				sleep 2;
+				VMWARTE=$((VMWARTE+2));
+			done;
+		fi;
+		VMGEWECHSELT=1;
+		ausf "cmake --install $VMBUILD";
+		[ "$ret" = 0 ]||{ printf "${rot}vmime: Installieren fehlgeschlagen$reset\n"; exit 1; };
+		ausf "ldconfig";
+		ausf "pkg-config --modversion vmime" "${blau}";
+		if [ -d $VMPQ ]; then
+			# vmparse2 selbst gegen die frisch gebaute vmime neu bauen und installieren
+			# (nach /usr/bin, per Makefile-install-Target); (cd ...) statt ausf-eval,
+			# damit das cd nicht den cwd von los.sh selbst verändert.
+			# -B: die Makefile-Abhaengigkeiten kennen die vmime-Header nicht; ohne -B bliebe vmparse2 auf den alten Headern
+			ausf "(cd $VMPQ && make -B -j$(nproc) && make install)" "${blau}";
+			[ "$ret" = 0 ]||{ printf "${rot}vmime: vmparse2 bauen fehlgeschlagen$reset\n"; exit 1; };
+			# das Makefile ignoriert Fehler beim Kopieren (Regel mit "-@"), darum hier das Ergebnis pruefen
+			cmp -s $VMPQ/vmparse2 $VMPZ||{ printf "${rot}vmime: $VMPZ wurde nicht ersetzt$reset\n"; exit 1; };
+			ldd $VMPZ|grep -q "not found"&&{ printf "${rot}vmime: $VMPZ findet nicht alle Bibliotheken$reset\n"; exit 1; };
+		fi;
+		VMFERTIG=1;
+	);
+	ret=$?;
+	[ "$ret" = 0 ]&&printf "vmime und vmparse2: ${blau}neu installiert$reset\n";
+	return $ret;
 } # vmime_bauen
 
 # phpparse_bauen() – baut phpparse aus $instvz/phpparse/phpparse.cpp und
