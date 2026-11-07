@@ -436,6 +436,8 @@ kopiermt() { # mit test
       which mail >/dev/null 2>&1 && \
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fehlte die Schutzdatei\n${Q:-$LINEINS:}/$QVos/$SD.\nDa so etwas auch durch Ransomware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" $SDMAILEMPF
       printf "${rot}Schutzdatei /$QVos/$SD auf Quelle nicht gefunden${reset} – überspringe $blau/$QVos$reset\n";
+      # nur unter /DATA und nur bei erreichbarer Quelle ein Warnzeichen: fehlt linux1 oder ein Windows-Mount, fehlt sie auch
+      case "/$QVos/" in /DATA/*) { [ -z "$QL" ]||ping -c1 -W3 "$QL" >/dev/null 2>&1; }&&/root/bin/repo_sperre.sh "Schutzdatei /$QVos/$SD fehlt auf ${QL:-der Quelle}";; esac;
       return 1;
     elif [ -z "$_sdkmt_z" ]; then
       # b) SD fehlt auf Ziel – frisches/neues Ziel, Kopie erlaubt (weitere Schutzdateien der Liste werden noch geprüft)
@@ -446,6 +448,7 @@ kopiermt() { # mit test
       which mail >/dev/null 2>&1 && \
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein inhaltlicher Unterschied (SHA-256) bei der Schutzdatei zwischen\n${Q:-$LINEINS:}/$QVos/$SD und\n$ZL/$ZVos/$SD.\nDa so etwas auch durch Ransomware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" $SDMAILEMPF
       printf "${rot}keine inhaltliche Übereinstimmung (SHA-256) bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
+      /root/bin/repo_sperre.sh "Schutzdatei weicht ab: $QL:/$QVos/$SD";
       return 1;
     fi;
     # diese Schutzdatei identisch oder Ziel frisch → weiter mit der naechsten aus SDLISTE bzw. mit der Kopie

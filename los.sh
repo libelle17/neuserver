@@ -4318,13 +4318,23 @@ phpparse_bauen() {
 # Wartezeit: uebernommen wird nur, was dieser Rechner seit mindestens 7 Tagen auf github sieht (linux1 darf nach
 # github schreiben; so bleibt Zeit, einen Angriff ueber linux1 zu bemerken). Massgeblich ist der eigene erste
 # Sichtkontakt (/var/lib/wecklauf/repostand_<Repo>: "Commit Epoche"), weil das Commit-Datum faelschbar ist.
-# "los.sh -pasofort" uebernimmt ohne Wartezeit.
+# "los.sh -pasofort" uebernimmt ohne Wartezeit und ohne die Pruefung, ob linux1 erreichbar ist.
+# Bedingungen: keine Sperre (repo_sperre.sh; auch -pasofort; dann wird nicht einmal geholt, damit nichts waehrend der
+# Sperre "reift"), linux1 erreichbar (192.168.178.21), kein Notfallbetrieb; wecklauf.sh ruft -pa zudem nur nach
+# fehlerfreier Sicherung auf. Umgeschriebener Verlauf auf github (Stand nicht mehr Nachfolger) loest die Sperre aus.
+# Neu gesehene Commits meldet nur linux0 per Mail (sonst kaeme jede Nachricht doppelt).
 # _pa_reif() - im Repo-Verzeichnis nach git fetch: gibt den neuesten reifen Commit aus (leer: noch keiner reif)
 _pa_reif() {
   local f=/var/lib/wecklauf/repostand_$1 k;
   k=$(git rev-parse '@{u}')||return 1;
   mkdir -p /var/lib/wecklauf;
-  grep -qs "^$k " "$f"||echo "$k $(date +%s)" >>"$f";
+  git merge-base --is-ancestor HEAD "$k";
+  [ $? = 1 ]&&{ /root/bin/repo_sperre.sh "github-Verlauf von $1 umgeschrieben: $(git rev-parse --short HEAD) ist kein Vorgaenger von $(git rev-parse --short "$k")"; return 1; };
+  if ! grep -qs "^$k " "$f"; then
+    local b; b=$(tail -n1 "$f" 2>/dev/null|cut -d' ' -f1); git merge-base --is-ancestor "${b:-x}" "$k" 2>/dev/null||b=HEAD;
+    [ "$b" = "$k" ]||{ git log --format='%h %ad %an: %s' --date=short "$b..$k"; git diff --stat "$b" "$k"|tail -n 15; }|sed "1i\\n== $1 ==" >>"$_pa_neu";
+    echo "$k $(date +%s)" >>"$f";
+  fi;
   if [ "$pasofort" ]; then echo "$k"; else awk -v g=$(($(date +%s)-7*86400)) '$2<=g{s=$1}END{print s}' "$f"; fi;
 } # _pa_reif
 _pa_wartet() { # $1 = Repo; meldet, was noch in der Wartezeit steckt
@@ -4334,7 +4344,16 @@ _pa_wartet() { # $1 = Repo; meldet, was noch in der Wartezeit steckt
 } # _pa_wartet
 progaktualisieren() {
   printf "${dblau}progaktualisieren$reset()\n";
-  case "$(hostname -s)" in
+  local _pa_s=/var/lib/wecklauf/repo_sperre _pa_h; _pa_h=$(hostname -s);
+  if [ -f "$_pa_s" ]; then
+    printf "${rot}Uebernahme von github gesperrt$reset (Aufheben nach Pruefung: rm $_pa_s):\n"; cat "$_pa_s"; return;
+  fi;
+  if [ -z "$pasofort" ]; then
+    [ -f /etc/notfallbetrieb ]&&{ printf "${rot}Notfallbetrieb$reset - keine Uebernahme von github\n"; return; };
+    ping -c1 -W3 192.168.178.21 >/dev/null 2>&1||{ printf "${rot}linux1 nicht erreichbar$reset - keine Uebernahme von github\n"; return; };
+  fi;
+  export _pa_neu; _pa_neu=$(mktemp);
+  case "$_pa_h" in
     linux0|linux7)
       cd "$instvz"&&_pa_vor=$(git rev-parse HEAD);
       if git fetch -q&&_pa_ziel=$(_pa_reif neuserver)&&{ [ -z "$_pa_ziel" ]||git merge -q --ff-only "$_pa_ziel" 2>/dev/null; }; then
@@ -4347,6 +4366,7 @@ progaktualisieren() {
       fi;;
   esac;
   for D in autofax anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
+    [ -f "$_pa_s" ]&&{ printf "${rot}Uebernahme von github gesperrt$reset\n"; break; };
     [ -d "$HOME/$D/.git" ]||{ printf "${rot}$HOME/$D fehlt$reset - erst ${blau}los.sh -prog$reset\n"; continue; };
     cd "$HOME/$D"||continue;
     _pa_vor=$(git rev-parse HEAD);
@@ -4367,6 +4387,12 @@ progaktualisieren() {
     fi||printf "${rot}$D: Bauen/Installieren fehlgeschlagen$reset\n";
   done;
   cd "$instvz";
+  if [ -s "$_pa_neu" ]&&[ "$_pa_h" = linux0 ]; then
+    { printf 'To: gerald.schade@gmx.de\nSubject: neue Commits auf github (Uebernahme fruehestens %s)\nContent-Type: text/plain; charset=UTF-8\n\n' "$(date -d '+7 days' +%d.%m.)";
+      printf 'Diese Commits hat %s heute erstmals auf github gesehen. Stammen sie nicht von Ihnen: auf linux0 und linux7\n"/root/bin/repo_sperre.sh <Grund>" aufrufen und den github-Zugang von linux1 sperren.\n' "$_pa_h";
+      cat "$_pa_neu"; }|/usr/sbin/sendmail -t;
+  fi;
+  rm -f "$_pa_neu";
 } # progaktualisieren
 
 # tuya_einrichten() – Steuerung der Tuya-Steckdosenleisten (Logilink SH0104,

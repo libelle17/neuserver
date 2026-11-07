@@ -106,6 +106,7 @@ permissselten.sh
 ping.sh
 platz.sh
 platzwaechter.sh
+repo_sperre.sh
 shziel_vorschau.sh
 crontab_uebernehmen.sh
 dokrechte.sh

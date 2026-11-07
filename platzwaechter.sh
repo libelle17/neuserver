@@ -121,7 +121,7 @@ if [ -f "$ZUSTAND/letzt" ]; then
   if [ -n "$t" ] && [ $(( JETZT - t )) -le 21600 ] && [ $(( b - FREI_B )) -gt $(( MAX_SPRUNG_GB * 1073741824 )) ]; then
     SPRUNG=1
     log "AUFFAELLIG: frei fiel seit $(date -d "@$t" '+%H:%M') von $(gib $b) auf $(gib $FREI_B) GiB - Loeschen gesperrt"
-    if [ -z "$NUR_ANZEIGEN" ]; then echo $(( JETZT + SPERRE_H * 3600 )) >"$ZUSTAND/gesperrt_bis"; fi
+    if [ -z "$NUR_ANZEIGEN" ]; then echo $(( JETZT + SPERRE_H * 3600 )) >"$ZUSTAND/gesperrt_bis"; /root/bin/repo_sperre.sh "Platzwaechter: freier Platz auf /DATA plötzlich stark eingebrochen"; fi
     mailen_selten sprung "Platzwaechter $(hostname): auffaelliger Platzverbrauch, Loeschen gesperrt" \
 "der freie Platz auf $MP fiel seit $(date -d "@$t" '+%d.%m. %H:%M') von $(gib $b) GiB auf $(gib $FREI_B) GiB (mehr als $MAX_SPRUNG_GB GiB).
 Das kann eine grosse legitime Kopie sein, aber auch Verschluesselung (Ransomware) auf der Quelle. Der Waechter loescht deshalb

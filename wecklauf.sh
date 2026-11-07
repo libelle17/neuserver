@@ -222,6 +222,7 @@ _lauf() { # $1 = Skript, Rest = Argumente, ohne -e nur anzeigen
     # Zeitbegrenzung (bulinux.sh in der Nacht 3./4.10. auf linux0 UND linux7) erschien als
     # "Exitcode 0". Jetzt der echte Exitcode von timeout/Skript; 124 = Zeitbegrenzung erreicht.
     local rc=${PIPESTATUS[0]};
+    [ "$rc" = 0 ]||_lauf_fehler=1;
     log "${blau}Ende${reset} $skript (Exitcode der timeout-Huelle: $rc)";
     [ "$rc" = 124 ] && log "${rot}ABGEBROCHEN:${reset} $skript nach ${WECKLAUF_TIMEOUT:-8h} durch die Zeitbegrenzung beendet - Sicherung UNVOLLSTAENDIG!";
   else
@@ -312,7 +313,10 @@ case "$BESTER_MODUS" in
     # Dieses Repo (neuserver, dann make shziel) und die eigenen C++-Programme (autofax, anrliste,
     # fbfax ...) auf den neuesten github-Stand bringen, damit dieser Ersatzrechner bei Ausfall von linux1 sofort bereit ist
     # (5.10.2026). Nicht ueber _lauf: los.sh kennt kein -e; baut nur Geaendertes.
-    if [ "$obecht" ]; then
+    # Nur nach fehlerfreier Sicherung; weitere Bedingungen (Sperre, linux1 erreichbar) in los.sh, progaktualisieren
+    if [ "$_lauf_fehler" ]; then
+      log "${rot}los.sh -pa uebersprungen:${reset} Sicherung dieser Nacht nicht fehlerfrei";
+    elif [ "$obecht" ]; then
       echo /root/bin/los.sh > "$AKTUELL_DATEI" 2>/dev/null;
       log "${blau}Starte${reset} los.sh -pa";
       timeout 2h /root/bin/los.sh -pa 2>&1 | tee -a "$LOG";
