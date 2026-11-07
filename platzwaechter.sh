@@ -17,6 +17,7 @@
 # Sperre: faellt der freie Platz seit dem letzten Lauf (<= 6 h her) um mehr als MAX_SPRUNG_GB, wird NICHT geloescht,
 # sondern gemailt und fuer SPERRE_STUNDEN gesperrt. Grund: bei Verschluesselung auf der Quelle wuerde der Waechter
 # sonst genau die Snapshots mit den unverschluesselten Originalen loeschen. Aufheben: rm $ZUSTAND/gesperrt_bis
+# Zugleich sperrt der Platzeinbruch die naechtliche Uebernahme von github (repo_sperre.sh).
 # Mails: Loeschungen immer; Sperre/KRITISCH (nichts mehr loeschbar) hoechstens alle 24 h.
 #
 # Aufruf:  platzwaechter.sh [-n] [-s] [-t] [-v]

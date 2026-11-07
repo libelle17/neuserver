@@ -448,6 +448,7 @@ kopiermt() { # mit test
       which mail >/dev/null 2>&1 && \
       printf "Liebe Praxis,\nbeim Versuch der Sicherheitskopie fand sich ein inhaltlicher Unterschied (SHA-256) bei der Schutzdatei zwischen\n${Q:-$LINEINS:}/$QVos/$SD und\n$ZL/$ZVos/$SD.\nDa so etwas auch durch Ransomware verursacht werden könnte, wurde die Sicherheitskopie für dieses Verzeichnis unterlassen.\nBitte den Systemadiminstrator verständigen!\nMit besten Grüßen, Ihr Linuxrechner"|mail -s "Achtung, Sicherheitswarnung von ${QL:-$LINEINS:} zu /$QVos vor Kopie auf $ZL!" $SDMAILEMPF
       printf "${rot}keine inhaltliche Übereinstimmung (SHA-256) bei \"$QL:/$QVos/$SD\" und \"$ZL:/$ZVos/$SD\"!$reset\n";
+      # Verdacht auf Verschluesselung: auch nichts mehr von github uebernehmen (s. repo_sperre.sh)
       /root/bin/repo_sperre.sh "Schutzdatei weicht ab: $QL:/$QVos/$SD";
       return 1;
     fi;

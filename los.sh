@@ -134,7 +134,7 @@ commandline() {
         printf "  $blau-prompt$reset:    richtet die Eingabeaufforderung ein\n";
         printf "  -- Programme & Laufwerke --\n";
         printf "  $blau-prog$reset:      lädt notwendige Programme aus dem Repository und von github\n";
-        printf "  $blau-pa$reset:        aktualisiert die eigenen C++-Programme (autofax, anrliste, fbfax ...) von github und baut geaenderte neu\n";
+        printf "  $blau-pa$reset:        holt neuserver (dann make shziel) und die eigenen C++-Programme (autofax, anrliste, fbfax ...) von github, nach 7 Tagen Wartezeit und nur ohne Sperre (s. progaktualisieren), und baut geaenderte neu\n";
         printf "  $blau-mt$reset:        konfiguriert /etc/fstab zum Mounten der Laufwerke (benötigt -prog: exfatprogs)\n";
         printf "  -- Datenbank --\n";
         printf "  $blau-mariau$reset:    richtet mariadb ein (Benutzer/Konfiguration)\n";
@@ -4329,10 +4329,12 @@ _pa_reif() {
   k=$(git rev-parse '@{u}')||return 1;
   mkdir -p /var/lib/wecklauf;
   git merge-base --is-ancestor HEAD "$k";
+  # Exitcode 1 = sicher kein Vorgaenger (Verlauf umgeschrieben), andere Codes = nicht entscheidbar
   [ $? = 1 ]&&{ /root/bin/repo_sperre.sh "github-Verlauf von $1 umgeschrieben: $(git rev-parse --short HEAD) ist kein Vorgaenger von $(git rev-parse --short "$k")"; return 1; };
   if ! grep -qs "^$k " "$f"; then
     local b; b=$(tail -n1 "$f" 2>/dev/null|cut -d' ' -f1); git merge-base --is-ancestor "${b:-x}" "$k" 2>/dev/null||b=HEAD;
-    [ "$b" = "$k" ]||{ git log --format='%h %ad %an: %s' --date=short "$b..$k"; git diff --stat "$b" "$k"|tail -n 15; }|sed "1i\\n== $1 ==" >>"$_pa_neu";
+    # fuer die Mail (progaktualisieren): was neu ist, je Commit und als Liste der geaenderten Dateien
+    [ "$b" = "$k" ]||{ printf '\n== %s ==\n' "$1"; git log --format='%h %ad %an: %s' --date=short "$b..$k"; git diff --stat "$b" "$k"|tail -n 15; } >>"$_pa_neu";
     echo "$k $(date +%s)" >>"$f";
   fi;
   if [ "$pasofort" ]; then echo "$k"; else awk -v g=$(($(date +%s)-7*86400)) '$2<=g{s=$1}END{print s}' "$f"; fi;
