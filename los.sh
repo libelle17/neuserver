@@ -4272,7 +4272,9 @@ vmime_bauen() {
 	VMSRC=/usr/local/src/vmime;
 	VMBUILD=/usr/local/src/vmime-build;
 	if [ -d "$VMSRC/.git" ]; then
-		ausf "git -C $VMSRC pull";
+		# flacher Klon nur zum Bauen: "pull" scheitert dort an scheinbar abweichender Historie (und es wurde dann still
+		# die alte Quelle gebaut); lokale Aenderungen in $VMSRC gibt es nicht
+		ausf "git -C $VMSRC fetch --depth 1 origin master&&git -C $VMSRC reset -q --hard FETCH_HEAD";
 	else
 		ausf "rm -rf $VMSRC";
 		ausf "git clone --depth 1 https://github.com/kisli/vmime.git $VMSRC";
