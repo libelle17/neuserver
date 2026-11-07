@@ -309,8 +309,8 @@ case "$BESTER_MODUS" in
     _lauf /root/bin/bumo.sh;
     _lauf /root/bin/bulinux.sh -f;
     _lauf /root/bin/bunacht.sh;
-    # Eigene C++-Programme (autofax, anrliste, fbfax ...) auf den neuesten github-Stand
-    # bringen, damit dieser Ersatzrechner bei Ausfall von linux1 sofort bereit ist
+    # Dieses Repo (neuserver, dann make shziel) und die eigenen C++-Programme (autofax, anrliste,
+    # fbfax ...) auf den neuesten github-Stand bringen, damit dieser Ersatzrechner bei Ausfall von linux1 sofort bereit ist
     # (5.10.2026). Nicht ueber _lauf: los.sh kennt kein -e; baut nur Geaendertes.
     if [ "$obecht" ]; then
       echo /root/bin/los.sh > "$AKTUELL_DATEI" 2>/dev/null;

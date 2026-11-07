@@ -4307,14 +4307,29 @@ phpparse_bauen() {
 # sie per cron nicht laufen, aber bei Ausfall von linux1 sofort gebraucht werden, holt
 # diese Funktion den neuen Stand von github (nur fast-forward) und baut/installiert ein
 # Programm nur, wenn sich etwas geaendert hat (fehlt es nur in /usr/bin, wird das gemeldet).
+# Vorher dasselbe fuer dieses Repo selbst, dort nur auf linux0/linux7 (auf linux1 wird es bearbeitet):
+# neuer Stand + "make shziel" (ersetzt per mv, laufende Skripte lesen ungestoert ihre alte Datei zu Ende).
+# crontab bleibt Handarbeit (crontab_uebernehmen.sh; bumonitor.sh meldet Abweichungen).
 progaktualisieren() {
   printf "${dblau}progaktualisieren$reset()\n";
+  case "$(hostname -s)" in
+    linux0|linux7)
+      cd "$instvz"&&_pa_vor=$(git rev-parse HEAD);
+      if git fetch -q&&git merge -q --ff-only '@{u}' 2>/dev/null; then
+        [ "$_pa_vor" = "$(git rev-parse HEAD)" ]&&printf "neuserver: aktuell\n"||printf "neuserver: neuer Stand ${blau}$(git log -1 --format='%h %s')$reset\n";
+        make shziel;
+        systemctl daemon-reload;
+      else
+        printf "${rot}neuserver: neuer Stand nicht uebernehmbar (lokale Aenderung?)$reset - uebersprungen\n";
+      fi;;
+  esac;
   for D in autofax anrliste dicom fbfax impgl labimp termine vmparse2 auffaell berein labpath pznbdt; do
     [ -d "$HOME/$D/.git" ]||{ printf "${rot}$HOME/$D fehlt$reset - erst ${blau}los.sh -prog$reset\n"; continue; };
     cd "$HOME/$D"||continue;
     _pa_vor=$(git rev-parse HEAD);
     # fetch+merge statt pull: pull.rebase=true verweigert sonst jede lokale Aenderung (inst.log, man_* vom Bauen)
-    git fetch -q&&git merge -q --ff-only '@{u}' 2>/dev/null||{ printf "${rot}$D: neuer Stand nicht uebernehmbar (lokale Aenderung an einer auch auf github geaenderten Datei?) - uebersprungen$reset\n"; continue; };
+    # versioniert, aber bei jedem Bauen anders - duerfen den neuen Stand nicht blockieren; alles andere bleibt
+    git fetch -q&&{ [ "$_pa_vor" = "$(git rev-parse '@{u}')" ]||git diff --name-only|grep -Ex 'man_(de|en)(\.bak|\.gz)?|tmp_opt_[de]|versdt|inst\.log|[^/]*\.zaehl'|xargs -r git checkout --; }&&git merge -q --ff-only '@{u}' 2>/dev/null||{ printf "${rot}$D: neuer Stand nicht uebernehmbar (lokale Aenderung an einer auch auf github geaenderten Datei?) - uebersprungen$reset\n"; continue; };
     if [ "$_pa_vor" = "$(git rev-parse HEAD)" ]; then
       [ -s "/usr/bin/$D" ]&&printf "$D: aktuell\n"||printf "$D: aktuell, aber nicht in /usr/bin installiert\n";
       continue;
