@@ -148,6 +148,7 @@ commandline() {
         printf "  $blau-turbomed$reset:  richtet Turbomed ein\n";
         printf "  $blau-must$reset:      kopiert vom Musterserver\n";
         printf "  ${blau}-mustneu${reset}:   wie -must, aber überschreibt vorhandene Dateien\n";
+        printf "  $blau-pasofort$reset:  wie -pa (Repos neuserver und eigene Programme von github), aber ohne die 7 Tage Wartezeit\n";
         printf "  $blau-vmime$reset:     baut vmime (für vmparse2) frisch aus github\n";
         printf "  $blau-phpparse$reset:  baut phpparse aus phpparse/phpparse.cpp und installiert es nach /root/bin\n";
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
@@ -182,6 +183,7 @@ commandline() {
           knl) obkonfignl=1;;
           prog) obprog=1;;
           pa|progakt) obprogakt=1;;
+          pasofort) obprogakt=1;pasofort=1;; # wie -pa, aber ohne die 7 Tage Wartezeit
           turbomed) obtm=1;;
           mariau) obmyuser=1;;
 					maria|mariadb|mysql) obmysql=1;;
@@ -4310,13 +4312,31 @@ phpparse_bauen() {
 # Vorher dasselbe fuer dieses Repo selbst, dort nur auf linux0/linux7 (auf linux1 wird es bearbeitet):
 # neuer Stand + "make shziel" (ersetzt per mv, laufende Skripte lesen ungestoert ihre alte Datei zu Ende).
 # crontab bleibt Handarbeit (crontab_uebernehmen.sh; bumonitor.sh meldet Abweichungen).
+# Wartezeit: uebernommen wird nur, was dieser Rechner seit mindestens 7 Tagen auf github sieht (linux1 darf nach
+# github schreiben; so bleibt Zeit, einen Angriff ueber linux1 zu bemerken). Massgeblich ist der eigene erste
+# Sichtkontakt (/var/lib/wecklauf/repostand_<Repo>: "Commit Epoche"), weil das Commit-Datum faelschbar ist.
+# "los.sh -pasofort" uebernimmt ohne Wartezeit.
+# _pa_reif() - im Repo-Verzeichnis nach git fetch: gibt den neuesten reifen Commit aus (leer: noch keiner reif)
+_pa_reif() {
+  local f=/var/lib/wecklauf/repostand_$1 k;
+  k=$(git rev-parse '@{u}')||return 1;
+  mkdir -p /var/lib/wecklauf;
+  grep -qs "^$k " "$f"||echo "$k $(date +%s)" >>"$f";
+  if [ "$pasofort" ]; then echo "$k"; else awk -v g=$(($(date +%s)-7*86400)) '$2<=g{s=$1}END{print s}' "$f"; fi;
+} # _pa_reif
+_pa_wartet() { # $1 = Repo; meldet, was noch in der Wartezeit steckt
+  local n; n=$(git rev-list --count 'HEAD..@{u}' 2>/dev/null);
+  [ "${n:-0}" -gt 0 ]&&printf "$1: $n neue(r) Commit(s) in der Wartezeit bzw. nicht uebernommen\n";
+  return 0;
+} # _pa_wartet
 progaktualisieren() {
   printf "${dblau}progaktualisieren$reset()\n";
   case "$(hostname -s)" in
     linux0|linux7)
       cd "$instvz"&&_pa_vor=$(git rev-parse HEAD);
-      if git fetch -q&&git merge -q --ff-only '@{u}' 2>/dev/null; then
+      if git fetch -q&&_pa_ziel=$(_pa_reif neuserver)&&{ [ -z "$_pa_ziel" ]||git merge -q --ff-only "$_pa_ziel" 2>/dev/null; }; then
         [ "$_pa_vor" = "$(git rev-parse HEAD)" ]&&printf "neuserver: aktuell\n"||printf "neuserver: neuer Stand ${blau}$(git log -1 --format='%h %s')$reset\n";
+        _pa_wartet neuserver;
         make shziel;
         systemctl daemon-reload;
       else
@@ -4329,7 +4349,8 @@ progaktualisieren() {
     _pa_vor=$(git rev-parse HEAD);
     # fetch+merge statt pull: pull.rebase=true verweigert sonst jede lokale Aenderung (inst.log, man_* vom Bauen)
     # versioniert, aber bei jedem Bauen anders - duerfen den neuen Stand nicht blockieren; alles andere bleibt
-    git fetch -q&&{ [ "$_pa_vor" = "$(git rev-parse '@{u}')" ]||git diff --name-only|grep -Ex 'man_(de|en)(\.bak|\.gz)?|tmp_opt_[de]|versdt|inst\.log|[^/]*\.zaehl'|xargs -r git checkout --; }&&git merge -q --ff-only '@{u}' 2>/dev/null||{ printf "${rot}$D: neuer Stand nicht uebernehmbar (lokale Aenderung an einer auch auf github geaenderten Datei?) - uebersprungen$reset\n"; continue; };
+    git fetch -q&&_pa_ziel=$(_pa_reif "$D")&&{ [ -z "$_pa_ziel" ]||git merge-base --is-ancestor "$_pa_ziel" HEAD||{ git diff --name-only|grep -Ex 'man_(de|en)(\.bak|\.gz)?|tmp_opt_[de]|versdt|inst\.log|[^/]*\.zaehl'|xargs -r git checkout --;git merge -q --ff-only "$_pa_ziel" 2>/dev/null; }; }||{ printf "${rot}$D: neuer Stand nicht uebernehmbar (lokale Aenderung an einer auch auf github geaenderten Datei?) - uebersprungen$reset\n"; continue; };
+    _pa_wartet "$D";
     if [ "$_pa_vor" = "$(git rev-parse HEAD)" ]; then
       [ -s "/usr/bin/$D" ]&&printf "$D: aktuell\n"||printf "$D: aktuell, aber nicht in /usr/bin installiert\n";
       continue;
