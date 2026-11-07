@@ -23,7 +23,7 @@
 <body>
 
 <h1>Datensicherungskonzept der Praxis-Server</h1>
-<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 10.10.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
+<p class="stand">Diabetologische Gemeinschaftspraxis Dachau &middot; Stand 07.11.2026 &middot; ersetzt die Fassung vom 19.04.2026 (<code>Sicherungskonzept.odt</code>), deren Windows-Teil hier übernommen ist</p>
 
 <table class="kasten" border="1" cellspacing="0" cellpadding="8" width="100%" style="border:1px solid #cc9900"><tr><td bgcolor="#fff8e6" style="background:#fff8e6"><b>In einem Satz:</b> Die Praxisdaten liegen auf den Windows-Servern <b>wser</b>/<b>wres</b> (Medical Office) und dem Linux-Hauptserver <b>linux1</b>. Die beiden Sicherungsrechner <b>linux0</b> und <b>linux7</b> schalten sich zweimal täglich selbst ein, <b>holen</b> sich die Daten von linux1, bewahren ältere Stände als Snapshots auf und schalten sich wieder aus. linux1 selbst kann auf die Sicherungsrechner nicht zugreifen &ndash; ein Verschlüsselungstrojaner auf linux1 oder einem Windows-PC kommt deshalb nicht an die Sicherungen.</td></tr></table>
 
@@ -40,7 +40,7 @@
 <h2>2. Grundsätze</h2>
 <ul>
 <li><b>Ziehen statt Schieben:</b> Die Sicherungsrechner holen die Daten von linux1 (ssh/rsync). linux1 hat bewusst <b>keinen</b> ssh-Zugang zu linux0/linux7. Wake-on-LAN-Wecken (siehe Abschnitt 7) gibt keinen Zugang. Einzige Ausnahme für die Überwachung (<code>bumonitor.sh</code>, Abschnitt 10): ein eingeschränkter Schlüssel, mit dem linux1 auf den Sicherungsrechnern nur lesend messen darf (freier Platz, Prüfsumme der crontab; <code>backup_ssh_wrapper.sh</code>).</li>
-<li><b>Ältere Stände bleiben erhalten:</b> Auf linux0 und linux7 liegt <code>/DATA</code> auf btrfs mit Snapper-Snapshots (auf linux0: täglich, 7 Tage). Wird auf linux1 etwas gelöscht oder verschlüsselt, steht der alte Stand noch in den Snapshots.</li>
+<li><b>Ältere Stände bleiben erhalten:</b> Auf linux0 und linux7 liegt <code>/DATA</code> auf btrfs mit Snapper-Snapshots (täglich, 7 Tage). Wird auf linux1 etwas gelöscht oder verschlüsselt, steht der alte Stand noch in den Snapshots.</li>
 <li><b>Platzwächter</b> (<code>platzwaechter.sh</code>, alle 15 min auf linux0/linux7): Fällt der freie Platz auf <code>/DATA</code> unter 8 %, löscht er die ältesten Snapshots, bis 12 % frei sind &ndash; die Snapshots der letzten 3 Tage aber nie. Bricht der freie Platz plötzlich stark ein (mögliche Verschlüsselung), löscht er nichts, sondern meldet sich. Jede Löschung wird gemailt.</li>
 <li><b>Schutzdateien (Frühwarnung):</b> In den gesicherten Verzeichnissen liegen Dateien „Schutzdatei_bitte_belassen…“. Weicht eine davon vor dem Kopieren inhaltlich ab (Hinweis auf Verschlüsselung), wird das Verzeichnis <b>nicht</b> kopiert und eine Warnmail verschickt.</li>
 <li><b>Zwei Sicherungsrechner in zwei Räumen</b>, damit ein Schaden in einem Raum nicht alle Kopien trifft.</li>
@@ -125,6 +125,7 @@
 <tr><td>linux0</td><td><code>netconsole-linux1.service</code> (aktiviert)</td><td>schickt Kernel- und Herunterfahr-Meldungen an linux1</td></tr>
 <tr><td>linux1</td><td><code>netconsole-empfang.service</code> (aktiviert), <code>socat</code>, Firewall-Regel UDP 6666 nur von linux0</td><td>Empfang nach <code>/var/log/netconsole-linux0.log</code></td></tr>
 <tr><td>linux1</td><td><code>/var/lib/wecklauf/strom_linux0</code> mit Inhalt <code>1</code>, falls sie fehlt</td><td>Stufe 3 für linux0 (<code>switch_1</code>) scharf</td></tr>
+<tr><td>linux0, linux7</td><td>Snapper für <code>/DATA</code>: <code>/etc/snapper/configs/data</code> (Vorlage <code>rechner/reserver/snapper-data</code>), Eintrag in <code>/etc/sysconfig/snapper</code>, Timer aktiv; nur unter openSUSE und nur auf btrfs</td><td>tägliche Snapshots. Liegt nicht auf <code>/DATA</code>, sondern im System &ndash; fehlt also nach einem Tausch der Systemplatte, bis <code>los.sh -rechner</code> läuft</td></tr>
 <tr><td>linux7</td><td><code>/etc/fstab</code>: <code>x-systemd.mount-timeout=180</code> bei <code>/DATA</code> und <code>/DATAC</code> (vorher Sicherungskopie der fstab)</td><td>das Einhängen der großen btrfs-Platte dauert ca. 50 s; ohne die Option bricht systemd es ab und MariaDB startet nicht</td></tr>
 </table>
 
@@ -214,7 +215,7 @@
 <tr><td>Platz und Snapshot-Löschungen</td><td><code>/var/log/platzwaechter.log</code> auf linux0/linux7, Mails</td></tr>
 <tr><td>Herunterfahren von linux0</td><td><code>/var/log/netconsole-linux0.log</code> auf linux1</td></tr>
 <tr><td>Starts und Abschaltungen</td><td><code>last -x | head</code> auf dem jeweiligen Rechner</td></tr>
-<tr><td>Tägliche Prüfung aller Läufe: 07:30 voll (auch Platz und crontab-Abgleich), 16:30 nur Mittagslauf</td><td><code>bumonitor.sh</code> auf linux1; Warnmail an diabetologie@dachau-mail.de, wenn ein Lauf fehlt, FEHLER meldet oder zu alt ist</td></tr>
+<tr><td>Tägliche Prüfung aller Läufe: 07:30 voll (auch Platz, crontab-Abgleich, Alter des jüngsten Snapshots, netconsole-Empfänger), 16:30 nur Mittagslauf</td><td><code>bumonitor.sh</code> auf linux1; Warnmail an diabetologie@dachau-mail.de, wenn ein Lauf fehlt, FEHLER meldet oder zu alt ist</td></tr>
 <tr><td>Systemplatte und Ersatzsystem</td><td><code>/var/log/wurzelwacht.log</code> (linux1), <code>wecklauf.log</code> (linux0/linux7); Warnmail an diabetologie@dachau-mail.de</td></tr>
 </table>
 <p>Gute Zeichen in <code>wecklauf.log</code>: „Fenster erkannt“, je Skript „Ende … (Exitcode der timeout-Huelle: 0)“, im Nachtlauf „Dump: OK Awk: OK Import: OK“, kein „Kopieren nicht begonnen“, kein „ABGEBROCHEN“. „Kopieren nicht begonnen“ heißt: die Platzprüfung vor dem Kopieren hielt den Platz für zu knapp.</p>
@@ -242,9 +243,9 @@
 <li><code>cd /root/neuserver &amp;&amp; git pull &amp;&amp; make shziel</code>, <code>crontab_uebernehmen.sh --anwenden</code>, <code>los.sh -cron</code> (aktiviert <code>wecklauf-alarm.service</code>), <code>los.sh -rechner</code> (Abschnitt 7), <code>systemctl daemon-reload</code>; prüfen: <code>systemctl --failed</code> (MariaDB!), <code>cat /sys/class/rtc/rtc0/wakealarm</code>.</li>
 </ol></td></tr></table>
 
-<h2>13. Offene Punkte (Stand 10.10.2026)</h2>
+<h2>13. Offene Punkte (Stand 07.11.2026)</h2>
 <ul>
-<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09., 02.10. und 09.10.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit). Bis dahin fängt Stufe 3 (Abschnitt 7) die Hänger ab.</li>
+<li>Ursache der gelegentlichen Hänger von linux0 beim Ausschalten (bisher 27.09., 02.10., 09.10., 30.10. und vermutlich 01.11.) ist unbekannt; nächster Versuch: BIOS „USB power in Soft Off state“ abschalten (immer nur eine Änderung zur Zeit). Bis dahin fängt Stufe 3 (Abschnitt 7) die Hänger ab.</li>
 <li>Zugangsdaten erneuern (Einzelheiten nur intern).</li>
 <li>Alte NVMe in linux7 (Intel 256 GB, SMART FAILED) ausbauen; bis dahin bleibt sie als Notfall-System im Bootmenü („on /dev/nvme0n1p3“).</li>
 </ul>

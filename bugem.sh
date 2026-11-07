@@ -783,13 +783,16 @@ backupstatus() {
 # Heartbeat (linux1:/DATA/Backup-Status_<Rechner>.txt), z.B. "platz  2026-09-21 21:44:12  frei=7% 520GB/7452GB".
 # Auswertung: bumonitor.sh auf linux1 (Warnmail bei zu wenig freiem Platz). Nur im Pull-Modus (ZL leer), weil
 # df lokal misst; im Push-Modus liefe es auf linux1 und wuerde dessen Platz melden. Eingefuehrt 21.9.2026.
+# Dahinter steht der juengste Snapper-Snapshot von /DATA ("snap=2026-11-06_22:00:01") oder "snap=keine", wenn
+# keiner da ist oder die Snapper-Einstellung fehlt; bumonitor.sh warnt dann bzw. wenn er zu alt ist.
 platzstatus() {
   [ -z "$ZL" ] || return 0;
-  local _p_zahlen _p_txt;
+  local _p_zahlen _p_txt _p_snap;
   _p_zahlen=$(df -Pk /DATA 2>/dev/null | awk 'NR==2 && $2>0 {printf "%.0f %.0f", $4, $2}');
   [ -n "$_p_zahlen" ] || return 0;
   _p_txt=$(printf '%s' "$_p_zahlen" | awk '{printf "frei=%d%% %dGB/%dGB", $1*100/$2, $1/1048576, $2/1048576}');
-  backupstatus "$_p_txt" platz;
+  _p_snap=$(LC_ALL=C timeout 30 snapper --csvout --no-headers -c data list --columns date 2>/dev/null|grep .|tail -1|tr ' ' _);
+  backupstatus "$_p_txt snap=${_p_snap:-keine}" platz;
 } # platzstatus
 
 # kopiert eine einzelne Datei/Verzeichnis $1 unterhalb von /etc per kopiermt()

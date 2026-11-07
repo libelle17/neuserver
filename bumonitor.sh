@@ -18,6 +18,8 @@
 # die Platzmeldung aelter als 3 Tage, wird nur vermerkt (kein Alarm). Testhilfen: BUMON_STATUSDIR, BUMON_ZUSTAND, BUMON_SSH.
 # Ausserdem (nur Modus voll): crontab-Abgleich - vergleicht den Hash von /root/crontabakt (alle 2h aus
 # "crontab -l" neu geschrieben) zwischen linux1 und jedem Reserver; weicht er ab, s. crontab_uebernehmen.sh.
+# Ausserdem (nur Modus voll): juengster Snapshot von /DATA der Reserver ("snap=..." in der Zeile "platz", bugem.sh):
+# Warnung, wenn keiner da oder aelter als BU_SNAP_MAX_STUNDEN (Vorgabe 50). netconsole-Empfaenger auf linux1 laeuft.
 # Mailfrequenz: nur wenn sich die Problemliste aendert oder seit der letzten Mail > 24 h vergangen
 # sind; bei Wegfall aller Probleme eine "Entwarnung". Laeuft nur auf linux1.
 EMPFAENGER="diabetologie@dachau-mail.de"
@@ -26,6 +28,7 @@ STATUSDIR=${BUMON_STATUSDIR:-/DATA}
 ZUSTAND=${BUMON_ZUSTAND:-/var/lib/bumonitor}
 BUSSH=${BUMON_SSH:-ssh -i /root/.ssh/id_ed25519_backup -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new}
 MIN_FREI=${BU_MIN_FREI_PROZENT:-10}; KRIT_FREI=${BU_KRIT_FREI_PROZENT:-3}
+SNAP_MAXH=${BU_SNAP_MAX_STUNDEN:-50}
 MODUS=voll; NUR_ANZEIGEN=; TESTMAIL=
 for a in "$@"; do case "$a" in voll|mittag) MODUS=$a;; -n) NUR_ANZEIGEN=1;; -t) TESTMAIL=1;; *) sed -n '2,17p' "$0"; exit 1;; esac; done
 h=$(hostname); [ "${h%%.*}" = linux1 ] || { echo "bumonitor.sh laeuft nur auf linux1"; exit 0; }
@@ -71,6 +74,16 @@ platz_pruefen() { # Rechner Statusdatei
   if [ "$pct" -lt "$KRIT_FREI" ]; then add "$r: Speicherplatz /DATA KRITISCH (unter $KRIT_FREI % frei) - Sicherungen koennen scheitern"
   elif [ "$pct" -lt "$MIN_FREI" ]; then add "$r: Speicherplatz /DATA knapp (unter $MIN_FREI % frei)"; fi
 }
+snapshot_pruefen() { # Rechner Statusdatei
+  local r=$1 f=$2 snap ts al
+  snap=$(grep -E '^platz[[:space:]]' "$f" 2>/dev/null | tail -1 | sed -n 's/.* snap=\([^ ]*\).*/\1/p')
+  if [ -z "$snap" ]; then add "$r: juengster Snapshot von /DATA nicht gemeldet (bugem.sh auf $r zu alt oder kein Lauf?)"; return; fi
+  if [ "$snap" = keine ]; then add "$r: keine Snapshots von /DATA (Snapper-Einstellung fehlt? los.sh -rechner) - aeltere Staende nicht geschuetzt"; return; fi
+  ts=$(date -d "${snap/_/ }" +%s 2>/dev/null) || { add "$r: Snapshot-Meldung unlesbar: $snap"; return; }
+  al=$((JETZT-ts))
+  if [ "$al" -gt $((SNAP_MAXH*3600)) ]; then add "$r: juengster Snapshot von /DATA ist vom $(date -d "@$ts" '+%d.%m.%Y %H:%M') (vor $(alter_text $al), erlaubt $SNAP_MAXH Stunden)"
+  else detail "$r: juengster Snapshot von /DATA: $(date -d "@$ts" '+%d.%m.%Y %H:%M')"; fi
+}
 alter_text() { # Sekunden -> "6,5 Stunden" / "10,0 Tage"
   awk -v s="$1" 'BEGIN{ if (s>=172800) printf "%.1f Tagen", s/86400; else printf "%.1f Stunden", s/3600 }' | sed 's/\./,/'; }
 for r in $RESERVER; do
@@ -86,8 +99,12 @@ for r in $RESERVER; do
     elif [ "$al" -gt $(( ${MAXH[$s]} * 3600 )) ]; then add "$r: $s veraltet - letzter OK-Lauf am $dd (vor $(alter_text $al), erlaubt ${MAXH[$s]} Stunden)"
     fi
   done
-  [ "$MODUS" = voll ] && { platz_pruefen "$r" "$f"; crontab_pruefen "$r"; }
+  [ "$MODUS" = voll ] && { platz_pruefen "$r" "$f"; snapshot_pruefen "$r" "$f"; crontab_pruefen "$r"; }
 done
+# netconsole-Empfaenger (Diagnose der Haenger von linux0 beim Abschalten)
+if [ "$MODUS" = voll ] && systemctl -q is-enabled netconsole-empfang.service 2>/dev/null && ! systemctl -q is-active netconsole-empfang.service; then
+  add "linux1: netconsole-Empfaenger laeuft nicht (systemctl status netconsole-empfang) - Abschalt-Meldungen von linux0 gehen verloren"
+fi
 sig=$(printf '%s' "$PROBLEME" | sha256sum | cut -c1-16)
 SF="$ZUSTAND/zustand_$MODUS"; letzte_sig=; letzte_zeit=0
 [ -f "$SF" ] && { read -r letzte_sig letzte_zeit < "$SF"; }

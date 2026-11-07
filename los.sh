@@ -153,7 +153,7 @@ commandline() {
         printf "  $blau-patdirs$reset:   legt Patientendokumente-Unterverzeichnisse an (zutxt/zupdf/zusalat/ur/zufaxen)\n";
         printf "  $blau-fachliches$reset: richtet die oeffentlichen Fachliches-Webseiten ein (AID-Vergleich, HbA1c, Dienstplan)\n";
         printf "  $blau-tuya$reset:      richtet tinytuya und den Befehl leiste (Steckdosenleisten) ein\n";
-        printf "  $blau-rechner$reset:   richtet fehlende rechnerspezifische Einstellungen ein (rechner/<host>/: Watchdog, netconsole, fstab, Stufe 3)\n";
+        printf "  $blau-rechner$reset:   richtet fehlende rechnerspezifische Einstellungen ein (rechner/<host>/: Watchdog, netconsole, fstab, Stufe 3, Snapper)\n";
         printf "  -- Weitere Tools --\n";
         printf "  $blau-firebird$reset:  richtet Firebird ein\n";
         printf "  $blau-teamviewer$reset: richtet den Teamviewer ein\n";
@@ -3822,8 +3822,35 @@ reserverdienste() {
 # Fehlende werden angelegt, vorhandene NICHT ueberschrieben (Abweichung nur gemeldet). Dazu je Rechner:
 #  linux0: Watchdog auch beim Poweroff scharf (Haenger beim Abschalten -> Reset), netconsole-Sender zu linux1
 #  linux1: netconsole-Empfaenger (socat, UDP 6666 nur von linux0), Stufe 3 von weckwacht.sh fuer linux0 (switch_1)
+#  linux0,linux7: Snapper fuer /DATA (snapper_data)
 #  linux7: /DATA,/DATAC mit x-systemd.mount-timeout=180 (btrfs-Mount dauert ~50 s, DefaultTimeoutStartSec=10s
 #          brach ihn ab, MariaDB startete dann ohne /DATA - 2.10.2026)
+# snapper_data() - Snapshots von /DATA der Sicherungsrechner (Vorlage rechner/reserver/snapper-data: taeglich, 7 Tage).
+# Nur unter openSUSE (nur dort erprobt; anderswo liegen z.B. die Einstellungen anders) und nur auf btrfs. Eine
+# vorhandene Einstellung bleibt, Abweichung wird nur gemeldet. Vorhandenes /DATA/.snapshots wird weiterverwendet
+# (nach Tausch der Systemplatte liegen die Snapshots noch auf /DATA, nur /etc/snapper fehlt).
+snapper_data() {
+  printf "${dblau}snapper_data${reset}()\n";
+  local k=/etc/snapper/configs/data v=$instvz/rechner/reserver/snapper-data s=/etc/sysconfig/snapper;
+  [ "$OSNR" = 4 ]||{ printf "Snapper nur unter openSUSE eingerichtet (OSNR: ${blau}$OSNR${reset}) - uebersprungen.\n"; return; };
+  [ "$(findmnt -no FSTYPE /DATA)" = btrfs ]||{ printf "${rot}/DATA ist nicht (eingehaengt als) btrfs${reset} - Snapper uebersprungen.\n"; return; };
+  command -v snapper >/dev/null||{ [ "$insg" ]||setzinstprog; doinst snapper; };
+  command -v snapper >/dev/null||{ printf "${rot}snapper nicht installierbar${reset}\n"; return; };
+  if [ ! -f "$k" ]; then
+    [ -d /DATA/.snapshots ]||ausf "snapper -c data create-config /DATA" "${blau}";
+    ausf "install -D -m 640 $v $k" "${blau}";
+    command -v restorecon >/dev/null&&restorecon "$k";
+  elif ! cmp -s "$v" "$k"; then
+    printf "${rot}$k${reset} weicht von ${blau}$v${reset} ab - nicht ueberschrieben.\n";
+  fi;
+  grep -Eq '^SNAPPER_CONFIGS="([^"]* )?data( [^"]*)?"' "$s"||{
+    sed -i -E 's/^SNAPPER_CONFIGS="(.*)"/SNAPPER_CONFIGS="\1 data"/;s/^SNAPPER_CONFIGS=" /SNAPPER_CONFIGS="/' "$s";
+    printf "${blau}$s${reset}: data eingetragen.\n"; };
+  systemctl try-restart snapperd.service 2>/dev/null; # liest die Einstellungen sonst nicht neu
+  systemctl enable --now snapper-timeline.timer snapper-cleanup.timer 2>/dev/null;
+  snapper -c data list >/dev/null||printf "${rot}snapper -c data list scheitert${reset}\n";
+} # snapper_data
+
 rechnereinstellungen() {
   printf "${dblau}rechnereinstellungen${reset}()\n";
   local h q z neu= dracut= dienst;
@@ -3846,9 +3873,10 @@ rechnereinstellungen() {
   for dienst in netconsole-linux1 netconsole-empfang; do
     [ -f /etc/systemd/system/$dienst.service ]&&! systemctl -q is-enabled $dienst.service 2>/dev/null&&ausf "systemctl enable --now $dienst.service" "${blau}";
   done;
+  case "$h" in linux0|linux7) snapper_data;; esac;
   case "$h" in
     linux1)
-      command -v socat >/dev/null||doinst socat;
+      command -v socat >/dev/null||{ [ "$insg" ]||setzinstprog; doinst socat; };
       if command -v firewall-cmd >/dev/null&&firewall-cmd -q --state 2>/dev/null; then
         local regel='rule family="ipv4" source address="192.168.178.20/32" port port="6666" protocol="udp" accept';
         firewall-cmd -q --permanent --query-rich-rule="$regel"||{
