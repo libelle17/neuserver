@@ -240,7 +240,6 @@ ELG=/var/log/cronf.log
 -*/11 * * * * /root/bin/verhdop.sh chmod 770 /root/bin/*.sh >/dev/null 2>>$ELG
 # -* * * * * /root/bin/verhdop.sh /root/bin/bertest.sh >>$NLG 2>>$ELG
 # Entzerrung 8.7.2026: von 2:00 auf 1:25 Uhr verschoben, s. Analyse bei bunacht.sh.
--25 1 * * * /usr/bin/ionice -c3 /root/bin/berein -cfg ~/bin/berein.cfg -d >>$NLG 2>>$ELG
 -1 07,14 * * * chmod 644 /root/bin/logrotate.conf; logrotate /root/bin/logrotate.conf >>$NLG 2>>$ELG
 -5 * * * * /usr/local/sbin/faxmodem ttyACM0 >>$NLG 2>>$ELG
 # Entzerrung 8.7.2026: von 2:15 auf 1:55 Uhr verschoben, s. Analyse bei bunacht.sh.
@@ -344,3 +343,6 @@ ELG=/var/log/cronf.log
 -35 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/kvb_einlesen.py" >>$NLG 2>>$ELG
 # 6.10.2026: prueft die Systemplatte per SMART und haelt ggf. ein markiertes Ersatz-Betriebssystem aktuell (linux0/linux7: aus wecklauf.sh); s. wurzelwacht.sh
 53 6,18 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/wurzelwacht.sh -e >>$VL/wurzelwacht.log 2>&1
+7 * * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&/root/bin/mysqlspeicher.sh >>$VL/mysqlspeicher.log 2>&1
+-40 2 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && { /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/smartpix_einlesen.py" && /root/bin/machtha.sh >/dev/null; } >>$NLG 2>>$ELG # Smart-Pix-Geraete einlesen, dann Therapiearten neu (fuellThaP(0), ca. 30 min)
+-0 22 * * * HOST=$(hostname);[ ${HOST\%\%.*}/ = linux1/ ]&&mountpoint -q "/DATA" && /usr/bin/python3 "/DATA/eigene Dateien/Programmierung/Dateilesen/abdata_einlesen.py" >>$NLG 2>>$ELG

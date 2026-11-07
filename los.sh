@@ -4287,7 +4287,8 @@ vmime_bauen() {
 	# vmparse2 selbst gegen die frisch gebaute vmime neu bauen und installieren
 	# (nach /usr/bin, per Makefile-install-Target); (cd ...) statt ausf-eval,
 	# damit das cd nicht den cwd von los.sh selbst verändert.
-	[ -d /root/vmparse2 ]&&ausf "(cd /root/vmparse2 && make -j$(nproc) && make install)" "${blau}";
+	# -B: die Makefile-Abhaengigkeiten kennen die vmime-Header nicht; ohne -B bliebe vmparse2 auf den alten Headern
+	[ -d /root/vmparse2 ]&&ausf "(cd /root/vmparse2 && make -B -j$(nproc) && make install)" "${blau}";
 } # vmime_bauen
 
 # phpparse_bauen() – baut phpparse aus $instvz/phpparse/phpparse.cpp und
